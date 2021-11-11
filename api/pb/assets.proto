@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
+
+package pb;
+
+service AssetManagement {
+    rpc Create(Asset) returns (Id);
+    rpc Get(Id) returns (Asset);
+    rpc List(SearchQuery) returns (stream Asset);
+}
+
+message Asset {
+    Id id = 1;
+    string name = 2;
+    string image = 3;
+}
+
+message Id {
+    string val = 1;
+}
+
+message SearchQuery {
+}
