@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/cli"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -51,11 +49,13 @@ var listAssetsCmd = &cobra.Command{
 			}
 			assets = append(assets, a)
 		}
-		displayAssets(assets)
+		if err := displayAssets(assets); err != nil {
+			log.Fatalf("display assets: %v", err)
+		}
 	},
 }
 
-func displayAssets(assets []*pb.Asset) {
+func displayAssets(assets []*pb.Asset) error {
 	numAssets := len(assets)
 	ids := make([]string, 0, numAssets)
 	names := make([]string, 0, numAssets)
@@ -70,43 +70,18 @@ func displayAssets(assets []*pb.Asset) {
 		WithPadding(colPad).
 		WithMinColSize(minColSize).
 		Build()
-	
-	t.AddColumn(IdText, ids)
-	t.AddColumn(NameText, names)
-	t.AddColumn(ImageText, images)
+
+	if err := t.AddColumn(IdText, ids); err != nil {
+		return err
+	}
+	if err := t.AddColumn(NameText, names); err != nil {
+		return err
+	}
+	if err := t.AddColumn(ImageText, images); err != nil {
+		return err
+	}
 	fmt.Print(t)
-	//sb := &strings.Builder{}
-	//buildTitle(sb)
-	//for _, a := range assets {
-	//	buildAsset(sb, a)
-	//}
-	//fmt.Print(sb.String())
-}
-
-func buildTitle(sb *strings.Builder) {
-	idPad := asset.IdSize - len(IdText) + colPad
-	titleLen := len(IdText) + idPad + len(NameText) + 1 // Last for \n
-	sb.Grow(titleLen)
-	sb.WriteString(IdText)
-	for i := 0; i < idPad; i++ {
-		sb.WriteByte(' ')
-	}
-	sb.WriteString(NameText)
-	sb.WriteByte('\n')
-}
-
-func buildAsset(sb *strings.Builder, a *pb.Asset) {
-	id := a.Id.Val
-	name := a.Name
-	idPad := asset.IdSize - len(id) + colPad
-	assetLen := len(id) + idPad + len(name) + 1 // Last for \n
-	sb.Grow(assetLen)
-	sb.WriteString(id)
-	for i := 0; i < idPad; i++ {
-		sb.WriteByte(' ')
-	}
-	sb.WriteString(name)
-	sb.WriteByte('\n')
+	return nil
 }
 
 func init() {
