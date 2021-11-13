@@ -14,12 +14,15 @@ type Store interface {
 }
 
 type store struct {
-	assets map[identifier.Id]*Asset
-	lock   sync.RWMutex
+	assets sync.Map
+	gen    identifier.Generator
 }
 
 func NewStore() Store {
-	return &store{assets: map[identifier.Id]*Asset{}, lock: sync.RWMutex{}}
+	return &store{
+		assets: sync.Map{},
+		gen:    identifier.GenForSize(IdSize),
+	}
 }
 
 func (st *store) Create(config *Asset) (identifier.Id, error) {
@@ -31,10 +34,11 @@ func (st *store) Create(config *Asset) (identifier.Id, error) {
 	}
 	asset := config.Clone()
 
-	st.lock.Lock()
-	id := st.generateNewId()
-	st.assets[id] = asset
-	st.lock.Unlock()
+	id, err := st.gen()
+	if err != nil {
+		return identifier.Empty(), fmt.Errorf("store create asset: %v", err)
+	}
+	st.assets.Store(id, asset)
 
 	asset.Id = id
 
@@ -45,36 +49,28 @@ func (st *store) Get(id identifier.Id) (*Asset, error) {
 	if !id.IsValid() {
 		return nil, errors.New("invalid identifier")
 	}
-	st.lock.RLock()
-	asset, ok := st.assets[id]
-	st.lock.RUnlock()
+
+	stored, ok := st.assets.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("no such identifier: '%s'", id)
+	}
+	asset, ok := stored.(*Asset)
+	if !ok {
+		return nil, fmt.Errorf("store get asset %v: type assertion failed", id)
 	}
 	return asset.Clone(), nil
 }
 
 func (st *store) List() ([]*Asset, error) {
-	st.lock.RLock()
-	defer st.lock.RUnlock()
-	res := make([]*Asset, 0, len(st.assets))
-	for _, a := range st.assets {
-		res = append(res, a.Clone())
-	}
+	res := make([]*Asset, 0)
+	st.assets.Range(
+		func(key, value interface{}) bool {
+			a, ok := value.(*Asset)
+			if !ok {
+				return false
+			}
+			res = append(res, a.Clone())
+			return true
+		})
 	return res, nil
-}
-
-func (st *store) generateNewId() identifier.Id {
-	newId, err := identifier.Rand(IdSize)
-	if err != nil {
-		panic(err)
-	}
-	_, idExists := st.assets[newId]
-	for idExists {
-		if newId, err = identifier.Rand(IdSize); err != nil {
-			panic(err)
-		}
-		_, idExists = st.assets[newId]
-	}
-	return newId
 }

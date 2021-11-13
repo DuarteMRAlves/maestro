@@ -16,7 +16,8 @@ func IsNil(
 	t *testing.T,
 	actual interface{},
 	msg string,
-	msgArgs ...interface{}) {
+	msgArgs ...interface{},
+) {
 
 	if actual != nil {
 		t.Fatalf(
@@ -31,11 +32,29 @@ func DeepEqual(
 	expected interface{},
 	actual interface{},
 	msg string,
-	msgArgs ...interface{}) {
+	msgArgs ...interface{},
+) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf(
 			"DeepEqual is false: expected='%v', actual='%v' (msg='%v')",
+			expected,
+			actual,
+			fmt.Sprintf(msg, msgArgs...))
+	}
+}
+
+func NotDeepEqual(
+	t *testing.T,
+	expected interface{},
+	actual interface{},
+	msg string,
+	msgArgs ...interface{},
+) {
+
+	if reflect.DeepEqual(expected, actual) {
+		t.Fatalf(
+			"DeepEqual is true: expected='%v', actual='%v' (msg='%v')",
 			expected,
 			actual,
 			fmt.Sprintf(msg, msgArgs...))
