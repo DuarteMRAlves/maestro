@@ -48,7 +48,7 @@ func verifyConfig(config *Blueprint) (bool, error) {
 		return false, errors.New("blueprint identifier should not be defined")
 	}
 	if len(config.stages) != 0 {
-		return false, errors.New("blueprint should not have assets")
+		return false, errors.New("blueprint should not have stages")
 	}
 	if len(config.links) != 0 {
 		return false, errors.New("blueprint should not have links")
