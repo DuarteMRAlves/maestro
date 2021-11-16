@@ -18,8 +18,7 @@ func IsNil(
 	msg string,
 	msgArgs ...interface{},
 ) {
-
-	if actual != nil {
+	if !isNil(actual) {
 		t.Fatalf(
 			"Value not nil: '%v' (msg='%v')",
 			actual,

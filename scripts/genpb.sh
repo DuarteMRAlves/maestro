@@ -22,15 +22,11 @@ set +e
 rm ./*.pb.go 2>/dev/null
 set -e
 
-echo "==> Collecting .proto files"
-PROTO_FILES=$( ls ./*.proto )
-
 echo "==> Generating new .pb.go files"
-for FILE in "${PROTO_FILES[@]}"; do
-    protoc \
-        --go_out=. \
-        --go_opt=paths=source_relative \
-        --go-grpc_out=. \
-        --go-grpc_opt=paths=source_relative \
-        "${FILE}"
-done
+protoc \
+  -I. \
+  --go_out=. \
+  --go-grpc_out=. \
+  --go_opt=paths=source_relative \
+  --go-grpc_opt=paths=source_relative \
+  ./*.proto

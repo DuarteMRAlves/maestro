@@ -2,15 +2,10 @@ package protobuff
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"testing"
-)
-
-const (
-	name  = "Asset Name"
-	image = "user/image:version"
 )
 
 func TestMarshalID(t *testing.T) {
@@ -33,28 +28,21 @@ func TestMarshalID(t *testing.T) {
 	}
 }
 
-func TestMarshalAsset(t *testing.T) {
-	rand, _ := identifier.Rand(5)
+func TestUnmarshalId(t *testing.T) {
 	tests := []struct {
-		in asset.Asset
+		in *pb.Id
 	}{
-		{asset.Asset{Id: rand, Name: name, Image: image}},
-		{asset.Asset{Id: identifier.Empty(), Name: name, Image: image}},
-		{asset.Asset{Name: name}},
-		{asset.Asset{Id: rand}},
-		{asset.Asset{Image: image}},
+		{&pb.Id{Val: ""}},
+		{&pb.Id{Val: "SomeId"}},
 	}
-
 	for _, inner := range tests {
 		in := inner.in
 		name := fmt.Sprintf("in='%v'", in)
 
 		t.Run(
 			name, func(t *testing.T) {
-				res := MarshalAsset(&in)
-				assert.DeepEqual(t, in.Id.Val, res.Id.Val, "Asset Id")
-				assert.DeepEqual(t, in.Name, res.Name, "Asset Name")
-				assert.DeepEqual(t, in.Image, res.Image, "Asset Image")
+				res := UnmarshalId(in)
+				assert.DeepEqual(t, in.Val, res.Val, "Id Val")
 			})
 	}
 }

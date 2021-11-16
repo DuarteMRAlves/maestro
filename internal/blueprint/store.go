@@ -47,11 +47,11 @@ func verifyConfig(config *Blueprint) (bool, error) {
 	if !config.Id.IsEmpty() {
 		return false, errors.New("blueprint identifier should not be defined")
 	}
-	if len(config.stages) != 0 {
-		return false, errors.New("blueprint should not have stages")
+	if len(config.Stages) != 0 {
+		return false, errors.New("blueprint should not have Stages")
 	}
-	if len(config.links) != 0 {
-		return false, errors.New("blueprint should not have links")
+	if len(config.Links) != 0 {
+		return false, errors.New("blueprint should not have Links")
 	}
 	return true, nil
 }

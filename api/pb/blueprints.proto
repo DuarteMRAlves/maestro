@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
+
+package pb;
+
+import "identifier.proto";
+
+service BlueprintManagement {
+  rpc Create(Blueprint) returns (Id);
+}
+
+message Blueprint {
+  Id id = 1;
+  string name = 2;
+  repeated Stage stages = 3;
+  repeated Link links = 4;
+}
+
+message Stage {
+  Id id = 1;
+  string name = 2;
+  Id assetId = 3;
+  string service = 4;
+  string method = 5;
+}
+
+message Link {
+  Id sourceId = 1;
+  string sourceField = 2;
+  Id targetId = 3;
+  string targetField = 4;
+}

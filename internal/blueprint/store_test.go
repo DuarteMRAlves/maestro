@@ -14,10 +14,10 @@ func TestStore_CreateCorrect(t *testing.T) {
 	tests := []*Blueprint{
 		{Name: bpName},
 		{Id: identifier.Empty(), Name: bpName},
-		{Name: bpName, stages: nil},
-		{Name: bpName, stages: []*Stage{}},
-		{Name: bpName, links: nil},
-		{Name: bpName, links: []*Link{}},
+		{Name: bpName, Stages: nil},
+		{Name: bpName, Stages: []*Stage{}},
+		{Name: bpName, Links: nil},
+		{Name: bpName, Links: []*Link{}},
 	}
 	for _, config := range tests {
 		testName := fmt.Sprintf("config=%v", config)
@@ -37,8 +37,8 @@ func TestStore_CreateCorrect(t *testing.T) {
 				assert.IsTrue(t, ok, "blueprint type assertion failed")
 				assert.DeepEqual(t, bpId, bp.Id, "correct id")
 				assert.DeepEqual(t, bpName, bp.Name, "correct name")
-				assert.DeepEqual(t, 0, len(bp.stages), "empty stages")
-				assert.DeepEqual(t, 0, len(bp.links), "empty links")
+				assert.DeepEqual(t, 0, len(bp.Stages), "empty Stages")
+				assert.DeepEqual(t, 0, len(bp.Links), "empty Links")
 			})
 	}
 }
@@ -54,12 +54,12 @@ func TestStore_CreateIncorrect(t *testing.T) {
 			errors.New("blueprint identifier should not be defined"),
 		},
 		{
-			&Blueprint{Name: bpName, stages: []*Stage{nil}},
-			errors.New("blueprint should not have stages"),
+			&Blueprint{Name: bpName, Stages: []*Stage{nil}},
+			errors.New("blueprint should not have Stages"),
 		},
 		{
-			&Blueprint{Name: bpName, links: []*Link{nil}},
-			errors.New("blueprint should not have links"),
+			&Blueprint{Name: bpName, Links: []*Link{nil}},
+			errors.New("blueprint should not have Links"),
 		},
 	}
 	for _, inner := range tests {

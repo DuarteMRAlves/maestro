@@ -24,52 +24,52 @@ func TestBlueprint_Clone(t *testing.T) {
 	bp := &Blueprint{
 		Id:     identifier.Id{Val: oldBpId},
 		Name:   oldBpName,
-		stages: []*Stage{stage1},
-		links:  []*Link{link1},
+		Stages: []*Stage{stage1},
+		Links:  []*Link{link1},
 	}
 	c := bp.Clone()
 
 	assert.DeepEqual(t, oldBpId, c.Id.Val, "cloned old id")
 	assert.DeepEqual(t, oldBpName, c.Name, "cloned old name")
-	assert.DeepEqual(t, 1, len(c.stages), "cloned old stages length")
-	assert.DeepEqual(t, "Stage 1", c.stages[0].Name, "cloned old stage name")
-	assert.DeepEqual(t, 1, len(c.links), "cloned old links length")
+	assert.DeepEqual(t, 1, len(c.Stages), "cloned old Stages length")
+	assert.DeepEqual(t, "Stage 1", c.Stages[0].Name, "cloned old stage name")
+	assert.DeepEqual(t, 1, len(c.Links), "cloned old Links length")
 	assert.DeepEqual(
 		t,
 		"Source Field 1",
-		c.links[0].SourceField,
+		c.Links[0].SourceField,
 		"cloned old link source field")
 
 	c.Id.Val = newBpId
 	c.Name = newBpName
-	c.stages = append(c.stages, stage2)
-	c.links = append(c.links, link2)
+	c.Stages = append(c.Stages, stage2)
+	c.Links = append(c.Links, link2)
 
 	assert.DeepEqual(t, oldBpId, bp.Id.Val, "source old id")
 	assert.DeepEqual(t, oldBpName, bp.Name, "source old name")
-	assert.DeepEqual(t, 1, len(bp.stages), "source old stages length")
-	assert.DeepEqual(t, "Stage 1", bp.stages[0].Name, "source old stage name")
-	assert.DeepEqual(t, 1, len(bp.links), "source old links length")
+	assert.DeepEqual(t, 1, len(bp.Stages), "source old Stages length")
+	assert.DeepEqual(t, "Stage 1", bp.Stages[0].Name, "source old stage name")
+	assert.DeepEqual(t, 1, len(bp.Links), "source old Links length")
 	assert.DeepEqual(
 		t,
 		"Source Field 1",
-		bp.links[0].SourceField,
+		bp.Links[0].SourceField,
 		"source old link source field")
 
 	assert.DeepEqual(t, newBpId, c.Id.Val, "cloned new id")
 	assert.DeepEqual(t, newBpName, c.Name, "cloned new name")
-	assert.DeepEqual(t, 2, len(c.stages), "cloned new stages length")
-	assert.DeepEqual(t, "Stage 1", c.stages[0].Name, "cloned new stage 1 name")
-	assert.DeepEqual(t, "Stage 2", c.stages[1].Name, "cloned new stage 2 name")
-	assert.DeepEqual(t, 2, len(c.links), "cloned new links length")
+	assert.DeepEqual(t, 2, len(c.Stages), "cloned new Stages length")
+	assert.DeepEqual(t, "Stage 1", c.Stages[0].Name, "cloned new stage 1 name")
+	assert.DeepEqual(t, "Stage 2", c.Stages[1].Name, "cloned new stage 2 name")
+	assert.DeepEqual(t, 2, len(c.Links), "cloned new Links length")
 	assert.DeepEqual(
 		t,
 		"Source Field 1",
-		c.links[0].SourceField,
+		c.Links[0].SourceField,
 		"cloned new link 1 source field")
 	assert.DeepEqual(
 		t,
 		"Target Field 2",
-		c.links[1].TargetField,
+		c.Links[1].TargetField,
 		"cloned new link 2 target field")
 }
