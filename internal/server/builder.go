@@ -38,7 +38,11 @@ func (b *Builder) Build() *Server {
 
 func activateGrpc(s *Server, b *Builder) {
 	grpcServer := grpc.NewServer(b.grpcOpts...)
+
 	assetManagementServer := ipb.NewAssetManagementServer(s.api)
+	blueprintManagementServer := ipb.NewBlueprintManagementServer(s.api)
+	
 	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
+	pb.RegisterBlueprintManagementServer(grpcServer, blueprintManagementServer)
 	s.grpcServer = grpcServer
 }
