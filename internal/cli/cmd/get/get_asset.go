@@ -1,9 +1,9 @@
-package cmd
+package get
 
 import (
 	"context"
 	"fmt"
-	pb "github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/spf13/cobra"
@@ -16,43 +16,45 @@ const (
 	IdText    = "ID"
 	NameText  = "NAME"
 	ImageText = "IMAGE"
-)
 
-const (
 	colPad     = 2
 	minColSize = 15
 )
 
-var listAssetsCmd = &cobra.Command{
-	Use:   "list",
-	Short: "maestro-cli asset list allows you to list created assets",
-	Run: func(cmd *cobra.Command, args []string) {
-		conn := cli.NewConnection(addr)
-		defer conn.Close()
+func NewCmdGetAsset() *cobra.Command {
+	return &cobra.Command{
+		Use:   "asset",
+		Short: "list one or more Assets",
+		Run:   runGetAsset,
+	}
+}
 
-		c := pb.NewAssetManagementClient(conn)
+func runGetAsset(_ *cobra.Command, _ []string) {
+	conn := cli.NewConnection(createOpts.addr)
+	defer conn.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		stream, err := c.List(ctx, &pb.SearchQuery{})
-		assets := make([]*pb.Asset, 0)
+	c := pb.NewAssetManagementClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	stream, err := c.List(ctx, &pb.SearchQuery{})
+	assets := make([]*pb.Asset, 0)
+	if err != nil {
+		log.Fatalf("Unable to create asset: %v", err)
+	}
+	for {
+		a, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			log.Fatalf("Unable to create asset: %v", err)
+			log.Fatalf("unable to list assets: %v", err)
 		}
-		for {
-			a, err := stream.Recv()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatalf("unable to list assets: %v", err)
-			}
-			assets = append(assets, a)
-		}
-		if err := displayAssets(assets); err != nil {
-			log.Fatalf("display assets: %v", err)
-		}
-	},
+		assets = append(assets, a)
+	}
+	if err := displayAssets(assets); err != nil {
+		log.Fatalf("display assets: %v", err)
+	}
 }
 
 func displayAssets(assets []*pb.Asset) error {
@@ -82,8 +84,4 @@ func displayAssets(assets []*pb.Asset) error {
 	}
 	fmt.Print(t)
 	return nil
-}
-
-func init() {
-	assetCmd.AddCommand(listAssetsCmd)
 }
