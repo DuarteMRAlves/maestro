@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli"
 	"github.com/spf13/cobra"
-	"log"
 	"time"
 )
 
@@ -18,26 +17,23 @@ const (
 )
 
 var createAssetOpts = &struct {
-	name  string
 	image string
 }{}
 
 func NewCmdCreateAsset() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "asset",
+		Use:   "asset NAME",
 		Short: "create a new Asset",
+		Args:  cobra.ExactArgs(1),
 		Run:   runCreateAsset,
 	}
-
-	cmd.Flags().StringVar(&createAssetOpts.name, nameFlag, "", nameUsage)
-	cmd.MarkFlagRequired(nameFlag)
 
 	cmd.Flags().StringVar(&createAssetOpts.image, imageFlag, "", imageUsage)
 
 	return cmd
 }
 
-func runCreateAsset(_ *cobra.Command, _ []string) {
+func runCreateAsset(_ *cobra.Command, args []string) {
 	conn := cli.NewConnection(createOpts.addr)
 	defer conn.Close()
 
@@ -50,12 +46,12 @@ func runCreateAsset(_ *cobra.Command, _ []string) {
 	asset, err := c.Create(
 		ctx,
 		&pb.Asset{
-			Name:  createAssetOpts.name,
+			Name:  args[0],
 			Image: createAssetOpts.image,
 		})
-
 	if err != nil {
-		log.Fatalf("Unable to create asset: %v", err)
+		fmt.Printf("Unable to create asset: %v\n", err)
+		return
 	}
 	fmt.Printf("created asset with identifier '%v'\n", asset.Val)
 }
