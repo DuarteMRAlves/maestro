@@ -8,9 +8,8 @@ import (
 
 func MarshalStage(s *blueprint.Stage) *pb.Stage {
 	return &pb.Stage{
-		Id:      MarshalID(s.Id),
 		Name:    s.Name,
-		AssetId: MarshalID(s.AssetId),
+		Asset:   s.Asset,
 		Service: s.Service,
 		Method:  s.Method,
 	}
@@ -21,9 +20,8 @@ func UnmarshalStage(p *pb.Stage) (*blueprint.Stage, error) {
 		return nil, err
 	}
 	return &blueprint.Stage{
-		Id:      UnmarshalId(p.Id),
 		Name:    p.Name,
-		AssetId: UnmarshalId(p.AssetId),
+		Asset:   p.Asset,
 		Service: p.Service,
 		Method:  p.Method,
 	}, nil

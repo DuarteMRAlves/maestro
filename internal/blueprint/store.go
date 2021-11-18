@@ -2,7 +2,6 @@ package blueprint
 
 import (
 	"errors"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"sync"
 )
 
@@ -12,14 +11,10 @@ type Store interface {
 
 type store struct {
 	blueprints sync.Map
-	gen        identifier.Generator
 }
 
 func NewStore() Store {
-	return &store{
-		blueprints: sync.Map{},
-		gen:        identifier.GenForSize(IdSize),
-	}
+	return &store{blueprints: sync.Map{}}
 }
 
 func (st *store) Create(config *Blueprint) error {

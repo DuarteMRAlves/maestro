@@ -2,68 +2,91 @@ package blueprint
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"testing"
 )
 
 const (
-	oldSourceId    = "GIB343AFE1"
+	oldSourceStage = "OldSourceStage"
 	oldSourceField = "OldSourceField"
-	oldTargetId    = "Y5UYV878BU"
+	oldTargetStage = "OldTargetStage"
 	oldTargetField = "OldTargetField"
 
-	newSourceId    = "GIB564VV97"
+	newSourceStage = "NewSourceStage"
 	newSourceField = "NewSourceField"
-	newTargetId    = "GOEF67V5CD"
+	newTargetStage = "NewTargetStage"
 	newTargetField = "NewTargetField"
 )
 
 func TestLink_Clone(t *testing.T) {
 	s := &Link{
-		SourceId:    identifier.Id{Val: oldSourceId},
+		SourceStage: oldSourceStage,
 		SourceField: oldSourceField,
-		TargetId:    identifier.Id{Val: oldTargetId},
+		TargetStage: oldTargetStage,
 		TargetField: oldTargetField,
 	}
 	c := s.Clone()
-	assert.DeepEqual(t, oldSourceId, c.SourceId.Val, "cloned old source id")
+	assert.DeepEqual(
+		t,
+		oldSourceStage,
+		c.SourceStage,
+		"cloned old source stage")
 	assert.DeepEqual(
 		t,
 		oldSourceField,
 		c.SourceField,
 		"cloned old source field")
-	assert.DeepEqual(t, oldTargetId, c.TargetId.Val, "cloned old target id")
+	assert.DeepEqual(
+		t,
+		oldTargetStage,
+		c.TargetStage,
+		"cloned old target stage")
 	assert.DeepEqual(
 		t,
 		oldTargetField,
 		c.TargetField,
 		"cloned old target field")
 
-	c.SourceId.Val = newSourceId
+	c.SourceStage = newSourceStage
 	c.SourceField = newSourceField
-	c.TargetId.Val = newTargetId
+	c.TargetStage = newTargetStage
 	c.TargetField = newTargetField
 
-	assert.DeepEqual(t, oldSourceId, s.SourceId.Val, "source old source id")
+	assert.DeepEqual(
+		t,
+		oldSourceStage,
+		s.SourceStage,
+		"source old source stage")
 	assert.DeepEqual(
 		t,
 		oldSourceField,
 		s.SourceField,
 		"source old source field")
-	assert.DeepEqual(t, oldTargetId, s.TargetId.Val, "source old target id")
+	assert.DeepEqual(
+		t,
+		oldTargetStage,
+		s.TargetStage,
+		"source old target stage")
 	assert.DeepEqual(
 		t,
 		oldTargetField,
 		s.TargetField,
 		"source old target field")
 
-	assert.DeepEqual(t, newSourceId, c.SourceId.Val, "cloned new source id")
+	assert.DeepEqual(
+		t,
+		newSourceStage,
+		c.SourceStage,
+		"cloned new source stage")
 	assert.DeepEqual(
 		t,
 		newSourceField,
 		c.SourceField,
 		"cloned new source field")
-	assert.DeepEqual(t, newTargetId, c.TargetId.Val, "cloned new target id")
+	assert.DeepEqual(
+		t,
+		newTargetStage,
+		c.TargetStage,
+		"cloned new target stage")
 	assert.DeepEqual(
 		t,
 		newTargetField,

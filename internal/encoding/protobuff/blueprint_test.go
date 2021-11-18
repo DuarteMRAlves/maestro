@@ -53,13 +53,11 @@ func TestMarshalBlueprint(t *testing.T) {
 func TestUnmarshalBlueprintCorrect(t *testing.T) {
 	tests := []*pb.Blueprint{
 		{
-			Id:     &pb.Id{Val: blueprintId},
 			Name:   blueprintName,
 			Stages: []*pb.Stage{pbStage1, pbStage2, pbStage3},
 			Links:  []*pb.Link{pbLink1, pbLink2, pbLink3},
 		},
 		{
-			Id:     &pb.Id{Val: ""},
 			Name:   "",
 			Stages: nil,
 			Links:  nil,

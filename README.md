@@ -18,8 +18,7 @@ associated docker image that exposes the grpc api.
 
 An Asset has the following properties:
 
-* `Id` that uniquely identifies the Asset.
-* `Name` that is a human-readable string to identify the Asset.
+* `Name` that is a human-readable string to uniquely identify the Asset.
 * `Image` (optional) which is the name of the image associated with this Asset.
 
 ### Blueprint
@@ -30,9 +29,8 @@ like structure where we have Stages and Links.
 A `Stage` is an instantiation of an Asset. It specifies a concrete grpc method
 to be executed, and has the following fields:
 
-* `Id` Uniquely identifies the stage inside a Blueprint.
-* `AssetId` Identifies the associated Asset.
-* `Address` Defines where the grpc service is running.
+* `Name` Uniquely identifies the stage inside a Blueprint.
+* `Asset` The name of the associated Asset.
 * `Service` (optional) Specifies the grpc service within the sever (required if
   multiple services exist, otherwise can be omitted)
 * `Method` (optional) Specifies the grpc method within the service (required if
@@ -40,11 +38,11 @@ to be executed, and has the following fields:
 
 A `Link` specifies a connection between two stages. A Link has:
 
-* `SourceId` Id of the Stage that is the source of the connection.
+* `SourceStage` Name of the Stage that is the source of the connection.
 * `SourceField` (optional) If not specified the whole message is transferred. It
   defines the field name of the source output that will be transferred through
   the connection.
-* `TargetId` Id of the Stage that is the target of the connection.
+* `TargetStage` Name of the Stage that is the target of the connection.
 * `TargetField`(optional) If not defined, the whole received message is
   delivered to the stage. Otherwise, the default message for the target stage is
   created, and the field with the given variable name is set with the received

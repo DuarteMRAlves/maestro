@@ -2,30 +2,29 @@ package blueprint
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
 )
 
 type Link struct {
-	SourceId    identifier.Id
+	SourceStage string
 	SourceField string
-	TargetId    identifier.Id
+	TargetStage string
 	TargetField string
 }
 
 func (l *Link) Clone() *Link {
 	return &Link{
-		SourceId:    l.SourceId,
+		SourceStage: l.SourceStage,
 		SourceField: l.SourceField,
-		TargetId:    l.TargetId,
+		TargetStage: l.TargetStage,
 		TargetField: l.TargetField,
 	}
 }
 
 func (l *Link) String() string {
 	return fmt.Sprintf(
-		"Link{SourceId:%v,SourceField:'%v',TargetId:%v,TargetField:'%v'",
-		l.SourceId,
+		"Link{SourceStage:%v,SourceField:'%v',TargetStage:%v,TargetField:'%v'",
+		l.SourceStage,
 		l.SourceField,
-		l.TargetId,
+		l.TargetStage,
 		l.TargetField)
 }

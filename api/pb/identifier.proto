@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
-
-package pb;
-
-message Id {
-  string val = 1;
-}

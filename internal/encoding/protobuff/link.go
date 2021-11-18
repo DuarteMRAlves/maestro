@@ -8,9 +8,9 @@ import (
 
 func MarshalLink(l *blueprint.Link) *pb.Link {
 	return &pb.Link{
-		SourceId:    MarshalID(l.SourceId),
+		SourceStage: l.SourceStage,
 		SourceField: l.SourceField,
-		TargetId:    MarshalID(l.TargetId),
+		TargetStage: l.TargetStage,
 		TargetField: l.TargetField,
 	}
 }
@@ -20,9 +20,9 @@ func UnmarshalLink(p *pb.Link) (*blueprint.Link, error) {
 		return nil, err
 	}
 	return &blueprint.Link{
-		SourceId:    UnmarshalId(p.SourceId),
+		SourceStage: p.SourceStage,
 		SourceField: p.SourceField,
-		TargetId:    UnmarshalId(p.TargetId),
+		TargetStage: p.TargetStage,
 		TargetField: p.TargetField,
 	}, nil
 }
