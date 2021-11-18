@@ -2,15 +2,13 @@ package asset
 
 import (
 	"errors"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"sync"
 )
 
 type Store interface {
-	Create(description *Asset) (identifier.Id, error)
-	Get(id identifier.Id) (*Asset, error)
-	List() ([]*Asset, error)
+	Create(description *Asset) error
+	Get(query *Asset) []*Asset
 }
 
 type store struct {
@@ -25,43 +23,24 @@ func NewStore() Store {
 	}
 }
 
-func (st *store) Create(config *Asset) (identifier.Id, error) {
+func (st *store) Create(config *Asset) error {
 	if config == nil {
-		return identifier.Empty(), errors.New("nil config")
+		return errors.New("nil config")
 	}
-	if !config.Id.IsEmpty() {
-		return identifier.Empty(), errors.New("asset identifier should not be defined")
-	}
+
 	asset := config.Clone()
-
-	id, err := st.gen()
-	if err != nil {
-		return identifier.Empty(), fmt.Errorf("store create asset: %v", err)
+	_, prev := st.assets.LoadOrStore(asset.Name, asset)
+	if prev {
+		return AlreadyExists{Name: asset.Name}
 	}
-	st.assets.Store(id, asset)
-
-	asset.Id = id
-
-	return id.Clone(), nil
+	return nil
 }
 
-func (st *store) Get(id identifier.Id) (*Asset, error) {
-	if !id.IsValid() {
-		return nil, errors.New("invalid identifier")
+func (st *store) Get(query *Asset) []*Asset {
+	if query == nil {
+		query = &Asset{}
 	}
-
-	stored, ok := st.assets.Load(id)
-	if !ok {
-		return nil, fmt.Errorf("no such identifier: '%s'", id)
-	}
-	asset, ok := stored.(*Asset)
-	if !ok {
-		return nil, fmt.Errorf("store get asset %v: type assertion failed", id)
-	}
-	return asset.Clone(), nil
-}
-
-func (st *store) List() ([]*Asset, error) {
+	filter := buildQueryFilter(query)
 	res := make([]*Asset, 0)
 	st.assets.Range(
 		func(key, value interface{}) bool {
@@ -69,8 +48,41 @@ func (st *store) List() ([]*Asset, error) {
 			if !ok {
 				return false
 			}
-			res = append(res, a.Clone())
+			if filter(a) {
+				res = append(res, a.Clone())
+			}
 			return true
 		})
-	return res, nil
+	return res
+}
+
+func buildQueryFilter(query *Asset) func(a *Asset) bool {
+	filters := make([]func(a *Asset) bool, 0)
+	if query.Name != "" {
+		filters = append(
+			filters,
+			func(a *Asset) bool {
+				return a.Name == query.Name
+			})
+	}
+	if query.Image != "" {
+		filters = append(
+			filters,
+			func(a *Asset) bool {
+				return a.Image == query.Image
+			})
+	}
+	if len(filters) > 0 {
+		return func(a *Asset) bool {
+			for _, f := range filters {
+				if !f(a) {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	return func(a *Asset) bool {
+		return true
+	}
 }

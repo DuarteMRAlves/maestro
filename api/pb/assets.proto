@@ -4,21 +4,14 @@ option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
 
 package pb;
 
-import "identifier.proto";
+import "google/protobuf/empty.proto";
 
 service AssetManagement {
-  rpc Create(Asset) returns (Id);
-  rpc Get(Id) returns (Asset);
-  rpc List(SearchQuery) returns (stream Asset);
+  rpc Create(Asset) returns (google.protobuf.Empty);
+  rpc Get(Asset) returns (stream Asset);
 }
 
 message Asset {
-  Id id = 1;
-  string name = 2;
-  string image = 3;
-}
-
-
-
-message SearchQuery {
+  string name = 1;
+  string image = 2;
 }

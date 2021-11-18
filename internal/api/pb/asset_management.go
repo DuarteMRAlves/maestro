@@ -2,11 +2,14 @@ package pb
 
 import (
 	"context"
+	"errors"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type assetManagementServer struct {
@@ -21,30 +24,40 @@ func NewAssetManagementServer(api api.InternalAPI) pb.AssetManagementServer {
 func (s *assetManagementServer) Create(
 	ctx context.Context,
 	pbAsset *pb.Asset,
-) (*pb.Id, error) {
+) (*emptypb.Empty, error) {
 
 	var a *asset.Asset
-	var id identifier.Id
 	var err error
+	var grpcErr error = nil
 
 	if a, err = protobuff.UnmarshalAsset(pbAsset); err != nil {
-		return emptyIdPb, err
+		return &emptypb.Empty{}, err
 	}
-	if id, err = s.api.CreateAsset(a); err != nil {
-		return emptyIdPb, err
+	err = s.api.CreateAsset(a)
+	if err != nil {
+		var alreadyExists asset.AlreadyExists
+		if errors.As(err, &alreadyExists) {
+			grpcErr = status.Error(codes.AlreadyExists, alreadyExists.Error())
+		} else {
+			grpcErr = status.Error(codes.Unknown, err.Error())
+		}
 	}
-	return protobuff.MarshalID(id), nil
+	return &emptypb.Empty{}, grpcErr
 }
 
-func (s *assetManagementServer) List(
-	_ *pb.SearchQuery,
-	stream pb.AssetManagement_ListServer,
+func (s *assetManagementServer) Get(
+	pbQuery *pb.Asset,
+	stream pb.AssetManagement_GetServer,
 ) error {
 
-	assets, err := s.api.ListAssets()
-	if err != nil {
+	var query *asset.Asset
+	var err error
+
+	if query, err = protobuff.UnmarshalAsset(pbQuery); err != nil {
 		return err
 	}
+
+	assets := s.api.GetAsset(query)
 	for _, a := range assets {
 		stream.Send(protobuff.MarshalAsset(a))
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func MarshalAsset(a *asset.Asset) *pb.Asset {
-	return &pb.Asset{Id: MarshalID(a.Id), Name: a.Name, Image: a.Image}
+	return &pb.Asset{Name: a.Name, Image: a.Image}
 }
 
 func UnmarshalAsset(p *pb.Asset) (*asset.Asset, error) {
@@ -15,7 +15,6 @@ func UnmarshalAsset(p *pb.Asset) (*asset.Asset, error) {
 		return nil, err
 	}
 	return &asset.Asset{
-		Id:    UnmarshalId(p.Id),
 		Name:  p.Name,
 		Image: p.Image,
 	}, nil

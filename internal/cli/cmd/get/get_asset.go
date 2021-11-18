@@ -37,7 +37,7 @@ func runGetAsset(_ *cobra.Command, _ []string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := c.List(ctx, &pb.SearchQuery{})
+	stream, err := c.Get(ctx, &pb.Asset{})
 	assets := make([]*pb.Asset, 0)
 	if err != nil {
 		log.Fatalf("Unable to create asset: %v", err)
@@ -59,11 +59,9 @@ func runGetAsset(_ *cobra.Command, _ []string) {
 
 func displayAssets(assets []*pb.Asset) error {
 	numAssets := len(assets)
-	ids := make([]string, 0, numAssets)
 	names := make([]string, 0, numAssets)
 	images := make([]string, 0, numAssets)
 	for _, a := range assets {
-		ids = append(ids, a.Id.Val)
 		names = append(names, a.Name)
 		images = append(images, a.Image)
 	}
@@ -73,9 +71,6 @@ func displayAssets(assets []*pb.Asset) error {
 		WithMinColSize(minColSize).
 		Build()
 
-	if err := t.AddColumn(IdText, ids); err != nil {
-		return err
-	}
 	if err := t.AddColumn(NameText, names); err != nil {
 		return err
 	}

@@ -43,7 +43,7 @@ func runCreateAsset(_ *cobra.Command, args []string) {
 		context.Background(),
 		time.Second)
 	defer cancel()
-	asset, err := c.Create(
+	_, err := c.Create(
 		ctx,
 		&pb.Asset{
 			Name:  args[0],
@@ -53,5 +53,5 @@ func runCreateAsset(_ *cobra.Command, args []string) {
 		fmt.Printf("Unable to create asset: %v\n", err)
 		return
 	}
-	fmt.Printf("created asset with identifier '%v'\n", asset.Val)
+	fmt.Printf("created asset with name '%v'\n", args[0])
 }
