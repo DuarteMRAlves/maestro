@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"log"
 )
 
@@ -14,7 +13,7 @@ type InternalAPI interface {
 	CreateAsset(config *asset.Asset) error
 	GetAsset(query *asset.Asset) []*asset.Asset
 
-	CreateBlueprint(config *blueprint.Blueprint) (identifier.Id, error)
+	CreateBlueprint(config *blueprint.Blueprint) error
 }
 
 type internalAPI struct {
@@ -39,9 +38,7 @@ func (m *internalAPI) GetAsset(query *asset.Asset) []*asset.Asset {
 	return m.assetStore.Get(query)
 }
 
-func (m *internalAPI) CreateBlueprint(
-	config *blueprint.Blueprint,
-) (identifier.Id, error) {
+func (m *internalAPI) CreateBlueprint(config *blueprint.Blueprint) error {
 	log.Printf("Create Blueprint with config=%v", config)
 	return m.blueprintStore.Create(config)
 }

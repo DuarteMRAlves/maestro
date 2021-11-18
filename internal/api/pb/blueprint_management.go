@@ -2,11 +2,14 @@ package pb
 
 import (
 	"context"
+	"errors"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type blueprintManagementServer struct {
@@ -23,19 +26,25 @@ func NewBlueprintManagementServer(
 func (s *blueprintManagementServer) Create(
 	_ context.Context,
 	pbBlueprint *pb.Blueprint,
-) (*pb.Id, error) {
+) (*emptypb.Empty, error) {
 
 	var (
-		bp  *blueprint.Blueprint
-		id  identifier.Id
-		err error
+		bp      *blueprint.Blueprint
+		err     error
+		grpcErr error
 	)
 
 	if bp, err = protobuff.UnmarshalBlueprint(pbBlueprint); err != nil {
-		return emptyIdPb, err
+		return &emptypb.Empty{}, status.Error(codes.Unknown, err.Error())
 	}
-	if id, err = s.api.CreateBlueprint(bp); err != nil {
-		return emptyIdPb, err
+	err = s.api.CreateBlueprint(bp)
+	if err != nil {
+		var alreadyExists blueprint.AlreadyExists
+		if errors.As(err, &alreadyExists) {
+			grpcErr = status.Error(codes.AlreadyExists, alreadyExists.Error())
+		} else {
+			grpcErr = status.Error(codes.Unknown, err.Error())
+		}
 	}
-	return protobuff.MarshalID(id), nil
+	return &emptypb.Empty{}, grpcErr
 }

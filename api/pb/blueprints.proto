@@ -5,9 +5,10 @@ option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
 package pb;
 
 import "identifier.proto";
+import "google/protobuf/empty.proto";
 
 service BlueprintManagement {
-  rpc Create(Blueprint) returns (Id);
+  rpc Create(Blueprint) returns (google.protobuf.Empty);
 }
 
 message Blueprint {

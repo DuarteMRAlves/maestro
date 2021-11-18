@@ -2,13 +2,12 @@ package blueprint
 
 import (
 	"errors"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/identifier"
 	"sync"
 )
 
 type Store interface {
-	Create(b *Blueprint) (identifier.Id, error)
+	Create(b *Blueprint) error
 }
 
 type store struct {
@@ -23,29 +22,22 @@ func NewStore() Store {
 	}
 }
 
-func (st *store) Create(config *Blueprint) (identifier.Id, error) {
+func (st *store) Create(config *Blueprint) error {
 	if ok, err := verifyConfig(config); !ok {
-		return identifier.Empty(), err
+		return err
 	}
+
 	bp := config.Clone()
-
-	id, err := st.gen()
-	if err != nil {
-		return identifier.Empty(), fmt.Errorf("store create blueprint: %v", err)
+	_, prev := st.blueprints.LoadOrStore(bp.Name, bp)
+	if prev {
+		return AlreadyExists{Name: bp.Name}
 	}
-	st.blueprints.Store(id, bp)
-
-	bp.Id = id
-
-	return id.Clone(), nil
+	return nil
 }
 
 func verifyConfig(config *Blueprint) (bool, error) {
 	if config == nil {
 		return false, errors.New("nil config")
-	}
-	if !config.Id.IsEmpty() {
-		return false, errors.New("blueprint identifier should not be defined")
 	}
 	if len(config.Stages) != 0 {
 		return false, errors.New("blueprint should not have Stages")

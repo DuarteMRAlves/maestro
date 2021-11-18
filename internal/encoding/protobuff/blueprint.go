@@ -16,7 +16,6 @@ func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
 		links = append(links, MarshalLink(l))
 	}
 	return &pb.Blueprint{
-		Id:     MarshalID(bp.Id),
 		Name:   bp.Name,
 		Stages: stages,
 		Links:  links,
@@ -39,7 +38,6 @@ func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
 	}
 
 	return &blueprint.Blueprint{
-		Id:     UnmarshalId(p.Id),
 		Name:   p.Name,
 		Stages: stages,
 		Links:  links,

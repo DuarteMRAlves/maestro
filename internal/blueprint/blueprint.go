@@ -2,13 +2,11 @@ package blueprint
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/identifier"
 )
 
 const IdSize = 10
 
 type Blueprint struct {
-	Id     identifier.Id
 	Name   string
 	Stages []*Stage
 	Links  []*Link
@@ -26,7 +24,6 @@ func (bp *Blueprint) Clone() *Blueprint {
 	}
 
 	return &Blueprint{
-		Id:     bp.Id.Clone(),
 		Name:   bp.Name,
 		Stages: stages,
 		Links:  links,
@@ -35,8 +32,7 @@ func (bp *Blueprint) Clone() *Blueprint {
 
 func (bp *Blueprint) String() string {
 	return fmt.Sprintf(
-		"Blueprint{Id:%v,Name:'%v',NumStages:%v,NumLinks:%v}",
-		bp.Id,
+		"Blueprint{Name:'%v',NumStages:%v,NumLinks:%v}",
 		bp.Name,
 		len(bp.Stages),
 		len(bp.Links))
