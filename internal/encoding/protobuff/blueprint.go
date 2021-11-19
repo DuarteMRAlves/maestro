@@ -11,9 +11,9 @@ func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
 	for _, s := range bp.Stages {
 		stages = append(stages, s)
 	}
-	links := make([]*pb.Link, 0, len(bp.Links))
+	links := make([]string, 0, len(bp.Links))
 	for _, l := range bp.Links {
-		links = append(links, MarshalLink(l))
+		links = append(links, l)
 	}
 	return &pb.Blueprint{
 		Name:   bp.Name,
@@ -52,14 +52,10 @@ func unmarshalStages(p *pb.Blueprint) ([]string, error) {
 	return stages, nil
 }
 
-func unmarshalLinks(p *pb.Blueprint) ([]*blueprint.Link, error) {
-	links := make([]*blueprint.Link, 0, len(p.Links))
+func unmarshalLinks(p *pb.Blueprint) ([]string, error) {
+	links := make([]string, 0, len(p.Links))
 	for _, l := range p.Links {
-		res, err := UnmarshalLink(l)
-		if err != nil {
-			return nil, err
-		}
-		links = append(links, res)
+		links = append(links, l)
 	}
 	return links, nil
 }

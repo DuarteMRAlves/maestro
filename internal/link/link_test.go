@@ -1,4 +1,4 @@
-package blueprint
+package link
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/assert"
@@ -6,11 +6,13 @@ import (
 )
 
 const (
+	oldName        = "OldName"
 	oldSourceStage = "OldSourceStage"
 	oldSourceField = "OldSourceField"
 	oldTargetStage = "OldTargetStage"
 	oldTargetField = "OldTargetField"
 
+	newName        = "NewName"
 	newSourceStage = "NewSourceStage"
 	newSourceField = "NewSourceField"
 	newTargetStage = "NewTargetStage"
@@ -19,12 +21,14 @@ const (
 
 func TestLink_Clone(t *testing.T) {
 	s := &Link{
+		Name:        oldName,
 		SourceStage: oldSourceStage,
 		SourceField: oldSourceField,
 		TargetStage: oldTargetStage,
 		TargetField: oldTargetField,
 	}
 	c := s.Clone()
+	assert.DeepEqual(t, oldName, c.Name, "cloned old name")
 	assert.DeepEqual(
 		t,
 		oldSourceStage,
@@ -46,11 +50,13 @@ func TestLink_Clone(t *testing.T) {
 		c.TargetField,
 		"cloned old target field")
 
+	c.Name = newName
 	c.SourceStage = newSourceStage
 	c.SourceField = newSourceField
 	c.TargetStage = newTargetStage
 	c.TargetField = newTargetField
 
+	assert.DeepEqual(t, oldName, s.Name, "source old name")
 	assert.DeepEqual(
 		t,
 		oldSourceStage,
@@ -72,6 +78,7 @@ func TestLink_Clone(t *testing.T) {
 		s.TargetField,
 		"source old target field")
 
+	assert.DeepEqual(t, newName, c.Name, "cloned new name")
 	assert.DeepEqual(
 		t,
 		newSourceStage,

@@ -3,11 +3,12 @@ package protobuff
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/link"
 )
 
-func MarshalLink(l *blueprint.Link) *pb.Link {
+func MarshalLink(l *link.Link) *pb.Link {
 	return &pb.Link{
+		Name:        l.Name,
 		SourceStage: l.SourceStage,
 		SourceField: l.SourceField,
 		TargetStage: l.TargetStage,
@@ -15,11 +16,12 @@ func MarshalLink(l *blueprint.Link) *pb.Link {
 	}
 }
 
-func UnmarshalLink(p *pb.Link) (*blueprint.Link, error) {
+func UnmarshalLink(p *pb.Link) (*link.Link, error) {
 	if ok, err := assert.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
-	return &blueprint.Link{
+	return &link.Link{
+		Name:        p.Name,
 		SourceStage: p.SourceStage,
 		SourceField: p.SourceField,
 		TargetStage: p.TargetStage,

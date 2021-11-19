@@ -15,7 +15,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 		{Name: bpName, Stages: nil},
 		{Name: bpName, Stages: []string{}},
 		{Name: bpName, Links: nil},
-		{Name: bpName, Links: []*Link{}},
+		{Name: bpName, Links: []string{}},
 	}
 	for _, config := range tests {
 		testName := fmt.Sprintf("config=%v", config)
@@ -50,7 +50,7 @@ func TestStore_CreateIncorrect(t *testing.T) {
 			errors.New("blueprint should not have Stages"),
 		},
 		{
-			&Blueprint{Name: bpName, Links: []*Link{nil}},
+			&Blueprint{Name: bpName, Links: []string{"Some Link"}},
 			errors.New("blueprint should not have Links"),
 		},
 	}

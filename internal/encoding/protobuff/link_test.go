@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/link"
 	"testing"
 )
 
 func TestMarshalLink(t *testing.T) {
-	tests := []*blueprint.Link{
+	tests := []*link.Link{
 		{
+			Name:        linkName,
 			SourceStage: linkSourceStage,
 			SourceField: linkSourceField,
 			TargetStage: linkTargetStage,
 			TargetField: linkTargetField,
 		},
 		{
+			Name:        "",
 			SourceStage: "",
 			SourceField: "",
 			TargetStage: "",
@@ -39,12 +41,14 @@ func TestMarshalLink(t *testing.T) {
 func TestUnmarshalLinkCorrect(t *testing.T) {
 	tests := []*pb.Link{
 		{
+			Name:        linkName,
 			SourceStage: linkSourceStage,
 			SourceField: linkSourceField,
 			TargetStage: linkTargetStage,
 			TargetField: linkTargetField,
 		},
 		{
+			Name:        "",
 			SourceStage: "",
 			SourceField: "",
 			TargetStage: "",
@@ -70,7 +74,8 @@ func TestUnmarshalLinkError(t *testing.T) {
 	assert.IsNil(t, res, "nil return value")
 }
 
-func assertLink(t *testing.T, expected *blueprint.Link, actual *pb.Link) {
+func assertLink(t *testing.T, expected *link.Link, actual *pb.Link) {
+	assert.DeepEqual(t, expected.Name, actual.Name, "name")
 	assert.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
 	assert.DeepEqual(
 		t,
@@ -85,7 +90,8 @@ func assertLink(t *testing.T, expected *blueprint.Link, actual *pb.Link) {
 		"target field")
 }
 
-func assertPbLink(t *testing.T, expected *pb.Link, actual *blueprint.Link) {
+func assertPbLink(t *testing.T, expected *pb.Link, actual *link.Link) {
+	assert.DeepEqual(t, expected.Name, actual.Name, "name")
 	assert.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
 	assert.DeepEqual(
 		t,

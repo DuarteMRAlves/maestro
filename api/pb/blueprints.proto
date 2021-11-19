@@ -13,12 +13,6 @@ service BlueprintManagement {
 message Blueprint {
   string name = 2;
   repeated string stages = 3;
-  repeated Link links = 4;
+  repeated string links = 4;
 }
 
-message Link {
-  string sourceStage = 1;
-  string sourceField = 2;
-  string targetStage = 3;
-  string targetField = 4;
-}

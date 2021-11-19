@@ -14,7 +14,7 @@ func TestMarshalBlueprint(t *testing.T) {
 		{
 			Name:   blueprintName,
 			Stages: []string{bpStage1, bpStage2, bpStage3},
-			Links:  []*blueprint.Link{link1, link2, link3},
+			Links:  []string{bpLink1, bpLink2, bpLink3},
 		},
 		{
 			Name:   "",
@@ -44,7 +44,7 @@ func TestMarshalBlueprint(t *testing.T) {
 					len(res.Links),
 					"blueprint links len")
 				for i, l := range bp.Links {
-					assertLink(t, l, res.Links[i])
+					assert.DeepEqual(t, l, res.Links[i], "link %d equal", i)
 				}
 			})
 	}
@@ -55,7 +55,7 @@ func TestUnmarshalBlueprintCorrect(t *testing.T) {
 		{
 			Name:   blueprintName,
 			Stages: []string{bpStage1, bpStage2, bpStage3},
-			Links:  []*pb.Link{pbLink1, pbLink2, pbLink3},
+			Links:  []string{bpLink1, bpLink2, bpLink3},
 		},
 		{
 			Name:   "",
@@ -87,7 +87,7 @@ func TestUnmarshalBlueprintCorrect(t *testing.T) {
 					len(res.Links),
 					"blueprint links len")
 				for i, l := range bp.Links {
-					assertPbLink(t, l, res.Links[i])
+					assert.DeepEqual(t, l, res.Links[i], "link %d equal", i)
 				}
 			})
 	}

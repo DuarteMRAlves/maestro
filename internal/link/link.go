@@ -1,10 +1,11 @@
-package blueprint
+package link
 
 import (
 	"fmt"
 )
 
 type Link struct {
+	Name        string
 	SourceStage string
 	SourceField string
 	TargetStage string
@@ -13,6 +14,7 @@ type Link struct {
 
 func (l *Link) Clone() *Link {
 	return &Link{
+		Name:        l.Name,
 		SourceStage: l.SourceStage,
 		SourceField: l.SourceField,
 		TargetStage: l.TargetStage,
@@ -22,7 +24,8 @@ func (l *Link) Clone() *Link {
 
 func (l *Link) String() string {
 	return fmt.Sprintf(
-		"Link{SourceStage:%v,SourceField:'%v',TargetStage:%v,TargetField:'%v'",
+		"Link{Name:%v,SourceStage:%v,SourceField:'%v',TargetStage:%v,TargetField:'%v'",
+		l.Name,
 		l.SourceStage,
 		l.SourceField,
 		l.TargetStage,

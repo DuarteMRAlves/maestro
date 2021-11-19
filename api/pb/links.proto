@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+service LinkManagement {
+  rpc Create(Link) returns (google.protobuf.Empty);
+}
+
+message Link {
+  string name = 1;
+  string sourceStage = 2;
+  string sourceField = 3;
+  string targetStage = 4;
+  string targetField = 5;
+}
