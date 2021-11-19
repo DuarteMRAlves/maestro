@@ -7,6 +7,7 @@ import (
 
 type Store interface {
 	Create(description *Asset) error
+	Contains(name string) bool
 	Get(query *Asset) []*Asset
 }
 
@@ -29,6 +30,11 @@ func (st *store) Create(config *Asset) error {
 		return AlreadyExists{Name: asset.Name}
 	}
 	return nil
+}
+
+func (st *store) Contains(name string) bool {
+	_, ok := st.assets.Load(name)
+	return ok
 }
 
 func (st *store) Get(query *Asset) []*Asset {

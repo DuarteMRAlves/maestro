@@ -2,8 +2,10 @@ package server
 
 import (
 	pb "github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/asset"
+	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"google.golang.org/grpc"
 )
 
@@ -29,19 +31,26 @@ func (b *Builder) WithGrpcOpts(opts ...grpc.ServerOption) *Builder {
 }
 
 func (b *Builder) Build() *Server {
-	s := &Server{api: api.NewInternalAPI()}
+	s := &Server{}
+	initStores(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
 	return s
 }
 
+func initStores(s *Server) {
+	s.assetStore = asset.NewStore()
+	s.stageStore = stage.NewStore()
+	s.blueprintStore = blueprint.NewStore()
+}
+
 func activateGrpc(s *Server, b *Builder) {
 	grpcServer := grpc.NewServer(b.grpcOpts...)
 
-	assetManagementServer := ipb.NewAssetManagementServer(s.api)
-	blueprintManagementServer := ipb.NewBlueprintManagementServer(s.api)
-	
+	assetManagementServer := ipb.NewAssetManagementServer(s)
+	blueprintManagementServer := ipb.NewBlueprintManagementServer(s)
+
 	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
 	pb.RegisterBlueprintManagementServer(grpcServer, blueprintManagementServer)
 	s.grpcServer = grpcServer
