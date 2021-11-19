@@ -1,4 +1,4 @@
-package blueprint
+package stage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/assert"
@@ -25,7 +25,7 @@ func TestStage_Clone(t *testing.T) {
 		Method:  oldMethod,
 	}
 	c := s.Clone()
-	assert.DeepEqual(t, oldName, c.Name, "cloned old name")
+	assert.DeepEqual(t, oldName, c.Name, "cloned old Name")
 	assert.DeepEqual(t, oldAsset, c.Asset, "cloned old asset id")
 	assert.DeepEqual(t, oldService, c.Service, "cloned old service")
 	assert.DeepEqual(t, oldMethod, c.Method, "cloned old method")
@@ -35,12 +35,12 @@ func TestStage_Clone(t *testing.T) {
 	c.Service = newService
 	c.Method = newMethod
 
-	assert.DeepEqual(t, oldName, s.Name, "source old name")
+	assert.DeepEqual(t, oldName, s.Name, "source old Name")
 	assert.DeepEqual(t, oldAsset, s.Asset, "source old asset id")
 	assert.DeepEqual(t, oldService, s.Service, "source old service")
 	assert.DeepEqual(t, oldMethod, s.Method, "source old method")
 
-	assert.DeepEqual(t, newName, c.Name, "cloned new name")
+	assert.DeepEqual(t, newName, c.Name, "cloned new Name")
 	assert.DeepEqual(t, newAsset, c.Asset, "cloned new asset id")
 	assert.DeepEqual(t, newService, c.Service, "cloned new service")
 	assert.DeepEqual(t, newMethod, c.Method, "cloned new method")

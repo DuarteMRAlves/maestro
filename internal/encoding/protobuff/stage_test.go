@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"testing"
 )
 
 func TestMarshalStage(t *testing.T) {
-	tests := []*blueprint.Stage{
+	tests := []*stage.Stage{
 		{
 			Name:    stageName,
 			Asset:   stageAsset,
@@ -70,14 +70,14 @@ func TestUnmarshalStageError(t *testing.T) {
 	assert.IsNil(t, res, "nil return value")
 }
 
-func assertStage(t *testing.T, expected *blueprint.Stage, actual *pb.Stage) {
+func assertStage(t *testing.T, expected *stage.Stage, actual *pb.Stage) {
 	assert.DeepEqual(t, expected.Name, actual.Name, "stage assetName")
 	assert.DeepEqual(t, expected.Asset, actual.Asset, "asset id")
 	assert.DeepEqual(t, expected.Service, actual.Service, "stage service")
 	assert.DeepEqual(t, expected.Method, actual.Method, "stage method")
 }
 
-func assertPbStage(t *testing.T, expected *pb.Stage, actual *blueprint.Stage) {
+func assertPbStage(t *testing.T, expected *pb.Stage, actual *stage.Stage) {
 	assert.DeepEqual(t, expected.Name, actual.Name, "stage assetName")
 	assert.DeepEqual(t, expected.Asset, actual.Asset, "asset id")
 	assert.DeepEqual(t, expected.Service, actual.Service, "stage service")

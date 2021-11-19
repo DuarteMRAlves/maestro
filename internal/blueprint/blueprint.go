@@ -8,14 +8,14 @@ const IdSize = 10
 
 type Blueprint struct {
 	Name   string
-	Stages []*Stage
+	Stages []string
 	Links  []*Link
 }
 
 func (bp *Blueprint) Clone() *Blueprint {
-	stages := make([]*Stage, 0, len(bp.Stages))
+	stages := make([]string, 0, len(bp.Stages))
 	for _, s := range bp.Stages {
-		stages = append(stages, s.Clone())
+		stages = append(stages, s)
 	}
 
 	links := make([]*Link, 0, len(bp.Links))
@@ -32,8 +32,8 @@ func (bp *Blueprint) Clone() *Blueprint {
 
 func (bp *Blueprint) String() string {
 	return fmt.Sprintf(
-		"Blueprint{Name:'%v',NumStages:%v,NumLinks:%v}",
+		"Blueprint{Name:'%v',Stages:%v,NumLinks:%v}",
 		bp.Name,
-		len(bp.Stages),
+		bp.Stages,
 		len(bp.Links))
 }

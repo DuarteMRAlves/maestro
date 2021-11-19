@@ -7,9 +7,9 @@ import (
 )
 
 func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
-	stages := make([]*pb.Stage, 0, len(bp.Stages))
+	stages := make([]string, 0, len(bp.Stages))
 	for _, s := range bp.Stages {
-		stages = append(stages, MarshalStage(s))
+		stages = append(stages, s)
 	}
 	links := make([]*pb.Link, 0, len(bp.Links))
 	for _, l := range bp.Links {
@@ -44,14 +44,10 @@ func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
 	}, nil
 }
 
-func unmarshalStages(p *pb.Blueprint) ([]*blueprint.Stage, error) {
-	stages := make([]*blueprint.Stage, 0, len(p.Stages))
+func unmarshalStages(p *pb.Blueprint) ([]string, error) {
+	stages := make([]string, 0, len(p.Stages))
 	for _, s := range p.Stages {
-		res, err := UnmarshalStage(s)
-		if err != nil {
-			return nil, err
-		}
-		stages = append(stages, res)
+		stages = append(stages, s)
 	}
 	return stages, nil
 }

@@ -13,7 +13,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 	tests := []*Blueprint{
 		{Name: bpName},
 		{Name: bpName, Stages: nil},
-		{Name: bpName, Stages: []*Stage{}},
+		{Name: bpName, Stages: []string{}},
 		{Name: bpName, Links: nil},
 		{Name: bpName, Links: []*Link{}},
 	}
@@ -46,7 +46,7 @@ func TestStore_CreateIncorrect(t *testing.T) {
 	}{
 		{nil, errors.New("nil config")},
 		{
-			&Blueprint{Name: bpName, Stages: []*Stage{nil}},
+			&Blueprint{Name: bpName, Stages: []string{"Some Stage"}},
 			errors.New("blueprint should not have Stages"),
 		},
 		{

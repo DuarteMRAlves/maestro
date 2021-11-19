@@ -12,15 +12,8 @@ service BlueprintManagement {
 
 message Blueprint {
   string name = 2;
-  repeated Stage stages = 3;
+  repeated string stages = 3;
   repeated Link links = 4;
-}
-
-message Stage {
-  string name = 2;
-  string asset = 3;
-  string service = 4;
-  string method = 5;
 }
 
 message Link {

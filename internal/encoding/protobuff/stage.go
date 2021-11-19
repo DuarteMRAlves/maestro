@@ -3,10 +3,10 @@ package protobuff
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/stage"
 )
 
-func MarshalStage(s *blueprint.Stage) *pb.Stage {
+func MarshalStage(s *stage.Stage) *pb.Stage {
 	return &pb.Stage{
 		Name:    s.Name,
 		Asset:   s.Asset,
@@ -15,11 +15,11 @@ func MarshalStage(s *blueprint.Stage) *pb.Stage {
 	}
 }
 
-func UnmarshalStage(p *pb.Stage) (*blueprint.Stage, error) {
+func UnmarshalStage(p *pb.Stage) (*stage.Stage, error) {
 	if ok, err := assert.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
-	return &blueprint.Stage{
+	return &stage.Stage{
 		Name:    p.Name,
 		Asset:   p.Asset,
 		Service: p.Service,

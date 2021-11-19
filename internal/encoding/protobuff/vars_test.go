@@ -20,35 +20,15 @@ const (
 	linkTargetField = "linkTargetField"
 
 	blueprintName = "BlueprintName"
+	bpStage1      = "Stage Name 1"
+	bpStage2      = "Stage Name 2"
+	bpStage3      = "Stage Name 3"
 )
 
 var (
-	stage1 = &blueprint.Stage{Name: "Stage Name 1"}
-	stage2 = &blueprint.Stage{Name: "Stage Name 2"}
-	stage3 = &blueprint.Stage{Name: "Stage Name 3"}
-
 	link1 = &blueprint.Link{SourceField: "Source1"}
 	link2 = &blueprint.Link{SourceField: "Source2"}
 	link3 = &blueprint.Link{SourceField: "Source3"}
-
-	pbStage1 = &pb.Stage{
-		Name:    "Stage Name 1",
-		Asset:   "Asset Name 1",
-		Service: "Service1",
-		Method:  "Method1",
-	}
-	pbStage2 = &pb.Stage{
-		Name:    "Stage Name 2",
-		Asset:   "Asset Name 2",
-		Service: "Service2",
-		Method:  "Method2",
-	}
-	pbStage3 = &pb.Stage{
-		Name:    "Stage Name 3",
-		Asset:   "Asset Name 3",
-		Service: "Service3",
-		Method:  "Method3",
-	}
 
 	pbLink1 = &pb.Link{
 		SourceStage: "SourceStage1",

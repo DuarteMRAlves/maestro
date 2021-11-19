@@ -1,4 +1,4 @@
-package blueprint
+package stage
 
 import (
 	"fmt"

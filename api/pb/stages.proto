@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+service StageManagement {
+  rpc Create(Stage) returns (google.protobuf.Empty);
+}
+
+message Stage {
+  string name = 2;
+  string asset = 3;
+  string service = 4;
+  string method = 5;
+}
