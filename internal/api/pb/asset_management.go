@@ -2,13 +2,10 @@ package pb
 
 import (
 	"context"
-	"errors"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -35,12 +32,7 @@ func (s *assetManagementServer) Create(
 	}
 	err = s.api.CreateAsset(a)
 	if err != nil {
-		var alreadyExists asset.AlreadyExists
-		if errors.As(err, &alreadyExists) {
-			grpcErr = status.Error(codes.AlreadyExists, alreadyExists.Error())
-		} else {
-			grpcErr = status.Error(codes.Unknown, err.Error())
-		}
+		grpcErr = GrpcErrorFromError(err)
 	}
 	return &emptypb.Empty{}, grpcErr
 }

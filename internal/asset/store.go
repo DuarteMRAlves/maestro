@@ -1,7 +1,7 @@
 package asset
 
 import (
-	"errors"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"sync"
 )
 
@@ -21,13 +21,15 @@ func NewStore() Store {
 
 func (st *store) Create(config *Asset) error {
 	if config == nil {
-		return errors.New("nil config")
+		return errdefs.UnknownWithMsg("nil config")
 	}
 
 	asset := config.Clone()
 	_, prev := st.assets.LoadOrStore(asset.Name, asset)
 	if prev {
-		return AlreadyExists{Name: asset.Name}
+		return errdefs.AlreadyExistsWithMsg(
+			"asset '%v' already exists",
+			asset.Name)
 	}
 	return nil
 }

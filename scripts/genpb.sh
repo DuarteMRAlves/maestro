@@ -17,7 +17,7 @@ PROTO_DIR="${PROJECT_DIR}/api/pb"
 cd "$PROTO_DIR"
 
 echo "==> Removing old .pb.go files"
-# Ignore errors if no files are found
+# Ignore errdefs if no files are found
 set +e
 rm ./*.pb.go 2>/dev/null
 set -e
