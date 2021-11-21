@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	nameFlag   = "name"
-	nameUsage  = "Name to give the asset (required)"
 	imageFlag  = "image"
 	imageUsage = "Docker image for the asset"
 )

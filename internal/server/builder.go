@@ -49,9 +49,11 @@ func activateGrpc(s *Server, b *Builder) {
 	grpcServer := grpc.NewServer(b.grpcOpts...)
 
 	assetManagementServer := ipb.NewAssetManagementServer(s)
+	stageManagementServer := ipb.NewStageManagementServer(s)
 	blueprintManagementServer := ipb.NewBlueprintManagementServer(s)
 
 	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
+	pb.RegisterStageManagementServer(grpcServer, stageManagementServer)
 	pb.RegisterBlueprintManagementServer(grpcServer, blueprintManagementServer)
 	s.grpcServer = grpcServer
 }

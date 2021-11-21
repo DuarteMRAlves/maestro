@@ -1,10 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"google.golang.org/grpc"
 	"log"
@@ -40,9 +40,12 @@ func (s *Server) GetAsset(query *asset.Asset) []*asset.Asset {
 }
 
 func (s *Server) CreateStage(config *stage.Stage) error {
-	log.Printf("Create Asset with config='%v'\n", config)
+	log.Printf("Create Stage with config='%v'\n", config)
+	if config.Asset == "" {
+		return errdefs.InvalidArgumentWithMsg("empty asset name")
+	}
 	if !s.assetStore.Contains(config.Asset) {
-		return fmt.Errorf("asset Not Found '%v'", config.Asset)
+		return errdefs.NotFoundWithMsg("asset '%v' not found", config.Asset)
 	}
 	return s.stageStore.Create(config)
 }

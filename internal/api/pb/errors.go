@@ -12,6 +12,10 @@ func GrpcErrorFromError(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errdefs.IsNotFound(err):
 		return status.Error(codes.NotFound, err.Error())
+	case errdefs.IsInvalidArgument(err):
+		return status.Error(codes.InvalidArgument, err.Error())
+	case errdefs.IsInternal(err):
+		return status.Error(codes.Internal, "internal server error")
 	case errdefs.IsUnknown(err):
 	default:
 		return status.Error(codes.Unknown, err.Error())

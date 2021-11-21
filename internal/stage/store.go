@@ -2,6 +2,7 @@ package stage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/assert"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"sync"
 )
 
@@ -25,7 +26,7 @@ func (st *store) Create(config *Stage) error {
 	s := config.Clone()
 	_, prev := st.stages.LoadOrStore(s.Name, s)
 	if prev {
-		return AlreadyExists{Name: s.Name}
+		return errdefs.AlreadyExistsWithMsg("stage '%v' already exists", s.Name)
 	}
 	return nil
 }

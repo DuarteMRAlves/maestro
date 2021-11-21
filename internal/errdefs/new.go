@@ -24,6 +24,28 @@ func AlreadyExistsWithMsg(format string, a ...interface{}) error {
 	return AlreadyExistsWithError(fmt.Errorf(format, a...))
 }
 
+func InvalidArgumentWithError(err error) error {
+	if err == nil || IsInvalidArgument(err) {
+		return err
+	}
+	return invalidArgument{err}
+}
+
+func InvalidArgumentWithMsg(format string, a ...interface{}) error {
+	return InvalidArgumentWithError(fmt.Errorf(format, a...))
+}
+
+func InternalWithError(err error) error {
+	if err == nil || IsInternal(err) {
+		return err
+	}
+	return internal{err}
+}
+
+func InternalWithMsg(format string, a ...interface{}) error {
+	return InternalWithError(fmt.Errorf(format, a...))
+}
+
 func UnknownWithError(err error) error {
 	if err == nil || IsUnknown(err) {
 		return err

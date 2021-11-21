@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/assert"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"testing"
 )
@@ -66,7 +67,11 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 
 func TestUnmarshalStageError(t *testing.T) {
 	res, err := UnmarshalStage(nil)
-	assert.DeepEqual(t, errors.New("p is nil"), err, "unmarshal error")
+	assert.DeepEqual(
+		t,
+		errdefs.InternalWithError(errors.New("p is nil")),
+		err,
+		"unmarshal error")
 	assert.IsNil(t, res, "nil return value")
 }
 

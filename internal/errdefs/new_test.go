@@ -49,6 +49,50 @@ func TestNotFoundWithMessage(t *testing.T) {
 	assert.DeepEqual(t, dummyErrMsg, msg, "error message")
 }
 
+func TestInvalidArgumentWithError(t *testing.T) {
+	var ok bool
+	err := InvalidArgumentWithError(dummyErr)
+	_, ok = err.(InvalidArgument)
+	assert.IsTrue(t, ok, "InvalidArgument interface")
+	_, ok = err.(invalidArgument)
+	assert.IsTrue(t, ok, "invalidArgument struct")
+	msg := err.Error()
+	assert.DeepEqual(t, dummyErrMsg, msg, "error message")
+}
+
+func TestInvalidArgumentWithMessage(t *testing.T) {
+	var ok bool
+	err := InvalidArgumentWithMsg(dummyErrMsg)
+	_, ok = err.(InvalidArgument)
+	assert.IsTrue(t, ok, "InvalidArgument interface")
+	_, ok = err.(invalidArgument)
+	assert.IsTrue(t, ok, "invalidArgument struct")
+	msg := err.Error()
+	assert.DeepEqual(t, dummyErrMsg, msg, "error message")
+}
+
+func TestInternalWithError(t *testing.T) {
+	var ok bool
+	err := InternalWithError(dummyErr)
+	_, ok = err.(Internal)
+	assert.IsTrue(t, ok, "Internal interface")
+	_, ok = err.(internal)
+	assert.IsTrue(t, ok, "internal struct")
+	msg := err.Error()
+	assert.DeepEqual(t, dummyErrMsg, msg, "error message")
+}
+
+func TestInternalWithMessage(t *testing.T) {
+	var ok bool
+	err := InternalWithMsg(dummyErrMsg)
+	_, ok = err.(Internal)
+	assert.IsTrue(t, ok, "Internal interface")
+	_, ok = err.(internal)
+	assert.IsTrue(t, ok, "internal struct")
+	msg := err.Error()
+	assert.DeepEqual(t, dummyErrMsg, msg, "error message")
+}
+
 func TestUnknownWithError(t *testing.T) {
 	var ok bool
 	err := UnknownWithError(dummyErr)

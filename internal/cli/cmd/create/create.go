@@ -25,6 +25,7 @@ func NewCmdCreate() *cobra.Command {
 
 	// Subcommands
 	cmd.AddCommand(NewCmdCreateAsset())
+	cmd.AddCommand(NewCmdCreateStage())
 
 	return cmd
 }
