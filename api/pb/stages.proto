@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 
 service StageManagement {
   rpc Create(Stage) returns (google.protobuf.Empty);
+  rpc Get(Stage) returns (stream Stage);
 }
 
 message Stage {

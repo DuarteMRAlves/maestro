@@ -14,6 +14,7 @@ type InternalAPI interface {
 	GetAsset(query *asset.Asset) []*asset.Asset
 
 	CreateStage(config *stage.Stage) error
+	GetStage(query *stage.Stage) []*stage.Stage
 
 	CreateBlueprint(config *blueprint.Blueprint) error
 }

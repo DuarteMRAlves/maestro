@@ -50,6 +50,11 @@ func (s *Server) CreateStage(config *stage.Stage) error {
 	return s.stageStore.Create(config)
 }
 
+func (s *Server) GetStage(query *stage.Stage) []*stage.Stage {
+	log.Printf("Get Stage with query=%v", query)
+	return s.stageStore.Get(query)
+}
+
 func (s *Server) CreateBlueprint(config *blueprint.Blueprint) error {
 	log.Printf("Create Blueprint with config=%v", config)
 	return s.blueprintStore.Create(config)

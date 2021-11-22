@@ -12,15 +12,6 @@ import (
 	"time"
 )
 
-const (
-	IdText    = "ID"
-	NameText  = "NAME"
-	ImageText = "IMAGE"
-
-	colPad     = 2
-	minColSize = 15
-)
-
 func NewCmdGetAsset() *cobra.Command {
 	return &cobra.Command{
 		Use:   "asset",

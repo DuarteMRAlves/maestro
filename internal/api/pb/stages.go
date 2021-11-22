@@ -36,3 +36,24 @@ func (s *stageManagementServer) Create(
 	}
 	return &emptypb.Empty{}, grpcErr
 }
+
+func (s *stageManagementServer) Get(
+	pbQuery *pb.Stage,
+	stream pb.StageManagement_GetServer,
+) error {
+
+	var (
+		query *stage.Stage
+		err   error
+	)
+
+	if query, err = protobuff.UnmarshalStage(pbQuery); err != nil {
+		return GrpcErrorFromError(err)
+	}
+
+	stages := s.api.GetStage(query)
+	for _, s := range stages {
+		stream.Send(protobuff.MarshalStage(s))
+	}
+	return nil
+}
