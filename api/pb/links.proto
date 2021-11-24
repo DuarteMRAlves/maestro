@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 
 service LinkManagement {
   rpc Create(Link) returns (google.protobuf.Empty);
+  rpc Get(Link) returns (stream Link);
 }
 
 message Link {

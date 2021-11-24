@@ -5,6 +5,7 @@ import (
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"google.golang.org/grpc"
 )
@@ -42,6 +43,7 @@ func (b *Builder) Build() *Server {
 func initStores(s *Server) {
 	s.assetStore = asset.NewStore()
 	s.stageStore = stage.NewStore()
+	s.linkStore = link.NewStore()
 	s.blueprintStore = blueprint.NewStore()
 }
 
@@ -50,10 +52,12 @@ func activateGrpc(s *Server, b *Builder) {
 
 	assetManagementServer := ipb.NewAssetManagementServer(s)
 	stageManagementServer := ipb.NewStageManagementServer(s)
+	linkManagementServer := ipb.NewLinkManagementServer(s)
 	blueprintManagementServer := ipb.NewBlueprintManagementServer(s)
 
 	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
 	pb.RegisterStageManagementServer(grpcServer, stageManagementServer)
+	pb.RegisterLinkManagementServer(grpcServer, linkManagementServer)
 	pb.RegisterBlueprintManagementServer(grpcServer, blueprintManagementServer)
 	s.grpcServer = grpcServer
 }

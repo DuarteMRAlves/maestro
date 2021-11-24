@@ -8,6 +8,7 @@ import (
 
 type Store interface {
 	Create(s *Stage) error
+	Contains(name string) bool
 	Get(query *Stage) []*Stage
 }
 
@@ -30,6 +31,11 @@ func (st *store) Create(config *Stage) error {
 		return errdefs.AlreadyExistsWithMsg("stage '%v' already exists", s.Name)
 	}
 	return nil
+}
+
+func (st *store) Contains(name string) bool {
+	_, ok := st.stages.Load(name)
+	return ok
 }
 
 func (st *store) Get(query *Stage) []*Stage {
