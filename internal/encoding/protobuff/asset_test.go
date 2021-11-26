@@ -3,8 +3,8 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
+	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
 	"testing"
 )
 
@@ -30,8 +30,8 @@ func TestMarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res := MarshalAsset(&in)
-				assert.DeepEqual(t, in.Name, res.Name, "Asset Name")
-				assert.DeepEqual(t, in.Image, res.Image, "Asset Image")
+				testing2.DeepEqual(t, in.Name, res.Name, "Asset Name")
+				testing2.DeepEqual(t, in.Image, res.Image, "Asset Image")
 			})
 	}
 }
@@ -51,8 +51,8 @@ func TestUnmarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res, err := UnmarshalAsset(in)
-				assert.DeepEqual(t, nil, err, "Error")
-				assert.DeepEqual(t, in.Name, res.Name, "Asset Name")
+				testing2.DeepEqual(t, nil, err, "Error")
+				testing2.DeepEqual(t, in.Name, res.Name, "Asset Name")
 			})
 	}
 }

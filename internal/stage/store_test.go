@@ -2,7 +2,7 @@ package stage
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
+	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
 	"testing"
 )
 
@@ -36,19 +36,19 @@ func TestStore_Create(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				assert.IsTrue(t, ok, "type assertion failed for store")
+				testing2.IsTrue(t, ok, "type assertion failed for store")
 
 				err := st.Create(cfg)
-				assert.IsNil(t, err, "create error")
-				assert.DeepEqual(t, 1, lenStages(st), "store size")
+				testing2.IsNil(t, err, "create error")
+				testing2.DeepEqual(t, 1, lenStages(st), "store size")
 				stored, ok := st.stages.Load(cfg.Name)
-				assert.IsTrue(t, ok, "stage exists")
+				testing2.IsTrue(t, ok, "stage exists")
 				s, ok := stored.(*Stage)
-				assert.IsTrue(t, ok, "stage type assertion failed")
-				assert.DeepEqual(t, cfg.Name, s.Name, "correct name")
-				assert.DeepEqual(t, cfg.Asset, s.Asset, "correct asset")
-				assert.DeepEqual(t, cfg.Service, s.Service, "correct service")
-				assert.DeepEqual(t, cfg.Method, s.Method, "correct method")
+				testing2.IsTrue(t, ok, "stage type assertion failed")
+				testing2.DeepEqual(t, cfg.Name, s.Name, "correct name")
+				testing2.DeepEqual(t, cfg.Asset, s.Asset, "correct asset")
+				testing2.DeepEqual(t, cfg.Service, s.Service, "correct service")
+				testing2.DeepEqual(t, cfg.Method, s.Method, "correct method")
 			})
 	}
 }

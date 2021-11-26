@@ -1,4 +1,4 @@
-package assert
+package testing
 
 import (
 	"fmt"
@@ -43,19 +43,13 @@ func DeepEqual(
 	}
 }
 
-func NotDeepEqual(
-	t *testing.T,
-	expected interface{},
-	actual interface{},
-	msg string,
-	msgArgs ...interface{},
-) {
-
-	if reflect.DeepEqual(expected, actual) {
-		t.Fatalf(
-			"DeepEqual is true: expected='%v', actual='%v' (msg='%v')",
-			expected,
-			actual,
-			fmt.Sprintf(msg, msgArgs...))
+func isNil(v interface{}) bool {
+	if v == nil {
+		return true
 	}
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(v).IsNil()
+	}
+	return false
 }

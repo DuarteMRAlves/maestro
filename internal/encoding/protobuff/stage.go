@@ -18,7 +18,7 @@ func MarshalStage(s *stage.Stage) *pb.Stage {
 
 func UnmarshalStage(p *pb.Stage) (*stage.Stage, error) {
 	if ok, err := assert.ArgNotNil(p, "p"); !ok {
-		return nil, errdefs.InternalWithError(err)
+		return nil, errdefs.InvalidArgumentWithError(err)
 	}
 	return &stage.Stage{
 		Name:    p.Name,

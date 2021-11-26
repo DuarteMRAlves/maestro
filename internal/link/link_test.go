@@ -1,7 +1,7 @@
 package link
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/assert"
+	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
 	"testing"
 )
 
@@ -28,23 +28,23 @@ func TestLink_Clone(t *testing.T) {
 		TargetField: oldTargetField,
 	}
 	c := s.Clone()
-	assert.DeepEqual(t, oldName, c.Name, "cloned old name")
-	assert.DeepEqual(
+	testing2.DeepEqual(t, oldName, c.Name, "cloned old name")
+	testing2.DeepEqual(
 		t,
 		oldSourceStage,
 		c.SourceStage,
 		"cloned old source stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldSourceField,
 		c.SourceField,
 		"cloned old source field")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldTargetStage,
 		c.TargetStage,
 		"cloned old target stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldTargetField,
 		c.TargetField,
@@ -56,45 +56,45 @@ func TestLink_Clone(t *testing.T) {
 	c.TargetStage = newTargetStage
 	c.TargetField = newTargetField
 
-	assert.DeepEqual(t, oldName, s.Name, "source old name")
-	assert.DeepEqual(
+	testing2.DeepEqual(t, oldName, s.Name, "source old name")
+	testing2.DeepEqual(
 		t,
 		oldSourceStage,
 		s.SourceStage,
 		"source old source stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldSourceField,
 		s.SourceField,
 		"source old source field")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldTargetStage,
 		s.TargetStage,
 		"source old target stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		oldTargetField,
 		s.TargetField,
 		"source old target field")
 
-	assert.DeepEqual(t, newName, c.Name, "cloned new name")
-	assert.DeepEqual(
+	testing2.DeepEqual(t, newName, c.Name, "cloned new name")
+	testing2.DeepEqual(
 		t,
 		newSourceStage,
 		c.SourceStage,
 		"cloned new source stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		newSourceField,
 		c.SourceField,
 		"cloned new source field")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		newTargetStage,
 		c.TargetStage,
 		"cloned new target stage")
-	assert.DeepEqual(
+	testing2.DeepEqual(
 		t,
 		newTargetField,
 		c.TargetField,

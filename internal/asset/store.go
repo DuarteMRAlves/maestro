@@ -1,7 +1,9 @@
 package asset
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"sync"
 )
 
@@ -20,8 +22,11 @@ func NewStore() Store {
 }
 
 func (st *store) Create(config *Asset) error {
-	if config == nil {
-		return errdefs.UnknownWithMsg("nil config")
+	if ok, err := assert.ArgNotNil(config, "config"); !ok {
+		return errdefs.InvalidArgumentWithError(err)
+	}
+	if !naming.IsValidName(config.Name) {
+		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 
 	asset := config.Clone()

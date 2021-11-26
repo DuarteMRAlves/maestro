@@ -2,12 +2,13 @@ package assert
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"reflect"
 )
 
 func ArgNotNil(v interface{}, name string) (bool, error) {
 	if isNil(v) {
-		return false, fmt.Errorf("%v is nil", name)
+		return false, errdefs.InvalidArgumentWithMsg("'%v' is nil", name)
 	}
 	return true, nil
 }
