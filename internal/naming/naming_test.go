@@ -2,7 +2,7 @@ package naming
 
 import (
 	"fmt"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -31,7 +31,7 @@ func TestIsValidName(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				result := IsValidName(name)
-				testing2.DeepEqual(t, expected, result, "is valid name")
+				test.DeepEqual(t, expected, result, "is valid name")
 			})
 	}
 }

@@ -1,7 +1,7 @@
 package stage
 
 import (
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -25,23 +25,23 @@ func TestStage_Clone(t *testing.T) {
 		Method:  oldMethod,
 	}
 	c := s.Clone()
-	testing2.DeepEqual(t, oldName, c.Name, "cloned old Name")
-	testing2.DeepEqual(t, oldAsset, c.Asset, "cloned old asset id")
-	testing2.DeepEqual(t, oldService, c.Service, "cloned old service")
-	testing2.DeepEqual(t, oldMethod, c.Method, "cloned old method")
+	test.DeepEqual(t, oldName, c.Name, "cloned old Name")
+	test.DeepEqual(t, oldAsset, c.Asset, "cloned old asset id")
+	test.DeepEqual(t, oldService, c.Service, "cloned old service")
+	test.DeepEqual(t, oldMethod, c.Method, "cloned old method")
 
 	c.Name = newName
 	c.Asset = newAsset
 	c.Service = newService
 	c.Method = newMethod
 
-	testing2.DeepEqual(t, oldName, s.Name, "source old Name")
-	testing2.DeepEqual(t, oldAsset, s.Asset, "source old asset id")
-	testing2.DeepEqual(t, oldService, s.Service, "source old service")
-	testing2.DeepEqual(t, oldMethod, s.Method, "source old method")
+	test.DeepEqual(t, oldName, s.Name, "source old Name")
+	test.DeepEqual(t, oldAsset, s.Asset, "source old asset id")
+	test.DeepEqual(t, oldService, s.Service, "source old service")
+	test.DeepEqual(t, oldMethod, s.Method, "source old method")
 
-	testing2.DeepEqual(t, newName, c.Name, "cloned new Name")
-	testing2.DeepEqual(t, newAsset, c.Asset, "cloned new asset id")
-	testing2.DeepEqual(t, newService, c.Service, "cloned new service")
-	testing2.DeepEqual(t, newMethod, c.Method, "cloned new method")
+	test.DeepEqual(t, newName, c.Name, "cloned new Name")
+	test.DeepEqual(t, newAsset, c.Asset, "cloned new asset id")
+	test.DeepEqual(t, newService, c.Service, "cloned new service")
+	test.DeepEqual(t, newMethod, c.Method, "cloned new method")
 }

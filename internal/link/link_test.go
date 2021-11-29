@@ -1,7 +1,7 @@
 package link
 
 import (
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -28,23 +28,23 @@ func TestLink_Clone(t *testing.T) {
 		TargetField: oldTargetField,
 	}
 	c := s.Clone()
-	testing2.DeepEqual(t, oldName, c.Name, "cloned old name")
-	testing2.DeepEqual(
+	test.DeepEqual(t, oldName, c.Name, "cloned old name")
+	test.DeepEqual(
 		t,
 		oldSourceStage,
 		c.SourceStage,
 		"cloned old source stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldSourceField,
 		c.SourceField,
 		"cloned old source field")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldTargetStage,
 		c.TargetStage,
 		"cloned old target stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldTargetField,
 		c.TargetField,
@@ -56,45 +56,45 @@ func TestLink_Clone(t *testing.T) {
 	c.TargetStage = newTargetStage
 	c.TargetField = newTargetField
 
-	testing2.DeepEqual(t, oldName, s.Name, "source old name")
-	testing2.DeepEqual(
+	test.DeepEqual(t, oldName, s.Name, "source old name")
+	test.DeepEqual(
 		t,
 		oldSourceStage,
 		s.SourceStage,
 		"source old source stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldSourceField,
 		s.SourceField,
 		"source old source field")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldTargetStage,
 		s.TargetStage,
 		"source old target stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		oldTargetField,
 		s.TargetField,
 		"source old target field")
 
-	testing2.DeepEqual(t, newName, c.Name, "cloned new name")
-	testing2.DeepEqual(
+	test.DeepEqual(t, newName, c.Name, "cloned new name")
+	test.DeepEqual(
 		t,
 		newSourceStage,
 		c.SourceStage,
 		"cloned new source stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		newSourceField,
 		c.SourceField,
 		"cloned new source field")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		newTargetStage,
 		c.TargetStage,
 		"cloned new target stage")
-	testing2.DeepEqual(
+	test.DeepEqual(
 		t,
 		newTargetField,
 		c.TargetField,

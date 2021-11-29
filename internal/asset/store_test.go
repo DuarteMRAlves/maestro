@@ -3,7 +3,7 @@ package asset
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -18,17 +18,17 @@ func TestStore_CreateCorrect(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				testing2.IsTrue(t, ok, "type assertion failed for store")
+				test.IsTrue(t, ok, "type assertion failed for store")
 
 				e := st.Create(a)
-				testing2.DeepEqual(t, nil, e, "error not nil")
-				testing2.DeepEqual(t, 1, lenAssets(st), "store size")
+				test.DeepEqual(t, nil, e, "error not nil")
+				test.DeepEqual(t, 1, lenAssets(st), "store size")
 				stored, ok := st.assets.Load(assetName)
-				testing2.IsTrue(t, ok, "asset does not exist")
+				test.IsTrue(t, ok, "asset does not exist")
 				asset, ok := stored.(*Asset)
-				testing2.IsTrue(t, ok, "asset type assertion failed")
-				testing2.DeepEqual(t, asset.Name, a.Name, "name not correct")
-				testing2.DeepEqual(t, asset.Image, a.Image, "image not correct")
+				test.IsTrue(t, ok, "asset type assertion failed")
+				test.DeepEqual(t, asset.Name, a.Name, "name not correct")
+				test.DeepEqual(t, asset.Image, a.Image, "image not correct")
 			})
 	}
 }
@@ -72,13 +72,13 @@ func TestStore_CreateInvalidArguments(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				testing2.IsTrue(t, ok, "type assertion failed for store")
+				test.IsTrue(t, ok, "type assertion failed for store")
 
 				e := st.Create(a)
-				testing2.DeepEqual(t, err, e, "expected error")
-				testing2.DeepEqual(t, 0, lenAssets(st), "store size")
+				test.DeepEqual(t, err, e, "expected error")
+				test.DeepEqual(t, 0, lenAssets(st), "store size")
 				_, ok = st.assets.Load(assetName)
-				testing2.IsTrue(t, !ok, "asset does not exist")
+				test.IsTrue(t, !ok, "asset does not exist")
 			})
 	}
 }
@@ -89,18 +89,18 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 		Image: assetImage,
 	}
 	st, ok := NewStore().(*store)
-	testing2.IsTrue(t, ok, "type assertion failed for store")
+	test.IsTrue(t, ok, "type assertion failed for store")
 
 	// First create should go well
 	e := st.Create(config)
-	testing2.DeepEqual(t, nil, e, "error not nil")
-	testing2.DeepEqual(t, 1, lenAssets(st), "store size")
+	test.DeepEqual(t, nil, e, "error not nil")
+	test.DeepEqual(t, 1, lenAssets(st), "store size")
 	stored, ok := st.assets.Load(assetName)
-	testing2.IsTrue(t, ok, "asset does not exist")
+	test.IsTrue(t, ok, "asset does not exist")
 	asset, ok := stored.(*Asset)
-	testing2.IsTrue(t, ok, "asset type assertion failed")
-	testing2.DeepEqual(t, assetName, asset.Name, "name not correct")
-	testing2.DeepEqual(t, assetImage, asset.Image, "image not correct")
+	test.IsTrue(t, ok, "asset type assertion failed")
+	test.DeepEqual(t, assetName, asset.Name, "name not correct")
+	test.DeepEqual(t, assetImage, asset.Image, "image not correct")
 
 	// Create new image
 	config.Image = fmt.Sprintf("%v-new", assetImage)
@@ -108,16 +108,16 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 	err := errdefs.AlreadyExistsWithMsg(
 		"asset '%v' already exists",
 		config.Name)
-	testing2.DeepEqual(t, err, e, "error no already exists")
+	test.DeepEqual(t, err, e, "error no already exists")
 	// Store should keep old asset
-	testing2.DeepEqual(t, 1, lenAssets(st), "store size")
+	test.DeepEqual(t, 1, lenAssets(st), "store size")
 	stored, ok = st.assets.Load(assetName)
-	testing2.IsTrue(t, ok, "asset does not exist")
+	test.IsTrue(t, ok, "asset does not exist")
 	asset, ok = stored.(*Asset)
-	testing2.IsTrue(t, ok, "asset type assertion failed")
-	testing2.DeepEqual(t, assetName, asset.Name, "name not correct")
+	test.IsTrue(t, ok, "asset type assertion failed")
+	test.DeepEqual(t, assetName, asset.Name, "name not correct")
 	// Still should be old image as asset is not replaced
-	testing2.DeepEqual(t, assetImage, asset.Image, "image not correct")
+	test.DeepEqual(t, assetImage, asset.Image, "image not correct")
 }
 
 func lenAssets(st *store) int {

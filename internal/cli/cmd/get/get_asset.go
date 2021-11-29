@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli"
+	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/spf13/cobra"
 	"io"
@@ -21,7 +21,7 @@ func NewCmdGetAsset() *cobra.Command {
 }
 
 func runGetAsset(_ *cobra.Command, _ []string) {
-	conn := cli.NewConnection(createOpts.addr)
+	conn := client.NewConnection(createOpts.addr)
 	defer conn.Close()
 
 	c := pb.NewAssetManagementClient(conn)

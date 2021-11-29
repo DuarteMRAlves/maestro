@@ -13,6 +13,13 @@ func ArgNotNil(v interface{}, name string) (bool, error) {
 	return true, nil
 }
 
+func ArgStatus(b bool, msg string, msgArgs ...interface{}) (bool, error) {
+	if !b {
+		return false, errdefs.InvalidArgumentWithMsg(msg, msgArgs...)
+	}
+	return true, nil
+}
+
 func Status(b bool, msg string, msgArgs ...interface{}) (bool, error) {
 	if !b {
 		return false, fmt.Errorf(

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli"
+	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/spf13/cobra"
 	"time"
 )
@@ -69,7 +69,7 @@ func NewCmdCreateLink() *cobra.Command {
 }
 
 func runCreateLink(cmd *cobra.Command, args []string) {
-	conn := cli.NewConnection(createOpts.addr)
+	conn := client.NewConnection(createOpts.addr)
 	defer conn.Close()
 
 	c := pb.NewLinkManagementClient(conn)

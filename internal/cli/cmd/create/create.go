@@ -1,27 +1,35 @@
 package create
 
-import "github.com/spf13/cobra"
-
-const (
-	defaultAddr = "localhost:50051"
-	addrUsage   = "Address to connect to the maestro server"
+import (
+	"fmt"
+	"github.com/spf13/cobra"
 )
 
 var createOpts = struct {
-	addr string
+	addr  string
+	files []string
 }{}
 
 func NewCmdCreate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create resources of a given type",
+		Args:  cobra.MaximumNArgs(0),
+		Run:   RunCreate,
 	}
 
 	cmd.PersistentFlags().StringVar(
 		&createOpts.addr,
-		"addr",
-		defaultAddr,
-		addrUsage)
+		addrFull,
+		addrDefault,
+		addrHelp)
+
+	cmd.PersistentFlags().StringSliceVarP(
+		&createOpts.files,
+		fileFull,
+		fileShort,
+		fileDefault,
+		fileHelp)
 
 	// Subcommands
 	cmd.AddCommand(NewCmdCreateAsset())
@@ -29,4 +37,11 @@ func NewCmdCreate() *cobra.Command {
 	cmd.AddCommand(NewCmdCreateLink())
 
 	return cmd
+}
+
+func RunCreate(_ *cobra.Command, _ []string) {
+	err := createFromFiles(createOpts.files, createOpts.addr, "")
+	if err != nil {
+		fmt.Printf("unable to create resources: %v\n", err)
+	}
 }

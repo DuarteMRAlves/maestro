@@ -1,12 +1,10 @@
 package create
 
 import (
-	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli"
+	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 const (
@@ -22,7 +20,7 @@ func NewCmdCreateAsset() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "asset NAME",
 		Short: "create a new Asset",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		Run:   runCreateAsset,
 	}
 
@@ -31,25 +29,34 @@ func NewCmdCreateAsset() *cobra.Command {
 	return cmd
 }
 
-func runCreateAsset(_ *cobra.Command, args []string) {
-	conn := cli.NewConnection(createOpts.addr)
-	defer conn.Close()
-
-	c := pb.NewAssetManagementClient(conn)
-
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Second)
-	defer cancel()
-	_, err := c.Create(
-		ctx,
-		&pb.Asset{
+func runCreateAsset(cmd *cobra.Command, args []string) {
+	var asset *pb.Asset
+	// Create from files
+	if cmd.Flag(fileFull).Changed {
+		if len(args) > 0 {
+			fmt.Printf(
+				"warning: creating from files, positional arguments ignored\n")
+		}
+		if cmd.Flag(imageFlag).Changed {
+			fmt.Printf(
+				"warning: creating from files, %v flag ignored\n",
+				imageFlag)
+		}
+		err := createFromFiles(createOpts.files, createOpts.addr, assetKind)
+		if err != nil {
+			fmt.Printf("unable to create resources: %v\n", err)
+		}
+	} else {
+		asset = &pb.Asset{
 			Name:  args[0],
 			Image: createAssetOpts.image,
-		})
-	if err != nil {
-		fmt.Printf("Unable to create asset: %v\n", err)
-		return
+		}
+		err := client.CreateAsset(asset, createOpts.addr)
+
+		if err != nil {
+			fmt.Printf("Unable to create asset: %v\n", err)
+			return
+		}
+		fmt.Printf("created asset with name '%v'\n", args[0])
 	}
-	fmt.Printf("created asset with name '%v'\n", args[0])
 }

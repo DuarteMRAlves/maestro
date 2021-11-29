@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -62,7 +62,7 @@ func TestUnmarshalLinkCorrect(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				res, err := UnmarshalLink(l)
-				testing2.DeepEqual(t, nil, err, "unmarshal error")
+				test.DeepEqual(t, nil, err, "unmarshal error")
 				assertPbLink(t, l, res)
 			})
 	}
@@ -71,20 +71,20 @@ func TestUnmarshalLinkCorrect(t *testing.T) {
 func TestUnmarshalLinkError(t *testing.T) {
 	res, err := UnmarshalLink(nil)
 	expectedErr := errdefs.InvalidArgumentWithMsg("'p' is nil")
-	testing2.DeepEqual(t, expectedErr, err, "unmarshal error")
-	testing2.IsNil(t, res, "nil return value")
+	test.DeepEqual(t, expectedErr, err, "unmarshal error")
+	test.IsNil(t, res, "nil return value")
 }
 
 func assertLink(t *testing.T, expected *link.Link, actual *pb.Link) {
-	testing2.DeepEqual(t, expected.Name, actual.Name, "name")
-	testing2.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
-	testing2.DeepEqual(
+	test.DeepEqual(t, expected.Name, actual.Name, "name")
+	test.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
+	test.DeepEqual(
 		t,
 		expected.SourceField,
 		actual.SourceField,
 		"source field")
-	testing2.DeepEqual(t, expected.TargetStage, actual.TargetStage, "target id")
-	testing2.DeepEqual(
+	test.DeepEqual(t, expected.TargetStage, actual.TargetStage, "target id")
+	test.DeepEqual(
 		t,
 		expected.TargetField,
 		actual.TargetField,
@@ -92,15 +92,15 @@ func assertLink(t *testing.T, expected *link.Link, actual *pb.Link) {
 }
 
 func assertPbLink(t *testing.T, expected *pb.Link, actual *link.Link) {
-	testing2.DeepEqual(t, expected.Name, actual.Name, "name")
-	testing2.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
-	testing2.DeepEqual(
+	test.DeepEqual(t, expected.Name, actual.Name, "name")
+	test.DeepEqual(t, expected.SourceStage, actual.SourceStage, "source id")
+	test.DeepEqual(
 		t,
 		expected.SourceField,
 		actual.SourceField,
 		"source field")
-	testing2.DeepEqual(t, expected.TargetStage, actual.TargetStage, "target id")
-	testing2.DeepEqual(
+	test.DeepEqual(t, expected.TargetStage, actual.TargetStage, "target id")
+	test.DeepEqual(
 		t,
 		expected.TargetField,
 		actual.TargetField,

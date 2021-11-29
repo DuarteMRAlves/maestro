@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -30,8 +30,8 @@ func TestMarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res := MarshalAsset(&in)
-				testing2.DeepEqual(t, in.Name, res.Name, "Asset Name")
-				testing2.DeepEqual(t, in.Image, res.Image, "Asset Image")
+				test.DeepEqual(t, in.Name, res.Name, "Asset Name")
+				test.DeepEqual(t, in.Image, res.Image, "Asset Image")
 			})
 	}
 }
@@ -51,8 +51,8 @@ func TestUnmarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res, err := UnmarshalAsset(in)
-				testing2.DeepEqual(t, nil, err, "Error")
-				testing2.DeepEqual(t, in.Name, res.Name, "Asset Name")
+				test.DeepEqual(t, nil, err, "Error")
+				test.DeepEqual(t, in.Name, res.Name, "Asset Name")
 			})
 	}
 }

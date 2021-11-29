@@ -2,7 +2,7 @@ package link
 
 import (
 	"fmt"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -39,32 +39,32 @@ func TestStore_Create(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				testing2.IsTrue(t, ok, "type assertion failed for store")
+				test.IsTrue(t, ok, "type assertion failed for store")
 
 				err := st.Create(cfg)
-				testing2.IsNil(t, err, "create error")
-				testing2.DeepEqual(t, 1, lenLinks(st), "store size")
+				test.IsNil(t, err, "create error")
+				test.DeepEqual(t, 1, lenLinks(st), "store size")
 				stored, ok := st.links.Load(cfg.Name)
-				testing2.IsTrue(t, ok, "link exists")
+				test.IsTrue(t, ok, "link exists")
 				s, ok := stored.(*Link)
-				testing2.IsTrue(t, ok, "link type assertion failed")
-				testing2.DeepEqual(t, cfg.Name, s.Name, "correct name")
-				testing2.DeepEqual(
+				test.IsTrue(t, ok, "link type assertion failed")
+				test.DeepEqual(t, cfg.Name, s.Name, "correct name")
+				test.DeepEqual(
 					t,
 					cfg.SourceStage,
 					s.SourceStage,
 					"correct source stage")
-				testing2.DeepEqual(
+				test.DeepEqual(
 					t,
 					cfg.SourceField,
 					s.SourceField,
 					"correct source field")
-				testing2.DeepEqual(
+				test.DeepEqual(
 					t,
 					cfg.TargetStage,
 					s.TargetStage,
 					"correct target stage")
-				testing2.DeepEqual(
+				test.DeepEqual(
 					t,
 					cfg.TargetField,
 					s.TargetField,

@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -29,22 +29,22 @@ func TestMarshalBlueprint(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				res := MarshalBlueprint(bp)
-				testing2.DeepEqual(t, bp.Name, res.Name, "blueprint name")
-				testing2.DeepEqual(
+				test.DeepEqual(t, bp.Name, res.Name, "blueprint name")
+				test.DeepEqual(
 					t,
 					len(bp.Stages),
 					len(res.Stages),
 					"blueprint stages len")
 				for i, s := range bp.Stages {
-					testing2.DeepEqual(t, s, res.Stages[i], "stage %d equal", i)
+					test.DeepEqual(t, s, res.Stages[i], "stage %d equal", i)
 				}
-				testing2.DeepEqual(
+				test.DeepEqual(
 					t,
 					len(bp.Links),
 					len(res.Links),
 					"blueprint links len")
 				for i, l := range bp.Links {
-					testing2.DeepEqual(t, l, res.Links[i], "link %d equal", i)
+					test.DeepEqual(t, l, res.Links[i], "link %d equal", i)
 				}
 			})
 	}
@@ -71,23 +71,23 @@ func TestUnmarshalBlueprintCorrect(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				res, err := UnmarshalBlueprint(bp)
-				testing2.DeepEqual(t, nil, err, "unmarshal error")
-				testing2.DeepEqual(t, bp.Name, res.Name, "blueprint name")
-				testing2.DeepEqual(
+				test.DeepEqual(t, nil, err, "unmarshal error")
+				test.DeepEqual(t, bp.Name, res.Name, "blueprint name")
+				test.DeepEqual(
 					t,
 					len(bp.Stages),
 					len(res.Stages),
 					"blueprint stages len")
 				for i, s := range bp.Stages {
-					testing2.DeepEqual(t, s, res.Stages[i], "stage %d equal", i)
+					test.DeepEqual(t, s, res.Stages[i], "stage %d equal", i)
 				}
-				testing2.DeepEqual(
+				test.DeepEqual(
 					t,
 					len(bp.Links),
 					len(res.Links),
 					"blueprint links len")
 				for i, l := range bp.Links {
-					testing2.DeepEqual(t, l, res.Links[i], "link %d equal", i)
+					test.DeepEqual(t, l, res.Links[i], "link %d equal", i)
 				}
 			})
 	}
@@ -96,6 +96,6 @@ func TestUnmarshalBlueprintCorrect(t *testing.T) {
 func TestUnmarshalBlueprintError(t *testing.T) {
 	res, err := UnmarshalBlueprint(nil)
 	expectedErr := errdefs.InvalidArgumentWithMsg("'p' is nil")
-	testing2.DeepEqual(t, expectedErr, err, "unmarshal error")
-	testing2.IsNil(t, res, "nil return value")
+	test.DeepEqual(t, expectedErr, err, "unmarshal error")
+	test.IsNil(t, res, "nil return value")
 }

@@ -3,7 +3,7 @@ package blueprint
 import (
 	"errors"
 	"fmt"
-	testing2 "github.com/DuarteMRAlves/maestro/internal/testing"
+	"github.com/DuarteMRAlves/maestro/internal/test"
 	"testing"
 )
 
@@ -23,18 +23,18 @@ func TestStore_CreateCorrect(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				testing2.IsTrue(t, ok, "type assertion failed for store")
+				test.IsTrue(t, ok, "type assertion failed for store")
 
 				err := st.Create(config)
-				testing2.IsNil(t, err, "create error")
-				testing2.DeepEqual(t, 1, lenBlueprints(st), "store size")
+				test.IsNil(t, err, "create error")
+				test.DeepEqual(t, 1, lenBlueprints(st), "store size")
 				stored, ok := st.blueprints.Load(bpName)
-				testing2.IsTrue(t, ok, "blueprint exists")
+				test.IsTrue(t, ok, "blueprint exists")
 				bp, ok := stored.(*Blueprint)
-				testing2.IsTrue(t, ok, "blueprint type assertion failed")
-				testing2.DeepEqual(t, bpName, bp.Name, "correct name")
-				testing2.DeepEqual(t, 0, len(bp.Stages), "empty Stages")
-				testing2.DeepEqual(t, 0, len(bp.Links), "empty Links")
+				test.IsTrue(t, ok, "blueprint type assertion failed")
+				test.DeepEqual(t, bpName, bp.Name, "correct name")
+				test.DeepEqual(t, 0, len(bp.Stages), "empty Stages")
+				test.DeepEqual(t, 0, len(bp.Links), "empty Links")
 			})
 	}
 }
@@ -61,11 +61,11 @@ func TestStore_CreateIncorrect(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				testing2.IsTrue(t, ok, "type assertion failed for store")
+				test.IsTrue(t, ok, "type assertion failed for store")
 
 				e := st.Create(config)
-				testing2.DeepEqual(t, err, e, "expected error")
-				testing2.DeepEqual(t, 0, lenBlueprints(st), "store size")
+				test.DeepEqual(t, err, e, "expected error")
+				test.DeepEqual(t, 0, lenBlueprints(st), "store size")
 			})
 	}
 }
