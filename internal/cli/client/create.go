@@ -21,3 +21,19 @@ func CreateAsset(a *pb.Asset, addr string) error {
 
 	return err
 }
+
+func CreateStage(s *pb.Stage, addr string) error {
+	conn := NewConnection(addr)
+	defer conn.Close()
+
+	c := pb.NewStageManagementClient(conn)
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	_, err := c.Create(ctx, s)
+
+	return err
+}

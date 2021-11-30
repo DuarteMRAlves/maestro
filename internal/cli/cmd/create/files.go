@@ -30,5 +30,18 @@ func createFromFiles(files []string, addr string, kind string) error {
 			}
 		}
 	}
+	if createAll || kind == stageKind {
+		for _, r := range resources {
+			if isStageKind(r) {
+				s := &pb.Stage{}
+				if err = MarshalStageResource(s, r); err != nil {
+					return err
+				}
+				if err = client.CreateStage(s, addr); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }

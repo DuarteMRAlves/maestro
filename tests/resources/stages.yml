@@ -1,0 +1,16 @@
+kind: stage
+spec:
+  name: stage-4
+  asset: asset-4
+---
+kind: stage
+spec:
+  name: stage-5
+  asset: asset-4
+---
+kind: stage
+spec:
+  name: stage-6
+  asset: asset-6
+  service: Service6
+  method: Method6

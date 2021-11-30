@@ -1,0 +1,23 @@
+kind: asset
+spec:
+  name: asset-1
+  image: user-1/asset-1:latest
+---
+kind: stage
+spec:
+  name: stage-1
+  asset: asset-1
+  service: Service1
+  method: Method1
+---
+kind: stage
+spec:
+  name: stage-2
+  asset: asset-2
+  service: Service2
+  method: Method2
+---
+kind: asset
+spec:
+  name: asset-2
+  image: user-1/image-2:latest

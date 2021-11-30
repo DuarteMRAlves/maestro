@@ -4,6 +4,7 @@ import "github.com/DuarteMRAlves/maestro/internal/errdefs"
 
 const (
 	assetKind = "asset"
+	stageKind = "stage"
 )
 
 func isValidKinds(resources []*Resource) error {
@@ -16,9 +17,13 @@ func isValidKinds(resources []*Resource) error {
 }
 
 func isValidKind(kind string) bool {
-	return kind == assetKind
+	return kind == assetKind || kind == stageKind
 }
 
 func isAssetKind(r *Resource) bool {
 	return r.Kind == assetKind
+}
+
+func isStageKind(r *Resource) bool {
+	return r.Kind == stageKind
 }

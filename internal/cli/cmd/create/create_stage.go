@@ -1,12 +1,11 @@
 package create
 
 import (
-	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
+	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 const (
@@ -26,6 +25,8 @@ const (
 )
 
 var createStageOpts = &struct {
+	addr    string
+	files   []string
 	asset   string
 	service string
 	method  string
@@ -39,13 +40,15 @@ func NewCmdCreateStage() *cobra.Command {
 		Run:   runCreateStage,
 	}
 
+	addAddrFlag(cmd, &createStageOpts.addr, addrHelp)
+	addFilesFlag(cmd, &createStageOpts.files, fileHelp)
+
 	cmd.Flags().StringVarP(
 		&createStageOpts.asset,
 		assetFlag,
 		assetShort,
 		"",
 		assetUsage)
-	cmd.MarkFlagRequired(assetFlag)
 	cmd.Flags().StringVarP(
 		&createStageOpts.service,
 		serviceFlag,
@@ -62,28 +65,43 @@ func NewCmdCreateStage() *cobra.Command {
 	return cmd
 }
 
-func runCreateStage(_ *cobra.Command, args []string) {
-	conn := client.NewConnection(createOpts.addr)
-	defer conn.Close()
+func runCreateStage(cmd *cobra.Command, args []string) {
+	var stage *pb.Stage
 
-	c := pb.NewStageManagementClient(conn)
-
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Second)
-	defer cancel()
-
-	_, err := c.Create(
-		ctx,
-		&pb.Stage{
+	if cmd.Flag(fileFull).Changed {
+		util.WarnArgsIgnore(args, "creating from file")
+		util.WarnFlagsIgnore(
+			cmd,
+			[]string{assetFlag, serviceFlag, methodFlag},
+			"creating from file")
+		err := createFromFiles(
+			createStageOpts.files,
+			createStageOpts.addr,
+			stageKind)
+		if err != nil {
+			fmt.Printf("unable to create resources: %v\n", err)
+		}
+	} else {
+		if len(args) != 1 {
+			fmt.Printf("unable to create stage: expected name argument")
+			return
+		}
+		err := util.VerifyFlagsChanged(cmd, []string{assetFlag})
+		if err != nil {
+			fmt.Printf("unable to create stage: %v", err)
+			return
+		}
+		stage = &pb.Stage{
 			Name:    args[0],
 			Asset:   createStageOpts.asset,
 			Service: createStageOpts.service,
 			Method:  createStageOpts.method,
-		})
-	if err != nil {
-		fmt.Printf("unable to create stage: %v\n", err)
-		return
+		}
+		err = client.CreateStage(stage, createOpts.addr)
+		if err != nil {
+			fmt.Printf("unable to create stage: %v\n", err)
+			return
+		}
+		fmt.Printf("stage '%v' created\n", args[0])
 	}
-	fmt.Printf("stage '%v' created\n", args[0])
 }

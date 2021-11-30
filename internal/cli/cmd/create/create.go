@@ -18,18 +18,8 @@ func NewCmdCreate() *cobra.Command {
 		Run:   RunCreate,
 	}
 
-	cmd.PersistentFlags().StringVar(
-		&createOpts.addr,
-		addrFull,
-		addrDefault,
-		addrHelp)
-
-	cmd.PersistentFlags().StringSliceVarP(
-		&createOpts.files,
-		fileFull,
-		fileShort,
-		fileDefault,
-		fileHelp)
+	addAddrFlag(cmd, &createOpts.addr, addrHelp)
+	addFilesFlag(cmd, &createOpts.files, fileHelp)
 
 	// Subcommands
 	cmd.AddCommand(NewCmdCreateAsset())
