@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
 )
@@ -77,7 +78,7 @@ func runCreateStage(cmd *cobra.Command, args []string) {
 		err := createFromFiles(
 			createStageOpts.files,
 			createStageOpts.addr,
-			stageKind)
+			resources.StageKind)
 		if err != nil {
 			fmt.Printf("unable to create resources: %v\n", err)
 		}
@@ -97,7 +98,7 @@ func runCreateStage(cmd *cobra.Command, args []string) {
 			Service: createStageOpts.service,
 			Method:  createStageOpts.method,
 		}
-		err = client.CreateStage(stage, createOpts.addr)
+		err = client.CreateStage(stage, createStageOpts.addr)
 		if err != nil {
 			fmt.Printf("unable to create stage: %v\n", err)
 			return

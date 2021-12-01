@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +48,7 @@ func runCreateAsset(cmd *cobra.Command, args []string) {
 		err := createFromFiles(
 			createAssetOpts.files,
 			createAssetOpts.addr,
-			assetKind)
+			resources.AssetKind)
 		if err != nil {
 			fmt.Printf("unable to create resources: %v\n", err)
 		}

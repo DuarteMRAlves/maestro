@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"time"
 )
 
@@ -34,6 +35,29 @@ func CreateStage(s *pb.Stage, addr string) error {
 	defer cancel()
 
 	_, err := c.Create(ctx, s)
+
+	return err
+}
+
+func CreateLink(link *resources.LinkResource, addr string) error {
+	l := &pb.Link{
+		Name:        link.Name,
+		SourceStage: link.SourceStage,
+		SourceField: link.SourceField,
+		TargetStage: link.TargetStage,
+		TargetField: link.TargetField,
+	}
+	conn := NewConnection(addr)
+	defer conn.Close()
+
+	c := pb.NewLinkManagementClient(conn)
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	_, err := c.Create(ctx, l)
 
 	return err
 }

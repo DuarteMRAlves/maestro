@@ -1,4 +1,4 @@
-package create
+package resources
 
 import (
 	"fmt"
@@ -18,12 +18,12 @@ var fileContent = fmt.Sprintf(
 ---
 kind: asset
 spec:
-  name: %v
+  optional: %v
   image: %v
 ---
 kind: asset
 spec:
-  name: %v
+  optional: %v
   image: %v`,
 	assetName1,
 	assetImage1,
@@ -33,18 +33,18 @@ spec:
 var expected = []*Resource{
 	{
 		Kind: "asset",
-		Spec: map[string]string{"name": assetName1, "image": assetImage1},
+		Spec: map[string]string{"optional": assetName1, "image": assetImage1},
 	},
 	{
 		Kind: "asset",
-		Spec: map[string]string{"name": assetName2, "image": assetImage2},
+		Spec: map[string]string{"optional": assetName2, "image": assetImage2},
 	},
 }
 
 func TestUnmarshalAsset(t *testing.T) {
 	data := []byte(fileContent)
 
-	resources, err := UnmarshalResources(data)
+	resources, err := ParseBytes(data)
 	test.IsNil(t, err, "err is not nil: %v", err)
 	test.DeepEqual(t, expected, resources, "resources not equal")
 }
