@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -67,8 +66,6 @@ func NewCmdCreateStage() *cobra.Command {
 }
 
 func runCreateStage(cmd *cobra.Command, args []string) {
-	var stage *pb.Stage
-
 	if cmd.Flag(fileFull).Changed {
 		util.WarnArgsIgnore(args, "creating from file")
 		util.WarnFlagsIgnore(
@@ -92,7 +89,7 @@ func runCreateStage(cmd *cobra.Command, args []string) {
 			fmt.Printf("unable to create stage: %v", err)
 			return
 		}
-		stage = &pb.Stage{
+		stage := &resources.StageResource{
 			Name:    args[0],
 			Asset:   createStageOpts.asset,
 			Service: createStageOpts.service,

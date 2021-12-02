@@ -1,7 +1,6 @@
 package create
 
 import (
-	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	resources "github.com/DuarteMRAlves/maestro/internal/cli/resources"
 )
@@ -20,8 +19,8 @@ func createFromFiles(files []string, addr string, kind string) error {
 	if createAll || kind == resources.AssetKind {
 		for _, r := range parsed {
 			if resources.IsAssetKind(r) {
-				a := &pb.Asset{}
-				if err = resources.MarshalAssetResource(a, r); err != nil {
+				a := &resources.AssetResource{}
+				if err = resources.MarshalResource(a, r); err != nil {
 					return err
 				}
 				if err = client.CreateAsset(a, addr); err != nil {
@@ -33,8 +32,8 @@ func createFromFiles(files []string, addr string, kind string) error {
 	if createAll || kind == resources.StageKind {
 		for _, r := range parsed {
 			if resources.IsStageKind(r) {
-				s := &pb.Stage{}
-				if err = resources.MarshalStageResource(s, r); err != nil {
+				s := &resources.StageResource{}
+				if err = resources.MarshalResource(s, r); err != nil {
 					return err
 				}
 				if err = client.CreateStage(s, addr); err != nil {

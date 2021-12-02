@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -37,7 +36,7 @@ func NewCmdCreateAsset() *cobra.Command {
 }
 
 func runCreateAsset(cmd *cobra.Command, args []string) {
-	var asset *pb.Asset
+
 	// Create from files
 	if cmd.Flag(fileFull).Changed {
 		util.WarnArgsIgnore(args, "creating from file")
@@ -57,7 +56,7 @@ func runCreateAsset(cmd *cobra.Command, args []string) {
 			fmt.Printf("unable to create asset: expected name argument")
 			return
 		}
-		asset = &pb.Asset{
+		asset := &resources.AssetResource{
 			Name:  args[0],
 			Image: createAssetOpts.image,
 		}

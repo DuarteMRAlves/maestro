@@ -7,7 +7,11 @@ import (
 	"time"
 )
 
-func CreateAsset(a *pb.Asset, addr string) error {
+func CreateAsset(asset *resources.AssetResource, addr string) error {
+	a := &pb.Asset{
+		Name:  asset.Name,
+		Image: asset.Image,
+	}
 	conn := NewConnection(addr)
 	defer conn.Close()
 
@@ -23,7 +27,13 @@ func CreateAsset(a *pb.Asset, addr string) error {
 	return err
 }
 
-func CreateStage(s *pb.Stage, addr string) error {
+func CreateStage(stage *resources.StageResource, addr string) error {
+	s := &pb.Stage{
+		Name:    stage.Name,
+		Asset:   stage.Asset,
+		Service: stage.Service,
+		Method:  stage.Method,
+	}
 	conn := NewConnection(addr)
 	defer conn.Close()
 
