@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -30,8 +30,8 @@ func TestMarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res := MarshalAsset(&in)
-				test.DeepEqual(t, in.Name, res.Name, "Asset Name")
-				test.DeepEqual(t, in.Image, res.Image, "Asset Image")
+				assert.Equal(t, in.Name, res.Name, "Asset Name")
+				assert.Equal(t, in.Image, res.Image, "Asset Image")
 			})
 	}
 }
@@ -51,8 +51,8 @@ func TestUnmarshalAsset(t *testing.T) {
 		t.Run(
 			name, func(t *testing.T) {
 				res, err := UnmarshalAsset(in)
-				test.DeepEqual(t, nil, err, "Error")
-				test.DeepEqual(t, in.Name, res.Name, "Asset Name")
+				assert.Equal(t, nil, err, "Error")
+				assert.Equal(t, in.Name, res.Name, "Asset Name")
 			})
 	}
 }

@@ -2,7 +2,7 @@ package resources
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -45,6 +45,6 @@ func TestUnmarshalAsset(t *testing.T) {
 	data := []byte(fileContent)
 
 	resources, err := ParseBytes(data)
-	test.IsNil(t, err, "err is not nil: %v", err)
-	test.DeepEqual(t, expected, resources, "resources not equal")
+	assert.NilError(t, err, "err is not nil: %v", err)
+	assert.DeepEqual(t, expected, resources)
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -58,7 +58,7 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				res, err := UnmarshalStage(s)
-				test.DeepEqual(t, nil, err, "unmarshal error")
+				assert.Equal(t, nil, err, "unmarshal error")
 				assertPbStage(t, s, res)
 			})
 	}
@@ -66,21 +66,21 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 
 func TestUnmarshalStageError(t *testing.T) {
 	res, err := UnmarshalStage(nil)
-	expectedErr := errdefs.InvalidArgumentWithMsg("'p' is nil")
-	test.DeepEqual(t, expectedErr, err, "unmarshal error")
-	test.IsNil(t, res, "nil return value")
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'p' is nil")
+	assert.Assert(t, res == nil, "nil return value")
 }
 
 func assertStage(t *testing.T, expected *stage.Stage, actual *pb.Stage) {
-	test.DeepEqual(t, expected.Name, actual.Name, "stage assetName")
-	test.DeepEqual(t, expected.Asset, actual.Asset, "asset id")
-	test.DeepEqual(t, expected.Service, actual.Service, "stage service")
-	test.DeepEqual(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
+	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
+	assert.Equal(t, expected.Service, actual.Service, "stage service")
+	assert.Equal(t, expected.Method, actual.Method, "stage method")
 }
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *stage.Stage) {
-	test.DeepEqual(t, expected.Name, actual.Name, "stage assetName")
-	test.DeepEqual(t, expected.Asset, actual.Asset, "asset id")
-	test.DeepEqual(t, expected.Service, actual.Service, "stage service")
-	test.DeepEqual(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
+	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
+	assert.Equal(t, expected.Service, actual.Service, "stage service")
+	assert.Equal(t, expected.Method, actual.Method, "stage method")
 }

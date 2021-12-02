@@ -2,7 +2,7 @@ package link
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -39,32 +39,32 @@ func TestStore_Create(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				test.IsTrue(t, ok, "type assertion failed for store")
+				assert.Assert(t, ok, "type assertion failed for store")
 
 				err := st.Create(cfg)
-				test.IsNil(t, err, "create error")
-				test.DeepEqual(t, 1, lenLinks(st), "store size")
+				assert.NilError(t, err, "create error")
+				assert.Equal(t, 1, lenLinks(st), "store size")
 				stored, ok := st.links.Load(cfg.Name)
-				test.IsTrue(t, ok, "link exists")
+				assert.Assert(t, ok, "link exists")
 				s, ok := stored.(*Link)
-				test.IsTrue(t, ok, "link type assertion failed")
-				test.DeepEqual(t, cfg.Name, s.Name, "correct name")
-				test.DeepEqual(
+				assert.Assert(t, ok, "link type assertion failed")
+				assert.Equal(t, cfg.Name, s.Name, "correct name")
+				assert.Equal(
 					t,
 					cfg.SourceStage,
 					s.SourceStage,
 					"correct source stage")
-				test.DeepEqual(
+				assert.Equal(
 					t,
 					cfg.SourceField,
 					s.SourceField,
 					"correct source field")
-				test.DeepEqual(
+				assert.Equal(
 					t,
 					cfg.TargetStage,
 					s.TargetStage,
 					"correct target stage")
-				test.DeepEqual(
+				assert.Equal(
 					t,
 					cfg.TargetField,
 					s.TargetField,

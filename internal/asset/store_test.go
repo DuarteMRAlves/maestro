@@ -3,7 +3,7 @@ package asset
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -18,67 +18,68 @@ func TestStore_CreateCorrect(t *testing.T) {
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				test.IsTrue(t, ok, "type assertion failed for store")
+				assert.Assert(t, ok, "type assertion failed for store")
 
 				e := st.Create(a)
-				test.DeepEqual(t, nil, e, "error not nil")
-				test.DeepEqual(t, 1, lenAssets(st), "store size")
+				assert.NilError(t, e, "error not nil")
+				assert.Equal(t, 1, lenAssets(st), "store size")
 				stored, ok := st.assets.Load(assetName)
-				test.IsTrue(t, ok, "asset does not exist")
+				assert.Assert(t, ok, "asset does not exist")
 				asset, ok := stored.(*Asset)
-				test.IsTrue(t, ok, "asset type assertion failed")
-				test.DeepEqual(t, asset.Name, a.Name, "name not correct")
-				test.DeepEqual(t, asset.Image, a.Image, "image not correct")
+				assert.Assert(t, ok, "asset type assertion failed")
+				assert.Equal(t, asset.Name, a.Name, "name not correct")
+				assert.Equal(t, asset.Image, a.Image, "image not correct")
 			})
 	}
 }
 
 func TestStore_CreateInvalidArguments(t *testing.T) {
 	tests := []struct {
-		a   *Asset
-		err error
+		a      *Asset
+		errMsg string
 	}{
 		{
 			nil,
-			errdefs.InvalidArgumentWithMsg("'config' is nil"),
+			"'config' is nil",
 		},
 		{
 			&Asset{
 				// No name will create empty string
 				Image: assetImage,
 			},
-			errdefs.InvalidArgumentWithMsg("invalid name ''"),
+			"invalid name ''",
 		},
 		{
 			&Asset{
 				Name:  "",
 				Image: assetImage,
 			},
-			errdefs.InvalidArgumentWithMsg("invalid name ''"),
+			"invalid name ''",
 		},
 		{
 			&Asset{
 				Name:  "invalid-name/",
 				Image: assetImage,
 			},
-			errdefs.InvalidArgumentWithMsg("invalid name 'invalid-name/'"),
+			"invalid name 'invalid-name/'",
 		},
 	}
 
 	for _, inner := range tests {
-		a, err := inner.a, inner.err
-		testName := fmt.Sprintf("config=%v, err=%v", a, err)
+		a, errMsg := inner.a, inner.errMsg
+		testName := fmt.Sprintf("config=%v, errMsg=%v", a, errMsg)
 
 		t.Run(
 			testName, func(t *testing.T) {
 				st, ok := NewStore().(*store)
-				test.IsTrue(t, ok, "type assertion failed for store")
+				assert.Assert(t, ok, "type assertion failed for store")
 
-				e := st.Create(a)
-				test.DeepEqual(t, err, e, "expected error")
-				test.DeepEqual(t, 0, lenAssets(st), "store size")
+				err := st.Create(a)
+				assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+				assert.ErrorContains(t, err, errMsg)
+				assert.Equal(t, 0, lenAssets(st), "store size")
 				_, ok = st.assets.Load(assetName)
-				test.IsTrue(t, !ok, "asset does not exist")
+				assert.Assert(t, !ok, "asset does not exist")
 			})
 	}
 }
@@ -89,35 +90,36 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 		Image: assetImage,
 	}
 	st, ok := NewStore().(*store)
-	test.IsTrue(t, ok, "type assertion failed for store")
+	assert.Assert(t, ok, "type assertion failed for store")
 
 	// First create should go well
-	e := st.Create(config)
-	test.DeepEqual(t, nil, e, "error not nil")
-	test.DeepEqual(t, 1, lenAssets(st), "store size")
+	err := st.Create(config)
+	assert.NilError(t, err, "error not nil")
+	assert.Equal(t, 1, lenAssets(st), "store size")
 	stored, ok := st.assets.Load(assetName)
-	test.IsTrue(t, ok, "asset does not exist")
+	assert.Assert(t, ok, "asset does not exist")
 	asset, ok := stored.(*Asset)
-	test.IsTrue(t, ok, "asset type assertion failed")
-	test.DeepEqual(t, assetName, asset.Name, "name not correct")
-	test.DeepEqual(t, assetImage, asset.Image, "image not correct")
+	assert.Assert(t, ok, "asset type assertion failed")
+	assert.Equal(t, assetName, asset.Name, "name not correct")
+	assert.Equal(t, assetImage, asset.Image, "image not correct")
 
 	// Create new image
 	config.Image = fmt.Sprintf("%v-new", assetImage)
-	e = st.Create(config)
-	err := errdefs.AlreadyExistsWithMsg(
-		"asset '%v' already exists",
-		config.Name)
-	test.DeepEqual(t, err, e, "error no already exists")
+	err = st.Create(config)
+	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
+	assert.ErrorContains(
+		t,
+		err,
+		fmt.Sprintf("asset '%v' already exists", config.Name))
 	// Store should keep old asset
-	test.DeepEqual(t, 1, lenAssets(st), "store size")
+	assert.Equal(t, 1, lenAssets(st), "store size")
 	stored, ok = st.assets.Load(assetName)
-	test.IsTrue(t, ok, "asset does not exist")
+	assert.Assert(t, ok, "asset does not exist")
 	asset, ok = stored.(*Asset)
-	test.IsTrue(t, ok, "asset type assertion failed")
-	test.DeepEqual(t, assetName, asset.Name, "name not correct")
+	assert.Assert(t, ok, "asset type assertion failed")
+	assert.Equal(t, assetName, asset.Name, "name not correct")
 	// Still should be old image as asset is not replaced
-	test.DeepEqual(t, assetImage, asset.Image, "image not correct")
+	assert.Equal(t, assetImage, asset.Image, "image not correct")
 }
 
 func lenAssets(st *store) int {

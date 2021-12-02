@@ -2,7 +2,7 @@ package naming
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -31,7 +31,7 @@ func TestIsValidName(t *testing.T) {
 			testName,
 			func(t *testing.T) {
 				result := IsValidName(name)
-				test.DeepEqual(t, expected, result, "is valid name")
+				assert.Equal(t, expected, result, "is valid name")
 			})
 	}
 }

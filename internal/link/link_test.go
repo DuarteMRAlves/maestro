@@ -1,7 +1,7 @@
 package link
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/test"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -28,27 +28,11 @@ func TestLink_Clone(t *testing.T) {
 		TargetField: oldTargetField,
 	}
 	c := s.Clone()
-	test.DeepEqual(t, oldName, c.Name, "cloned old name")
-	test.DeepEqual(
-		t,
-		oldSourceStage,
-		c.SourceStage,
-		"cloned old source stage")
-	test.DeepEqual(
-		t,
-		oldSourceField,
-		c.SourceField,
-		"cloned old source field")
-	test.DeepEqual(
-		t,
-		oldTargetStage,
-		c.TargetStage,
-		"cloned old target stage")
-	test.DeepEqual(
-		t,
-		oldTargetField,
-		c.TargetField,
-		"cloned old target field")
+	assert.Equal(t, oldName, c.Name, "cloned old name")
+	assert.Equal(t, oldSourceStage, c.SourceStage, "cloned old source stage")
+	assert.Equal(t, oldSourceField, c.SourceField, "cloned old source field")
+	assert.Equal(t, oldTargetStage, c.TargetStage, "cloned old target stage")
+	assert.Equal(t, oldTargetField, c.TargetField, "cloned old target field")
 
 	c.Name = newName
 	c.SourceStage = newSourceStage
@@ -56,47 +40,15 @@ func TestLink_Clone(t *testing.T) {
 	c.TargetStage = newTargetStage
 	c.TargetField = newTargetField
 
-	test.DeepEqual(t, oldName, s.Name, "source old name")
-	test.DeepEqual(
-		t,
-		oldSourceStage,
-		s.SourceStage,
-		"source old source stage")
-	test.DeepEqual(
-		t,
-		oldSourceField,
-		s.SourceField,
-		"source old source field")
-	test.DeepEqual(
-		t,
-		oldTargetStage,
-		s.TargetStage,
-		"source old target stage")
-	test.DeepEqual(
-		t,
-		oldTargetField,
-		s.TargetField,
-		"source old target field")
+	assert.Equal(t, oldName, s.Name, "source old name")
+	assert.Equal(t, oldSourceStage, s.SourceStage, "source old source stage")
+	assert.Equal(t, oldSourceField, s.SourceField, "source old source field")
+	assert.Equal(t, oldTargetStage, s.TargetStage, "source old target stage")
+	assert.Equal(t, oldTargetField, s.TargetField, "source old target field")
 
-	test.DeepEqual(t, newName, c.Name, "cloned new name")
-	test.DeepEqual(
-		t,
-		newSourceStage,
-		c.SourceStage,
-		"cloned new source stage")
-	test.DeepEqual(
-		t,
-		newSourceField,
-		c.SourceField,
-		"cloned new source field")
-	test.DeepEqual(
-		t,
-		newTargetStage,
-		c.TargetStage,
-		"cloned new target stage")
-	test.DeepEqual(
-		t,
-		newTargetField,
-		c.TargetField,
-		"cloned new target field")
+	assert.Equal(t, newName, c.Name, "cloned new name")
+	assert.Equal(t, newSourceStage, c.SourceStage, "cloned new source stage")
+	assert.Equal(t, newSourceField, c.SourceField, "cloned new source field")
+	assert.Equal(t, newTargetStage, c.TargetStage, "cloned new target stage")
+	assert.Equal(t, newTargetField, c.TargetField, "cloned new target field")
 }
