@@ -1,25 +1,44 @@
 package create
 
 import (
-	"fmt"
+	"context"
+	"github.com/DuarteMRAlves/maestro/internal/cli/client"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
+	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
+	"time"
 )
 
-var createOpts = struct {
-	addr  string
+// Flags store the flags defined by the user when executing the create
+// command.
+type Flags struct {
+	addr string
+
 	files []string
-}{}
+}
 
 func NewCmdCreate() *cobra.Command {
+	flags := &Flags{}
+
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create resources of a given type",
 		Args:  cobra.MaximumNArgs(0),
-		Run:   RunCreate,
+		Run: func(cmd *cobra.Command, _ []string) {
+			err := validate(flags)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = execute(flags)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+			}
+		},
 	}
 
-	addAddrFlag(cmd, &createOpts.addr, addrHelp)
-	addFilesFlag(cmd, &createOpts.files, fileHelp)
+	addFlags(cmd, flags)
 
 	// Subcommands
 	cmd.AddCommand(NewCmdCreateAsset())
@@ -29,9 +48,49 @@ func NewCmdCreate() *cobra.Command {
 	return cmd
 }
 
-func RunCreate(_ *cobra.Command, _ []string) {
-	err := createFromFiles(createOpts.files, createOpts.addr, "")
-	if err != nil {
-		fmt.Printf("unable to create resources: %v\n", err)
+func addFlags(cmd *cobra.Command, flags *Flags) {
+	addAddrFlag(cmd, &flags.addr, addrHelp)
+	addFilesFlag(cmd, &flags.files, fileHelp)
+}
+
+func validate(flags *Flags) error {
+	// In create, we only accept files
+	if len(flags.files) == 0 {
+		return errdefs.InvalidArgumentWithMsg("please specify input files")
 	}
+	return nil
+}
+
+func execute(flags *Flags) error {
+	parsed, err := resources.ParseFiles(flags.files)
+	if err != nil {
+		return err
+	}
+	if err = resources.IsValidKinds(parsed); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	assets := resources.FilterAssets(parsed)
+	stages := resources.FilterStages(parsed)
+	links := resources.FilterLinks(parsed)
+
+	orderedResourcesSize := len(assets) + len(stages) + len(links)
+
+	resourcesByKind := make([]*resources.Resource, 0, orderedResourcesSize)
+
+	resourcesByKind = append(resourcesByKind, assets...)
+	resourcesByKind = append(resourcesByKind, stages...)
+	resourcesByKind = append(resourcesByKind, links...)
+
+	for _, r := range resourcesByKind {
+		if err := client.CreateResource(ctx, r, flags.addr); err != nil {
+			return err
+		}
+	}
+	return nil
 }
