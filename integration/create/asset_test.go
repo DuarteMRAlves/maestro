@@ -1,12 +1,14 @@
 package create
 
 import (
+	"context"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestCreateAssetFromCli(t *testing.T) {
@@ -29,6 +31,12 @@ func TestCreateAssetFromCli(t *testing.T) {
 		Name:  "asset",
 		Image: "image",
 	}
-	err = client.CreateAsset(asset, address)
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	err = client.CreateAsset(ctx, asset, address)
 	assert.NilError(t, err, "error is %v", err)
 }

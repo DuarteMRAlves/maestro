@@ -1,11 +1,13 @@
 package create
 
 import (
+	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 const (
@@ -60,7 +62,12 @@ func runCreateAsset(cmd *cobra.Command, args []string) {
 			Name:  args[0],
 			Image: createAssetOpts.image,
 		}
-		err := client.CreateAsset(asset, createAssetOpts.addr)
+
+		ctx, cancel := context.WithTimeout(
+			context.Background(),
+			time.Second)
+		defer cancel()
+		err := client.CreateAsset(ctx, asset, createAssetOpts.addr)
 
 		if err != nil {
 			fmt.Printf("Unable to create asset: %v\n", err)

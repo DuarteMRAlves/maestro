@@ -1,11 +1,13 @@
 package create
 
 import (
+	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 const (
@@ -108,7 +110,12 @@ func runCreateLink(cmd *cobra.Command, args []string) {
 			TargetStage: createLinkOpts.targetStage,
 			TargetField: createLinkOpts.targetField,
 		}
-		err = client.CreateLink(link, createLinkOpts.addr)
+
+		ctx, cancel := context.WithTimeout(
+			context.Background(),
+			time.Second)
+		defer cancel()
+		err = client.CreateLink(ctx, link, createLinkOpts.addr)
 		if err != nil {
 			fmt.Printf("unable to create link: %v\n", err)
 			return

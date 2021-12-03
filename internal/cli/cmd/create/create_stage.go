@@ -1,11 +1,13 @@
 package create
 
 import (
+	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 const (
@@ -95,7 +97,12 @@ func runCreateStage(cmd *cobra.Command, args []string) {
 			Service: createStageOpts.service,
 			Method:  createStageOpts.method,
 		}
-		err = client.CreateStage(stage, createStageOpts.addr)
+		ctx, cancel := context.WithTimeout(
+			context.Background(),
+			time.Second)
+		defer cancel()
+
+		err = client.CreateStage(ctx, stage, createStageOpts.addr)
 		if err != nil {
 			fmt.Printf("unable to create stage: %v\n", err)
 			return
