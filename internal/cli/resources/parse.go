@@ -14,7 +14,7 @@ func ParseFiles(files []string) ([]*Resource, error) {
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
-			return nil, errdefs.InternalWithMsg("read file %v: %v", f, err)
+			return nil, errdefs.InvalidArgumentWithError(err)
 		}
 		dataResources, err := ParseBytes(data)
 		if err != nil {

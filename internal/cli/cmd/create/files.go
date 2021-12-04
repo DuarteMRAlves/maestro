@@ -3,7 +3,7 @@ package create
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	resources "github.com/DuarteMRAlves/maestro/internal/cli/resources"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"time"
 )
 
