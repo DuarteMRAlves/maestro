@@ -1,0 +1,6 @@
+kind: stage
+spec:
+  name: stage-1
+  asset: unknown-asset
+  service: Service1
+  method: Method1

@@ -23,7 +23,7 @@ func TestCreate(t *testing.T) {
 		{
 			"multiple resources in a single file",
 			"localhost:50051",
-			[]string{"-f", "../resources/resources.yml"},
+			[]string{"-f", "../resources/create/resources.yml"},
 			"",
 		},
 		{
@@ -31,11 +31,11 @@ func TestCreate(t *testing.T) {
 			"localhost:50051",
 			[]string{
 				"-f",
-				"../resources/stages.yml",
+				"../resources/create/stages.yml",
 				"-f",
-				"../resources/links.yml",
+				"../resources/create/links.yml",
 				"-f",
-				"../resources/assets.yml",
+				"../resources/create/assets.yml",
 			},
 			"",
 		},
@@ -44,7 +44,7 @@ func TestCreate(t *testing.T) {
 			"localhost:50052",
 			[]string{
 				"-f",
-				"../resources/resources.yml",
+				"../resources/create/resources.yml",
 				"--addr",
 				"localhost:50052",
 			},
@@ -55,6 +55,36 @@ func TestCreate(t *testing.T) {
 			"localhost:50051",
 			[]string{},
 			"invalid argument: please specify input files",
+		},
+		{
+			"no such file",
+			"localhost:50051",
+			[]string{"-f", "missing_file.yml"},
+			"invalid argument: open missing_file.yml: no such file or directory",
+		},
+		{
+			"invalid kind",
+			"localhost:50051",
+			[]string{"-f", "../resources/create/invalid_kind.yml"},
+			"invalid argument: invalid kind 'invalid-kind'",
+		},
+		{
+			"invalid specs",
+			"localhost:50051",
+			[]string{"-f", "../resources/create/invalid_specs.yml"},
+			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
+		},
+		{
+			"asset not found",
+			"localhost:50051",
+			[]string{"-f", "../resources/create/asset_not_found.yml"},
+			"not found: asset 'unknown-asset' not found",
+		},
+		{
+			"stage not found",
+			"localhost:50051",
+			[]string{"-f", "../resources/create/stage_not_found.yml"},
+			"not found: target stage 'unknown-stage' not found",
 		},
 	}
 	for _, test := range tests {

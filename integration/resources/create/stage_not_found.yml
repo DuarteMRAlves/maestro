@@ -1,0 +1,14 @@
+kind: asset
+spec:
+  name: asset-1
+---
+kind: stage
+spec:
+  name: stage-1
+  asset: asset-1
+---
+kind: link
+spec:
+  name: link-1
+  source_stage: stage-1
+  target_stage: unknown-stage

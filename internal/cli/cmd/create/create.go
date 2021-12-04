@@ -70,11 +70,6 @@ func execute(flags *Flags) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Second)
-	defer cancel()
-
 	assets := resources.FilterAssets(parsed)
 	stages := resources.FilterStages(parsed)
 	links := resources.FilterLinks(parsed)
@@ -86,6 +81,11 @@ func execute(flags *Flags) error {
 	resourcesByKind = append(resourcesByKind, assets...)
 	resourcesByKind = append(resourcesByKind, stages...)
 	resourcesByKind = append(resourcesByKind, links...)
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
 
 	for _, r := range resourcesByKind {
 		if err := client.CreateResource(ctx, r, flags.addr); err != nil {

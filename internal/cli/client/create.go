@@ -62,7 +62,7 @@ func CreateAsset(
 
 	_, err := c.Create(ctx, a)
 
-	return err
+	return ErrorFromGrpcError(err)
 }
 
 func CreateStage(
@@ -83,7 +83,7 @@ func CreateStage(
 
 	_, err := c.Create(ctx, s)
 
-	return err
+	return ErrorFromGrpcError(err)
 }
 
 func CreateLink(
@@ -105,5 +105,5 @@ func CreateLink(
 
 	_, err := c.Create(ctx, l)
 
-	return err
+	return ErrorFromGrpcError(err)
 }

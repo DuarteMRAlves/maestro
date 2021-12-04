@@ -13,7 +13,7 @@ const (
 func IsValidKinds(resources []*Resource) error {
 	for _, r := range resources {
 		if !IsValidKind(r.Kind) {
-			return errdefs.InvalidArgumentWithMsg("invalid kind %v", r.Kind)
+			return errdefs.InvalidArgumentWithMsg("invalid kind '%v'", r.Kind)
 		}
 	}
 	return nil
