@@ -32,3 +32,7 @@ func (s *Server) ServeGrpc(lis net.Listener) error {
 func (s *Server) GracefulStopGrpc() {
 	s.grpcServer.GracefulStop()
 }
+
+func (s *Server) StopGrpc() {
+	s.grpcServer.Stop()
+}
