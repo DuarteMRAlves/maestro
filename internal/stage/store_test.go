@@ -22,7 +22,7 @@ func TestStore_Create(t *testing.T) {
 			Method:  stageMethod,
 		},
 		{
-			Name:    stageName,
+			Name:    "",
 			Asset:   "",
 			Service: "",
 			Method:  "",

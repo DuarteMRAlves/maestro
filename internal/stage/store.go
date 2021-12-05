@@ -3,7 +3,6 @@ package stage
 import (
 	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"sync"
 )
 
@@ -24,10 +23,6 @@ func NewStore() Store {
 func (st *store) Create(config *Stage) error {
 	if ok, err := assert.ArgNotNil(config, "config"); !ok {
 		return err
-	}
-
-	if !naming.IsValidName(config.Name) {
-		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 
 	s := config.Clone()
