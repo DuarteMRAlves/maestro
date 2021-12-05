@@ -24,7 +24,7 @@ func TestStore_Create(t *testing.T) {
 			TargetField: linkTargetField,
 		},
 		{
-			Name:        "",
+			Name:        linkName,
 			SourceStage: "",
 			SourceField: "",
 			TargetStage: "",

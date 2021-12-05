@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-// TestCreateStageWithServer performs integration testing on the CreateStage
+// TestCreateLinkWithServer performs integration testing on the CreateLink
 // command considering operations that require the server to be running.
 // It runs a maestro server and then executes a create asset command with
 // predetermined arguments, verifying its output.
-func TestCreateStageWithServer(t *testing.T) {
+func TestCreateLinkWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		serverAddr  string
@@ -27,48 +27,82 @@ func TestCreateStageWithServer(t *testing.T) {
 		expectedOut string
 	}{
 		{
-			"create a stage with all arguments",
+			"create a link with all arguments",
 			"localhost:50051",
 			[]string{
-				"stage-name",
-				"--asset",
-				"asset-name",
-				"--service",
-				"ServiceName",
-				"--method",
-				"MethodName",
+				"link-name",
+				"--source-stage",
+				"source-name",
+				"--source-field",
+				"SourceField",
+				"--target-stage",
+				"target-name",
+				"--target-field",
+				"TargetField",
 			},
 			"",
 		},
 		{
-			"create a stage with required arguments",
+			"create a link with required arguments",
 			"localhost:50051",
-			[]string{"stage-name", "--asset", "asset-name"},
+			[]string{
+				"link-name",
+				"--source-stage",
+				"source-name",
+				"--target-stage",
+				"target-name",
+			},
 			"",
 		},
 		{
-			"create an stage on custom address",
+			"create a link on custom address",
 			"localhost:50052",
 			[]string{
-				"stage-name",
-				"--asset",
-				"asset-name",
+				"link-name",
+				"--source-stage",
+				"source-name",
+				"--target-stage",
+				"target-name",
 				"--addr",
 				"localhost:50052",
 			},
 			"",
 		},
 		{
-			"create a stage with invalid name",
+			"create a link with invalid name",
 			"localhost:50051",
-			[]string{"invalid--name", "--asset", "asset-name"},
+			[]string{
+				"invalid--name",
+				"--source-stage",
+				"source-name",
+				"--target-stage",
+				"target-name",
+			},
 			"invalid argument: invalid name 'invalid--name'",
 		},
 		{
-			"create a stage no such asset",
+			"create a link no such source stage",
 			"localhost:50051",
-			[]string{"stage-name", "--asset", "does-not-exist"},
-			"not found: asset 'does-not-exist' not found",
+			[]string{
+				"link-name",
+				"--source-stage",
+				"does-not-exist",
+				"--target-stage",
+				"target-name",
+			},
+			"not found: source stage 'does-not-exist' not found",
+		},
+		{
+			"create a link no such target stage",
+			"localhost:50051",
+			[]string{
+				"link-name",
+				"--source-stage",
+				"source-name",
+				"--target-stage",
+				"does-not-exist",
+			},
+			"not found: target stage 'does-not-exist' not found",
 		},
 	}
 	for _, test := range tests {
@@ -93,21 +127,41 @@ func TestCreateStageWithServer(t *testing.T) {
 				}()
 
 				// Create asset before executing command
+				testResources := []*resources.Resource{
+					{
+						Kind: "asset",
+						Spec: map[string]string{"name": "asset-name"},
+					},
+					{
+						Kind: "stage",
+						Spec: map[string]string{
+							"name":  "source-name",
+							"asset": "asset-name",
+						},
+					},
+					{
+						Kind: "stage",
+						Spec: map[string]string{
+							"name":  "target-name",
+							"asset": "asset-name",
+						},
+					},
+				}
 				ctx, cancel := context.WithTimeout(
 					context.Background(),
 					time.Second)
 				defer cancel()
 
-				assert.NilError(
-					t,
-					client.CreateAsset(
-						ctx,
-						&resources.AssetResource{Name: "asset-name"},
-						test.serverAddr),
-					"create asset error")
+				for _, r := range testResources {
+					assert.NilError(
+						t,
+						client.CreateResource(ctx, r, test.serverAddr),
+						"create resource error")
+				}
 
+				// Create link
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateStage()
+				cmd := create.NewCmdCreateLink()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -119,9 +173,9 @@ func TestCreateStageWithServer(t *testing.T) {
 	}
 }
 
-// TestCreateStageWithoutServer performs integration testing on the CreateStage
+// TestCreateLinkWithoutServer performs integration testing on the CreateStage
 // command with sets of flags that do no required the server to be running.
-func TestCreateStageWithoutServer(t *testing.T) {
+func TestCreateLinkWithoutServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
@@ -130,19 +184,24 @@ func TestCreateStageWithoutServer(t *testing.T) {
 		{
 			"no name",
 			[]string{},
-			"invalid argument: please specify a stage name",
+			"invalid argument: please specify a link name",
 		},
 		{
-			"no asset",
-			[]string{"stage-name"},
-			"invalid argument: please specify an asset",
+			"no source stage",
+			[]string{"link-name", "--target-stage", "target-name"},
+			"invalid argument: please specify a source stage",
+		},
+		{
+			"no target stage",
+			[]string{"link-name", "--source-stage", "source-name"},
+			"invalid argument: please specify a target stage",
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateStage()
+				cmd := create.NewCmdCreateLink()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()

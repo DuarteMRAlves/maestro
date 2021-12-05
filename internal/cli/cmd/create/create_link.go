@@ -2,10 +2,10 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
 	"time"
 )
@@ -26,101 +26,98 @@ const (
 		"If not specified the entire message is used."
 )
 
-var createLinkOpts = &struct {
-	addr        string
-	files       []string
+// CreateLinkOptions stores the flags for the CreateLink command and executes it
+type CreateLinkOptions struct {
+	addr string
+
+	name        string
 	sourceStage string
 	sourceField string
 	targetStage string
 	targetField string
-}{}
+}
 
+// NewCmdCreateLink returns a new command that creates a link from command line
+// arguments
 func NewCmdCreateLink() *cobra.Command {
+	o := &CreateLinkOptions{}
+
 	cmd := &cobra.Command{
 		Use:   "link name",
 		Short: "create a new link",
-		Args:  cobra.ExactArgs(1),
-		Run:   runCreateLink,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := o.complete(args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.run()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+		},
 	}
 
-	addAddrFlag(cmd, &createLinkOpts.addr, addrHelp)
-	addFilesFlag(cmd, &createLinkOpts.files, addrHelp)
-
-	cmd.Flags().StringVar(
-		&createLinkOpts.sourceStage,
-		sourceStageFlag,
-		"",
-		sourceStageUsage)
-
-	cmd.Flags().StringVar(
-		&createLinkOpts.sourceField,
-		sourceFieldFlag,
-		"",
-		sourceFieldUsage)
-
-	cmd.Flags().StringVar(
-		&createLinkOpts.targetStage,
-		targetStageFlag,
-		"",
-		targetStageUsage)
-
-	cmd.Flags().StringVar(
-		&createLinkOpts.targetField,
-		targetFieldFlag,
-		"",
-		targetFieldUsage)
+	o.addFlags(cmd)
 
 	return cmd
 }
 
-func runCreateLink(cmd *cobra.Command, args []string) {
-	if cmd.Flag(fileFull).Changed {
-		util.WarnArgsIgnore(args, "creating from file")
-		util.WarnFlagsIgnore(
-			cmd,
-			[]string{
-				sourceStageFlag,
-				sourceFieldFlag,
-				targetStageFlag,
-				targetFieldFlag,
-			},
-			"creating from file")
-		err := createFromFiles(
-			createLinkOpts.files,
-			createLinkOpts.addr,
-			resources.LinkKind)
-		if err != nil {
-			fmt.Printf("unable to create link: %v", err)
-		}
-	} else {
-		if len(args) != 1 {
-			fmt.Printf("unable to create link: expected name argument")
-			return
-		}
-		err := util.VerifyFlagsChanged(
-			cmd,
-			[]string{sourceStageFlag, targetStageFlag})
-		if err != nil {
-			fmt.Printf("unable to create link: %v", err)
-		}
-		link := &resources.LinkResource{
-			Name:        args[0],
-			SourceStage: createLinkOpts.sourceStage,
-			SourceField: createLinkOpts.sourceField,
-			TargetStage: createLinkOpts.targetStage,
-			TargetField: createLinkOpts.targetField,
-		}
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// run the CreateLink command
+func (o *CreateLinkOptions) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr, addrHelp)
 
-		ctx, cancel := context.WithTimeout(
-			context.Background(),
-			time.Second)
-		defer cancel()
-		err = client.CreateLink(ctx, link, createLinkOpts.addr)
-		if err != nil {
-			fmt.Printf("unable to create link: %v\n", err)
-			return
-		}
-		fmt.Printf("link '%v' created\n", args[0])
+	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
+	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
+	cmd.Flags().StringVar(&o.targetStage, targetStageFlag, "", targetStageUsage)
+	cmd.Flags().StringVar(&o.targetField, targetFieldFlag, "", targetFieldUsage)
+}
+
+// complete fills any remaining information necessary to run the command that is
+// not specified by the user flags and is in the positional arguments
+func (o *CreateLinkOptions) complete(args []string) error {
+	if len(args) == 1 {
+		o.name = args[0]
+	}
+	return nil
+}
+
+// validate verifies if the user options are valid and all necessary information
+// for the command to run is present
+func (o *CreateLinkOptions) validate() error {
+	if o.name == "" {
+		return errdefs.InvalidArgumentWithMsg("please specify a link name")
+	}
+	if o.sourceStage == "" {
+		return errdefs.InvalidArgumentWithMsg("please specify a source stage")
+	}
+	if o.targetStage == "" {
+		return errdefs.InvalidArgumentWithMsg("please specify a target stage")
+	}
+	return nil
+}
+
+// CreateLinkOptions runs a CreateLink command with the specified options.
+// It assumes the options were previously validated.
+func (o *CreateLinkOptions) run() error {
+	link := &resources.LinkResource{
+		Name:        o.name,
+		SourceStage: o.sourceStage,
+		SourceField: o.sourceField,
+		TargetStage: o.targetStage,
+		TargetField: o.targetField,
 	}
 
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+	return client.CreateLink(ctx, link, o.addr)
 }
