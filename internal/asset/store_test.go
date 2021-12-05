@@ -11,6 +11,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 	tests := []*Asset{
 		{Name: assetName},
 		{Name: assetName, Image: assetImage},
+		{Name: "", Image: ""},
 	}
 	for _, a := range tests {
 		testName := fmt.Sprintf("a='%v'", a)
@@ -23,7 +24,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 				e := st.Create(a)
 				assert.NilError(t, e, "error not nil")
 				assert.Equal(t, 1, lenAssets(st), "store size")
-				stored, ok := st.assets.Load(assetName)
+				stored, ok := st.assets.Load(a.Name)
 				assert.Assert(t, ok, "asset does not exist")
 				asset, ok := stored.(*Asset)
 				assert.Assert(t, ok, "asset type assertion failed")
@@ -41,27 +42,6 @@ func TestStore_CreateInvalidArguments(t *testing.T) {
 		{
 			nil,
 			"'config' is nil",
-		},
-		{
-			&Asset{
-				// No name will create empty string
-				Image: assetImage,
-			},
-			"invalid name ''",
-		},
-		{
-			&Asset{
-				Name:  "",
-				Image: assetImage,
-			},
-			"invalid name ''",
-		},
-		{
-			&Asset{
-				Name:  "invalid-name/",
-				Image: assetImage,
-			},
-			"invalid name 'invalid-name/'",
 		},
 	}
 
