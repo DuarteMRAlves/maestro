@@ -23,7 +23,7 @@ const (
 	methodFlag  = "method"
 	methodShort = "m"
 	methodUsage = "name of the grpc method to call " +
-		"(if not specified the service must only have on method to execute)"
+		"(if not specified the service must only have on method to run)"
 )
 
 var createStageOpts = &struct {

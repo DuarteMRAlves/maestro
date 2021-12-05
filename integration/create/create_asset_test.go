@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-// TestCreateWithServer performs integration testing on the Create command
-// considering operations that require the server to be running.
-// It runs a maestro server and executes the command with predetermined
-// arguments, verifying its output.
-func TestCreateWithServer(t *testing.T) {
+// TestCreateAssetWithServer performs integration testing on the CreateAsset
+// command considering operations that require the server to be running.
+// It runs a maestro server and then executes a create asset command with
+// predetermined arguments, verifying its output.
+func TestCreateAssetWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		serverAddr  string
@@ -24,46 +24,28 @@ func TestCreateWithServer(t *testing.T) {
 		expectedOut string
 	}{
 		{
-			"multiple resources in a single file",
+			"create an asset with an image",
 			"localhost:50051",
-			[]string{"-f", "../resources/create/resources.yml"},
+			[]string{"asset-name", "--image", "image-name"},
 			"",
 		},
 		{
-			"multiple resources in multiple files",
+			"create an asset without an image",
 			"localhost:50051",
-			[]string{
-				"-f",
-				"../resources/create/stages.yml",
-				"-f",
-				"../resources/create/links.yml",
-				"-f",
-				"../resources/create/assets.yml",
-			},
+			[]string{"asset-name"},
 			"",
 		},
 		{
-			"custom address",
+			"create an asset on custom address",
 			"localhost:50052",
-			[]string{
-				"-f",
-				"../resources/create/resources.yml",
-				"--addr",
-				"localhost:50052",
-			},
+			[]string{"asset-name", "--addr", "localhost:50052"},
 			"",
 		},
 		{
-			"asset not found",
+			"create an asset invalid name",
 			"localhost:50051",
-			[]string{"-f", "../resources/create/asset_not_found.yml"},
-			"not found: asset 'unknown-asset' not found",
-		},
-		{
-			"stage not found",
-			"localhost:50051",
-			[]string{"-f", "../resources/create/stage_not_found.yml"},
-			"not found: target stage 'unknown-stage' not found",
+			[]string{"invalid--name"},
+			"invalid argument: invalid name 'invalid--name'",
 		},
 	}
 	for _, test := range tests {
@@ -88,7 +70,7 @@ func TestCreateWithServer(t *testing.T) {
 				}()
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreate()
+				cmd := create.NewCmdCreateAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -100,33 +82,18 @@ func TestCreateWithServer(t *testing.T) {
 	}
 }
 
-// TestCreateWithServer performs integration testing on the Create command
-// considering operations that do not require the server to be running.
-func TestCreateWithoutServer(t *testing.T) {
+// TestCreateAssetWithoutServer performs integration testing on the CreateAsset
+// command with sets of flags that do no required the server to be running.
+func TestCreateAssetWithoutServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
 		expectedOut string
 	}{
 		{
-			"no files",
+			"no name",
 			[]string{},
-			"invalid argument: please specify input files",
-		},
-		{
-			"no such file",
-			[]string{"-f", "missing_file.yml"},
-			"invalid argument: open missing_file.yml: no such file or directory",
-		},
-		{
-			"invalid kind",
-			[]string{"-f", "../resources/create/invalid_kind.yml"},
-			"invalid argument: invalid kind 'invalid-kind'",
-		},
-		{
-			"invalid specs",
-			[]string{"-f", "../resources/create/invalid_specs.yml"},
-			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
+			"invalid argument: please specify the asset name",
 		},
 	}
 	for _, test := range tests {
@@ -135,7 +102,7 @@ func TestCreateWithoutServer(t *testing.T) {
 				fmt.Println(test.name)
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreate()
+				cmd := create.NewCmdCreateAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()
