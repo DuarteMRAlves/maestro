@@ -31,7 +31,6 @@ func NewCmdCreateAsset() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "asset NAME",
 		Short: "create a new Asset",
-		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(args)
 			if err != nil {
