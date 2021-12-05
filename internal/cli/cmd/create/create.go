@@ -10,35 +10,35 @@ import (
 	"time"
 )
 
-// Flags store the flags defined by the user when executing the create
-// command.
-type Flags struct {
+// CreateOptions store the flags defined by the user when executing the create
+// command and then executes the command.
+type CreateOptions struct {
 	addr string
 
 	files []string
 }
 
 func NewCmdCreate() *cobra.Command {
-	flags := &Flags{}
+	o := &CreateOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create resources of a given type",
 		Args:  cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, _ []string) {
-			err := validate(flags)
+			err := o.validate()
 			if err != nil {
 				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
-			err = execute(flags)
+			err = o.run()
 			if err != nil {
 				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 			}
 		},
 	}
 
-	addFlags(cmd, flags)
+	o.addFlags(cmd)
 
 	// Subcommands
 	cmd.AddCommand(NewCmdCreateAsset())
@@ -48,21 +48,25 @@ func NewCmdCreate() *cobra.Command {
 	return cmd
 }
 
-func addFlags(cmd *cobra.Command, flags *Flags) {
-	addAddrFlag(cmd, &flags.addr, addrHelp)
-	addFilesFlag(cmd, &flags.files, fileHelp)
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// parse the command line arguments and run the command
+func (o *CreateOptions) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr, addrHelp)
+	addFilesFlag(cmd, &o.files, fileHelp)
 }
 
-func validate(flags *Flags) error {
+// validate verifies if the user inputs are valid and there are no conflits
+func (o *CreateOptions) validate() error {
 	// In create, we only accept files
-	if len(flags.files) == 0 {
+	if len(o.files) == 0 {
 		return errdefs.InvalidArgumentWithMsg("please specify input files")
 	}
 	return nil
 }
 
-func execute(flags *Flags) error {
-	parsed, err := resources.ParseFiles(flags.files)
+// run executes the Create command
+func (o *CreateOptions) run() error {
+	parsed, err := resources.ParseFiles(o.files)
 	if err != nil {
 		return err
 	}
@@ -88,7 +92,7 @@ func execute(flags *Flags) error {
 	defer cancel()
 
 	for _, r := range resourcesByKind {
-		if err := client.CreateResource(ctx, r, flags.addr); err != nil {
+		if err := client.CreateResource(ctx, r, o.addr); err != nil {
 			return err
 		}
 	}
