@@ -87,7 +87,7 @@ func runCreateLink(cmd *cobra.Command, args []string) {
 			"creating from file")
 		err := createFromFiles(
 			createLinkOpts.files,
-			createStageOpts.addr,
+			createLinkOpts.addr,
 			resources.LinkKind)
 		if err != nil {
 			fmt.Printf("unable to create link: %v", err)

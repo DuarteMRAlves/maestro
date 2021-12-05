@@ -2,10 +2,10 @@ package create
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
 	"time"
 )
@@ -26,87 +26,95 @@ const (
 		"(if not specified the service must only have on method to run)"
 )
 
-var createStageOpts = &struct {
-	addr    string
-	files   []string
+// CreateStageOptions stores the flags for the CreateStage command and executes it
+type CreateStageOptions struct {
+	addr string
+
+	name    string
 	asset   string
 	service string
 	method  string
-}{}
+}
 
+// NewCmdCreateStage returns a new command that creates a stage from command
+// line arguments
 func NewCmdCreateStage() *cobra.Command {
+	o := &CreateStageOptions{}
+
 	cmd := &cobra.Command{
 		Use:   "stage name",
 		Short: "create a new stage",
-		Args:  cobra.ExactArgs(1),
-		Run:   runCreateStage,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := o.complete(args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.run()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+		},
 	}
 
-	addAddrFlag(cmd, &createStageOpts.addr, addrHelp)
-	addFilesFlag(cmd, &createStageOpts.files, fileHelp)
-
-	cmd.Flags().StringVarP(
-		&createStageOpts.asset,
-		assetFlag,
-		assetShort,
-		"",
-		assetUsage)
-	cmd.Flags().StringVarP(
-		&createStageOpts.service,
-		serviceFlag,
-		serviceShort,
-		"",
-		serviceUsage)
-	cmd.Flags().StringVarP(
-		&createStageOpts.method,
-		methodFlag,
-		methodShort,
-		"",
-		methodUsage)
+	o.addFlags(cmd)
 
 	return cmd
 }
 
-func runCreateStage(cmd *cobra.Command, args []string) {
-	if cmd.Flag(fileFull).Changed {
-		util.WarnArgsIgnore(args, "creating from file")
-		util.WarnFlagsIgnore(
-			cmd,
-			[]string{assetFlag, serviceFlag, methodFlag},
-			"creating from file")
-		err := createFromFiles(
-			createStageOpts.files,
-			createStageOpts.addr,
-			resources.StageKind)
-		if err != nil {
-			fmt.Printf("unable to create resources: %v\n", err)
-		}
-	} else {
-		if len(args) != 1 {
-			fmt.Printf("unable to create stage: expected name argument")
-			return
-		}
-		err := util.VerifyFlagsChanged(cmd, []string{assetFlag})
-		if err != nil {
-			fmt.Printf("unable to create stage: %v", err)
-			return
-		}
-		stage := &resources.StageResource{
-			Name:    args[0],
-			Asset:   createStageOpts.asset,
-			Service: createStageOpts.service,
-			Method:  createStageOpts.method,
-		}
-		ctx, cancel := context.WithTimeout(
-			context.Background(),
-			time.Second)
-		defer cancel()
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// run the CreateStage command
+func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr, addrHelp)
 
-		err = client.CreateStage(ctx, stage, createStageOpts.addr)
-		if err != nil {
-			fmt.Printf("unable to create stage: %v\n", err)
-			return
-		}
-		fmt.Printf("stage '%v' created\n", args[0])
+	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
+	cmd.Flags().StringVarP(
+		&o.service,
+		serviceFlag,
+		serviceShort,
+		"",
+		serviceUsage)
+	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
+}
+
+// complete fills any remaining information necessary to run the command that is
+// not specified by the user flags and is in the positional arguments
+func (o *CreateStageOptions) complete(args []string) error {
+	if len(args) == 1 {
+		o.name = args[0]
 	}
+	return nil
+}
+
+// validate verifies if the user options are valid and all necessary information
+// for the command to run is present
+func (o *CreateStageOptions) validate() error {
+	if o.name == "" {
+		return errdefs.InvalidArgumentWithMsg("please specify a stage name")
+	}
+	if o.asset == "" {
+		return errdefs.InvalidArgumentWithMsg("please specify an asset")
+	}
+	return nil
+}
+
+func (o *CreateStageOptions) run() error {
+	stage := &resources.StageResource{
+		Name:    o.name,
+		Asset:   o.asset,
+		Service: o.service,
+		Method:  o.method,
+	}
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	return client.CreateStage(ctx, stage, o.addr)
 }
