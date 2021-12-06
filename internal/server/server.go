@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -23,7 +23,7 @@ type Server struct {
 }
 
 func (s *Server) ServeGrpc(lis net.Listener) error {
-	if ok, err := assert.Status(s.grpcServer != nil, grpcNotConfigured); !ok {
+	if ok, err := validate.Status(s.grpcServer != nil, grpcNotConfigured); !ok {
 		return err
 	}
 	return s.grpcServer.Serve(lis)

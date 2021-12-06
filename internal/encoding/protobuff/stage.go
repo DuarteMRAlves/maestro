@@ -2,9 +2,9 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 func MarshalStage(s *stage.Stage) *pb.Stage {
@@ -17,7 +17,7 @@ func MarshalStage(s *stage.Stage) *pb.Stage {
 }
 
 func UnmarshalStage(p *pb.Stage) (*stage.Stage, error) {
-	if ok, err := assert.ArgNotNil(p, "p"); !ok {
+	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, errdefs.InvalidArgumentWithError(err)
 	}
 	return &stage.Stage{

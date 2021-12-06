@@ -2,8 +2,8 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 func MarshalLink(l *link.Link) *pb.Link {
@@ -17,7 +17,7 @@ func MarshalLink(l *link.Link) *pb.Link {
 }
 
 func UnmarshalLink(p *pb.Link) (*link.Link, error) {
-	if ok, err := assert.ArgNotNil(p, "p"); !ok {
+	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
 	return &link.Link{

@@ -1,8 +1,8 @@
 package resources
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"reflect"
 	"sort"
 	"strings"
@@ -69,22 +69,22 @@ func validateMarshalResourceArgs(dst interface{}, src *Resource) error {
 		ok  bool
 		err error
 	)
-	if ok, err = assert.ArgNotNil(dst, "dst"); !ok {
+	if ok, err = validate.ArgNotNil(dst, "dst"); !ok {
 		return err
 	}
-	if ok, err = assert.ArgNotNil(src, "src"); !ok {
+	if ok, err = validate.ArgNotNil(src, "src"); !ok {
 		return err
 	}
 	ptrValue := reflect.ValueOf(dst)
 
-	ok, err = assert.ArgStatus(
+	ok, err = validate.ArgStatus(
 		ptrValue.Kind() == reflect.Ptr,
 		"dst must be a pointer")
 	if !ok {
 		return err
 	}
 	objValue := ptrValue.Elem()
-	ok, err = assert.ArgStatus(
+	ok, err = validate.ArgStatus(
 		objValue.Kind() == reflect.Struct && !ptrValue.IsNil(),
 		"underlying dst object must be a struct")
 	if !ok {

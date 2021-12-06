@@ -2,8 +2,8 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 func MarshalAsset(a *asset.Asset) *pb.Asset {
@@ -11,7 +11,7 @@ func MarshalAsset(a *asset.Asset) *pb.Asset {
 }
 
 func UnmarshalAsset(p *pb.Asset) (*asset.Asset, error) {
-	if ok, err := assert.ArgNotNil(p, "p"); !ok {
+	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
 	return &asset.Asset{

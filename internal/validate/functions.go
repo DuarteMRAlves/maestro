@@ -1,4 +1,4 @@
-package assert
+package validate
 
 import (
 	"fmt"
