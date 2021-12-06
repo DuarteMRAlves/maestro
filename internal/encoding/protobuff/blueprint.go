@@ -2,8 +2,8 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
@@ -23,7 +23,7 @@ func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
 }
 
 func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
-	if ok, err := assert.ArgNotNil(p, "p"); !ok {
+	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
 

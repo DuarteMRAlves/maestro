@@ -1,8 +1,8 @@
 package stage
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
 )
 
@@ -21,7 +21,7 @@ func NewStore() Store {
 }
 
 func (st *store) Create(config *Stage) error {
-	if ok, err := assert.ArgNotNil(config, "config"); !ok {
+	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
 

@@ -1,10 +1,10 @@
 package server
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/assert"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"log"
 )
 
@@ -26,7 +26,7 @@ func (s *Server) GetStage(query *stage.Stage) []*stage.Stage {
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
 // It returns an error if a condition is not met and nil otherwise.
 func (s *Server) validateCreateStageConfig(config *stage.Stage) error {
-	if ok, err := assert.ArgNotNil(config, "config"); !ok {
+	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
 	if !naming.IsValidName(config.Name) {
