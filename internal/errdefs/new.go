@@ -35,6 +35,28 @@ func InvalidArgumentWithMsg(format string, a ...interface{}) error {
 	return InvalidArgumentWithError(fmt.Errorf(format, a...))
 }
 
+func FailedPreconditionWithError(err error) error {
+	if err == nil || IsFailedPrecondition(err) {
+		return err
+	}
+	return failedPrecondition{err}
+}
+
+func FailedPreconditionWithMsg(format string, a ...interface{}) error {
+	return FailedPreconditionWithError(fmt.Errorf(format, a...))
+}
+
+func UnavailableWithError(err error) error {
+	if err == nil || IsUnavailable(err) {
+		return err
+	}
+	return unavailable{err}
+}
+
+func UnavailableWithMsg(format string, a ...interface{}) error {
+	return UnavailableWithError(fmt.Errorf(format, a...))
+}
+
 func InternalWithError(err error) error {
 	if err == nil || IsInternal(err) {
 		return err

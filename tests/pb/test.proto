@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
+
+package pb;
+
+service TestService {
+  rpc Unary(Request) returns (Reply);
+  rpc ClientStream(stream Request) returns (Reply);
+  rpc ServerStream(Request) returns (stream Reply);
+  rpc BidiStream(stream Request) returns (stream Reply);
+}
+
+message Request {
+  string stringField = 1;
+  repeated int64 repeatedField = 2;
+  repeated InnerMessage repeatedInnerMsg = 3;
+}
+
+message Reply {
+  double doubleField = 1;
+  InnerMessage innerMsg = 2;
+}
+
+message InnerMessage {
+  repeated string repeatedString = 1;
+}
