@@ -26,8 +26,5 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-      - name: Unit Tests
+      - name: Test internal package
         run: go test ./internal/...
-
-      - name: Integration Tests
-        run: go test ./integration/...

@@ -3,13 +3,11 @@ package create
 import (
 	"bytes"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/create"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
 	"testing"
-	"time"
 )
 
 // TestCreateAssetWithServer performs integration testing on the CreateAsset
@@ -63,14 +61,13 @@ func TestCreateAssetWithServer(t *testing.T) {
 					}
 				}()
 				defer func() {
-					s.GracefulStopGrpc()
-					// Wait a bit before forcefully stopping every call
-					time.Sleep(10 * time.Millisecond)
+					// Stop the server. Any calls in the test should be finished.
+					// If not, an error should be raised.
 					s.StopGrpc()
 				}()
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateAsset()
+				cmd := NewCmdCreateAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -100,7 +97,7 @@ func TestCreateAssetWithoutServer(t *testing.T) {
 		t.Run(
 			test.name, func(t *testing.T) {
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateAsset()
+				cmd := NewCmdCreateAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()

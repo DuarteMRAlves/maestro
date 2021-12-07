@@ -3,13 +3,11 @@ package create
 import (
 	"bytes"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/create"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
 	"testing"
-	"time"
 )
 
 // TestCreateWithServer performs integration testing on the Create command
@@ -26,7 +24,7 @@ func TestCreateWithServer(t *testing.T) {
 		{
 			"multiple resources in a single file",
 			"localhost:50051",
-			[]string{"-f", "../resources/create/resources.yml"},
+			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
 			"",
 		},
 		{
@@ -34,11 +32,11 @@ func TestCreateWithServer(t *testing.T) {
 			"localhost:50051",
 			[]string{
 				"-f",
-				"../resources/create/stages.yml",
+				"../../../../tests/resources/create/stages.yml",
 				"-f",
-				"../resources/create/links.yml",
+				"../../../../tests/resources/create/links.yml",
 				"-f",
-				"../resources/create/assets.yml",
+				"../../../../tests/resources/create/assets.yml",
 			},
 			"",
 		},
@@ -47,7 +45,7 @@ func TestCreateWithServer(t *testing.T) {
 			"localhost:50052",
 			[]string{
 				"-f",
-				"../resources/create/resources.yml",
+				"../../../../tests/resources/create/resources.yml",
 				"--addr",
 				"localhost:50052",
 			},
@@ -56,13 +54,19 @@ func TestCreateWithServer(t *testing.T) {
 		{
 			"asset not found",
 			"localhost:50051",
-			[]string{"-f", "../resources/create/asset_not_found.yml"},
+			[]string{
+				"-f",
+				"../../../../tests/resources/create/asset_not_found.yml",
+			},
 			"not found: asset 'unknown-asset' not found",
 		},
 		{
 			"stage not found",
 			"localhost:50051",
-			[]string{"-f", "../resources/create/stage_not_found.yml"},
+			[]string{
+				"-f",
+				"../../../../tests/resources/create/stage_not_found.yml",
+			},
 			"not found: target stage 'unknown-stage' not found",
 		},
 	}
@@ -81,14 +85,13 @@ func TestCreateWithServer(t *testing.T) {
 					}
 				}()
 				defer func() {
-					s.GracefulStopGrpc()
-					// Wait a bit before forcefully stopping every call
-					time.Sleep(10 * time.Millisecond)
+					// Stop the server. Any calls in the test should be finished.
+					// If not, an error should be raised.
 					s.StopGrpc()
 				}()
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreate()
+				cmd := NewCmdCreate()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -120,12 +123,18 @@ func TestCreateWithoutServer(t *testing.T) {
 		},
 		{
 			"invalid kind",
-			[]string{"-f", "../resources/create/invalid_kind.yml"},
+			[]string{
+				"-f",
+				"../../../../tests/resources/create/invalid_kind.yml",
+			},
 			"invalid argument: invalid kind 'invalid-kind'",
 		},
 		{
 			"invalid specs",
-			[]string{"-f", "../resources/create/invalid_specs.yml"},
+			[]string{
+				"-f",
+				"../../../../tests/resources/create/invalid_specs.yml",
+			},
 			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
 		},
 	}
@@ -135,7 +144,7 @@ func TestCreateWithoutServer(t *testing.T) {
 				fmt.Println(test.name)
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreate()
+				cmd := NewCmdCreate()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()

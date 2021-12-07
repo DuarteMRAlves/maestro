@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/create"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
@@ -120,9 +119,8 @@ func TestCreateLinkWithServer(t *testing.T) {
 					}
 				}()
 				defer func() {
-					s.GracefulStopGrpc()
-					// Wait a bit before forcefully stopping every call
-					time.Sleep(10 * time.Millisecond)
+					// Stop the server. Any calls in the test should be finished.
+					// If not, an error should be raised.
 					s.StopGrpc()
 				}()
 
@@ -161,7 +159,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 
 				// Create link
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateLink()
+				cmd := NewCmdCreateLink()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -201,7 +199,7 @@ func TestCreateLinkWithoutServer(t *testing.T) {
 		t.Run(
 			test.name, func(t *testing.T) {
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateLink()
+				cmd := NewCmdCreateLink()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()
