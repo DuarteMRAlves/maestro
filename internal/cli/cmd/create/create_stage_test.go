@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/create"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
@@ -86,9 +85,8 @@ func TestCreateStageWithServer(t *testing.T) {
 					}
 				}()
 				defer func() {
-					s.GracefulStopGrpc()
-					// Wait a bit before forcefully stopping every call
-					time.Sleep(10 * time.Millisecond)
+					// Stop the server. Any calls in the test should be finished.
+					// If not, an error should be raised.
 					s.StopGrpc()
 				}()
 
@@ -107,7 +105,7 @@ func TestCreateStageWithServer(t *testing.T) {
 					"create asset error")
 
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateStage()
+				cmd := NewCmdCreateStage()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -142,7 +140,7 @@ func TestCreateStageWithoutServer(t *testing.T) {
 		t.Run(
 			test.name, func(t *testing.T) {
 				b := bytes.NewBufferString("")
-				cmd := create.NewCmdCreateStage()
+				cmd := NewCmdCreateStage()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()
