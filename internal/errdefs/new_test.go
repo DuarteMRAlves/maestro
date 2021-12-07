@@ -71,6 +71,50 @@ func TestInvalidArgumentWithMessage(t *testing.T) {
 	assert.Equal(t, dummyErrMsg, msg, "error message")
 }
 
+func TestFailedPreconditionWithError(t *testing.T) {
+	var ok bool
+	err := FailedPreconditionWithError(dummyErr)
+	_, ok = err.(FailedPrecondition)
+	assert.Assert(t, ok, "FailedPrecondition interface")
+	_, ok = err.(failedPrecondition)
+	assert.Assert(t, ok, "failedPrecondition struct")
+	msg := err.Error()
+	assert.Equal(t, dummyErrMsg, msg, "error message")
+}
+
+func TestFailedPreconditionWithMsg(t *testing.T) {
+	var ok bool
+	err := FailedPreconditionWithMsg(dummyErrMsg)
+	_, ok = err.(FailedPrecondition)
+	assert.Assert(t, ok, "FailedPrecondition interface")
+	_, ok = err.(failedPrecondition)
+	assert.Assert(t, ok, "failedPrecondition struct")
+	msg := err.Error()
+	assert.Equal(t, dummyErrMsg, msg, "error message")
+}
+
+func TestUnavailableWithError(t *testing.T) {
+	var ok bool
+	err := UnavailableWithError(dummyErr)
+	_, ok = err.(Unavailable)
+	assert.Assert(t, ok, "Unavailable interface")
+	_, ok = err.(unavailable)
+	assert.Assert(t, ok, "unavailable struct")
+	msg := err.Error()
+	assert.Equal(t, dummyErrMsg, msg, "error message")
+}
+
+func TestUnavailableWithMsg(t *testing.T) {
+	var ok bool
+	err := UnavailableWithMsg(dummyErrMsg)
+	_, ok = err.(Unavailable)
+	assert.Assert(t, ok, "Unavailable interface")
+	_, ok = err.(unavailable)
+	assert.Assert(t, ok, "unavailable struct")
+	msg := err.Error()
+	assert.Equal(t, dummyErrMsg, msg, "error message")
+}
+
 func TestInternalWithError(t *testing.T) {
 	var ok bool
 	err := InternalWithError(dummyErr)

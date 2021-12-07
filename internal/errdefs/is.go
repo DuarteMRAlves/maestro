@@ -15,6 +15,16 @@ func IsInvalidArgument(err error) bool {
 	return ok
 }
 
+func IsFailedPrecondition(err error) bool {
+	_, ok := getImplementer(err).(FailedPrecondition)
+	return ok
+}
+
+func IsUnavailable(err error) bool {
+	_, ok := getImplementer(err).(Unavailable)
+	return ok
+}
+
 func IsInternal(err error) bool {
 	_, ok := getImplementer(err).(Internal)
 	return ok
@@ -31,7 +41,14 @@ type causer interface {
 
 func getImplementer(err error) error {
 	switch e := err.(type) {
-	case AlreadyExists, NotFound, InvalidArgument, Internal, Unknown:
+	case
+		AlreadyExists,
+		NotFound,
+		InvalidArgument,
+		FailedPrecondition,
+		Unavailable,
+		Internal,
+		Unknown:
 		return err
 	case causer:
 		return getImplementer(e.Cause())

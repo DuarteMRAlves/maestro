@@ -30,6 +30,26 @@ func (e invalidArgument) Cause() error {
 	return e.error
 }
 
+type failedPrecondition struct {
+	error
+}
+
+func (e failedPrecondition) FailedPrecondition() { /* Do nothing */ }
+
+func (e failedPrecondition) Cause() error {
+	return e.error
+}
+
+type unavailable struct {
+	error
+}
+
+func (e unavailable) Unavailable() { /* Do nothing */ }
+
+func (e unavailable) Cause() error {
+	return e.error
+}
+
 type internal struct {
 	error
 }

@@ -20,6 +20,16 @@ func TestIsInvalidArgument(t *testing.T) {
 	assert.Assert(t, IsInvalidArgument(err), "type assertion")
 }
 
+func TestIsFailedPrecondition(t *testing.T) {
+	err := failedPrecondition{dummyErr}
+	assert.Assert(t, IsFailedPrecondition(err), "type assertion")
+}
+
+func TestIsUnavailable(t *testing.T) {
+	err := unavailable{dummyErr}
+	assert.Assert(t, IsUnavailable(err), "type assertion")
+}
+
 func TestIsInternal(t *testing.T) {
 	err := internal{dummyErr}
 	assert.Assert(t, IsInternal(err), "type assertion")

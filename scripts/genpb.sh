@@ -13,20 +13,25 @@ while [ -h "$SOURCE" ] ;
 done
 PROJECT_DIR="$( cd -P "$( dirname "${SCRIPT_PATH}" )/.." && pwd )"
 
-PROTO_DIR="${PROJECT_DIR}/api/pb"
-cd "$PROTO_DIR"
+PROTO_DIRS=( "api/pb" "tests/pb" )
 
-echo "==> Removing old .pb.go files"
-# Ignore errdefs if no files are found
-set +e
-rm ./*.pb.go 2>/dev/null
-set -e
+for DIR in "${PROTO_DIRS[@]}"; do
 
-echo "==> Generating new .pb.go files"
-protoc \
-  -I. \
-  --go_out=. \
-  --go-grpc_out=. \
-  --go_opt=paths=source_relative \
-  --go-grpc_opt=paths=source_relative \
-  ./*.proto
+    ABS_DIR="${PROJECT_DIR}/${DIR}"
+    cd "$ABS_DIR"
+
+    echo "==> Removing old .pb.go files in $DIR"
+    # Ignore errdefs if no files are found
+    set +e
+    rm ./*.pb.go 2>/dev/null
+    set -e
+
+    echo "==> Generating new .pb.go files in $DIR"
+    protoc \
+        -I. \
+        --go_out=. \
+        --go-grpc_out=. \
+        --go_opt=paths=source_relative \
+        --go-grpc_opt=paths=source_relative \
+        ./*.proto
+done
