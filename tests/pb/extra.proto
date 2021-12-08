@@ -10,13 +10,13 @@ service ExtraService {
 
 message ExtraRequest {
   repeated string repeatedStringField = 1;
-  ExtraInnerMessage innerMsg = 3;
+  ExtraInnerMessage innerMsg = 2;
 }
 
 message ExtraReply {
   oneof oneOfField {
     int64 intOpt = 1;
-    ExtraInnerMessage repeatedDoubleOpt = 2;
+    ExtraInnerMessage extraInnerMsg = 2;
   }
   repeated double repeatedDoubleField = 3;
 }

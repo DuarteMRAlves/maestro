@@ -3,34 +3,15 @@ package reflection
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"gotest.tools/v3/assert"
-	"net"
 	"testing"
 	"time"
 )
 
-type service struct {
-	pb.UnimplementedTestServiceServer
-	pb.UnimplementedExtraServiceServer
-}
-
 func TestClient_ListServices(t *testing.T) {
 	addr := "localhost:50051"
-	lis, err := net.Listen("tcp", addr)
-	assert.NilError(t, err, "listen error")
-
-	testServer := grpc.NewServer()
-	pb.RegisterTestServiceServer(testServer, &service{})
-	pb.RegisterExtraServiceServer(testServer, &service{})
-	reflection.Register(testServer)
-
-	go func() {
-		err = testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
-	}()
+	testServer := startServer(t, addr, true)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -88,17 +69,7 @@ func TestClient_ListServicesUnavailable(t *testing.T) {
 
 func TestClient_ListServicesNoReflection(t *testing.T) {
 	addr := "localhost:50051"
-	lis, err := net.Listen("tcp", addr)
-	assert.NilError(t, err, "listen error")
-
-	testServer := grpc.NewServer()
-	pb.RegisterTestServiceServer(testServer, &service{})
-	pb.RegisterExtraServiceServer(testServer, &service{})
-
-	go func() {
-		err = testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
-	}()
+	testServer := startServer(t, addr, false)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
