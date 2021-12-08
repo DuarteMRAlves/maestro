@@ -1,4 +1,4 @@
-name: Test
+name: Build
 
 on:
   push:
@@ -14,17 +14,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # Run from a specific container with go and protoc already installed
-    container: duartemralves/maestro.test-workflow:latest
+    container: duartemralves/maestro.build-workflow:latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Generate Grpc
+      - name: Setup | Generate Grpc
         run: |
           chmod +x ./scripts/genpb.sh
           ./scripts/genpb.sh
 
-      - name: Build
-        run: go build -v ./...
-
-      - name: Test internal package
+      - name: Build | Test
         run: go test ./internal/...
