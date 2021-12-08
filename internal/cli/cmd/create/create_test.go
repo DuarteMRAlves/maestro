@@ -2,11 +2,11 @@ package create
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
+	"regexp"
 	"testing"
 )
 
@@ -79,7 +79,6 @@ func TestCreateWithServer(t *testing.T) {
 
 				go func() {
 					if err := s.ServeGrpc(lis); err != nil {
-						fmt.Println(err)
 						t.Errorf("Failed to serve: %v", err)
 						return
 					}
@@ -137,12 +136,15 @@ func TestCreateWithoutServer(t *testing.T) {
 			},
 			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
 		},
+		{
+			"server not connected",
+			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
+			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				fmt.Println(test.name)
-
 				b := bytes.NewBufferString("")
 				cmd := NewCmdCreate()
 				cmd.SetOut(b)
@@ -151,7 +153,14 @@ func TestCreateWithoutServer(t *testing.T) {
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
-				assert.Equal(t, test.expectedOut, string(out), "output differs")
+				// This is not ideal but its to match the not connected error
+				// with no ip. Detailed in GitHub issue
+				// https://github.com/DuarteMRAlves/maestro/issues/29.
+				matched, err := regexp.MatchString(
+					test.expectedOut,
+					string(out))
+				assert.NilError(t, err, "matched output")
+				assert.Assert(t, matched, "output not matched")
 			})
 	}
 }
