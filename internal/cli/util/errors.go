@@ -13,12 +13,15 @@ func DisplayMsgFromError(err error) string {
 		return fmt.Sprintf("not found: %v", err.Error())
 	case errdefs.IsInvalidArgument(err):
 		return fmt.Sprintf("invalid argument: %v", err.Error())
+	case errdefs.IsFailedPrecondition(err):
+		return fmt.Sprintf("failed precondition: %v", err.Error())
+	case errdefs.IsUnavailable(err):
+		return fmt.Sprintf("unavailable: %v", err.Error())
 	case errdefs.IsInternal(err):
 		return fmt.Sprintf("internal error: %v", err.Error())
 	case errdefs.IsUnknown(err):
+		return fmt.Sprintf("unknwon error: %v", err.Error())
 	default:
 		return fmt.Sprintf("unknwon error: %v", err.Error())
 	}
-	// Should never happen
-	return fmt.Sprintf("internal error")
 }

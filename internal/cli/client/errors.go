@@ -20,11 +20,15 @@ func ErrorFromGrpcError(err error) error {
 		return errdefs.NotFoundWithMsg(st.Message())
 	case codes.InvalidArgument:
 		return errdefs.InvalidArgumentWithMsg(st.Message())
+	case codes.FailedPrecondition:
+		return errdefs.FailedPreconditionWithMsg(st.Message())
+	case codes.Unavailable:
+		return errdefs.UnavailableWithMsg(st.Message())
 	case codes.Internal:
 		return errdefs.InternalWithMsg(st.Message())
 	case codes.Unknown:
+		return errdefs.UnknownWithMsg(st.Message())
 	default:
 		return errdefs.UnknownWithMsg(st.Message())
 	}
-	return errdefs.UnknownWithMsg(st.Message())
 }
