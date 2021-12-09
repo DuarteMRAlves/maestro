@@ -1,7 +1,8 @@
 package blueprint
 
 import (
-	"errors"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
 )
 
@@ -18,27 +19,16 @@ func NewStore() Store {
 }
 
 func (st *store) Create(config *Blueprint) error {
-	if ok, err := verifyConfig(config); !ok {
+	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
 
 	bp := config.Clone()
 	_, prev := st.blueprints.LoadOrStore(bp.Name, bp)
 	if prev {
-		return AlreadyExists{Name: bp.Name}
+		return errdefs.AlreadyExistsWithMsg(
+			"blueprint '%v' already exists",
+			bp.Name)
 	}
 	return nil
-}
-
-func verifyConfig(config *Blueprint) (bool, error) {
-	if config == nil {
-		return false, errors.New("nil config")
-	}
-	if len(config.Stages) != 0 {
-		return false, errors.New("blueprint should not have Stages")
-	}
-	if len(config.Links) != 0 {
-		return false, errors.New("blueprint should not have Links")
-	}
-	return true, nil
 }

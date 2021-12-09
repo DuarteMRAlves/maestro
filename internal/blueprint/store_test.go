@@ -1,7 +1,6 @@
 package blueprint
 
 import (
-	"fmt"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -9,62 +8,55 @@ import (
 const bpName = "Blueprint Name"
 
 func TestStore_CreateCorrect(t *testing.T) {
-	tests := []*Blueprint{
-		{Name: bpName},
-		{Name: bpName, Stages: nil},
-		{Name: bpName, Stages: []string{}},
-		{Name: bpName, Links: nil},
-		{Name: bpName, Links: []string{}},
+	tests := []struct {
+		name   string
+		config *Blueprint
+	}{
+		{
+			name:   "test no links variable",
+			config: &Blueprint{Name: bpName},
+		},
+		{
+			name:   "test nil links",
+			config: &Blueprint{Name: bpName, Links: nil},
+		},
+		{
+			name:   "test empty links",
+			config: &Blueprint{Name: bpName, Links: []string{}},
+		},
+		{
+			name:   "test links with one element",
+			config: &Blueprint{Name: bpName, Links: []string{"link-1"}},
+		},
+		{
+			name: "test links with multiple elements",
+			config: &Blueprint{
+				Name:  bpName,
+				Links: []string{"link-1", "link-2", "link-3"},
+			},
+		},
 	}
-	for _, config := range tests {
-		testName := fmt.Sprintf("config=%v", config)
-
+	for _, test := range tests {
 		t.Run(
-			testName, func(t *testing.T) {
+			test.name, func(t *testing.T) {
 				st, ok := NewStore().(*store)
 				assert.Assert(t, ok, "type assertion failed for store")
 
-				err := st.Create(config)
+				err := st.Create(test.config)
 				assert.NilError(t, err, "create error")
 				assert.Equal(t, 1, lenBlueprints(st), "store size")
+
 				stored, ok := st.blueprints.Load(bpName)
 				assert.Assert(t, ok, "blueprint exists")
+
 				bp, ok := stored.(*Blueprint)
 				assert.Assert(t, ok, "blueprint type assertion failed")
-				assert.Equal(t, bpName, bp.Name, "correct name")
-				assert.Equal(t, 0, len(bp.Stages), "empty Stages")
-				assert.Equal(t, 0, len(bp.Links), "empty Links")
-			})
-	}
-}
-
-func TestStore_CreateIncorrect(t *testing.T) {
-	tests := []struct {
-		config *Blueprint
-		errMsg string
-	}{
-		{nil, "nil config"},
-		{
-			&Blueprint{Name: bpName, Stages: []string{"Some Stage"}},
-			"blueprint should not have Stages",
-		},
-		{
-			&Blueprint{Name: bpName, Links: []string{"Some Link"}},
-			"blueprint should not have Links",
-		},
-	}
-	for _, inner := range tests {
-		config, errMsg := inner.config, inner.errMsg
-		testName := fmt.Sprintf("config=%v,errMsg='%v'", config, errMsg)
-
-		t.Run(
-			testName, func(t *testing.T) {
-				st, ok := NewStore().(*store)
-				assert.Assert(t, ok, "type assertion failed for store")
-
-				err := st.Create(config)
-				assert.ErrorContains(t, err, errMsg)
-				assert.Equal(t, 0, lenBlueprints(st), "store size")
+				assert.Equal(t, test.config.Name, bp.Name, "correct name")
+				if test.config.Links == nil {
+					assert.DeepEqual(t, []string{}, bp.Links)
+				} else {
+					assert.DeepEqual(t, test.config.Links, bp.Links)
+				}
 			})
 	}
 }

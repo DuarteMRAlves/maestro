@@ -1,7 +1,6 @@
 package protobuff
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -10,34 +9,32 @@ import (
 )
 
 func TestMarshalBlueprint(t *testing.T) {
-	tests := []*blueprint.Blueprint{
+	tests := []struct {
+		name string
+		bp   *blueprint.Blueprint
+	}{
 		{
-			Name:   blueprintName,
-			Stages: []string{bpStage1, bpStage2, bpStage3},
-			Links:  []string{bpLink1, bpLink2, bpLink3},
+			name: "all fields with non default values",
+			bp: &blueprint.Blueprint{
+				Name:  blueprintName,
+				Links: []string{bpLink1, bpLink2, bpLink3},
+			},
 		},
 		{
-			Name:   "",
-			Stages: nil,
-			Links:  nil,
+			name: "all field with default values",
+			bp: &blueprint.Blueprint{
+				Name:  "",
+				Links: nil,
+			},
 		},
 	}
 
-	for _, bp := range tests {
-		testName := fmt.Sprintf("blueprint=%v", bp)
-
+	for _, test := range tests {
 		t.Run(
-			testName, func(t *testing.T) {
+			test.name, func(t *testing.T) {
+				bp := test.bp
 				res := MarshalBlueprint(bp)
 				assert.Equal(t, bp.Name, res.Name, "blueprint name")
-				assert.Equal(
-					t,
-					len(bp.Stages),
-					len(res.Stages),
-					"blueprint stages len")
-				for i, s := range bp.Stages {
-					assert.Equal(t, s, res.Stages[i], "stage %d equal", i)
-				}
 				assert.Equal(
 					t,
 					len(bp.Links),
@@ -51,36 +48,34 @@ func TestMarshalBlueprint(t *testing.T) {
 }
 
 func TestUnmarshalBlueprintCorrect(t *testing.T) {
-	tests := []*pb.Blueprint{
+	tests := []struct {
+		name string
+		bp   *pb.Blueprint
+	}{
 		{
-			Name:   blueprintName,
-			Stages: []string{bpStage1, bpStage2, bpStage3},
-			Links:  []string{bpLink1, bpLink2, bpLink3},
+			name: "all fields with non default values",
+			bp: &pb.Blueprint{
+				Name:  blueprintName,
+				Links: []string{bpLink1, bpLink2, bpLink3},
+			},
 		},
 		{
-			Name:   "",
-			Stages: nil,
-			Links:  nil,
+			name: "all field with default values",
+			bp: &pb.Blueprint{
+				Name:  "",
+				Links: nil,
+			},
 		},
 	}
 
-	for _, bp := range tests {
-		testName := fmt.Sprintf("blueprint=%v", bp)
-
+	for _, test := range tests {
 		t.Run(
-			testName,
+			test.name,
 			func(t *testing.T) {
+				bp := test.bp
 				res, err := UnmarshalBlueprint(bp)
 				assert.Equal(t, nil, err, "unmarshal error")
 				assert.Equal(t, bp.Name, res.Name, "blueprint name")
-				assert.Equal(
-					t,
-					len(bp.Stages),
-					len(res.Stages),
-					"blueprint stages len")
-				for i, s := range bp.Stages {
-					assert.Equal(t, s, res.Stages[i], "stage %d equal", i)
-				}
 				assert.Equal(
 					t,
 					len(bp.Links),
