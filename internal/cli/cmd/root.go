@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const shortDescription = "maestro-cli is a command line interface to " +
+const shortDescription = "maestroctl is a command line interface to " +
 	"communicate with maestro"
 
 func NewCmdRoot() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "maestro-cli",
+		Use:   "maestroctl",
 		Short: shortDescription,
 	}
 
