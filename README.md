@@ -51,5 +51,15 @@ A `Link` specifies a connection between two stages. A Link has:
 ### Orchestration
 
 An `Orchestration` is an instantiation of a Blueprint where the pipeline is
-executed. 
- 
+executed.
+
+## Developing
+
+* Install golang version 1.17.3
+* Install protobuf version 3.17.3
+* Run the following commands:
+
+```shell
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+```
