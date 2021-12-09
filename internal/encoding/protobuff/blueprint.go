@@ -7,28 +7,18 @@ import (
 )
 
 func MarshalBlueprint(bp *blueprint.Blueprint) *pb.Blueprint {
-	stages := make([]string, 0, len(bp.Stages))
-	for _, s := range bp.Stages {
-		stages = append(stages, s)
-	}
 	links := make([]string, 0, len(bp.Links))
 	for _, l := range bp.Links {
 		links = append(links, l)
 	}
 	return &pb.Blueprint{
-		Name:   bp.Name,
-		Stages: stages,
-		Links:  links,
+		Name:  bp.Name,
+		Links: links,
 	}
 }
 
 func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
 	if ok, err := validate.ArgNotNil(p, "p"); !ok {
-		return nil, err
-	}
-
-	stages, err := unmarshalStages(p)
-	if err != nil {
 		return nil, err
 	}
 
@@ -38,18 +28,9 @@ func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
 	}
 
 	return &blueprint.Blueprint{
-		Name:   p.Name,
-		Stages: stages,
-		Links:  links,
+		Name:  p.Name,
+		Links: links,
 	}, nil
-}
-
-func unmarshalStages(p *pb.Blueprint) ([]string, error) {
-	stages := make([]string, 0, len(p.Stages))
-	for _, s := range p.Stages {
-		stages = append(stages, s)
-	}
-	return stages, nil
 }
 
 func unmarshalLinks(p *pb.Blueprint) ([]string, error) {
