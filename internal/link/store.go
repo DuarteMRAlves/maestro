@@ -8,6 +8,7 @@ import (
 
 type Store interface {
 	Create(l *Link) error
+	Contains(name string) bool
 	Get(query *Link) []*Link
 }
 
@@ -30,6 +31,13 @@ func (st *store) Create(config *Link) error {
 		return errdefs.AlreadyExistsWithMsg("link '%v' already exists", l.Name)
 	}
 	return nil
+}
+
+// Contains returns true if a link with the given name exists and false
+// otherwise.
+func (st *store) Contains(name string) bool {
+	_, ok := st.links.Load(name)
+	return ok
 }
 
 func (st *store) Get(query *Link) []*Link {
