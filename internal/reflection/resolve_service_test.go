@@ -245,11 +245,11 @@ func TestClient_ResolveServiceUnavailable(t *testing.T) {
 
 	serviceName := "pb.TestService"
 	c := NewClient(ctx, conn)
-	services, err := c.ResolveService(serviceName)
+	service, err := c.ResolveService(serviceName)
 
-	assert.Assert(t, errdefs.IsUnavailable(err), "list services error")
-	assert.ErrorContains(t, err, "list services:")
-	assert.Assert(t, services == nil, "services is not nil")
+	assert.Assert(t, errdefs.IsUnavailable(err), "resolve service error")
+	assert.ErrorContains(t, err, "resolve service: ")
+	assert.Assert(t, service == nil, "service is not nil")
 }
 
 func TestClient_ResolveServiceNoReflection(t *testing.T) {
@@ -268,9 +268,33 @@ func TestClient_ResolveServiceNoReflection(t *testing.T) {
 
 	serviceName := "pb.TestService"
 	c := NewClient(ctx, conn)
-	services, err := c.ResolveService(serviceName)
+	service, err := c.ResolveService(serviceName)
 
-	assert.Assert(t, errdefs.IsFailedPrecondition(err), "list services error")
-	assert.ErrorContains(t, err, "list services:")
-	assert.Assert(t, services == nil, "services is not nil")
+	assert.Assert(t, errdefs.IsFailedPrecondition(err), "resolve service error")
+	assert.ErrorContains(t, err, "resolve service: ")
+	assert.Assert(t, service == nil, "service is not nil")
+}
+
+func TestClient_ResolveServiceUnknownService(t *testing.T) {
+	addr := "localhost:50051"
+	testServer := startServer(t, addr, true)
+	defer testServer.GracefulStop()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	assert.NilError(t, err, "dial error")
+	defer func(conn *grpc.ClientConn) {
+		err = conn.Close()
+		assert.NilError(t, err, "close connection")
+	}(conn)
+
+	serviceName := "pb.UnknownService"
+	c := NewClient(ctx, conn)
+	service, err := c.ResolveService(serviceName)
+
+	assert.Assert(t, errdefs.IsNotFound(err), "resolve service error")
+	expectedMsg := "resolve service: Service not found: pb.UnknownService"
+	assert.Error(t, err, expectedMsg)
+	assert.Assert(t, service == nil, "service is not nil")
 }
