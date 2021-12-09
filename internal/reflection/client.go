@@ -35,7 +35,7 @@ func NewClient(ctx context.Context, conn grpc.ClientConnInterface) Client {
 func (c *client) ListServices() ([]string, error) {
 	all, err := c.client.ListServices()
 	if err != nil {
-		return nil, handleGrpcError(err)
+		return nil, handleGrpcError(err, "list services: ")
 	}
 	// Filter the reflection service
 	services := make([]string, 0, len(all)-1)
@@ -53,11 +53,10 @@ func (c *client) ResolveService(name string) (*desc.ServiceDescriptor, error) {
 	if err != nil {
 		switch {
 		case isGrpcErr(err):
-			return nil, handleGrpcError(err)
+			return nil, handleGrpcError(err, "resolve service: ")
 		case isElementNotFoundErr(err):
 			return nil, errdefs.NotFoundWithMsg(
-				"resolve service %v: %v",
-				name,
+				"resolve service: %v",
 				err.Error())
 		case isProtocolError(err):
 			return nil, errdefs.UnknownWithError(err)
@@ -70,16 +69,16 @@ func (c *client) ResolveService(name string) (*desc.ServiceDescriptor, error) {
 	return descriptor, nil
 }
 
-func handleGrpcError(err error) error {
+func handleGrpcError(err error, prependMsg string) error {
 	if err == nil {
 		return nil
 	}
 	st, _ := status.FromError(err)
 	switch st.Code() {
 	case codes.Unavailable:
-		return errdefs.UnavailableWithMsg("list services: %v", st.Err())
+		return errdefs.UnavailableWithMsg("%v%v", prependMsg, st.Err())
 	case codes.Unimplemented:
-		return errdefs.FailedPreconditionWithMsg("list services: %v", st.Err())
+		return errdefs.FailedPreconditionWithMsg("%v%v", prependMsg, st.Err())
 	default:
 		return errdefs.UnknownWithError(st.Err())
 	}
