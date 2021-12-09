@@ -1,5 +1,18 @@
-FROM golang:1.17.4-alpine
+ARG GO=1.17.3
+ARG PROTOC="3.17.3"
 
-RUN apk add --no-cache bash protoc protobuf-dev gcc libc-dev && \
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0 \
+FROM debian:bullseye-slim AS builder
+ARG PROTOC
+
+RUN apt-get update && apt-get install -y curl unzip
+RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC}/protoc-${PROTOC}-linux-x86_64.zip
+RUN unzip protoc-${PROTOC}-linux-x86_64.zip -d /opt/protoc
+
+FROM golang:${GO}-bullseye
+ARG PROTOC
+
+COPY --from=builder /opt/protoc /opt/protoc
+ENV PATH="${PATH}:/opt/protoc/bin"
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
