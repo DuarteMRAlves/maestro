@@ -11,7 +11,7 @@ import (
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateLink(config *link.Link) error {
-	log.Printf("Create Stage with config='%v'\n", config)
+	log.Printf("Create Link with config='%v'\n", config)
 	if err := s.validateCreateLinkConfig(config); err != nil {
 		return err
 	}
