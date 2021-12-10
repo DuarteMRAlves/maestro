@@ -62,7 +62,7 @@ func TestClient_ListServicesUnavailable(t *testing.T) {
 	c := NewClient(ctx, conn)
 	services, err := c.ListServices()
 
-	assert.Assert(t, errdefs.IsUnavailable(err), "list services error")
+	assert.Assert(t, errdefs.IsFailedPrecondition(err), "list services error")
 	assert.ErrorContains(t, err, "list services:")
 	assert.Assert(t, services == nil, "services is not nil")
 }
