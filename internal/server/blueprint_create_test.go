@@ -59,7 +59,7 @@ func TestServer_CreateBlueprint(t *testing.T) {
 				s := NewBuilder().WithGrpc().Build()
 				populateForBlueprints(t, s)
 				err := s.CreateBlueprint(test.config)
-				assert.NilError(t, err, "create error")
+				assert.NilError(t, err, "create blueprint error")
 			})
 	}
 }
@@ -78,29 +78,65 @@ func TestServer_CreateBlueprint_NilConfig(t *testing.T) {
 }
 
 func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
-	populateForBlueprints(t, s)
-
-	name := "invalid//name"
-	config := &blueprint.Blueprint{
-		Name: name,
-		Links: []string{
-			linkNameForNum(0),
-			linkNameForNum(1),
-			linkNameForNum(2),
+	tests := []struct {
+		name   string
+		config *blueprint.Blueprint
+	}{
+		{
+			name: "empty name",
+			config: &blueprint.Blueprint{
+				Name: "",
+				Links: []string{
+					linkNameForNum(0),
+					linkNameForNum(1),
+					linkNameForNum(2),
+				},
+			},
+		},
+		{
+			name: "invalid characters in name",
+			config: &blueprint.Blueprint{
+				Name: "?blueprint-name",
+				Links: []string{
+					linkNameForNum(0),
+					linkNameForNum(1),
+					linkNameForNum(2),
+				},
+			},
+		},
+		{
+			name: "invalid character sequence",
+			config: &blueprint.Blueprint{
+				Name: "invalid//name",
+				Links: []string{
+					linkNameForNum(0),
+					linkNameForNum(1),
+					linkNameForNum(2),
+				},
+			},
 		},
 	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				s := NewBuilder().WithGrpc().Build()
+				populateForBlueprints(t, s)
 
-	err := s.CreateBlueprint(config)
-	assert.Assert(
-		t,
-		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
-	expectedMsg := fmt.Sprintf("invalid name '%v'", name)
-	assert.Error(t, err, expectedMsg)
+				err := s.CreateBlueprint(test.config)
+				assert.Assert(
+					t,
+					errdefs.IsInvalidArgument(err),
+					"error is not InvalidArgument")
+				expectedMsg := fmt.Sprintf(
+					"invalid name '%v'",
+					test.config.Name)
+				assert.Error(t, err, expectedMsg)
+			})
+	}
 }
 
-func TestServer_CreateBlueprint_NoSuchLink(t *testing.T) {
+func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
 	s := NewBuilder().WithGrpc().Build()
 	populateForBlueprints(t, s)
 
