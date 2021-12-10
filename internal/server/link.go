@@ -38,6 +38,10 @@ func (s *Server) validateCreateLinkConfig(config *link.Link) error {
 	if config.TargetStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty target stage name")
 	}
+	if config.SourceStage == config.TargetStage {
+		return errdefs.InvalidArgumentWithMsg(
+			"source and target stages are equal")
+	}
 	if !s.stageStore.Contains(config.SourceStage) {
 		return errdefs.NotFoundWithMsg(
 			"source stage '%v' not found",
