@@ -247,7 +247,7 @@ func TestClient_ResolveServiceUnavailable(t *testing.T) {
 	c := NewClient(ctx, conn)
 	service, err := c.ResolveService(serviceName)
 
-	assert.Assert(t, errdefs.IsUnavailable(err), "resolve service error")
+	assert.Assert(t, errdefs.IsFailedPrecondition(err), "resolve service error")
 	assert.ErrorContains(t, err, "resolve service: ")
 	assert.Assert(t, service == nil, "service is not nil")
 }
