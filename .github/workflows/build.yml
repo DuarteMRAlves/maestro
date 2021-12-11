@@ -17,12 +17,16 @@ jobs:
     # Run from a specific container with go and protoc already installed
     container: duartemralves/maestro.build-workflow:latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Setup | Checkout repository
+        uses: actions/checkout@v2
 
       - name: Setup | Generate Grpc
         run: |
           chmod +x ./scripts/genpb.sh
           ./scripts/genpb.sh
+
+      - name: Build | Format
+        uses: ./.github/actions/gofmt-action
 
       - name: Build | Test
         run: go test ./internal/...

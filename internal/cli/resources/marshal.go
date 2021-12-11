@@ -52,7 +52,7 @@ func MarshalResource(dst interface{}, src *Resource) error {
 	// Raise error for unknown keys
 	if len(spec) > 0 {
 		keys := make([]string, 0, len(spec))
-		for k, _ := range spec {
+		for k := range spec {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
