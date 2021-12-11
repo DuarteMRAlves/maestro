@@ -48,7 +48,7 @@ var (
 func TestUnaryClient_Invoke(t *testing.T) {
 	addr := "localhost:50051"
 	testServer := startServer(t, addr)
-	defer testServer.GracefulStop()
+	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -75,7 +75,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	addr := "localhost:50051"
 	testServer := startServer(t, addr)
-	defer testServer.GracefulStop()
+	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -122,7 +122,7 @@ func TestUnaryClient_Invoke_ServerUnavailable(t *testing.T) {
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	addr := "localhost:50051"
 	testServer := startServer(t, addr)
-	defer testServer.GracefulStop()
+	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -148,7 +148,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 	addr := "localhost:50051"
 	testServer := startServer(t, addr)
-	defer testServer.GracefulStop()
+	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
