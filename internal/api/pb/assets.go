@@ -51,7 +51,11 @@ func (s *assetManagementServer) Get(
 
 	assets := s.api.GetAsset(query)
 	for _, a := range assets {
-		stream.Send(protobuff.MarshalAsset(a))
+		pbAsset, err := protobuff.MarshalAsset(a)
+		if err != nil {
+			return err
+		}
+		stream.Send(pbAsset)
 	}
 	return nil
 }

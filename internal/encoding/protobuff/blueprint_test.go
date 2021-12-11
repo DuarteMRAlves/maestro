@@ -33,7 +33,8 @@ func TestMarshalBlueprint(t *testing.T) {
 		t.Run(
 			test.name, func(t *testing.T) {
 				bp := test.bp
-				res := MarshalBlueprint(bp)
+				res, err := MarshalBlueprint(bp)
+				assert.NilError(t, err, "marshal error")
 				assert.Equal(t, bp.Name, res.Name, "blueprint name")
 				assert.Equal(
 					t,
@@ -88,7 +89,14 @@ func TestUnmarshalBlueprintCorrect(t *testing.T) {
 	}
 }
 
-func TestUnmarshalBlueprintError(t *testing.T) {
+func TestMarshalBlueprintError(t *testing.T) {
+	res, err := MarshalBlueprint(nil)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'bp' is nil")
+	assert.Assert(t, res == nil, "nil return value")
+}
+
+func TestUnmarshalBlueprintNil(t *testing.T) {
 	res, err := UnmarshalBlueprint(nil)
 	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 	assert.ErrorContains(t, err, "'p' is nil")
