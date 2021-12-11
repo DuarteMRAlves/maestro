@@ -16,12 +16,14 @@ func TestMarshalStage(t *testing.T) {
 			Asset:   stageAsset,
 			Service: stageService,
 			Method:  stageMethod,
+			Address: stageAddress,
 		},
 		{
 			Name:    "",
 			Asset:   "",
 			Service: "",
 			Method:  "",
+			Address: "",
 		},
 	}
 
@@ -43,12 +45,14 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Asset:   stageAsset,
 			Service: stageService,
 			Method:  stageMethod,
+			Address: stageAddress,
 		},
 		{
 			Name:    "",
 			Asset:   "",
 			Service: "",
 			Method:  "",
+			Address: "",
 		},
 	}
 	for _, s := range tests {
@@ -76,6 +80,7 @@ func assertStage(t *testing.T, expected *stage.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Address, actual.Address, "stage address")
 }
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *stage.Stage) {
@@ -83,4 +88,5 @@ func assertPbStage(t *testing.T, expected *pb.Stage, actual *stage.Stage) {
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Address, actual.Address, "stage address")
 }

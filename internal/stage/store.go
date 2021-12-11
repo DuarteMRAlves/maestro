@@ -88,6 +88,13 @@ func buildQueryFilter(query *Stage) func(s *Stage) bool {
 				return s.Method == query.Method
 			})
 	}
+	if query.Address != "" {
+		filters = append(
+			filters,
+			func(s *Stage) bool {
+				return s.Address == query.Address
+			})
+	}
 	switch len(filters) {
 	case 0:
 		return func(s *Stage) bool { return true }

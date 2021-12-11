@@ -17,28 +17,30 @@ func TestServer_CreateStage(t *testing.T) {
 		config *stage.Stage
 	}{
 		{
-			name: "correct with nil service and method",
+			name: "correct with nil service, method and address",
 			config: &stage.Stage{
 				Name:  stageName,
 				Asset: assetNameForNum(0),
 			},
 		},
 		{
-			name: "correct with empty service and method",
+			name: "correct with empty service, method and address",
 			config: &stage.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "",
 				Method:  "",
+				Address: "",
 			},
 		},
 		{
-			name: "correct with service and method",
+			name: "correct with service, method and address",
 			config: &stage.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "ServiceName",
 				Method:  "MethodName",
+				Address: "Address",
 			},
 		},
 	}
