@@ -53,7 +53,11 @@ func (s *stageManagementServer) Get(
 
 	stages := s.api.GetStage(query)
 	for _, s := range stages {
-		stream.Send(protobuff.MarshalStage(s))
+		pbStage, err := protobuff.MarshalStage(s)
+		if err != nil {
+			return err
+		}
+		stream.Send(pbStage)
 	}
 	return nil
 }

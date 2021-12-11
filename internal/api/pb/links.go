@@ -53,7 +53,11 @@ func (s *linkManagementServer) Get(
 
 	links := s.api.GetLink(query)
 	for _, l := range links {
-		stream.Send(protobuff.MarshalLink(l))
+		pbLink, err := protobuff.MarshalLink(l)
+		if err != nil {
+			return err
+		}
+		stream.Send(pbLink)
 	}
 	return nil
 }

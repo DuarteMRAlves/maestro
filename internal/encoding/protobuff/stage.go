@@ -9,14 +9,18 @@ import (
 
 // MarshalStage creates a protobuf message representing the Stage from the Stage
 // structure.
-func MarshalStage(s *stage.Stage) *pb.Stage {
-	return &pb.Stage{
+func MarshalStage(s *stage.Stage) (*pb.Stage, error) {
+	if ok, err := validate.ArgNotNil(s, "s"); !ok {
+		return nil, err
+	}
+	pbStage := &pb.Stage{
 		Name:    s.Name,
 		Asset:   s.Asset,
 		Service: s.Service,
 		Method:  s.Method,
 		Address: s.Address,
 	}
+	return pbStage, nil
 }
 
 // UnmarshalStage creates a Stage struct from a protobuf message representing

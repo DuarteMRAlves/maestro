@@ -32,7 +32,8 @@ func TestMarshalStage(t *testing.T) {
 
 		t.Run(
 			testName, func(t *testing.T) {
-				res := MarshalStage(s)
+				res, err := MarshalStage(s)
+				assert.NilError(t, err, "marshal error")
 				assertStage(t, s, res)
 			})
 	}
@@ -68,7 +69,14 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 	}
 }
 
-func TestUnmarshalStageError(t *testing.T) {
+func TestMarshalStageNil(t *testing.T) {
+	res, err := MarshalStage(nil)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'s' is nil")
+	assert.Assert(t, res == nil, "nil return value")
+}
+
+func TestUnmarshalStageNil(t *testing.T) {
 	res, err := UnmarshalStage(nil)
 	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 	assert.ErrorContains(t, err, "'p' is nil")

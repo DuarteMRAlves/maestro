@@ -32,7 +32,8 @@ func TestMarshalLink(t *testing.T) {
 
 		t.Run(
 			testName, func(t *testing.T) {
-				res := MarshalLink(l)
+				res, err := MarshalLink(l)
+				assert.NilError(t, err, "marshal error")
 				assertLink(t, l, res)
 			})
 	}
@@ -68,7 +69,14 @@ func TestUnmarshalLinkCorrect(t *testing.T) {
 	}
 }
 
-func TestUnmarshalLinkError(t *testing.T) {
+func TestMarshalLinkNil(t *testing.T) {
+	res, err := MarshalLink(nil)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'l' is nil")
+	assert.Assert(t, res == nil, "nil return value")
+}
+
+func TestUnmarshalLinkNil(t *testing.T) {
 	res, err := UnmarshalLink(nil)
 	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 	assert.ErrorContains(t, err, "'p' is nil")

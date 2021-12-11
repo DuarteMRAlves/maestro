@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -29,7 +30,8 @@ func TestMarshalAsset(t *testing.T) {
 
 		t.Run(
 			name, func(t *testing.T) {
-				res := MarshalAsset(&in)
+				res, err := MarshalAsset(&in)
+				assert.NilError(t, err, "marshal error")
 				assert.Equal(t, in.Name, res.Name, "Asset Name")
 				assert.Equal(t, in.Image, res.Image, "Asset Image")
 			})
@@ -55,4 +57,18 @@ func TestUnmarshalAsset(t *testing.T) {
 				assert.Equal(t, in.Name, res.Name, "Asset Name")
 			})
 	}
+}
+
+func TestMarshalAssetNil(t *testing.T) {
+	res, err := MarshalAsset(nil)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'a' is nil")
+	assert.Assert(t, res == nil, "nil return value")
+}
+
+func TestUnmarshalAssetNil(t *testing.T) {
+	res, err := UnmarshalAsset(nil)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, "'p' is nil")
+	assert.Assert(t, res == nil, "nil return value")
 }
