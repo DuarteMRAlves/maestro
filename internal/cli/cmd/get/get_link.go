@@ -6,9 +6,9 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
+	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
 	"io"
-	"log"
 	"time"
 )
 
@@ -26,62 +26,85 @@ const (
 	targetFieldUsage = "field in the target message search"
 )
 
-var getLinkOpts = &struct {
+type GetLinkOptions struct {
+	addr string
+
+	name        string
 	sourceStage string
 	sourceField string
 	targetStage string
 	targetField string
-}{}
+}
 
 func NewCmdGetLink() *cobra.Command {
+	o := &GetLinkOptions{}
+
 	cmd := &cobra.Command{
 		Use:     "link",
 		Short:   "list one or more links",
 		Args:    cobra.MaximumNArgs(1),
-		Aliases: []string{"stages"},
-		Run:     runGetLink,
+		Aliases: []string{"links"},
+		Run: func(cmd *cobra.Command, args []string) {
+			err := o.complete(args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.run()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+		},
 	}
 
-	cmd.Flags().StringVar(
-		&getLinkOpts.sourceStage,
-		sourceStageFlag,
-		"",
-		sourceStageUsage)
-
-	cmd.Flags().StringVar(
-		&getLinkOpts.sourceField,
-		sourceFieldFlag,
-		"",
-		sourceFieldUsage)
-
-	cmd.Flags().StringVar(
-		&getLinkOpts.targetStage,
-		targetStageFlag,
-		"",
-		targetStageUsage)
-
-	cmd.Flags().StringVar(
-		&getLinkOpts.targetField,
-		targetFieldFlag,
-		"",
-		targetFieldUsage)
+	o.addFlags(cmd)
 
 	return cmd
 }
 
-func runGetLink(_ *cobra.Command, args []string) {
-	query := &pb.Link{
-		SourceStage: getLinkOpts.sourceStage,
-		SourceField: getLinkOpts.sourceField,
-		TargetStage: getLinkOpts.targetStage,
-		TargetField: getLinkOpts.targetField,
-	}
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// execute
+func (o *GetLinkOptions) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr)
 
+	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
+	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
+	cmd.Flags().StringVar(&o.targetStage, targetStageFlag, "", targetStageUsage)
+	cmd.Flags().StringVar(&o.targetField, targetFieldFlag, "", targetFieldUsage)
+}
+
+// complete fills any remaining information for the runner that is not specified
+// by the flags.
+func (o *GetLinkOptions) complete(args []string) error {
 	if len(args) == 1 {
-		query.Name = args[0]
+		o.name = args[0]
+	}
+	return nil
+}
+
+// validate checks if the user options are compatible and the command can
+// be executed
+func (o *GetLinkOptions) validate() error {
+	return nil
+}
+
+// run executes the get link command
+func (o *GetLinkOptions) run() error {
+	query := &pb.Link{
+		Name:        o.name,
+		SourceStage: o.sourceStage,
+		SourceField: o.sourceField,
+		TargetStage: o.targetStage,
+		TargetField: o.targetField,
 	}
 
-	conn := client.NewConnection(createOpts.addr)
+	conn := client.NewConnection(o.addr)
 	defer conn.Close()
 
 	c := pb.NewLinkManagementClient(conn)
@@ -91,7 +114,7 @@ func runGetLink(_ *cobra.Command, args []string) {
 
 	stream, err := c.Get(ctx, query)
 	if err != nil {
-		log.Fatalf("list links: %v", err)
+		return err
 	}
 	links := make([]*pb.Link, 0)
 	for {
@@ -100,13 +123,11 @@ func runGetLink(_ *cobra.Command, args []string) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("list links: %v", err)
+			return err
 		}
 		links = append(links, l)
 	}
-	if err := displayLinks(links); err != nil {
-		log.Fatalf("list links: %v", err)
-	}
+	return displayLinks(links)
 }
 
 func displayLinks(links []*pb.Link) error {

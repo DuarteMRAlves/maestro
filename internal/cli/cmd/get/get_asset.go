@@ -6,22 +6,68 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
+	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
 	"io"
-	"log"
 	"time"
 )
 
-func NewCmdGetAsset() *cobra.Command {
-	return &cobra.Command{
-		Use:   "asset",
-		Short: "list one or more Assets",
-		Run:   runGetAsset,
-	}
+// GetAssetOptions executes a get asset command
+type GetAssetOptions struct {
+	addr string
 }
 
-func runGetAsset(_ *cobra.Command, _ []string) {
-	conn := client.NewConnection(createOpts.addr)
+func NewCmdGetAsset() *cobra.Command {
+	o := &GetAssetOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "asset",
+		Short: "list one or more Assets",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := o.complete(args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.run()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+		},
+	}
+
+	o.addFlags(cmd)
+
+	return cmd
+}
+
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// execute
+func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr)
+}
+
+// complete fills any remaining information for the runner that is not specified
+// by the flags.
+func (o *GetAssetOptions) complete(_ []string) error {
+	return nil
+}
+
+// validate checks if the user options are compatible and the command can
+// be executed
+func (o *GetAssetOptions) validate() error {
+	return nil
+}
+
+// run executes the get asset command
+func (o *GetAssetOptions) run() error {
+	conn := client.NewConnection(o.addr)
 	defer conn.Close()
 
 	c := pb.NewAssetManagementClient(conn)
@@ -31,7 +77,7 @@ func runGetAsset(_ *cobra.Command, _ []string) {
 	stream, err := c.Get(ctx, &pb.Asset{})
 	assets := make([]*pb.Asset, 0)
 	if err != nil {
-		log.Fatalf("Unable to create asset: %v", err)
+		return err
 	}
 	for {
 		a, err := stream.Recv()
@@ -39,13 +85,11 @@ func runGetAsset(_ *cobra.Command, _ []string) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("unable to list assets: %v", err)
+			return err
 		}
 		assets = append(assets, a)
 	}
-	if err := displayAssets(assets); err != nil {
-		log.Fatalf("display assets: %v", err)
-	}
+	return displayAssets(assets)
 }
 
 func displayAssets(assets []*pb.Asset) error {
