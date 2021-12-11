@@ -6,9 +6,9 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
+	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/spf13/cobra"
 	"io"
-	"log"
 	"time"
 )
 
@@ -26,54 +26,87 @@ const (
 	methodUsage = "method name to search"
 )
 
-var getStageOpts = &struct {
+type GetStageOpts struct {
+	addr string
+
+	name    string
 	asset   string
 	service string
 	method  string
-}{}
+}
 
 func NewCmdGetStage() *cobra.Command {
+	o := &GetStageOpts{}
+
 	cmd := &cobra.Command{
 		Use:     "stage",
 		Short:   "list one or more stages",
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"stages"},
-		Run:     runGetStage,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := o.complete(args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.run()
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+		},
 	}
-	cmd.Flags().StringVarP(
-		&getStageOpts.asset,
-		assetFlag,
-		assetShort,
-		"",
-		assetUsage)
-	cmd.Flags().StringVarP(
-		&getStageOpts.service,
-		serviceFlag,
-		serviceShort,
-		"",
-		serviceUsage)
-	cmd.Flags().StringVarP(
-		&getStageOpts.method,
-		methodFlag,
-		methodShort,
-		"",
-		methodUsage)
+
+	o.addFlags(cmd)
 
 	return cmd
 }
 
-func runGetStage(_ *cobra.Command, args []string) {
-	query := &pb.Stage{
-		Asset:   getStageOpts.asset,
-		Service: getStageOpts.service,
-		Method:  getStageOpts.method,
-	}
+// addFlags adds the necessary flags to the cobra.Command instance that will
+// execute
+func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
+	addAddrFlag(cmd, &o.addr)
 
+	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
+	cmd.Flags().StringVarP(
+		&o.service,
+		serviceFlag,
+		serviceShort,
+		"",
+		serviceUsage)
+	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
+}
+
+// complete fills any remaining information for the runner that is not specified
+// by the flags.
+func (o *GetStageOpts) complete(args []string) error {
 	if len(args) == 1 {
-		query.Name = args[0]
+		o.name = args[0]
+	}
+	return nil
+}
+
+// validate checks if the user options are compatible and the command can
+// be executed
+func (o *GetStageOpts) validate() error {
+	return nil
+}
+
+// run executes the get link command
+func (o *GetStageOpts) run() error {
+	query := &pb.Stage{
+		Name:    o.name,
+		Asset:   o.asset,
+		Service: o.service,
+		Method:  o.method,
 	}
 
-	conn := client.NewConnection(createOpts.addr)
+	conn := client.NewConnection(o.addr)
 	defer conn.Close()
 
 	c := pb.NewStageManagementClient(conn)
@@ -83,7 +116,7 @@ func runGetStage(_ *cobra.Command, args []string) {
 
 	stream, err := c.Get(ctx, query)
 	if err != nil {
-		log.Fatalf("list stages: %v", err)
+		return err
 	}
 	stages := make([]*pb.Stage, 0)
 	for {
@@ -92,13 +125,11 @@ func runGetStage(_ *cobra.Command, args []string) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("list stages: %v", err)
+			return err
 		}
 		stages = append(stages, s)
 	}
-	if err := displayStages(stages); err != nil {
-		log.Fatalf("list stages: %v", err)
-	}
+	return displayStages(stages)
 }
 
 func displayStages(stages []*pb.Stage) error {
