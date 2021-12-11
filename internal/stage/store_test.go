@@ -11,6 +11,7 @@ const (
 	stageAsset   = "asset-name"
 	stageService = "ServiceName"
 	stageMethod  = "MethodName"
+	stageAddress = "Address"
 )
 
 func TestStore_Create(t *testing.T) {
@@ -20,12 +21,14 @@ func TestStore_Create(t *testing.T) {
 			Asset:   stageAsset,
 			Service: stageService,
 			Method:  stageMethod,
+			Address: stageAddress,
 		},
 		{
 			Name:    "",
 			Asset:   "",
 			Service: "",
 			Method:  "",
+			Address: "",
 		},
 	}
 

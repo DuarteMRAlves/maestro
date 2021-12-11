@@ -16,4 +16,5 @@ message Stage {
   string asset = 3;
   string service = 4;
   string method = 5;
+  string address = 6;
 }
