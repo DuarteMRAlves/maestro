@@ -2,6 +2,7 @@ package get
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -9,6 +10,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"io"
+	"sort"
 	"time"
 )
 
@@ -33,6 +35,9 @@ type GetStageOpts struct {
 	asset   string
 	service string
 	method  string
+
+	// Output for the cobra.Command to be executed in order to verify outputs.
+	outWriter io.Writer
 }
 
 func NewCmdGetStage() *cobra.Command {
@@ -44,7 +49,7 @@ func NewCmdGetStage() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"stages"},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := o.complete(args)
+			err := o.complete(cmd, args)
 			if err != nil {
 				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
@@ -84,10 +89,11 @@ func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetStageOpts) complete(args []string) error {
+func (o *GetStageOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
+	o.outWriter = cmd.OutOrStdout()
 	return nil
 }
 
@@ -116,7 +122,7 @@ func (o *GetStageOpts) run() error {
 
 	stream, err := c.Get(ctx, query)
 	if err != nil {
-		return err
+		return client.ErrorFromGrpcError(err)
 	}
 	stages := make([]*pb.Stage, 0)
 	for {
@@ -125,14 +131,19 @@ func (o *GetStageOpts) run() error {
 			break
 		}
 		if err != nil {
-			return err
+			return client.ErrorFromGrpcError(err)
 		}
 		stages = append(stages, s)
 	}
-	return displayStages(stages)
+	return o.displayStages(stages)
 }
 
-func displayStages(stages []*pb.Stage) error {
+func (o *GetStageOpts) displayStages(stages []*pb.Stage) error {
+	sort.Slice(
+		stages,
+		func(i, j int) bool {
+			return stages[i].Name < stages[j].Name
+		})
 	numStages := len(stages)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numStages+1)
@@ -144,9 +155,13 @@ func displayStages(stages []*pb.Stage) error {
 		data = append(data, stageData)
 	}
 
-	err := pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+	output, err := pterm.DefaultTable.WithHasHeader().WithData(data).Srender()
 	if err != nil {
-		return errdefs.UnknownWithMsg("display assets: %v", err)
+		return errdefs.UnknownWithMsg("display stages: %v", err)
+	}
+	_, err = fmt.Fprintf(o.outWriter, output)
+	if err != nil {
+		return errdefs.UnknownWithMsg("display stages: %v", err)
 	}
 	return nil
 }
