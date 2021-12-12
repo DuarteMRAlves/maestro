@@ -2,11 +2,11 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"io"
 	"time"
@@ -134,35 +134,19 @@ func (o *GetStageOpts) run() error {
 
 func displayStages(stages []*pb.Stage) error {
 	numStages := len(stages)
-	names := make([]string, 0, numStages)
-	assets := make([]string, 0, numStages)
-	services := make([]string, 0, numStages)
-	methods := make([]string, 0, numStages)
+	// Add space for all assets plus the header
+	data := make([][]string, 0, numStages+1)
 
+	head := []string{NameText, AssetText, ServiceText, MethodText, AddressText}
+	data = append(data, head)
 	for _, s := range stages {
-		names = append(names, s.Name)
-		assets = append(assets, s.Asset)
-		services = append(services, s.Service)
-		methods = append(methods, s.Method)
+		stageData := []string{s.Name, s.Asset, s.Service, s.Method, s.Address}
+		data = append(data, stageData)
 	}
 
-	t := table.NewBuilder().
-		WithPadding(colPad).
-		WithMinColSize(minColSize).
-		Build()
-
-	if err := t.AddColumn(NameText, names); err != nil {
-		return err
+	err := pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+	if err != nil {
+		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}
-	if err := t.AddColumn(AssetText, assets); err != nil {
-		return err
-	}
-	if err := t.AddColumn(ServiceText, services); err != nil {
-		return err
-	}
-	if err := t.AddColumn(MethodText, methods); err != nil {
-		return err
-	}
-	fmt.Print(t)
 	return nil
 }

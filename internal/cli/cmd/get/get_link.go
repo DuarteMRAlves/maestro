@@ -2,11 +2,11 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"io"
 	"time"
@@ -132,40 +132,29 @@ func (o *GetLinkOptions) run() error {
 
 func displayLinks(links []*pb.Link) error {
 	numLinks := len(links)
-	names := make([]string, 0, numLinks)
-	sourceStages := make([]string, 0, numLinks)
-	sourceFields := make([]string, 0, numLinks)
-	targetStages := make([]string, 0, numLinks)
-	targetFields := make([]string, 0, numLinks)
-
+	// Add space for all assets plus the header
+	data := make([][]string, 0, numLinks+1)
+	headers := []string{
+		NameText,
+		SourceStageText,
+		SourceFieldText,
+		TargetStageText,
+		TargetFieldText,
+	}
+	data = append(data, headers)
 	for _, l := range links {
-		names = append(names, l.Name)
-		sourceStages = append(sourceStages, l.SourceStage)
-		sourceFields = append(sourceFields, l.SourceField)
-		targetStages = append(targetStages, l.TargetStage)
-		targetFields = append(targetFields, l.TargetField)
+		linkData := []string{
+			l.Name,
+			l.SourceStage,
+			l.SourceField,
+			l.TargetStage,
+			l.TargetField,
+		}
+		data = append(data, linkData)
 	}
-
-	t := table.NewBuilder().
-		WithPadding(colPad).
-		WithMinColSize(minColSize).
-		Build()
-
-	if err := t.AddColumn(NameText, names); err != nil {
-		return err
+	err := pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+	if err != nil {
+		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}
-	if err := t.AddColumn(SourceStageText, sourceStages); err != nil {
-		return err
-	}
-	if err := t.AddColumn(SourceFieldText, sourceFields); err != nil {
-		return err
-	}
-	if err := t.AddColumn(TargetStageText, targetStages); err != nil {
-		return err
-	}
-	if err := t.AddColumn(TargetFieldText, targetFields); err != nil {
-		return err
-	}
-	fmt.Print(t)
 	return nil
 }

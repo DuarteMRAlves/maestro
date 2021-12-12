@@ -2,11 +2,11 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/display/table"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"io"
 	"time"
@@ -21,8 +21,9 @@ func NewCmdGetAsset() *cobra.Command {
 	o := &GetAssetOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "asset",
-		Short: "list one or more Assets",
+		Use:     "asset",
+		Short:   "list one or more Assets",
+		Aliases: []string{"assets"},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(args)
 			if err != nil {
@@ -94,24 +95,15 @@ func (o *GetAssetOptions) run() error {
 
 func displayAssets(assets []*pb.Asset) error {
 	numAssets := len(assets)
-	names := make([]string, 0, numAssets)
-	images := make([]string, 0, numAssets)
+	// Add space for all assets plus the header
+	data := make([][]string, 0, numAssets+1)
+	data = append(data, []string{NameText, ImageText})
 	for _, a := range assets {
-		names = append(names, a.Name)
-		images = append(images, a.Image)
+		data = append(data, []string{a.Name, a.Image})
 	}
-
-	t := table.NewBuilder().
-		WithPadding(colPad).
-		WithMinColSize(minColSize).
-		Build()
-
-	if err := t.AddColumn(NameText, names); err != nil {
-		return err
+	err := pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+	if err != nil {
+		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}
-	if err := t.AddColumn(ImageText, images); err != nil {
-		return err
-	}
-	fmt.Print(t)
 	return nil
 }
