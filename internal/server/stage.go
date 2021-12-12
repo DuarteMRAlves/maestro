@@ -34,10 +34,8 @@ func (s *Server) validateCreateStageConfig(config *stage.Stage) error {
 			"invalid name '%v'",
 			config.Name)
 	}
-	if config.Asset == "" {
-		return errdefs.InvalidArgumentWithMsg("empty asset name")
-	}
-	if !s.assetStore.Contains(config.Asset) {
+	// Asset is not required but if specified should exist.
+	if config.Asset != "" && !s.assetStore.Contains(config.Asset) {
 		return errdefs.NotFoundWithMsg(
 			"asset '%v' not found",
 			config.Asset)

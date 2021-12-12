@@ -42,25 +42,19 @@ func TestCreateStageWithServer(t *testing.T) {
 		{
 			"create a stage with required arguments",
 			"localhost:50051",
-			[]string{"stage-name", "--asset", "asset-name"},
+			[]string{"stage-name"},
 			"",
 		},
 		{
 			"create an stage on custom address",
 			"localhost:50052",
-			[]string{
-				"stage-name",
-				"--asset",
-				"asset-name",
-				"--addr",
-				"localhost:50052",
-			},
+			[]string{"asset-name", "--addr", "localhost:50052"},
 			"",
 		},
 		{
 			"create a stage with invalid name",
 			"localhost:50051",
-			[]string{"invalid--name", "--asset", "asset-name"},
+			[]string{"invalid--name"},
 			"invalid argument: invalid name 'invalid--name'",
 		},
 		{
@@ -130,13 +124,8 @@ func TestCreateStageWithoutServer(t *testing.T) {
 			"invalid argument: please specify a stage name",
 		},
 		{
-			"no asset",
-			[]string{"stage-name"},
-			"invalid argument: please specify an asset",
-		},
-		{
 			"server not connected",
-			[]string{"stage-name", "--asset", "asset-name"},
+			[]string{"stage-name"},
 			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
 		},
 	}

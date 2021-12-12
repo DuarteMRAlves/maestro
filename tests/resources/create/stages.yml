@@ -6,7 +6,6 @@ spec:
 kind: stage
 spec:
   name: stage-5
-  asset: asset-4
 ---
 kind: stage
 spec:

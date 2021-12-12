@@ -1,12 +1,12 @@
 package resources
 
 type AssetResource struct {
-	Name  string `yaml:"name"`
+	Name  string `yaml:"name,required"`
 	Image string `yaml:"image"`
 }
 
 type StageResource struct {
-	Name    string `yaml:"name"`
+	Name    string `yaml:"name,required"`
 	Asset   string `yaml:"asset"`
 	Service string `yaml:"service"`
 	Method  string `yaml:"method"`

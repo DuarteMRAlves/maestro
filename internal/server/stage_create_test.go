@@ -17,24 +17,23 @@ func TestServer_CreateStage(t *testing.T) {
 		config *stage.Stage
 	}{
 		{
-			name: "correct with nil service, method and address",
+			name: "correct with nil asset, service, method and address",
 			config: &stage.Stage{
-				Name:  stageName,
-				Asset: assetNameForNum(0),
+				Name: stageName,
 			},
 		},
 		{
-			name: "correct with empty service, method and address",
+			name: "correct with empty asset, method and address",
 			config: &stage.Stage{
 				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Asset:   "",
 				Service: "",
 				Method:  "",
 				Address: "",
 			},
 		},
 		{
-			name: "correct with service, method and address",
+			name: "correct with asset, service, method and address",
 			config: &stage.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
@@ -115,23 +114,6 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 				assert.Error(t, err, expectedMsg)
 			})
 	}
-}
-
-func TestServer_CreateStage_AssetEmpty(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
-	populateForStages(t, s)
-
-	config := &stage.Stage{
-		Name:  stageName,
-		Asset: "",
-	}
-
-	err := s.CreateStage(config)
-	assert.Assert(
-		t,
-		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
-	assert.Error(t, err, "empty asset name")
 }
 
 func TestServer_CreateStage_AssetNotFound(t *testing.T) {
