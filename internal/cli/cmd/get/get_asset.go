@@ -12,9 +12,17 @@ import (
 	"time"
 )
 
+const (
+	imageFlag  = "image"
+	imageUsage = "image name to search"
+)
+
 // GetAssetOptions executes a get asset command
 type GetAssetOptions struct {
 	addr string
+
+	name  string
+	image string
 }
 
 func NewCmdGetAsset() *cobra.Command {
@@ -23,6 +31,7 @@ func NewCmdGetAsset() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "asset",
 		Short:   "list one or more Assets",
+		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"assets"},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(args)
@@ -52,11 +61,16 @@ func NewCmdGetAsset() *cobra.Command {
 // execute
 func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
 	addAddrFlag(cmd, &o.addr)
+
+	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
 }
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetAssetOptions) complete(_ []string) error {
+func (o *GetAssetOptions) complete(args []string) error {
+	if len(args) == 1 {
+		o.name = args[0]
+	}
 	return nil
 }
 
@@ -68,6 +82,11 @@ func (o *GetAssetOptions) validate() error {
 
 // run executes the get asset command
 func (o *GetAssetOptions) run() error {
+	query := &pb.Asset{
+		Name:  o.name,
+		Image: o.image,
+	}
+
 	conn := client.NewConnection(o.addr)
 	defer conn.Close()
 
@@ -75,11 +94,11 @@ func (o *GetAssetOptions) run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := c.Get(ctx, &pb.Asset{})
-	assets := make([]*pb.Asset, 0)
+	stream, err := c.Get(ctx, query)
 	if err != nil {
 		return err
 	}
+	assets := make([]*pb.Asset, 0)
 	for {
 		a, err := stream.Recv()
 		if err == io.EOF {
