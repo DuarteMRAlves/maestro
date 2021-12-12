@@ -28,21 +28,13 @@ func UnmarshalBlueprint(p *pb.Blueprint) (*blueprint.Blueprint, error) {
 		return nil, err
 	}
 
-	links, err := unmarshalLinks(p)
-	if err != nil {
-		return nil, err
+	links := make([]string, 0, len(p.Links))
+	for _, l := range p.Links {
+		links = append(links, l)
 	}
 
 	return &blueprint.Blueprint{
 		Name:  p.Name,
 		Links: links,
 	}, nil
-}
-
-func unmarshalLinks(p *pb.Blueprint) ([]string, error) {
-	links := make([]string, 0, len(p.Links))
-	for _, l := range p.Links {
-		links = append(links, l)
-	}
-	return links, nil
 }
