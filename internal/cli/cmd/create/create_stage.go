@@ -98,9 +98,6 @@ func (o *CreateStageOptions) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a stage name")
 	}
-	if o.asset == "" {
-		return errdefs.InvalidArgumentWithMsg("please specify an asset")
-	}
 	return nil
 }
 

@@ -29,4 +29,5 @@ jobs:
         uses: ./.github/actions/gofmt-action
 
       - name: Build | Test
-        run: go test ./internal/...
+        # Temporary fix for non parallel tests due to port conflicts
+        run: go test -p 1 ./internal/...
