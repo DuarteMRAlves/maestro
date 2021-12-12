@@ -90,6 +90,13 @@ func buildQueryFilter(query *Link) func(l *Link) bool {
 				return l.TargetStage == query.TargetStage
 			})
 	}
+	if query.TargetField != "" {
+		filters = append(
+			filters,
+			func(l *Link) bool {
+				return l.TargetField == query.TargetField
+			})
+	}
 	switch len(filters) {
 	case 0:
 		return func(l *Link) bool { return true }

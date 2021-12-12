@@ -2,6 +2,7 @@ package get
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -9,6 +10,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"io"
+	"sort"
 	"time"
 )
 
@@ -23,6 +25,9 @@ type GetAssetOptions struct {
 
 	name  string
 	image string
+
+	// Output for the cobra.Command to be executed in order to verify outputs.
+	outWriter io.Writer
 }
 
 func NewCmdGetAsset() *cobra.Command {
@@ -34,7 +39,7 @@ func NewCmdGetAsset() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"assets"},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := o.complete(args)
+			err := o.complete(cmd, args)
 			if err != nil {
 				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
@@ -67,10 +72,11 @@ func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetAssetOptions) complete(args []string) error {
+func (o *GetAssetOptions) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
+	o.outWriter = cmd.OutOrStdout()
 	return nil
 }
 
@@ -96,7 +102,7 @@ func (o *GetAssetOptions) run() error {
 	defer cancel()
 	stream, err := c.Get(ctx, query)
 	if err != nil {
-		return err
+		return client.ErrorFromGrpcError(err)
 	}
 	assets := make([]*pb.Asset, 0)
 	for {
@@ -105,14 +111,19 @@ func (o *GetAssetOptions) run() error {
 			break
 		}
 		if err != nil {
-			return err
+			return client.ErrorFromGrpcError(err)
 		}
 		assets = append(assets, a)
 	}
-	return displayAssets(assets)
+	return o.displayAssets(assets)
 }
 
-func displayAssets(assets []*pb.Asset) error {
+func (o *GetAssetOptions) displayAssets(assets []*pb.Asset) error {
+	sort.Slice(
+		assets,
+		func(i, j int) bool {
+			return assets[i].Name < assets[j].Name
+		})
 	numAssets := len(assets)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numAssets+1)
@@ -120,7 +131,11 @@ func displayAssets(assets []*pb.Asset) error {
 	for _, a := range assets {
 		data = append(data, []string{a.Name, a.Image})
 	}
-	err := pterm.DefaultTable.WithHasHeader().WithData(data).Render()
+	output, err := pterm.DefaultTable.WithHasHeader().WithData(data).Srender()
+	if err != nil {
+		return errdefs.UnknownWithMsg("display assets: %v", err)
+	}
+	_, err = fmt.Fprintf(o.outWriter, output)
 	if err != nil {
 		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}
