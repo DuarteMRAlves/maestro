@@ -135,7 +135,7 @@ func (o *GetAssetOptions) displayAssets(assets []*pb.Asset) error {
 	if err != nil {
 		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}
-	_, err = fmt.Fprintf(o.outWriter, output)
+	_, err = fmt.Fprintln(o.outWriter, output)
 	if err != nil {
 		return errdefs.UnknownWithMsg("display assets: %v", err)
 	}

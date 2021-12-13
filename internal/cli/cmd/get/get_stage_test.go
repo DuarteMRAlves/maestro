@@ -308,6 +308,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					WithHasHeader().
 					WithData(test.output).
 					Srender()
+				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
 			})

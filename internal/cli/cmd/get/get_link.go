@@ -167,7 +167,7 @@ func (o *GetLinkOptions) displayLinks(links []*pb.Link) error {
 	if err != nil {
 		return errdefs.UnknownWithMsg("display links: %v", err)
 	}
-	_, err = fmt.Fprintf(o.outWriter, output)
+	_, err = fmt.Fprintln(o.outWriter, output)
 	if err != nil {
 		return errdefs.UnknownWithMsg("display links: %v", err)
 	}
