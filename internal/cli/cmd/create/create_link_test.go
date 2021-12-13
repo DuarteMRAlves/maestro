@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -21,13 +22,13 @@ import (
 func TestCreateLinkWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		serverAddr  string
+		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create a link with all arguments",
-			"localhost:50051",
+			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -43,7 +44,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link with required arguments",
-			"localhost:50051",
+			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -54,22 +55,20 @@ func TestCreateLinkWithServer(t *testing.T) {
 			"",
 		},
 		{
-			"create a link on custom address",
-			"localhost:50052",
+			"create a link on default address",
+			true,
 			[]string{
 				"link-name",
 				"--source-stage",
 				"source-name",
 				"--target-stage",
 				"target-name",
-				"--addr",
-				"localhost:50052",
 			},
 			"",
 		},
 		{
 			"create a link with invalid name",
-			"localhost:50051",
+			false,
 			[]string{
 				"invalid--name",
 				"--source-stage",
@@ -81,7 +80,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link no such source stage",
-			"localhost:50051",
+			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -93,7 +92,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link no such target stage",
-			"localhost:50051",
+			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -107,8 +106,25 @@ func TestCreateLinkWithServer(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				lis, err := net.Listen("tcp", test.serverAddr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {
@@ -152,7 +168,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 				for _, r := range testResources {
 					assert.NilError(
 						t,
-						client.CreateResource(ctx, r, test.serverAddr),
+						client.CreateResource(ctx, r, addr),
 						"create resource error")
 				}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -18,10 +19,11 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetStage_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   []string
-		stages []*resources.StageResource
-		output [][]string
+		name        string
+		defaultAddr bool
+		args        []string
+		stages      []*resources.StageResource
+		output      [][]string
 	}{
 		{
 			name:   "empty stages",
@@ -50,6 +52,43 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple stages",
 			args: []string{},
+			stages: []*resources.StageResource{
+				stageForNum(1),
+				stageForNum(0),
+				stageForNum(2),
+			},
+			output: [][]string{
+				{NameText, AssetText, ServiceText, MethodText, AddressText},
+				{
+					stageNameForNum(0),
+					assetNameForNum(0),
+					stageServiceForNum(0),
+					stageMethodForNum(0),
+					// StageResource still has no address
+					"",
+				},
+				{
+					stageNameForNum(1),
+					assetNameForNum(1),
+					stageServiceForNum(1),
+					stageMethodForNum(1),
+					// StageResource still has no address
+					"",
+				},
+				{
+					stageNameForNum(2),
+					assetNameForNum(2),
+					stageServiceForNum(2),
+					stageMethodForNum(2),
+					// StageResource still has no address
+					"",
+				},
+			},
+		},
+		{
+			name:        "multiple stages default addr",
+			defaultAddr: true,
+			args:        []string{},
 			stages: []*resources.StageResource{
 				stageForNum(1),
 				stageForNum(0),
@@ -221,9 +260,25 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				addr := "localhost:50051"
-				lis, err := net.Listen("tcp", addr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {

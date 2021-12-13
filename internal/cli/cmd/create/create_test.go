@@ -3,6 +3,7 @@ package create
 import (
 	"bytes"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -17,19 +18,19 @@ import (
 func TestCreateWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		serverAddr  string
+		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"multiple resources in a single file",
-			"localhost:50051",
+			false,
 			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
 			"",
 		},
 		{
 			"multiple resources in multiple files",
-			"localhost:50051",
+			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/stages.yml",
@@ -42,18 +43,13 @@ func TestCreateWithServer(t *testing.T) {
 		},
 		{
 			"custom address",
-			"localhost:50052",
-			[]string{
-				"-f",
-				"../../../../tests/resources/create/resources.yml",
-				"--addr",
-				"localhost:50052",
-			},
+			true,
+			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
 			"",
 		},
 		{
 			"asset not found",
-			"localhost:50051",
+			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/asset_not_found.yml",
@@ -62,7 +58,7 @@ func TestCreateWithServer(t *testing.T) {
 		},
 		{
 			"stage not found",
-			"localhost:50051",
+			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/stage_not_found.yml",
@@ -73,8 +69,25 @@ func TestCreateWithServer(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				lis, err := net.Listen("tcp", test.serverAddr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {
