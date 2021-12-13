@@ -148,7 +148,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 					test.args = append(test.args, "--addr", addr)
 				}
 
-				s := server.NewBuilder().WithGrpc().Build()
+				s, err := server.NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 
 				go func() {
 					if err := s.ServeGrpc(lis); err != nil {

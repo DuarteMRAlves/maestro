@@ -50,19 +50,22 @@ func TestServer_CreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
+
 				populateForLinks(t, s)
-				err := s.CreateLink(test.config)
+				err = s.CreateLink(test.config)
 				assert.NilError(t, err, "create link error")
 			})
 	}
 }
 
 func TestServer_CreateLink_NilConfig(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	err := s.CreateLink(nil)
+	err = s.CreateLink(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -105,10 +108,11 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 				populateForBlueprints(t, s)
 
-				err := s.CreateLink(test.config)
+				err = s.CreateLink(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -122,7 +126,8 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateLink_SourceEmpty(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{
@@ -131,7 +136,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 		TargetStage: stageNameForNum(1),
 	}
 
-	err := s.CreateLink(config)
+	err = s.CreateLink(config)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -140,7 +145,8 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetEmpty(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{
@@ -149,7 +155,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 		TargetStage: "",
 	}
 
-	err := s.CreateLink(config)
+	err = s.CreateLink(config)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -158,7 +164,8 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{
@@ -167,13 +174,14 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 		TargetStage: stageNameForNum(0),
 	}
 
-	err := s.CreateLink(config)
+	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsInvalidArgument(err), "error is not NotFound")
 	assert.Error(t, err, "source and target stages are equal")
 }
 
 func TestServer_CreateLink_SourceNotFound(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{
@@ -182,7 +190,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 		TargetStage: stageNameForNum(1),
 	}
 
-	err := s.CreateLink(config)
+	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf(
 		"source stage '%v' not found",
@@ -191,7 +199,8 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetNotFound(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{
@@ -200,7 +209,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 		TargetStage: stageNameForNum(3),
 	}
 
-	err := s.CreateLink(config)
+	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf(
 		"target stage '%v' not found",
@@ -211,7 +220,8 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	var err error
 
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &link.Link{

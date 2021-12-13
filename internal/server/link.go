@@ -5,13 +5,13 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
-	"log"
+	"go.uber.org/zap"
 )
 
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateLink(config *link.Link) error {
-	log.Printf("Create Link with config='%v'\n", config)
+	s.logger.Info("Create Link.", logLink(config, "config")...)
 	if err := s.validateCreateLinkConfig(config); err != nil {
 		return err
 	}
@@ -19,8 +19,21 @@ func (s *Server) CreateLink(config *link.Link) error {
 }
 
 func (s *Server) GetLink(query *link.Link) []*link.Link {
-	log.Printf("Get Link with query=%v", query)
+	s.logger.Info("Get Link.", logLink(query, "query")...)
 	return s.linkStore.Get(query)
+}
+
+func logLink(l *link.Link, field string) []zap.Field {
+	if l == nil {
+		return []zap.Field{zap.String(field, "null")}
+	}
+	return []zap.Field{
+		zap.String("name", l.Name),
+		zap.String("source-stage", l.SourceStage),
+		zap.String("source-field", l.SourceField),
+		zap.String("target-stage", l.TargetStage),
+		zap.String("target-field", l.TargetField),
+	}
 }
 
 // validateCreateLinkConfig verifies if all conditions to create a link are met.

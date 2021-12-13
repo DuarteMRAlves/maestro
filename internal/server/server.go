@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -20,6 +21,8 @@ type Server struct {
 	linkStore      link.Store
 	blueprintStore blueprint.Store
 	grpcServer     *grpc.Server
+
+	logger *zap.Logger
 }
 
 func (s *Server) ServeGrpc(lis net.Listener) error {
