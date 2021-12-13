@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 
 service BlueprintManagement {
   rpc Create(Blueprint) returns (google.protobuf.Empty);
+  rpc Get(Blueprint) returns (stream Blueprint);
 }
 
 message Blueprint {

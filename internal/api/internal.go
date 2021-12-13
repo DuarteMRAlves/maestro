@@ -21,4 +21,5 @@ type InternalAPI interface {
 	GetLink(query *link.Link) []*link.Link
 
 	CreateBlueprint(config *blueprint.Blueprint) error
+	GetBlueprint(query *blueprint.Blueprint) []*blueprint.Blueprint
 }

@@ -19,6 +19,14 @@ func (s *Server) CreateBlueprint(config *blueprint.Blueprint) error {
 	return s.blueprintStore.Create(config)
 }
 
+// GetBlueprint returns a list of blueprints that match the received query.
+func (s *Server) GetBlueprint(
+	query *blueprint.Blueprint,
+) []*blueprint.Blueprint {
+	log.Printf("Get Blueprint with query='%v'\n", query)
+	return s.blueprintStore.Get(query)
+}
+
 // validateCreateBlueprintConfig verifies if all the conditions to create a
 // blueprint are met. It returns an error if one condition is not met and nil
 // otherwise.

@@ -40,3 +40,29 @@ func (s *blueprintManagementServer) Create(
 	}
 	return &emptypb.Empty{}, grpcErr
 }
+
+func (s *blueprintManagementServer) Get(
+	pbQuery *pb.Blueprint,
+	stream pb.BlueprintManagement_GetServer,
+) error {
+
+	var query *blueprint.Blueprint
+	var err error
+
+	if query, err = protobuff.UnmarshalBlueprint(pbQuery); err != nil {
+		return err
+	}
+
+	blueprints := s.api.GetBlueprint(query)
+	for _, a := range blueprints {
+		pbBlueprint, err := protobuff.MarshalBlueprint(a)
+		if err != nil {
+			return err
+		}
+		err = stream.Send(pbBlueprint)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
