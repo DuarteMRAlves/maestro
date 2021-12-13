@@ -48,19 +48,21 @@ func TestServer_CreateStage(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 				populateForStages(t, s)
-				err := s.CreateStage(test.config)
+				err = s.CreateStage(test.config)
 				assert.NilError(t, err, "create stage error")
 			})
 	}
 }
 
 func TestServer_CreateStage_NilConfig(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
-	err := s.CreateStage(nil)
+	err = s.CreateStage(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -100,10 +102,11 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 				populateForBlueprints(t, s)
 
-				err := s.CreateStage(test.config)
+				err = s.CreateStage(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -117,7 +120,8 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateStage_AssetNotFound(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
 	config := &stage.Stage{
@@ -125,7 +129,7 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 		Asset: assetNameForNum(1),
 	}
 
-	err := s.CreateStage(config)
+	err = s.CreateStage(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf("asset '%v' not found", assetNameForNum(1))
 	assert.Error(t, err, expectedMsg)
@@ -134,7 +138,8 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
 
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
 	config := &stage.Stage{

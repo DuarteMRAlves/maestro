@@ -41,17 +41,19 @@ func TestServer_CreateAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
-				err := s.CreateAsset(test.config)
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
+				err = s.CreateAsset(test.config)
 				assert.NilError(t, err, "create asset error")
 			})
 	}
 }
 
 func TestServer_CreateAsset_NilConfig(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 
-	err := s.CreateAsset(nil)
+	err = s.CreateAsset(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -88,9 +90,10 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 
-				err := s.CreateAsset(test.config)
+				err = s.CreateAsset(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -106,7 +109,8 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	var err error
 
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 
 	config := &asset.Asset{
 		Name: assetName,

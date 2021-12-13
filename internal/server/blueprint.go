@@ -5,14 +5,14 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
-	"log"
+	"go.uber.org/zap"
 )
 
 // CreateBlueprint creates a blueprint from the given config.
 // The function returns an error if the blueprint name is not valid or if
 // one of the links does not exist.
 func (s *Server) CreateBlueprint(config *blueprint.Blueprint) error {
-	log.Printf("Create Blueprint with config=%v", config)
+	s.logger.Info("Create Blueprint.", logBlueprint(config, "config")...)
 	if err := s.validateCreateBlueprintConfig(config); err != nil {
 		return err
 	}
@@ -23,8 +23,18 @@ func (s *Server) CreateBlueprint(config *blueprint.Blueprint) error {
 func (s *Server) GetBlueprint(
 	query *blueprint.Blueprint,
 ) []*blueprint.Blueprint {
-	log.Printf("Get Blueprint with query='%v'\n", query)
+	s.logger.Info("Get Blueprint.", logBlueprint(query, "query")...)
 	return s.blueprintStore.Get(query)
+}
+
+func logBlueprint(bp *blueprint.Blueprint, field string) []zap.Field {
+	if bp == nil {
+		return []zap.Field{zap.String(field, "null")}
+	}
+	return []zap.Field{
+		zap.String("name", bp.Name),
+		zap.Strings("links", bp.Links),
+	}
 }
 
 // validateCreateBlueprintConfig verifies if all the conditions to create a

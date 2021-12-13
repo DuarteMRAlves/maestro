@@ -56,19 +56,22 @@ func TestServer_CreateBlueprint(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
+
 				populateForBlueprints(t, s)
-				err := s.CreateBlueprint(test.config)
+				err = s.CreateBlueprint(test.config)
 				assert.NilError(t, err, "create blueprint error")
 			})
 	}
 }
 
 func TestServer_CreateBlueprint_NilConfig(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
-	err := s.CreateBlueprint(nil)
+	err = s.CreateBlueprint(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -120,10 +123,11 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 				populateForBlueprints(t, s)
 
-				err := s.CreateBlueprint(test.config)
+				err = s.CreateBlueprint(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -137,7 +141,8 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
 	config := &blueprint.Blueprint{
@@ -150,7 +155,7 @@ func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
 		},
 	}
 
-	err := s.CreateBlueprint(config)
+	err = s.CreateBlueprint(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf("link '%v' not found", linkNameForNum(3))
 	assert.Error(t, err, expectedMsg)
@@ -159,7 +164,8 @@ func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
 func TestServer_CreateBlueprint_AlreadyExists(t *testing.T) {
 	var err error
 
-	s := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().Build()
+	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
 	config := &blueprint.Blueprint{

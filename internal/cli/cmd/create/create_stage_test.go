@@ -47,7 +47,7 @@ func TestCreateStageWithServer(t *testing.T) {
 			"",
 		},
 		{
-			"create an stage on custom address",
+			"create an stage on default address",
 			true,
 			[]string{"asset-name"},
 			"",
@@ -87,7 +87,8 @@ func TestCreateStageWithServer(t *testing.T) {
 					test.args = append(test.args, "--addr", addr)
 				}
 
-				s := server.NewBuilder().WithGrpc().Build()
+				s, err := server.NewBuilder().WithGrpc().Build()
+				assert.NilError(t, err, "build server")
 
 				go func() {
 					if err := s.ServeGrpc(lis); err != nil {

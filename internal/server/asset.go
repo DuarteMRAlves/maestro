@@ -5,13 +5,13 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
-	"log"
+	"go.uber.org/zap"
 )
 
 // CreateAsset creates a new asset with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateAsset(config *asset.Asset) error {
-	log.Printf("Create Asset with config='%v'\n", config)
+	s.logger.Info("Create Asset.", logAsset(config, "config")...)
 	if err := s.validateCreateAssetConfig(config); err != nil {
 		return err
 	}
@@ -19,8 +19,15 @@ func (s *Server) CreateAsset(config *asset.Asset) error {
 }
 
 func (s *Server) GetAsset(query *asset.Asset) []*asset.Asset {
-	log.Printf("Get Asset with query='%v'\n", query)
+	s.logger.Info("Get Asset.", logAsset(query, "query")...)
 	return s.assetStore.Get(query)
+}
+
+func logAsset(a *asset.Asset, field string) []zap.Field {
+	if a == nil {
+		return []zap.Field{zap.String(field, "null")}
+	}
+	return []zap.Field{zap.String("name", a.Name), zap.String("image", a.Image)}
 }
 
 // validateCreateAssetConfig verifies if all conditions to create an asset are met.

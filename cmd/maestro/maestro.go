@@ -2,21 +2,30 @@ package main
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/server"
-	"log"
+	"go.uber.org/zap"
 	"net"
 )
 
 func main() {
+	logger, err := zap.NewProduction()
+	// Should never happen
+	if err != nil {
+		panic(err)
+	}
+	sugar := logger.Sugar()
 	address := "localhost:50051"
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		sugar.Fatal("Failed to listen.", "err", err)
 	}
-	log.Printf("Server listening at %v", lis.Addr())
+	sugar.Infof("Server listening at: %v", lis.Addr())
 
-	s := server.NewBuilder().WithGrpc().Build()
+	s, err := server.NewBuilder().WithGrpc().Build()
+	if err != nil {
+		sugar.Fatalf("build server: %v", err)
+	}
 
 	if err := s.ServeGrpc(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		sugar.Fatal("Failed to serve.", "err", err)
 	}
 }

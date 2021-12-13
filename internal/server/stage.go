@@ -5,13 +5,13 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
-	"log"
+	"go.uber.org/zap"
 )
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(config *stage.Stage) error {
-	log.Printf("Create Stage with config='%v'\n", config)
+	s.logger.Info("Create Stage.", logStage(config, "config")...)
 	if err := s.validateCreateStageConfig(config); err != nil {
 		return err
 	}
@@ -19,8 +19,21 @@ func (s *Server) CreateStage(config *stage.Stage) error {
 }
 
 func (s *Server) GetStage(query *stage.Stage) []*stage.Stage {
-	log.Printf("Get Stage with query=%v", query)
+	s.logger.Info("Get Stage.", logStage(query, "query")...)
 	return s.stageStore.Get(query)
+}
+
+func logStage(s *stage.Stage, field string) []zap.Field {
+	if s == nil {
+		return []zap.Field{zap.String(field, "null")}
+	}
+	return []zap.Field{
+		zap.String("name", s.Name),
+		zap.String("asset", s.Asset),
+		zap.String("service", s.Service),
+		zap.String("method", s.Method),
+		zap.String("address", s.Address),
+	}
 }
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
