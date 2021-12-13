@@ -159,7 +159,7 @@ func (o *GetStageOpts) displayStages(stages []*pb.Stage) error {
 	if err != nil {
 		return errdefs.UnknownWithMsg("display stages: %v", err)
 	}
-	_, err = fmt.Fprintf(o.outWriter, output)
+	_, err = fmt.Fprintln(o.outWriter, output)
 	if err != nil {
 		return errdefs.UnknownWithMsg("display stages: %v", err)
 	}
