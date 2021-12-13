@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -21,13 +22,13 @@ import (
 func TestCreateStageWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		serverAddr  string
+		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create a stage with all arguments",
-			"localhost:50051",
+			false,
 			[]string{
 				"stage-name",
 				"--asset",
@@ -41,25 +42,25 @@ func TestCreateStageWithServer(t *testing.T) {
 		},
 		{
 			"create a stage with required arguments",
-			"localhost:50051",
+			false,
 			[]string{"stage-name"},
 			"",
 		},
 		{
 			"create an stage on custom address",
-			"localhost:50052",
-			[]string{"asset-name", "--addr", "localhost:50052"},
+			true,
+			[]string{"asset-name"},
 			"",
 		},
 		{
 			"create a stage with invalid name",
-			"localhost:50051",
+			false,
 			[]string{"invalid--name"},
 			"invalid argument: invalid name 'invalid--name'",
 		},
 		{
 			"create a stage no such asset",
-			"localhost:50051",
+			false,
 			[]string{"stage-name", "--asset", "does-not-exist"},
 			"not found: asset 'does-not-exist' not found",
 		},
@@ -67,8 +68,25 @@ func TestCreateStageWithServer(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				lis, err := net.Listen("tcp", test.serverAddr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {
@@ -94,7 +112,7 @@ func TestCreateStageWithServer(t *testing.T) {
 					client.CreateAsset(
 						ctx,
 						&resources.AssetResource{Name: "asset-name"},
-						test.serverAddr),
+						addr),
 					"create asset error")
 
 				b := bytes.NewBufferString("")

@@ -3,6 +3,7 @@ package reflection
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -10,8 +11,9 @@ import (
 )
 
 func TestClient_ListServices(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr, true)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -68,8 +70,9 @@ func TestClient_ListServicesUnavailable(t *testing.T) {
 }
 
 func TestClient_ListServicesNoReflection(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr, false)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

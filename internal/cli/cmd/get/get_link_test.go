@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -18,10 +19,11 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetLink_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   []string
-		links  []*resources.LinkResource
-		output [][]string
+		name        string
+		defaultAddr bool
+		args        []string
+		links       []*resources.LinkResource
+		output      [][]string
 	}{
 		{
 			name:  "empty links",
@@ -61,6 +63,46 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple links",
 			args: []string{},
+			links: []*resources.LinkResource{
+				linkForNum(1),
+				linkForNum(0),
+				linkForNum(2),
+			},
+			output: [][]string{
+				{
+					NameText,
+					SourceStageText,
+					SourceFieldText,
+					TargetStageText,
+					TargetFieldText,
+				},
+				{
+					linkNameForNum(0),
+					linkSourceStageForNum(0),
+					linkSourceFieldForNum(0),
+					linkTargetStageForNum(0),
+					linkTargetFieldForNum(0),
+				},
+				{
+					linkNameForNum(1),
+					linkSourceStageForNum(1),
+					linkSourceFieldForNum(1),
+					linkTargetStageForNum(1),
+					linkTargetFieldForNum(1),
+				},
+				{
+					linkNameForNum(2),
+					linkSourceStageForNum(2),
+					linkSourceFieldForNum(2),
+					linkTargetStageForNum(2),
+					linkTargetFieldForNum(2),
+				},
+			},
+		},
+		{
+			name:        "multiple links",
+			defaultAddr: true,
+			args:        []string{},
 			links: []*resources.LinkResource{
 				linkForNum(1),
 				linkForNum(0),
@@ -329,9 +371,25 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				addr := "localhost:50051"
-				lis, err := net.Listen("tcp", addr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {

@@ -3,6 +3,7 @@ package create
 import (
 	"bytes"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -17,31 +18,31 @@ import (
 func TestCreateAssetWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		serverAddr  string
+		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create an asset with an image",
-			"localhost:50051",
+			false,
 			[]string{"asset-name", "--image", "image-name"},
 			"",
 		},
 		{
 			"create an asset without an image",
-			"localhost:50051",
+			false,
 			[]string{"asset-name"},
 			"",
 		},
 		{
-			"create an asset on custom address",
-			"localhost:50052",
-			[]string{"asset-name", "--addr", "localhost:50052"},
+			"create an asset on default address",
+			true,
+			[]string{"asset-name"},
 			"",
 		},
 		{
 			"create an asset invalid name",
-			"localhost:50051",
+			false,
 			[]string{"invalid--name"},
 			"invalid argument: invalid name 'invalid--name'",
 		},
@@ -49,8 +50,25 @@ func TestCreateAssetWithServer(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				lis, err := net.Listen("tcp", test.serverAddr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {

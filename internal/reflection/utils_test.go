@@ -14,10 +14,11 @@ type service struct {
 	pb.UnimplementedExtraServiceServer
 }
 
-func startServer(t *testing.T, addr string, reflectionFlag bool) *grpc.Server {
-	lis, err := net.Listen("tcp", addr)
-	assert.NilError(t, err, "listen error")
-
+func startServer(
+	t *testing.T,
+	lis net.Listener,
+	reflectionFlag bool,
+) *grpc.Server {
 	testServer := grpc.NewServer()
 	pb.RegisterTestServiceServer(testServer, &service{})
 	pb.RegisterExtraServiceServer(testServer, &service{})
@@ -27,7 +28,7 @@ func startServer(t *testing.T, addr string, reflectionFlag bool) *grpc.Server {
 	}
 
 	go func() {
-		err = testServer.Serve(lis)
+		err := testServer.Serve(lis)
 		assert.NilError(t, err, "test server error")
 	}()
 	return testServer

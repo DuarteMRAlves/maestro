@@ -3,6 +3,7 @@ package invoke
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
@@ -46,8 +47,9 @@ var (
 )
 
 func TestUnaryClient_Invoke(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -73,8 +75,9 @@ func TestUnaryClient_Invoke(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -120,8 +123,9 @@ func TestUnaryClient_Invoke_ServerUnavailable(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -146,8 +150,9 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
-	addr := "localhost:50051"
-	testServer := startServer(t, addr)
+	lis := testutil.ListenAvailablePort(t)
+	addr := lis.Addr().String()
+	testServer := startServer(t, lis)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -18,10 +19,11 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetAsset_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   []string
-		assets []*resources.AssetResource
-		output [][]string
+		name        string
+		defaultAddr bool
+		args        []string
+		assets      []*resources.AssetResource
+		output      [][]string
 	}{
 		{
 			name:   "empty assets",
@@ -43,6 +45,22 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple assets",
 			args: []string{},
+			assets: []*resources.AssetResource{
+				assetForNum(0),
+				assetForNum(2),
+				assetForNum(1),
+			},
+			output: [][]string{
+				{NameText, ImageText},
+				{assetNameForNum(0), assetImageForNum(0)},
+				{assetNameForNum(1), assetImageForNum(1)},
+				{assetNameForNum(2), assetImageForNum(2)},
+			},
+		},
+		{
+			name:        "multiple assets default address",
+			defaultAddr: true,
+			args:        []string{},
 			assets: []*resources.AssetResource{
 				assetForNum(0),
 				assetForNum(2),
@@ -111,9 +129,25 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				addr := "localhost:50051"
-				lis, err := net.Listen("tcp", addr)
-				assert.NilError(t, err, "failed to listen")
+				var (
+					lis  net.Listener
+					addr string
+					err  error
+				)
+
+				if test.defaultAddr {
+					lis = testutil.LockAndListenDefaultAddr(t)
+					defer testutil.UnlockDefaultAddr()
+				} else {
+					lis = testutil.ListenAvailablePort(t)
+				}
+
+				addr = lis.Addr().String()
+
+				if !test.defaultAddr {
+					test.args = append(test.args, "--addr", addr)
+				}
+
 				s := server.NewBuilder().WithGrpc().Build()
 
 				go func() {
