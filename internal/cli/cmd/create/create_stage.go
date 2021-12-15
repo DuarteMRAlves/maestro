@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -108,10 +109,19 @@ func (o *CreateStageOptions) run() error {
 		Service: o.service,
 		Method:  o.method,
 	}
+
+	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		time.Second)
 	defer cancel()
 
-	return client.CreateStage(ctx, stage, o.addr)
+	return c.CreateStage(ctx, stage)
 }

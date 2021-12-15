@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -86,13 +87,21 @@ func (o *CreateOptions) run() error {
 	resourcesByKind = append(resourcesByKind, stages...)
 	resourcesByKind = append(resourcesByKind, links...)
 
+	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		time.Second)
 	defer cancel()
 
 	for _, r := range resourcesByKind {
-		if err := client.CreateResource(ctx, r, o.addr); err != nil {
+		if err := c.CreateResource(ctx, r); err != nil {
 			return err
 		}
 	}

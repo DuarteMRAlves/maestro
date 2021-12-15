@@ -9,6 +9,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"io"
 	"sort"
 	"time"
@@ -93,27 +94,20 @@ func (o *GetAssetOptions) run() error {
 		Image: o.image,
 	}
 
-	conn := client.NewConnection(o.addr)
+	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
 	defer conn.Close()
 
-	c := pb.NewAssetManagementClient(conn)
+	c := client.New(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := c.Get(ctx, query)
+
+	assets, err := c.GetAsset(ctx, query)
 	if err != nil {
-		return client.ErrorFromGrpcError(err)
-	}
-	assets := make([]*pb.Asset, 0)
-	for {
-		a, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return client.ErrorFromGrpcError(err)
-		}
-		assets = append(assets, a)
+		return err
 	}
 	return o.displayAssets(assets)
 }

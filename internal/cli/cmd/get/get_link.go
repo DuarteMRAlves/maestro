@@ -9,6 +9,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"io"
 	"sort"
 	"time"
@@ -110,28 +111,20 @@ func (o *GetLinkOptions) run() error {
 		TargetField: o.targetField,
 	}
 
-	conn := client.NewConnection(o.addr)
+	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
 	defer conn.Close()
 
-	c := pb.NewLinkManagementClient(conn)
+	c := client.New(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	stream, err := c.Get(ctx, query)
+	links, err := c.GetLink(ctx, query)
 	if err != nil {
-		return client.ErrorFromGrpcError(err)
-	}
-	links := make([]*pb.Link, 0)
-	for {
-		l, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return client.ErrorFromGrpcError(err)
-		}
-		links = append(links, l)
+		return err
 	}
 	return o.displayLinks(links)
 }

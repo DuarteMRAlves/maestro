@@ -161,7 +161,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				// If not, an error should be raised.
 				defer s.StopGrpc()
 
-				populateAssets(t, test.assets, addr)
+				err = populateAssets(t, test.assets, addr)
+				assert.NilError(t, err, "populate assets")
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetAsset()

@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -102,6 +103,12 @@ func TestCreateStageWithServer(t *testing.T) {
 					s.StopGrpc()
 				}()
 
+				conn, err := grpc.Dial(addr, grpc.WithInsecure())
+				assert.NilError(t, err, "dial error")
+				defer conn.Close()
+
+				c := client.New(conn)
+
 				// Create asset before executing command
 				ctx, cancel := context.WithTimeout(
 					context.Background(),
@@ -110,10 +117,9 @@ func TestCreateStageWithServer(t *testing.T) {
 
 				assert.NilError(
 					t,
-					client.CreateAsset(
+					c.CreateAsset(
 						ctx,
-						&resources.AssetResource{Name: "asset-name"},
-						addr),
+						&resources.AssetResource{Name: "asset-name"}),
 					"create asset error")
 
 				b := bytes.NewBufferString("")

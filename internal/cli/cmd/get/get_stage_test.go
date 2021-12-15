@@ -292,8 +292,10 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				// If not, an error should be raised.
 				defer s.StopGrpc()
 
-				populateAssets(t, assets, addr)
-				populateStages(t, test.stages, addr)
+				err = populateAssets(t, assets, addr)
+				assert.NilError(t, err, "populate assets")
+				err = populateStages(t, test.stages, addr)
+				assert.NilError(t, err, "populate stages")
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetStage()

@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
@@ -161,6 +162,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 						},
 					},
 				}
+				conn, err := grpc.Dial(addr, grpc.WithInsecure())
+				assert.NilError(t, err, "dial error")
+				defer conn.Close()
+
+				c := client.New(conn)
+
 				ctx, cancel := context.WithTimeout(
 					context.Background(),
 					time.Second)
@@ -169,7 +176,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 				for _, r := range testResources {
 					assert.NilError(
 						t,
-						client.CreateResource(ctx, r, addr),
+						c.CreateResource(ctx, r),
 						"create resource error")
 				}
 
