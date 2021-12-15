@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
 	"testing"
 	"time"
@@ -107,7 +109,15 @@ func populateAssets(
 	t *testing.T,
 	assets []*resources.AssetResource,
 	addr string,
-) {
+) error {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	// Create asset before executing command
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -115,9 +125,11 @@ func populateAssets(
 	defer cancel()
 
 	for _, a := range assets {
-		err := client.CreateAsset(ctx, a, addr)
+		err := c.CreateAsset(ctx, a)
 		assert.NilError(t, err, "populate with assets")
 	}
+
+	return nil
 }
 
 // populateStages creates the stages in the server, asserting any occurred
@@ -126,7 +138,15 @@ func populateStages(
 	t *testing.T,
 	stages []*resources.StageResource,
 	addr string,
-) {
+) error {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	// Create asset before executing command
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -134,13 +154,26 @@ func populateStages(
 	defer cancel()
 
 	for _, s := range stages {
-		err := client.CreateStage(ctx, s, addr)
+		err := c.CreateStage(ctx, s)
 		assert.NilError(t, err, "populate with stages")
 	}
+	return nil
 }
 
 // populateLinks creates the links in the server, asserting any occurred errors.
-func populateLinks(t *testing.T, links []*resources.LinkResource, addr string) {
+func populateLinks(
+	t *testing.T,
+	links []*resources.LinkResource,
+	addr string,
+) error {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	// Create asset before executing command
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -148,7 +181,8 @@ func populateLinks(t *testing.T, links []*resources.LinkResource, addr string) {
 	defer cancel()
 
 	for _, l := range links {
-		err := client.CreateLink(ctx, l, addr)
+		err := c.CreateLink(ctx, l)
 		assert.NilError(t, err, "populate with links")
 	}
+	return nil
 }

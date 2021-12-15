@@ -403,9 +403,12 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				// If not, an error should be raised.
 				defer s.StopGrpc()
 
-				populateAssets(t, assets, addr)
-				populateStages(t, stages, addr)
-				populateLinks(t, test.links, addr)
+				err = populateAssets(t, assets, addr)
+				assert.NilError(t, err, "populate assets")
+				err = populateStages(t, stages, addr)
+				assert.NilError(t, err, "populate stages")
+				err = populateLinks(t, test.links, addr)
+				assert.NilError(t, err, "populate links")
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetLink()

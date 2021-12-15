@@ -9,10 +9,9 @@ import (
 
 // CreateResource creates a resource of any kind.
 // It does no checking of any pre-condition for the resource creation.
-func CreateResource(
+func (c *client) CreateResource(
 	ctx context.Context,
 	resource *resources.Resource,
-	addr string,
 ) error {
 	switch {
 	case resources.IsAssetKind(resource):
@@ -20,7 +19,7 @@ func CreateResource(
 		if err := resources.MarshalResource(a, resource); err != nil {
 			return err
 		}
-		if err := CreateAsset(ctx, a, addr); err != nil {
+		if err := c.CreateAsset(ctx, a); err != nil {
 			return err
 		}
 		return nil
@@ -29,7 +28,7 @@ func CreateResource(
 		if err := resources.MarshalResource(s, resource); err != nil {
 			return err
 		}
-		if err := CreateStage(ctx, s, addr); err != nil {
+		if err := c.CreateStage(ctx, s); err != nil {
 			return err
 		}
 		return nil
@@ -38,7 +37,7 @@ func CreateResource(
 		if err := resources.MarshalResource(l, resource); err != nil {
 			return err
 		}
-		if err := CreateLink(ctx, l, addr); err != nil {
+		if err := c.CreateLink(ctx, l); err != nil {
 			return err
 		}
 		return nil
@@ -46,29 +45,25 @@ func CreateResource(
 	return errdefs.InvalidArgumentWithMsg("unknown kind %v", resource.Kind)
 }
 
-func CreateAsset(
+func (c *client) CreateAsset(
 	ctx context.Context,
 	asset *resources.AssetResource,
-	addr string,
 ) error {
 	a := &pb.Asset{
 		Name:  asset.Name,
 		Image: asset.Image,
 	}
-	conn := NewConnection(addr)
-	defer conn.Close()
 
-	c := pb.NewAssetManagementClient(conn)
+	stub := pb.NewAssetManagementClient(c.conn)
 
-	_, err := c.Create(ctx, a)
+	_, err := stub.Create(ctx, a)
 
 	return ErrorFromGrpcError(err)
 }
 
-func CreateStage(
+func (c *client) CreateStage(
 	ctx context.Context,
 	stage *resources.StageResource,
-	addr string,
 ) error {
 	s := &pb.Stage{
 		Name:    stage.Name,
@@ -76,20 +71,17 @@ func CreateStage(
 		Service: stage.Service,
 		Method:  stage.Method,
 	}
-	conn := NewConnection(addr)
-	defer conn.Close()
 
-	c := pb.NewStageManagementClient(conn)
+	stub := pb.NewStageManagementClient(c.conn)
 
-	_, err := c.Create(ctx, s)
+	_, err := stub.Create(ctx, s)
 
 	return ErrorFromGrpcError(err)
 }
 
-func CreateLink(
+func (c *client) CreateLink(
 	ctx context.Context,
 	link *resources.LinkResource,
-	addr string,
 ) error {
 	l := &pb.Link{
 		Name:        link.Name,
@@ -98,12 +90,10 @@ func CreateLink(
 		TargetStage: link.TargetStage,
 		TargetField: link.TargetField,
 	}
-	conn := NewConnection(addr)
-	defer conn.Close()
 
-	c := pb.NewLinkManagementClient(conn)
+	stub := pb.NewLinkManagementClient(c.conn)
 
-	_, err := c.Create(ctx, l)
+	_, err := stub.Create(ctx, l)
 
 	return ErrorFromGrpcError(err)
 }

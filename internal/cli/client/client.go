@@ -1,17 +1,28 @@
 package client
 
 import (
+	"context"
+	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"google.golang.org/grpc"
-	"log"
 )
 
-const connError = "Unable to connect to maestro server at '%v'. " +
-	"Is the server running?"
+// Client offers an interface to connect to the maestro server
+type Client interface {
+	CreateResource(ctx context.Context, r *resources.Resource) error
+	CreateAsset(ctx context.Context, a *resources.AssetResource) error
+	CreateStage(ctx context.Context, s *resources.StageResource) error
+	CreateLink(ctx context.Context, l *resources.LinkResource) error
 
-func NewConnection(addr string) *grpc.ClientConn {
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf(connError, addr)
-	}
-	return conn
+	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
+	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)
+	GetLink(ctx context.Context, query *pb.Link) ([]*pb.Link, error)
+}
+
+type client struct {
+	conn grpc.ClientConnInterface
+}
+
+func New(conn grpc.ClientConnInterface) Client {
+	return &client{conn: conn}
 }

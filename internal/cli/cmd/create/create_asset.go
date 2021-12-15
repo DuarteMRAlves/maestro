@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -87,10 +88,18 @@ func (o *CreateAssetOptions) run() error {
 		Image: o.image,
 	}
 
+	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		time.Second)
 	defer cancel()
 
-	return client.CreateAsset(ctx, asset, o.addr)
+	return c.CreateAsset(ctx, asset)
 }
