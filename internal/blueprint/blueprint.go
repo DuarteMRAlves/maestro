@@ -23,7 +23,7 @@ func (bp *Blueprint) Clone() *Blueprint {
 
 func (bp *Blueprint) String() string {
 	return fmt.Sprintf(
-		"Blueprint{Name:'%v',Links:%v}",
+		"Blueprint{Name:%v,Links:%v}",
 		bp.Name,
 		bp.Links)
 }

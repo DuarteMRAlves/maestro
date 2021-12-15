@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -56,7 +57,7 @@ func TestServer_CreateBlueprint(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 
 				populateForBlueprints(t, s)
@@ -67,7 +68,7 @@ func TestServer_CreateBlueprint(t *testing.T) {
 }
 
 func TestServer_CreateBlueprint_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
@@ -123,7 +124,7 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 				populateForBlueprints(t, s)
 
@@ -141,7 +142,7 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 
@@ -164,7 +165,7 @@ func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
 func TestServer_CreateBlueprint_AlreadyExists(t *testing.T) {
 	var err error
 
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForBlueprints(t, s)
 

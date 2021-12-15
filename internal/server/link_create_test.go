@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -50,7 +51,7 @@ func TestServer_CreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 
 				populateForLinks(t, s)
@@ -61,7 +62,7 @@ func TestServer_CreateLink(t *testing.T) {
 }
 
 func TestServer_CreateLink_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -108,7 +109,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 				populateForBlueprints(t, s)
 
@@ -126,7 +127,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateLink_SourceEmpty(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -145,7 +146,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetEmpty(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -164,7 +165,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -180,7 +181,7 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 }
 
 func TestServer_CreateLink_SourceNotFound(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -199,7 +200,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetNotFound(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -220,7 +221,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	var err error
 
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 

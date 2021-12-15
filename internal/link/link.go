@@ -24,7 +24,7 @@ func (l *Link) Clone() *Link {
 
 func (l *Link) String() string {
 	return fmt.Sprintf(
-		"Link{Name:%v,SourceStage:%v,SourceField:'%v',TargetStage:%v,TargetField:'%v'",
+		"Link{Name:%v,SourceStage:%v,SourceField:%v,TargetStage:%v,TargetField:%v",
 		l.Name,
 		l.SourceStage,
 		l.SourceField,

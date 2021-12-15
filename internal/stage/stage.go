@@ -28,7 +28,7 @@ func (s *Stage) Clone() *Stage {
 // String provides a string representation for the stage.
 func (s *Stage) String() string {
 	return fmt.Sprintf(
-		"Stage{Name:'%v',Asset:%v,Service:'%v',Method:'%v',Address:%v}",
+		"Stage{Name:%v,Asset:%v,Service:%v,Method:%v,Address:%v}",
 		s.Name,
 		s.Asset,
 		s.Service,
