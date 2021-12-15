@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -41,7 +42,7 @@ func TestServer_CreateAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 				err = s.CreateAsset(test.config)
 				assert.NilError(t, err, "create asset error")
@@ -50,7 +51,7 @@ func TestServer_CreateAsset(t *testing.T) {
 }
 
 func TestServer_CreateAsset_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 
 	err = s.CreateAsset(nil)
@@ -90,7 +91,7 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().Build()
+				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 
 				err = s.CreateAsset(test.config)
@@ -109,7 +110,7 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	var err error
 
-	s, err := NewBuilder().WithGrpc().Build()
+	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 
 	config := &asset.Asset{
