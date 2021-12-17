@@ -103,7 +103,7 @@ func (o *CreateStageOptions) validate() error {
 }
 
 func (o *CreateStageOptions) run() error {
-	stage := &resources.StageResource{
+	stage := &resources.StageSpec{
 		Name:    o.name,
 		Asset:   o.asset,
 		Service: o.service,

@@ -6,6 +6,9 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	"regexp"
+	"sort"
+	"strings"
 )
 
 func ParseFiles(files []string) ([]*Resource, error) {
@@ -32,6 +35,7 @@ func ParseBytes(data []byte) ([]*Resource, error) {
 	reader := bytes.NewReader(data)
 
 	dec := yaml.NewDecoder(reader)
+	dec.SetStrict(true)
 
 	resources := make([]*Resource, 0)
 
@@ -42,10 +46,41 @@ func ParseBytes(data []byte) ([]*Resource, error) {
 		}
 		resources = append(resources, r)
 	}
-
-	if err == io.EOF {
+	switch {
+	case err == io.EOF:
 		return resources, nil
-	} else {
-		return nil, errdefs.InternalWithMsg("unmarshal resource: %v", err)
+	case errdefs.IsInvalidArgument(err):
+		return nil, err
+	default:
+		typeErr, ok := err.(*yaml.TypeError)
+		if ok {
+			return nil, typeErrorToError(typeErr)
+		}
+		return nil, errdefs.InvalidArgumentWithMsg(
+			"unmarshal resource: %v",
+			err)
 	}
+}
+
+func typeErrorToError(typeErr *yaml.TypeError) error {
+	unknownRegex := regexp.MustCompile(
+		`line \d+: field (?P<field>[\w\W_]+) not found in type [\w\W_.]+`)
+	unknownFields := make([]string, 0)
+	for _, errMsg := range typeErr.Errors {
+		unknownMatch := unknownRegex.FindStringSubmatch(errMsg)
+		if len(unknownMatch) > 0 {
+			unknownFields = append(
+				unknownFields,
+				unknownMatch[unknownRegex.SubexpIndex("field")])
+		}
+	}
+	if len(unknownFields) > 0 {
+		sort.Strings(unknownFields)
+		return errdefs.InvalidArgumentWithMsg(
+			"unknown spec fields: %v",
+			strings.Join(unknownFields, ","))
+	}
+	return errdefs.InvalidArgumentWithMsg(
+		"unmarshal resource: %v",
+		typeErr)
 }

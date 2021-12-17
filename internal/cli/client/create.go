@@ -15,27 +15,27 @@ func (c *client) CreateResource(
 ) error {
 	switch {
 	case resources.IsAssetKind(resource):
-		a := &resources.AssetResource{}
-		if err := resources.MarshalResource(a, resource); err != nil {
-			return err
+		a, ok := resource.Spec.(*resources.AssetSpec)
+		if !ok {
+			return errdefs.InternalWithMsg("asset spec cast failed: %v", a)
 		}
 		if err := c.CreateAsset(ctx, a); err != nil {
 			return err
 		}
 		return nil
 	case resources.IsStageKind(resource):
-		s := &resources.StageResource{}
-		if err := resources.MarshalResource(s, resource); err != nil {
-			return err
+		s, ok := resource.Spec.(*resources.StageSpec)
+		if !ok {
+			return errdefs.InternalWithMsg("stage spec cast failed: %v", s)
 		}
 		if err := c.CreateStage(ctx, s); err != nil {
 			return err
 		}
 		return nil
 	case resources.IsLinkKind(resource):
-		l := &resources.LinkResource{}
-		if err := resources.MarshalResource(l, resource); err != nil {
-			return err
+		l, ok := resource.Spec.(*resources.LinkSpec)
+		if !ok {
+			return errdefs.InternalWithMsg("link spec cast failed: %v", l)
 		}
 		if err := c.CreateLink(ctx, l); err != nil {
 			return err
@@ -47,7 +47,7 @@ func (c *client) CreateResource(
 
 func (c *client) CreateAsset(
 	ctx context.Context,
-	asset *resources.AssetResource,
+	asset *resources.AssetSpec,
 ) error {
 	a := &pb.Asset{
 		Name:  asset.Name,
@@ -63,7 +63,7 @@ func (c *client) CreateAsset(
 
 func (c *client) CreateStage(
 	ctx context.Context,
-	stage *resources.StageResource,
+	stage *resources.StageSpec,
 ) error {
 	s := &pb.Stage{
 		Name:    stage.Name,
@@ -81,7 +81,7 @@ func (c *client) CreateStage(
 
 func (c *client) CreateLink(
 	ctx context.Context,
-	link *resources.LinkResource,
+	link *resources.LinkSpec,
 ) error {
 	l := &pb.Link{
 		Name:        link.Name,

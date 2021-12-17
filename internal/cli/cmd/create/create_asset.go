@@ -83,7 +83,7 @@ func (o *CreateAssetOptions) validate() error {
 }
 
 func (o *CreateAssetOptions) run() error {
-	asset := &resources.AssetResource{
+	asset := &resources.AssetSpec{
 		Name:  o.name,
 		Image: o.image,
 	}

@@ -14,8 +14,8 @@ import (
 
 // assetForNum deterministically creates an asset resource with the given
 // number.
-func assetForNum(num int) *resources.AssetResource {
-	return &resources.AssetResource{
+func assetForNum(num int) *resources.AssetSpec {
+	return &resources.AssetSpec{
 		Name:  assetNameForNum(num),
 		Image: assetImageForNum(num),
 	}
@@ -23,8 +23,8 @@ func assetForNum(num int) *resources.AssetResource {
 
 // stageForNum deterministically creates a stage resource with the given number.
 // The associated asset name is the one used in assetForNum.
-func stageForNum(num int) *resources.StageResource {
-	return &resources.StageResource{
+func stageForNum(num int) *resources.StageSpec {
+	return &resources.StageSpec{
 		Name:    stageNameForNum(num),
 		Asset:   assetNameForNum(num),
 		Service: stageServiceForNum(num),
@@ -36,8 +36,8 @@ func stageForNum(num int) *resources.StageResource {
 // The associated source stage name is the one used in stageForNum with the num
 // argument. The associated target stage name is the one used in the stageForNum
 // with the num+1 argument.
-func linkForNum(num int) *resources.LinkResource {
-	return &resources.LinkResource{
+func linkForNum(num int) *resources.LinkSpec {
+	return &resources.LinkSpec{
 		Name:        linkNameForNum(num),
 		SourceStage: linkSourceStageForNum(num),
 		SourceField: linkSourceFieldForNum(num),
@@ -107,7 +107,7 @@ func linkTargetFieldForNum(num int) string {
 // errors.
 func populateAssets(
 	t *testing.T,
-	assets []*resources.AssetResource,
+	assets []*resources.AssetSpec,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -136,7 +136,7 @@ func populateAssets(
 // errors.
 func populateStages(
 	t *testing.T,
-	stages []*resources.StageResource,
+	stages []*resources.StageSpec,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -163,7 +163,7 @@ func populateStages(
 // populateLinks creates the links in the server, asserting any occurred errors.
 func populateLinks(
 	t *testing.T,
-	links []*resources.LinkResource,
+	links []*resources.LinkSpec,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())

@@ -22,13 +22,13 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		name        string
 		defaultAddr bool
 		args        []string
-		links       []*resources.LinkResource
+		links       []*resources.LinkSpec
 		output      [][]string
 	}{
 		{
 			name:  "empty links",
 			args:  []string{},
-			links: []*resources.LinkResource{},
+			links: []*resources.LinkSpec{},
 			output: [][]string{
 				{
 					NameText,
@@ -42,7 +42,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name:  "one link",
 			args:  []string{},
-			links: []*resources.LinkResource{linkForNum(0)},
+			links: []*resources.LinkSpec{linkForNum(0)},
 			output: [][]string{
 				{
 					NameText,
@@ -63,7 +63,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple links",
 			args: []string{},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(1),
 				linkForNum(0),
 				linkForNum(2),
@@ -103,7 +103,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 			name:        "multiple links",
 			defaultAddr: true,
 			args:        []string{},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(1),
 				linkForNum(0),
 				linkForNum(2),
@@ -142,7 +142,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{linkNameForNum(2)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(1),
 				linkForNum(0),
@@ -167,7 +167,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by source stage",
 			args: []string{"--source-stage", linkSourceStageForNum(2)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(1),
 				linkForNum(2),
 				linkForNum(0),
@@ -192,7 +192,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by source field",
 			args: []string{"--source-field", linkSourceFieldForNum(0)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(1),
 				linkForNum(0),
@@ -217,7 +217,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by target stage",
 			args: []string{"--target-stage", linkTargetStageForNum(1)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(0),
 				linkForNum(1),
@@ -242,7 +242,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by target field",
 			args: []string{"--target-field", linkTargetFieldForNum(2)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(0),
 				linkForNum(2),
 				linkForNum(1),
@@ -267,7 +267,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{linkNameForNum(3)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(1),
 				linkForNum(0),
@@ -285,7 +285,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such source stage",
 			args: []string{"--source-stage", linkSourceStageForNum(3)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(1),
 				linkForNum(2),
 				linkForNum(0),
@@ -303,7 +303,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such source field",
 			args: []string{"--source-field", linkSourceFieldForNum(4)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(1),
 				linkForNum(0),
@@ -321,7 +321,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such target stage",
 			args: []string{"--target-stage", linkTargetStageForNum(5)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(2),
 				linkForNum(0),
 				linkForNum(1),
@@ -339,7 +339,7 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such target field",
 			args: []string{"--target-field", linkTargetFieldForNum(6)},
-			links: []*resources.LinkResource{
+			links: []*resources.LinkSpec{
 				linkForNum(0),
 				linkForNum(1),
 				linkForNum(2),
@@ -355,13 +355,13 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 			},
 		},
 	}
-	assets := []*resources.AssetResource{
+	assets := []*resources.AssetSpec{
 		assetForNum(0),
 		assetForNum(1),
 		assetForNum(2),
 		assetForNum(3),
 	}
-	stages := []*resources.StageResource{
+	stages := []*resources.StageSpec{
 		stageForNum(0),
 		stageForNum(1),
 		stageForNum(2),
