@@ -2,21 +2,60 @@ package resources
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type Resource struct {
-	Kind string
-	Spec map[string]string
+	Kind string      `yaml:"kind"`
+	Spec interface{} `yaml:"-"`
 }
 
 func (r *Resource) String() string {
-	return fmt.Sprintf("Resource{Kind:%v,Spec:%v", r.Kind, r.Spec)
+	return fmt.Sprintf("Resource{Kind:%v,Spec:%v}", r.Kind, r.Spec)
 }
 
-func copyResource(dst *Resource, src *Resource) {
-	dst.Kind = src.Kind
-	dst.Spec = make(map[string]string, len(src.Spec))
-	for k, v := range src.Spec {
-		dst.Spec[k] = v
+type yamlNode struct {
+	unmarshal func(interface{}) error
+}
+
+func (n *yamlNode) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	n.unmarshal = unmarshal
+	return nil
+}
+
+// UnmarshalYAML changes the default unmarshalling behaviour for the Resource
+// unmarshalling to account for the dynamic unmarshalling of the spec field.
+func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	obj := &struct {
+		Kind string `yaml:"kind"`
+		// This field will not be decoded into a specific type but the
+		// relevant information will be stored.
+		Spec yamlNode `yaml:"spec"`
+	}{}
+	if err := unmarshal(obj); err != nil {
+		return err
 	}
+	r.Kind = obj.Kind
+	if r.Kind == "" {
+		return errdefs.InvalidArgumentWithMsg("kind not specified")
+	}
+	switch r.Kind {
+	case AssetKind:
+		r.Spec = new(AssetSpec)
+	case StageKind:
+		r.Spec = new(StageSpec)
+	case LinkKind:
+		r.Spec = new(LinkSpec)
+	default:
+		return errdefs.InvalidArgumentWithMsg("unknown kind: '%v'", r.Kind)
+	}
+	if obj.Spec.unmarshal == nil {
+		return errdefs.InvalidArgumentWithMsg("empty spec")
+	}
+	err := obj.Spec.unmarshal(r.Spec)
+	if err != nil {
+		return err
+	}
+
+	return validateInfo(r.Spec)
 }

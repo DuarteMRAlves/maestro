@@ -108,7 +108,7 @@ func (o *CreateLinkOptions) validate() error {
 // CreateLinkOptions runs a CreateLink command with the specified options.
 // It assumes the options were previously validated.
 func (o *CreateLinkOptions) run() error {
-	link := &resources.LinkResource{
+	link := &resources.LinkSpec{
 		Name:        o.name,
 		SourceStage: o.sourceStage,
 		SourceField: o.sourceField,

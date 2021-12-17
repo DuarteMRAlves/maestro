@@ -10,9 +10,9 @@ import (
 // Client offers an interface to connect to the maestro server
 type Client interface {
 	CreateResource(ctx context.Context, r *resources.Resource) error
-	CreateAsset(ctx context.Context, a *resources.AssetResource) error
-	CreateStage(ctx context.Context, s *resources.StageResource) error
-	CreateLink(ctx context.Context, l *resources.LinkResource) error
+	CreateAsset(ctx context.Context, a *resources.AssetSpec) error
+	CreateStage(ctx context.Context, s *resources.StageSpec) error
+	CreateLink(ctx context.Context, l *resources.LinkSpec) error
 
 	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)

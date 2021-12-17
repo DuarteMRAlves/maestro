@@ -140,7 +140,7 @@ func TestCreateWithoutServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/invalid_kind.yml",
 			},
-			"invalid argument: invalid kind 'invalid-kind'",
+			"invalid argument: unknown kind: 'invalid-kind'",
 		},
 		{
 			"invalid specs",

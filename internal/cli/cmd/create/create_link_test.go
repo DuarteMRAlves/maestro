@@ -125,8 +125,10 @@ func TestCreateLinkWithServer(t *testing.T) {
 				if !test.defaultAddr {
 					test.args = append(test.args, "--addr", addr)
 				}
-
-				s, err := server.NewBuilder().WithGrpc().Build()
+				s, err := server.NewBuilder().
+					WithGrpc().
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				go func() {
@@ -145,20 +147,18 @@ func TestCreateLinkWithServer(t *testing.T) {
 				testResources := []*resources.Resource{
 					{
 						Kind: "asset",
-						Spec: map[string]string{"name": "asset-name"},
+						Spec: &resources.AssetSpec{Name: "asset-name"},
 					},
 					{
 						Kind: "stage",
-						Spec: map[string]string{
-							"name":  "source-name",
-							"asset": "asset-name",
+						Spec: &resources.StageSpec{
+							Name: "source-name",
 						},
 					},
 					{
 						Kind: "stage",
-						Spec: map[string]string{
-							"name":  "target-name",
-							"asset": "asset-name",
+						Spec: &resources.StageSpec{
+							Name: "target-name",
 						},
 					},
 				}

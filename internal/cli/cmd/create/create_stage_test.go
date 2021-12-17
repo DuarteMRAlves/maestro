@@ -119,7 +119,7 @@ func TestCreateStageWithServer(t *testing.T) {
 					t,
 					c.CreateAsset(
 						ctx,
-						&resources.AssetResource{Name: "asset-name"}),
+						&resources.AssetSpec{Name: "asset-name"}),
 					"create asset error")
 
 				b := bytes.NewBufferString("")

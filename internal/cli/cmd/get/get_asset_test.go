@@ -22,13 +22,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		name        string
 		defaultAddr bool
 		args        []string
-		assets      []*resources.AssetResource
+		assets      []*resources.AssetSpec
 		output      [][]string
 	}{
 		{
 			name:   "empty assets",
 			args:   []string{},
-			assets: []*resources.AssetResource{},
+			assets: []*resources.AssetSpec{},
 			output: [][]string{
 				{NameText, ImageText},
 			},
@@ -36,7 +36,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name:   "one asset",
 			args:   []string{},
-			assets: []*resources.AssetResource{assetForNum(0)},
+			assets: []*resources.AssetSpec{assetForNum(0)},
 			output: [][]string{
 				{NameText, ImageText},
 				{assetNameForNum(0), assetImageForNum(0)},
@@ -45,7 +45,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple assets",
 			args: []string{},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(0),
 				assetForNum(2),
 				assetForNum(1),
@@ -61,7 +61,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			name:        "multiple assets default address",
 			defaultAddr: true,
 			args:        []string{},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(0),
 				assetForNum(2),
 				assetForNum(1),
@@ -76,7 +76,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{assetNameForNum(1)},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(2),
 				assetForNum(0),
 				assetForNum(1),
@@ -89,7 +89,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by image",
 			args: []string{"--image", assetImageForNum(2)},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(1),
 				assetForNum(0),
 				assetForNum(2),
@@ -102,7 +102,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{assetNameForNum(3)},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(2),
 				assetForNum(0),
 				assetForNum(1),
@@ -114,7 +114,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such image",
 			args: []string{"--image", assetImageForNum(4)},
-			assets: []*resources.AssetResource{
+			assets: []*resources.AssetSpec{
 				assetForNum(1),
 				assetForNum(0),
 				assetForNum(2),

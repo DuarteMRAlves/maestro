@@ -22,13 +22,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		name        string
 		defaultAddr bool
 		args        []string
-		stages      []*resources.StageResource
+		stages      []*resources.StageSpec
 		output      [][]string
 	}{
 		{
 			name:   "empty stages",
 			args:   []string{},
-			stages: []*resources.StageResource{},
+			stages: []*resources.StageSpec{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
@@ -36,7 +36,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name:   "one stage",
 			args:   []string{},
-			stages: []*resources.StageResource{stageForNum(0)},
+			stages: []*resources.StageSpec{stageForNum(0)},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 				{
@@ -44,7 +44,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -52,7 +52,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple stages",
 			args: []string{},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(1),
 				stageForNum(0),
 				stageForNum(2),
@@ -64,7 +64,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 				{
@@ -72,7 +72,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageMethodForNum(1),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 				{
@@ -80,7 +80,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -89,7 +89,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			name:        "multiple stages default addr",
 			defaultAddr: true,
 			args:        []string{},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(1),
 				stageForNum(0),
 				stageForNum(2),
@@ -101,7 +101,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 				{
@@ -109,7 +109,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageMethodForNum(1),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 				{
@@ -117,7 +117,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -125,7 +125,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{stageNameForNum(2)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(1),
 				stageForNum(0),
@@ -137,7 +137,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -145,7 +145,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by asset",
 			args: []string{"--asset", assetNameForNum(2)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(1),
 				stageForNum(2),
 				stageForNum(0),
@@ -157,7 +157,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -165,7 +165,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by service",
 			args: []string{"--service", stageServiceForNum(0)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(1),
 				stageForNum(0),
@@ -177,7 +177,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -185,7 +185,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by method",
 			args: []string{"--method", stageMethodForNum(1)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(0),
 				stageForNum(1),
@@ -197,7 +197,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageMethodForNum(1),
-					// StageResource still has no address
+					// StageSpec still has no address
 					"",
 				},
 			},
@@ -205,7 +205,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{stageNameForNum(3)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(1),
 				stageForNum(0),
@@ -217,7 +217,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such asset",
 			args: []string{"--asset", assetNameForNum(3)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(1),
 				stageForNum(2),
 				stageForNum(0),
@@ -229,7 +229,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such service",
 			args: []string{"--service", stageServiceForNum(4)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(1),
 				stageForNum(0),
@@ -241,7 +241,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such method",
 			args: []string{"--method", stageMethodForNum(5)},
-			stages: []*resources.StageResource{
+			stages: []*resources.StageSpec{
 				stageForNum(2),
 				stageForNum(0),
 				stageForNum(1),
@@ -251,7 +251,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 		},
 	}
-	assets := []*resources.AssetResource{
+	assets := []*resources.AssetSpec{
 		assetForNum(0),
 		assetForNum(1),
 		assetForNum(2),
@@ -349,7 +349,12 @@ func TestGetStage_CLIErrors(t *testing.T) {
 					test.expectedOut,
 					string(out))
 				assert.NilError(t, err, "matched output")
-				assert.Assert(t, matched, "output not matched")
+				assert.Assert(
+					t,
+					matched,
+					"output not matched: expected %v, received %v",
+					test.expectedOut,
+					string(out))
 			})
 	}
 }
