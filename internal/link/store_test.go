@@ -1,7 +1,6 @@
 package link
 
 import (
-	"fmt"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -15,29 +14,39 @@ const (
 )
 
 func TestStore_Create(t *testing.T) {
-	tests := []*Link{
+	tests := []struct {
+		name   string
+		config *Link
+	}{
 		{
-			Name:        linkName,
-			SourceStage: linkSourceStage,
-			SourceField: linkSourceField,
-			TargetStage: linkTargetStage,
-			TargetField: linkTargetField,
+			name: "non default parameters",
+			config: &Link{
+				Name:        linkName,
+				SourceStage: linkSourceStage,
+				SourceField: linkSourceField,
+				TargetStage: linkTargetStage,
+				TargetField: linkTargetField,
+			},
 		},
 		{
-			Name:        "",
-			SourceStage: "",
-			SourceField: "",
-			TargetStage: "",
-			TargetField: "",
+			name: "default parameters",
+			config: &Link{
+				Name:        "",
+				SourceStage: "",
+				SourceField: "",
+				TargetStage: "",
+				TargetField: "",
+			},
 		},
 	}
 
-	for _, cfg := range tests {
-		testName := fmt.Sprintf("cfg=%v", cfg)
+	for _, test := range tests {
 
 		t.Run(
-			testName,
+			test.name,
 			func(t *testing.T) {
+				cfg := test.config
+
 				st, ok := NewStore().(*store)
 				assert.Assert(t, ok, "type assertion failed for store")
 

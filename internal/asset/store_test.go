@@ -8,58 +8,67 @@ import (
 )
 
 func TestStore_CreateCorrect(t *testing.T) {
-	tests := []*Asset{
-		{Name: assetName},
-		{Name: assetName, Image: assetImage},
-		{Name: "", Image: ""},
+	tests := []struct {
+		name   string
+		config *Asset
+	}{
+		{
+			name:   "non default params",
+			config: &Asset{Name: assetName, Image: assetImage},
+		},
+		{
+			name:   "default params",
+			config: &Asset{Name: "", Image: ""},
+		},
 	}
-	for _, a := range tests {
-		testName := fmt.Sprintf("a='%v'", a)
-
+	for _, test := range tests {
 		t.Run(
-			testName, func(t *testing.T) {
+			test.name, func(t *testing.T) {
+				config := test.config
+
 				st, ok := NewStore().(*store)
 				assert.Assert(t, ok, "type assertion failed for store")
 
-				e := st.Create(a)
+				e := st.Create(config)
 				assert.NilError(t, e, "error not nil")
 				assert.Equal(t, 1, lenAssets(st), "store size")
-				stored, ok := st.assets.Load(a.Name)
-				assert.Assert(t, ok, "asset does not exist")
+				stored, ok := st.assets.Load(config.Name)
+				assert.Assert(t, ok, "config does not exist")
 				asset, ok := stored.(*Asset)
-				assert.Assert(t, ok, "asset type assertion failed")
-				assert.Equal(t, asset.Name, a.Name, "name not correct")
-				assert.Equal(t, asset.Image, a.Image, "image not correct")
+				assert.Assert(t, ok, "config type assertion failed")
+				assert.Equal(t, asset.Name, config.Name, "name not correct")
+				assert.Equal(t, asset.Image, config.Image, "image not correct")
 			})
 	}
 }
 
 func TestStore_CreateInvalidArguments(t *testing.T) {
 	tests := []struct {
-		a      *Asset
+		name   string
+		config *Asset
 		errMsg string
 	}{
 		{
-			nil,
-			"'config' is nil",
+			name:   "nil config",
+			config: nil,
+			errMsg: "'config' is nil",
 		},
 	}
 
-	for _, inner := range tests {
-		a, errMsg := inner.a, inner.errMsg
-		testName := fmt.Sprintf("config=%v, errMsg=%v", a, errMsg)
+	for _, test := range tests {
+		config, errMsg := test.config, test.errMsg
 
 		t.Run(
-			testName, func(t *testing.T) {
+			test.name, func(t *testing.T) {
 				st, ok := NewStore().(*store)
 				assert.Assert(t, ok, "type assertion failed for store")
 
-				err := st.Create(a)
+				err := st.Create(config)
 				assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 				assert.ErrorContains(t, err, errMsg)
 				assert.Equal(t, 0, lenAssets(st), "store size")
 				_, ok = st.assets.Load(assetName)
-				assert.Assert(t, !ok, "asset does not exist")
+				assert.Assert(t, !ok, "config does not exist")
 			})
 	}
 }

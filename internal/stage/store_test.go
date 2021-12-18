@@ -1,7 +1,6 @@
 package stage
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -16,29 +15,39 @@ const (
 )
 
 func TestStore_Create(t *testing.T) {
-	tests := []*Stage{
+	tests := []struct {
+		name   string
+		config *Stage
+	}{
 		{
-			Name:    stageName,
-			Asset:   stageAsset,
-			Service: stageService,
-			Method:  stageMethod,
-			Address: stageAddress,
+			name: "non default params",
+			config: &Stage{
+				Name:    stageName,
+				Asset:   stageAsset,
+				Service: stageService,
+				Method:  stageMethod,
+				Address: stageAddress,
+			},
 		},
 		{
-			Name:    "",
-			Asset:   "",
-			Service: "",
-			Method:  "",
-			Address: "",
+			name: "default params",
+			config: &Stage{
+				Name:    "",
+				Asset:   "",
+				Service: "",
+				Method:  "",
+				Address: "",
+			},
 		},
 	}
 
-	for _, cfg := range tests {
-		testName := fmt.Sprintf("cfg=%v", cfg)
+	for _, test := range tests {
 
 		t.Run(
-			testName,
+			test.name,
 			func(t *testing.T) {
+				cfg := test.config
+
 				st, ok := NewStore().(*store)
 				assert.Assert(t, ok, "type assertion failed for store")
 
