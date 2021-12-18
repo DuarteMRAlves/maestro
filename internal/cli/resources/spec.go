@@ -19,3 +19,8 @@ type LinkSpec struct {
 	TargetStage string `yaml:"target_stage" info:"required"`
 	TargetField string `yaml:"target_field"`
 }
+
+type BlueprintSpec struct {
+	Name  string   `yaml:"name" info:"required"`
+	Links []string `yaml:"links" info:"required"`
+}
