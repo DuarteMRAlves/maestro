@@ -97,3 +97,16 @@ func (c *client) CreateLink(
 
 	return ErrorFromGrpcError(err)
 }
+
+func (c *client) CreateBlueprint(
+	ctx context.Context,
+	blueprint *resources.BlueprintSpec,
+) error {
+	bp := &pb.Blueprint{Name: blueprint.Name, Links: blueprint.Links}
+
+	stub := pb.NewBlueprintManagementClient(c.conn)
+
+	_, err := stub.Create(ctx, bp)
+
+	return ErrorFromGrpcError(err)
+}
