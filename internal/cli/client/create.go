@@ -70,6 +70,7 @@ func (c *client) CreateStage(
 		Asset:   stage.Asset,
 		Service: stage.Service,
 		Method:  stage.Method,
+		Address: stage.Address,
 	}
 
 	stub := pb.NewStageManagementClient(c.conn)

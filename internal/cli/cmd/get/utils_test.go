@@ -29,6 +29,7 @@ func stageForNum(num int) *resources.StageSpec {
 		Asset:   assetNameForNum(num),
 		Service: stageServiceForNum(num),
 		Method:  stageMethodForNum(num),
+		Address: stageAddressForNum(num),
 	}
 }
 
@@ -72,6 +73,12 @@ func stageServiceForNum(num int) string {
 // number.
 func stageMethodForNum(num int) string {
 	return fmt.Sprintf("method-%v", num)
+}
+
+// stageAddressForNum deterministically creates a stage method for a given
+// number.
+func stageAddressForNum(num int) string {
+	return fmt.Sprintf("address-%v", num)
 }
 
 // linkNameForNum deterministically creates a link name for a given number.

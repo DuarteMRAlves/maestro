@@ -36,6 +36,8 @@ func TestCreateStageWithServer(t *testing.T) {
 				"ServiceName",
 				"--method",
 				"MethodName",
+				"--address",
+				"some-address",
 			},
 			"",
 		},

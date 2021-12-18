@@ -9,6 +9,7 @@ spec:
   asset: asset-1
   service: Service1
   method: Method1
+  address: address-1
 ---
 kind: link
 spec:
@@ -22,6 +23,7 @@ spec:
   asset: asset-2
   service: Service2
   method: Method2
+  address: address-2
 ---
 kind: asset
 spec:

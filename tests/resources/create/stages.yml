@@ -13,3 +13,4 @@ spec:
   asset: asset-6
   service: Service6
   method: Method6
+  address: stage-address

@@ -10,6 +10,7 @@ type StageSpec struct {
 	Asset   string `yaml:"asset"`
 	Service string `yaml:"service"`
 	Method  string `yaml:"method"`
+	Address string `yaml:"address"`
 }
 
 type LinkSpec struct {
