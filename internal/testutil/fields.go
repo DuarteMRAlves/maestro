@@ -2,63 +2,7 @@ package testutil
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/link"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 )
-
-// AssetForNum deterministically creates an asset resource with the given
-// number.
-func AssetForNum(num int) *asset.Asset {
-	return &asset.Asset{
-		Name:  AssetNameForNum(num),
-		Image: AssetImageForNum(num),
-	}
-}
-
-// StageForNum deterministically creates a stage resource with the given number.
-// The associated asset name is the one used in AssetForNum.
-func StageForNum(num int) *stage.Stage {
-	return &stage.Stage{
-		Name:    StageNameForNum(num),
-		Asset:   AssetNameForNum(num),
-		Service: StageServiceForNum(num),
-		Method:  StageMethodForNum(num),
-		Address: StageAddressForNum(num),
-	}
-}
-
-// LinkForNum deterministically creates a link resource with the given number.
-// The associated source stage name is the one used in stageForNum with the num
-// argument. The associated target stage name is the one used in the stageForNum
-// with the num+1 argument.
-func LinkForNum(num int) *link.Link {
-	return &link.Link{
-		Name:        LinkNameForNum(num),
-		SourceStage: LinkSourceStageForNum(num),
-		SourceField: LinkSourceFieldForNum(num),
-		TargetStage: LinkTargetStageForNum(num),
-		TargetField: LinkTargetFieldForNum(num),
-	}
-}
-
-// OrchestrationForNum deterministically creates an orchestration object with
-// the given number. The associated links names are created with LinkNameForNum
-// with the received nums.
-func OrchestrationForNum(
-	num int,
-	linkNums ...int,
-) *orchestration.Orchestration {
-	links := make([]string, 0, len(linkNums))
-	for _, linkNum := range linkNums {
-		links = append(links, LinkNameForNum(linkNum))
-	}
-	return &orchestration.Orchestration{
-		Name:  OrchestrationNameForNum(num),
-		Links: links,
-	}
-}
 
 // AssetNameForNum deterministically creates an asset name for a given number.
 func AssetNameForNum(num int) string {
