@@ -23,13 +23,11 @@ import (
 func TestCreateLinkWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create a link with all arguments",
-			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -45,19 +43,6 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link with required arguments",
-			false,
-			[]string{
-				"link-name",
-				"--source-stage",
-				"source-name",
-				"--target-stage",
-				"target-name",
-			},
-			"",
-		},
-		{
-			"create a link on default address",
-			true,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -69,7 +54,6 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link with invalid name",
-			false,
 			[]string{
 				"invalid--name",
 				"--source-stage",
@@ -81,7 +65,6 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link no such source stage",
-			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -93,7 +76,6 @@ func TestCreateLinkWithServer(t *testing.T) {
 		},
 		{
 			"create a link no such target stage",
-			false,
 			[]string{
 				"link-name",
 				"--source-stage",
@@ -113,18 +95,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
+
 				s, err := server.NewBuilder().
 					WithGrpc().
 					WithLogger(testutil.NewLogger(t)).
@@ -216,17 +192,6 @@ func TestCreateLinkWithoutServer(t *testing.T) {
 			"no target stage",
 			[]string{"link-name", "--source-stage", "source-name"},
 			"invalid argument: please specify a target stage",
-		},
-		{
-			"server not connected",
-			[]string{
-				"link-name",
-				"--source-stage",
-				"source-name",
-				"--target-stage",
-				"target-name",
-			},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
 		},
 	}
 	for _, test := range tests {

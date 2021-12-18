@@ -9,7 +9,6 @@ import (
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
-	"regexp"
 	"testing"
 )
 
@@ -19,11 +18,10 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetStage_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name        string
-		defaultAddr bool
-		args        []string
-		stages      []*resources.StageSpec
-		output      [][]string
+		name   string
+		args   []string
+		stages []*resources.StageSpec
+		output [][]string
 	}{
 		{
 			name:   "empty stages",
@@ -52,43 +50,6 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple stages",
 			args: []string{},
-			stages: []*resources.StageSpec{
-				stageForNum(1),
-				stageForNum(0),
-				stageForNum(2),
-			},
-			output: [][]string{
-				{NameText, AssetText, ServiceText, MethodText, AddressText},
-				{
-					stageNameForNum(0),
-					assetNameForNum(0),
-					stageServiceForNum(0),
-					stageMethodForNum(0),
-					// StageSpec still has no address
-					"",
-				},
-				{
-					stageNameForNum(1),
-					assetNameForNum(1),
-					stageServiceForNum(1),
-					stageMethodForNum(1),
-					// StageSpec still has no address
-					"",
-				},
-				{
-					stageNameForNum(2),
-					assetNameForNum(2),
-					stageServiceForNum(2),
-					stageMethodForNum(2),
-					// StageSpec still has no address
-					"",
-				},
-			},
-		},
-		{
-			name:        "multiple stages default addr",
-			defaultAddr: true,
-			args:        []string{},
 			stages: []*resources.StageSpec{
 				stageForNum(1),
 				stageForNum(0),
@@ -266,18 +227,11 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
 
 				s, err := server.NewBuilder().WithGrpc().Build()
 				assert.NilError(t, err, "build server")
@@ -313,48 +267,6 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
-	}
-}
-
-// TestGetStage_CLIErrors performs integration testing on the GetStage
-// command with sets of flags that do no required the server to be running.
-func TestGetStage_CLIErrors(t *testing.T) {
-	tests := []struct {
-		name        string
-		args        []string
-		expectedOut string
-	}{
-		{
-			"server not connected",
-			[]string{},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
-		},
-	}
-	for _, test := range tests {
-		t.Run(
-			test.name, func(t *testing.T) {
-				b := bytes.NewBufferString("")
-				cmd := NewCmdGetStage()
-				cmd.SetOut(b)
-				cmd.SetArgs(test.args)
-				err := cmd.Execute()
-				assert.NilError(t, err, "execute error")
-				out, err := ioutil.ReadAll(b)
-				assert.NilError(t, err, "read output error")
-				// This is not ideal but its to match the not connected error
-				// with no ip. Detailed in GitHub issue
-				// https://github.com/DuarteMRAlves/maestro/issues/29.
-				matched, err := regexp.MatchString(
-					test.expectedOut,
-					string(out))
-				assert.NilError(t, err, "matched output")
-				assert.Assert(
-					t,
-					matched,
-					"output not matched: expected %v, received %v",
-					test.expectedOut,
-					string(out))
 			})
 	}
 }

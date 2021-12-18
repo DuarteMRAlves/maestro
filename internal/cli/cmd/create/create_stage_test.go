@@ -23,13 +23,11 @@ import (
 func TestCreateStageWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create a stage with all arguments",
-			false,
 			[]string{
 				"stage-name",
 				"--asset",
@@ -43,25 +41,16 @@ func TestCreateStageWithServer(t *testing.T) {
 		},
 		{
 			"create a stage with required arguments",
-			false,
 			[]string{"stage-name"},
 			"",
 		},
 		{
-			"create an stage on default address",
-			true,
-			[]string{"asset-name"},
-			"",
-		},
-		{
 			"create a stage with invalid name",
-			false,
 			[]string{"invalid--name"},
 			"invalid argument: invalid name 'invalid--name'",
 		},
 		{
 			"create a stage no such asset",
-			false,
 			[]string{"stage-name", "--asset", "does-not-exist"},
 			"not found: asset 'does-not-exist' not found",
 		},
@@ -75,18 +64,11 @@ func TestCreateStageWithServer(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
 
 				s, err := server.NewBuilder().WithGrpc().Build()
 				assert.NilError(t, err, "build server")
@@ -147,11 +129,6 @@ func TestCreateStageWithoutServer(t *testing.T) {
 			"no name",
 			[]string{},
 			"invalid argument: please specify a stage name",
-		},
-		{
-			"server not connected",
-			[]string{"stage-name"},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
 		},
 	}
 	for _, test := range tests {

@@ -98,30 +98,6 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	assert.ErrorContains(t, err, "unary invoke: ")
 }
 
-func TestUnaryClient_Invoke_ServerUnavailable(t *testing.T) {
-	addr := "localhost:50051"
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
-	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
-	}(conn)
-
-	client := NewUnary("pb.TestService/Unary", conn)
-
-	reply := &pb.Reply{}
-	err = client.Invoke(ctx, errorRequest, reply)
-
-	assert.Assert(
-		t,
-		errdefs.IsFailedPrecondition(err),
-		"error is not FailedPrecondition")
-	assert.ErrorContains(t, err, "unary invoke: ")
-}
-
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	lis := testutil.ListenAvailablePort(t)
 	addr := lis.Addr().String()

@@ -49,26 +49,6 @@ func TestClient_ListServices(t *testing.T) {
 	}
 }
 
-func TestClient_ListServicesUnavailable(t *testing.T) {
-	addr := "localhost:50051"
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
-	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
-	}(conn)
-
-	c := NewClient(ctx, conn)
-	services, err := c.ListServices()
-
-	assert.Assert(t, errdefs.IsFailedPrecondition(err), "list services error")
-	assert.ErrorContains(t, err, "list services:")
-	assert.Assert(t, services == nil, "services is not nil")
-}
-
 func TestClient_ListServicesNoReflection(t *testing.T) {
 	lis := testutil.ListenAvailablePort(t)
 	addr := lis.Addr().String()
