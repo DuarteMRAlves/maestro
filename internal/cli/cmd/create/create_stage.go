@@ -25,6 +25,9 @@ const (
 	methodShort = "m"
 	methodUsage = "name of the grpc method to call " +
 		"(if not specified the service must only have on method to run)"
+
+	addressFlag  = "address"
+	addressUsage = "the address where the stage service is running"
 )
 
 // CreateStageOptions stores the flags for the CreateStage command and executes it
@@ -35,6 +38,7 @@ type CreateStageOptions struct {
 	asset   string
 	service string
 	method  string
+	address string
 }
 
 // NewCmdCreateStage returns a new command that creates a stage from command
@@ -82,6 +86,7 @@ func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
 		"",
 		serviceUsage)
 	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
+	cmd.Flags().StringVar(&o.address, addressFlag, "", addressUsage)
 }
 
 // complete fills any remaining information necessary to run the command that is
@@ -108,6 +113,7 @@ func (o *CreateStageOptions) run() error {
 		Asset:   o.asset,
 		Service: o.service,
 		Method:  o.method,
+		Address: o.address,
 	}
 
 	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())

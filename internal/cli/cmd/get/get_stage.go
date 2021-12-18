@@ -27,6 +27,9 @@ const (
 	methodFlag  = "method"
 	methodShort = "m"
 	methodUsage = "method name to search"
+
+	addressFlag  = "address"
+	addressUsage = "address to search"
 )
 
 type GetStageOpts struct {
@@ -36,6 +39,7 @@ type GetStageOpts struct {
 	asset   string
 	service string
 	method  string
+	address string
 
 	// Output for the cobra.Command to be executed in order to verify outputs.
 	outWriter io.Writer
@@ -86,6 +90,7 @@ func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
 		"",
 		serviceUsage)
 	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
+	cmd.Flags().StringVar(&o.address, addressFlag, "", addressUsage)
 }
 
 // complete fills any remaining information for the runner that is not specified
@@ -111,6 +116,7 @@ func (o *GetStageOpts) run() error {
 		Asset:   o.asset,
 		Service: o.service,
 		Method:  o.method,
+		Address: o.address,
 	}
 
 	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())

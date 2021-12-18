@@ -42,8 +42,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(0),
 				},
 			},
 		},
@@ -62,24 +61,21 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(0),
 				},
 				{
 					stageNameForNum(1),
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageMethodForNum(1),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(1),
 				},
 				{
 					stageNameForNum(2),
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(2),
 				},
 			},
 		},
@@ -98,8 +94,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(2),
 				},
 			},
 		},
@@ -118,8 +113,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageMethodForNum(2),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(2),
 				},
 			},
 		},
@@ -138,8 +132,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageMethodForNum(0),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(0),
 				},
 			},
 		},
@@ -158,8 +151,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageMethodForNum(1),
-					// StageSpec still has no address
-					"",
+					stageAddressForNum(1),
 				},
 			},
 		},
