@@ -17,25 +17,25 @@ import (
 	"time"
 )
 
-// TestCreateBlueprintWithServer performs integration testing on the
-// CreateBlueprint command considering operations that require the server to be
-// running. It runs a maestro server and then executes a create blueprint
+// TestCreateOrchestrationWithServer performs integration testing on the
+// CreateOrchestration command considering operations that require the server to be
+// running. It runs a maestro server and then executes a create orchestration
 // command with predetermined arguments, verifying its output.
-func TestCreateBlueprintWithServer(t *testing.T) {
+func TestCreateOrchestrationWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
 		expectedOut string
 	}{
 		{
-			name:        "create a blueprint with all arguments",
-			args:        []string{"blueprint-name", "--link=link1,link2"},
+			name:        "create a orchestration with all arguments",
+			args:        []string{"orchestration-name", "--link=link1,link2"},
 			expectedOut: "",
 		},
 		{
-			name: "create a blueprint with separate links",
+			name: "create a orchestration with separate links",
 			args: []string{
-				"blueprint-name",
+				"orchestration-name",
 				"--link",
 				"link1",
 				"--link",
@@ -44,19 +44,19 @@ func TestCreateBlueprintWithServer(t *testing.T) {
 			expectedOut: "",
 		},
 		{
-			name:        "create a blueprint with required arguments",
-			args:        []string{"blueprint-name", "--link=link1"},
+			name:        "create a orchestration with required arguments",
+			args:        []string{"orchestration-name", "--link=link1"},
 			expectedOut: "",
 		},
 		{
-			name:        "create a blueprint with invalid name",
+			name:        "create a orchestration with invalid name",
 			args:        []string{"invalid--name", "--link=link1,link2"},
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
-			name: "create a blueprint no such link",
+			name: "create a orchestration no such link",
 			args: []string{
-				"blueprint-name",
+				"orchestration-name",
 				"--link=link1,does-not-exist",
 			},
 			expectedOut: "not found: link 'does-not-exist' not found",
@@ -148,9 +148,9 @@ func TestCreateBlueprintWithServer(t *testing.T) {
 						"create resource error")
 				}
 
-				// Create blueprint
+				// Create orchestration
 				b := bytes.NewBufferString("")
-				cmd := NewCmdCreateBlueprint()
+				cmd := NewCmdCreateOrchestration()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err = cmd.Execute()
@@ -162,10 +162,10 @@ func TestCreateBlueprintWithServer(t *testing.T) {
 	}
 }
 
-// TestCreateBlueprintWithoutServer performs integration testing on the
+// TestCreateOrchestrationWithoutServer performs integration testing on the
 // CreateLink command with sets of flags that do no required the server to be
 // running.
-func TestCreateBlueprintWithoutServer(t *testing.T) {
+func TestCreateOrchestrationWithoutServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
@@ -174,11 +174,11 @@ func TestCreateBlueprintWithoutServer(t *testing.T) {
 		{
 			"no name",
 			[]string{"--link=link1,link2"},
-			"invalid argument: please specify a blueprint name",
+			"invalid argument: please specify a orchestration name",
 		},
 		{
 			"no link",
-			[]string{"blueprint-name"},
+			[]string{"orchestration-name"},
 			"invalid argument: please specify at least one link",
 		},
 	}
@@ -186,7 +186,7 @@ func TestCreateBlueprintWithoutServer(t *testing.T) {
 		t.Run(
 			test.name, func(t *testing.T) {
 				b := bytes.NewBufferString("")
-				cmd := NewCmdCreateBlueprint()
+				cmd := NewCmdCreateOrchestration()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
 				err := cmd.Execute()

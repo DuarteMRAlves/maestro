@@ -2,8 +2,8 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"go.uber.org/zap"
@@ -16,11 +16,11 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	assetStore     asset.Store
-	stageStore     stage.Store
-	linkStore      link.Store
-	blueprintStore blueprint.Store
-	grpcServer     *grpc.Server
+	assetStore         asset.Store
+	stageStore         stage.Store
+	linkStore          link.Store
+	orchestrationStore orchestration.Store
+	grpcServer         *grpc.Server
 
 	logger *zap.Logger
 }

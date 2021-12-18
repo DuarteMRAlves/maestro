@@ -11,23 +11,23 @@ import (
 	"time"
 )
 
-// CreateBlueprintOptions stores the necessary information to execute the create
-// blueprint command.
-type CreateBlueprintOptions struct {
+// CreateOrchestrationOptions stores the necessary information to execute the create
+// orchestration command.
+type CreateOrchestrationOptions struct {
 	addr string
 
 	name  string
 	links []string
 }
 
-// NewCmdCreateBlueprint returns a new command that create a blueprint from
+// NewCmdCreateOrchestration returns a new command that create a orchestration from
 // command line arguments.
-func NewCmdCreateBlueprint() *cobra.Command {
-	o := &CreateBlueprintOptions{}
+func NewCmdCreateOrchestration() *cobra.Command {
+	o := &CreateOrchestrationOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "blueprint name",
-		Short: "create a new blueprint",
+		Use:   "orchestration name",
+		Short: "create a new orchestration",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(args)
 			if err != nil {
@@ -54,19 +54,19 @@ func NewCmdCreateBlueprint() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
-func (o *CreateBlueprintOptions) addFlags(cmd *cobra.Command) {
+func (o *CreateOrchestrationOptions) addFlags(cmd *cobra.Command) {
 	addAddrFlag(cmd, &o.addr, addrHelp)
 
 	cmd.Flags().StringSliceVar(
 		&o.links,
 		"link",
 		nil,
-		"links to include in the blueprint")
+		"links to include in the orchestration")
 }
 
 // complete fills any remaining information necessary to run the command that is
 // not specified by the user flags and is in the positional arguments
-func (o *CreateBlueprintOptions) complete(args []string) error {
+func (o *CreateOrchestrationOptions) complete(args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -75,9 +75,9 @@ func (o *CreateBlueprintOptions) complete(args []string) error {
 
 // validate verifies if the user options are valid and all necessary information
 // for the command to run is present
-func (o *CreateBlueprintOptions) validate() error {
+func (o *CreateOrchestrationOptions) validate() error {
 	if o.name == "" {
-		return errdefs.InvalidArgumentWithMsg("please specify a blueprint name")
+		return errdefs.InvalidArgumentWithMsg("please specify a orchestration name")
 	}
 	if len(o.links) == 0 {
 		return errdefs.InvalidArgumentWithMsg(
@@ -87,10 +87,10 @@ func (o *CreateBlueprintOptions) validate() error {
 	return nil
 }
 
-// run executes the create blueprint command with the specified options.
+// run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
-func (o *CreateBlueprintOptions) run() error {
-	bp := &resources.BlueprintSpec{
+func (o *CreateOrchestrationOptions) run() error {
+	or := &resources.OrchestrationSpec{
 		Name:  o.name,
 		Links: o.links,
 	}
@@ -107,5 +107,5 @@ func (o *CreateBlueprintOptions) run() error {
 		context.Background(),
 		time.Second)
 	defer cancel()
-	return c.CreateBlueprint(ctx, bp)
+	return c.CreateOrchestration(ctx, or)
 }

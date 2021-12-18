@@ -20,7 +20,7 @@ type LinkSpec struct {
 	TargetField string `yaml:"target_field"`
 }
 
-type BlueprintSpec struct {
+type OrchestrationSpec struct {
 	Name  string   `yaml:"name" info:"required"`
 	Links []string `yaml:"links" info:"required"`
 }

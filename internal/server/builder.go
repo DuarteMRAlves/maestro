@@ -4,9 +4,9 @@ import (
 	pb "github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -70,7 +70,7 @@ func initStores(s *Server) {
 	s.assetStore = asset.NewStore()
 	s.stageStore = stage.NewStore()
 	s.linkStore = link.NewStore()
-	s.blueprintStore = blueprint.NewStore()
+	s.orchestrationStore = orchestration.NewStore()
 }
 
 func activateGrpc(s *Server, b *Builder) {
@@ -79,11 +79,13 @@ func activateGrpc(s *Server, b *Builder) {
 	assetManagementServer := ipb.NewAssetManagementServer(s)
 	stageManagementServer := ipb.NewStageManagementServer(s)
 	linkManagementServer := ipb.NewLinkManagementServer(s)
-	blueprintManagementServer := ipb.NewBlueprintManagementServer(s)
+	orchestrationManagementServer := ipb.NewOrchestrationManagementServer(s)
 
 	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
 	pb.RegisterStageManagementServer(grpcServer, stageManagementServer)
 	pb.RegisterLinkManagementServer(grpcServer, linkManagementServer)
-	pb.RegisterBlueprintManagementServer(grpcServer, blueprintManagementServer)
+	pb.RegisterOrchestrationManagementServer(
+		grpcServer,
+		orchestrationManagementServer)
 	s.grpcServer = grpcServer
 }

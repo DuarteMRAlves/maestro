@@ -13,7 +13,10 @@ type Client interface {
 	CreateAsset(ctx context.Context, a *resources.AssetSpec) error
 	CreateStage(ctx context.Context, s *resources.StageSpec) error
 	CreateLink(ctx context.Context, l *resources.LinkSpec) error
-	CreateBlueprint(ctx context.Context, bp *resources.BlueprintSpec) error
+	CreateOrchestration(
+		ctx context.Context,
+		o *resources.OrchestrationSpec,
+	) error
 
 	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)

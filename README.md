@@ -8,7 +8,7 @@ the next.
 
 ## Main Concepts
 
-There are three main concepts inside maestro - `Asset`, `Blueprint`
+There are three main concepts inside maestro - `Asset`, `Orchestration`
 , `Orchestration`:
 
 ### Asset
@@ -21,15 +21,15 @@ An Asset has the following properties:
 * `Name` that is a human-readable string to uniquely identify the Asset.
 * `Image` (optional) which is the name of the image associated with this Asset.
 
-### Blueprint
+### Orchestration
 
-A `Blueprint` defines the architecture of the pipeline. A Blueprint is a graph
-like structure where we have Stages and Links.
+A `Orchestration` defines the architecture of the pipeline. A Orchestration is a
+graph like structure where we have Stages and Links.
 
 A `Stage` is an instantiation of an Asset. It specifies a concrete grpc method
 to be executed, and has the following fields:
 
-* `Name` Uniquely identifies the stage inside a Blueprint.
+* `Name` Uniquely identifies the stage inside a Orchestration.
 * `Asset` The name of the associated Asset.
 * `Service` (optional) Specifies the grpc service within the sever (required if
   multiple services exist, otherwise can be omitted)
@@ -50,7 +50,7 @@ A `Link` specifies a connection between two stages. A Link has:
 
 ### Orchestration
 
-An `Orchestration` is an instantiation of a Blueprint where the pipeline is
+An `Orchestration` is an instantiation of a Orchestration where the pipeline is
 executed.
 
 ## Developing

@@ -98,15 +98,18 @@ func (c *client) CreateLink(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateBlueprint(
+func (c *client) CreateOrchestration(
 	ctx context.Context,
-	blueprint *resources.BlueprintSpec,
+	orchestration *resources.OrchestrationSpec,
 ) error {
-	bp := &pb.Blueprint{Name: blueprint.Name, Links: blueprint.Links}
+	o := &pb.Orchestration{
+		Name:  orchestration.Name,
+		Links: orchestration.Links,
+	}
 
-	stub := pb.NewBlueprintManagementClient(c.conn)
+	stub := pb.NewOrchestrationManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, bp)
+	_, err := stub.Create(ctx, o)
 
 	return ErrorFromGrpcError(err)
 }
