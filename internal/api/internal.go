@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 )
 
@@ -20,6 +20,6 @@ type InternalAPI interface {
 	CreateLink(config *link.Link) error
 	GetLink(query *link.Link) []*link.Link
 
-	CreateBlueprint(config *blueprint.Blueprint) error
-	GetBlueprint(query *blueprint.Blueprint) []*blueprint.Blueprint
+	CreateOrchestration(config *orchestration.Orchestration) error
+	GetOrchestration(query *orchestration.Orchestration) []*orchestration.Orchestration
 }

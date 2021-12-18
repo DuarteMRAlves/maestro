@@ -3,47 +3,47 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/blueprint"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-const bpName = "blueprint-name"
+const oName = "orchestration-name"
 
-func TestServer_CreateBlueprint(t *testing.T) {
+func TestServer_CreateOrchestration(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *blueprint.Blueprint
+		config *orchestration.Orchestration
 	}{
 		{
 			name: "correct with nil links",
-			config: &blueprint.Blueprint{
-				Name:  bpName,
+			config: &orchestration.Orchestration{
+				Name:  oName,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with empty links",
-			config: &blueprint.Blueprint{
-				Name:  bpName,
+			config: &orchestration.Orchestration{
+				Name:  oName,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with one link",
-			config: &blueprint.Blueprint{
-				Name:  bpName,
+			config: &orchestration.Orchestration{
+				Name:  oName,
 				Links: []string{linkNameForNum(0)},
 			},
 		},
 		{
 			name: "correct with multiple links",
-			config: &blueprint.Blueprint{
-				Name: bpName,
+			config: &orchestration.Orchestration{
+				Name: oName,
 				Links: []string{
 					linkNameForNum(0),
 					linkNameForNum(2),
@@ -60,19 +60,19 @@ func TestServer_CreateBlueprint(t *testing.T) {
 				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
 
-				populateForBlueprints(t, s)
-				err = s.CreateBlueprint(test.config)
-				assert.NilError(t, err, "create blueprint error")
+				populateForOrchestrations(t, s)
+				err = s.CreateOrchestration(test.config)
+				assert.NilError(t, err, "create orchestration error")
 			})
 	}
 }
 
-func TestServer_CreateBlueprint_NilConfig(t *testing.T) {
+func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
-	populateForBlueprints(t, s)
+	populateForOrchestrations(t, s)
 
-	err = s.CreateBlueprint(nil)
+	err = s.CreateOrchestration(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
@@ -81,14 +81,14 @@ func TestServer_CreateBlueprint_NilConfig(t *testing.T) {
 	assert.Error(t, err, expectedMsg)
 }
 
-func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
+func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *blueprint.Blueprint
+		config *orchestration.Orchestration
 	}{
 		{
 			name: "empty name",
-			config: &blueprint.Blueprint{
+			config: &orchestration.Orchestration{
 				Name: "",
 				Links: []string{
 					linkNameForNum(0),
@@ -99,8 +99,8 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid characters in name",
-			config: &blueprint.Blueprint{
-				Name: "?blueprint-name",
+			config: &orchestration.Orchestration{
+				Name: "?orchestration-name",
 				Links: []string{
 					linkNameForNum(0),
 					linkNameForNum(1),
@@ -110,7 +110,7 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid character sequence",
-			config: &blueprint.Blueprint{
+			config: &orchestration.Orchestration{
 				Name: "invalid//name",
 				Links: []string{
 					linkNameForNum(0),
@@ -126,9 +126,9 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 			func(t *testing.T) {
 				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
-				populateForBlueprints(t, s)
+				populateForOrchestrations(t, s)
 
-				err = s.CreateBlueprint(test.config)
+				err = s.CreateOrchestration(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -141,13 +141,13 @@ func TestServer_CreateBlueprint_InvalidName(t *testing.T) {
 	}
 }
 
-func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
+func TestServer_CreateOrchestration_LinkNotFound(t *testing.T) {
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
-	populateForBlueprints(t, s)
+	populateForOrchestrations(t, s)
 
-	config := &blueprint.Blueprint{
-		Name: bpName,
+	config := &orchestration.Orchestration{
+		Name: oName,
 		Links: []string{
 			linkNameForNum(0),
 			// This link does not exist
@@ -156,21 +156,21 @@ func TestServer_CreateBlueprint_LinkNotFound(t *testing.T) {
 		},
 	}
 
-	err = s.CreateBlueprint(config)
+	err = s.CreateOrchestration(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf("link '%v' not found", linkNameForNum(3))
 	assert.Error(t, err, expectedMsg)
 }
 
-func TestServer_CreateBlueprint_AlreadyExists(t *testing.T) {
+func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	var err error
 
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
-	populateForBlueprints(t, s)
+	populateForOrchestrations(t, s)
 
-	config := &blueprint.Blueprint{
-		Name: bpName,
+	config := &orchestration.Orchestration{
+		Name: oName,
 		Links: []string{
 			linkNameForNum(0),
 			linkNameForNum(1),
@@ -178,15 +178,15 @@ func TestServer_CreateBlueprint_AlreadyExists(t *testing.T) {
 		},
 	}
 
-	err = s.CreateBlueprint(config)
+	err = s.CreateOrchestration(config)
 	assert.NilError(t, err, "first creation has an error")
-	err = s.CreateBlueprint(config)
+	err = s.CreateOrchestration(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("blueprint '%v' already exists", bpName)
+	expectedMsg := fmt.Sprintf("orchestration '%v' already exists", oName)
 	assert.Error(t, err, expectedMsg)
 }
 
-func populateForBlueprints(t *testing.T, s *Server) {
+func populateForOrchestrations(t *testing.T, s *Server) {
 	assets := []*asset.Asset{
 		assetForNum(0),
 		assetForNum(1),

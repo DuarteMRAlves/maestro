@@ -1,37 +1,37 @@
-package blueprint
+package orchestration
 
 import (
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-const bpName = "Blueprint Name"
+const oName = "Orchestration Name"
 
 func TestStore_CreateCorrect(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *Blueprint
+		config *Orchestration
 	}{
 		{
 			name:   "test no links variable",
-			config: &Blueprint{Name: bpName},
+			config: &Orchestration{Name: oName},
 		},
 		{
 			name:   "test nil links",
-			config: &Blueprint{Name: bpName, Links: nil},
+			config: &Orchestration{Name: oName, Links: nil},
 		},
 		{
 			name:   "test empty links",
-			config: &Blueprint{Name: bpName, Links: []string{}},
+			config: &Orchestration{Name: oName, Links: []string{}},
 		},
 		{
 			name:   "test links with one element",
-			config: &Blueprint{Name: bpName, Links: []string{"link-1"}},
+			config: &Orchestration{Name: oName, Links: []string{"link-1"}},
 		},
 		{
 			name: "test links with multiple elements",
-			config: &Blueprint{
-				Name:  bpName,
+			config: &Orchestration{
+				Name:  oName,
 				Links: []string{"link-1", "link-2", "link-3"},
 			},
 		},
@@ -44,26 +44,26 @@ func TestStore_CreateCorrect(t *testing.T) {
 
 				err := st.Create(test.config)
 				assert.NilError(t, err, "create error")
-				assert.Equal(t, 1, lenBlueprints(st), "store size")
+				assert.Equal(t, 1, lenOrchestrations(st), "store size")
 
-				stored, ok := st.blueprints.Load(bpName)
-				assert.Assert(t, ok, "blueprint exists")
+				stored, ok := st.orchestrations.Load(oName)
+				assert.Assert(t, ok, "orchestration exists")
 
-				bp, ok := stored.(*Blueprint)
-				assert.Assert(t, ok, "blueprint type assertion failed")
-				assert.Equal(t, test.config.Name, bp.Name, "correct name")
+				o, ok := stored.(*Orchestration)
+				assert.Assert(t, ok, "orchestration type assertion failed")
+				assert.Equal(t, test.config.Name, o.Name, "correct name")
 				if test.config.Links == nil {
-					assert.DeepEqual(t, []string{}, bp.Links)
+					assert.DeepEqual(t, []string{}, o.Links)
 				} else {
-					assert.DeepEqual(t, test.config.Links, bp.Links)
+					assert.DeepEqual(t, test.config.Links, o.Links)
 				}
 			})
 	}
 }
 
-func lenBlueprints(st *store) int {
+func lenOrchestrations(st *store) int {
 	count := 0
-	st.blueprints.Range(
+	st.orchestrations.Range(
 		func(key, value interface{}) bool {
 			count += 1
 			return true

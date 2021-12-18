@@ -16,8 +16,8 @@ const (
 	linkTargetStage = "linkSourceStage"
 	linkTargetField = "linkTargetField"
 
-	blueprintName = "BlueprintName"
-	bpLink1       = "Link Name 1"
-	bpLink2       = "Link Name 2"
-	bpLink3       = "Link Name 3"
+	orchestrationName = "OrchestrationName"
+	oLink1            = "Link Name 1"
+	oLink2            = "Link Name 2"
+	oLink3            = "Link Name 3"
 )

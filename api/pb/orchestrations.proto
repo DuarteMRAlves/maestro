@@ -6,12 +6,12 @@ package pb;
 
 import "google/protobuf/empty.proto";
 
-service BlueprintManagement {
-  rpc Create(Blueprint) returns (google.protobuf.Empty);
-  rpc Get(Blueprint) returns (stream Blueprint);
+service OrchestrationManagement {
+  rpc Create(Orchestration) returns (google.protobuf.Empty);
+  rpc Get(Orchestration) returns (stream Orchestration);
 }
 
-message Blueprint {
+message Orchestration {
   string name = 1;
   repeated string links = 2;
 }

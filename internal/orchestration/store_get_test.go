@@ -1,4 +1,4 @@
-package blueprint
+package orchestration
 
 import (
 	"gotest.tools/v3/assert"
@@ -8,68 +8,68 @@ import (
 func TestStore_Get_Correct(t *testing.T) {
 	tests := []struct {
 		name   string
-		query  *Blueprint
-		stored []*Blueprint
-		// names of the expected blueprints
+		query  *Orchestration
+		stored []*Orchestration
+		// names of the expected orchestrations
 		expected []string
 	}{
 		{
 			name:     "zero elements stored, nil query",
 			query:    nil,
-			stored:   []*Blueprint{},
+			stored:   []*Orchestration{},
 			expected: []string{},
 		},
 		{
 			name:     "zero elements stored, some query",
-			query:    &Blueprint{Name: "some-name"},
-			stored:   []*Blueprint{},
+			query:    &Orchestration{Name: "some-name"},
+			stored:   []*Orchestration{},
 			expected: []string{},
 		},
 		{
 			name:     "one element stored, nil query",
 			query:    nil,
-			stored:   []*Blueprint{blueprintForName("some-name")},
+			stored:   []*Orchestration{orchestrationForName("some-name")},
 			expected: []string{"some-name"},
 		},
 		{
 			name:     "one element stored, matching query",
-			query:    &Blueprint{Name: "some-name"},
-			stored:   []*Blueprint{blueprintForName("some-name")},
+			query:    &Orchestration{Name: "some-name"},
+			stored:   []*Orchestration{orchestrationForName("some-name")},
 			expected: []string{"some-name"},
 		},
 		{
 			name:     "one element stored, non-matching query",
-			query:    &Blueprint{Name: "unknown-name"},
-			stored:   []*Blueprint{blueprintForName("some-name")},
+			query:    &Orchestration{Name: "unknown-name"},
+			stored:   []*Orchestration{orchestrationForName("some-name")},
 			expected: []string{},
 		},
 		{
 			name:  "multiple elements stored, nil query",
 			query: nil,
-			stored: []*Blueprint{
-				blueprintForName("some-name-1"),
-				blueprintForName("some-name-2"),
-				blueprintForName("some-name-3"),
+			stored: []*Orchestration{
+				orchestrationForName("some-name-1"),
+				orchestrationForName("some-name-2"),
+				orchestrationForName("some-name-3"),
 			},
 			expected: []string{"some-name-1", "some-name-2", "some-name-3"},
 		},
 		{
 			name:  "multiple elements stored, matching query",
-			query: &Blueprint{Name: "some-name-2"},
-			stored: []*Blueprint{
-				blueprintForName("some-name-1"),
-				blueprintForName("some-name-2"),
-				blueprintForName("some-name-3"),
+			query: &Orchestration{Name: "some-name-2"},
+			stored: []*Orchestration{
+				orchestrationForName("some-name-1"),
+				orchestrationForName("some-name-2"),
+				orchestrationForName("some-name-3"),
 			},
 			expected: []string{"some-name-2"},
 		},
 		{
 			name:  "multiple elements stored, non-matching query",
-			query: &Blueprint{Name: "unknown-name"},
-			stored: []*Blueprint{
-				blueprintForName("some-name-1"),
-				blueprintForName("some-name-2"),
-				blueprintForName("some-name-3"),
+			query: &Orchestration{Name: "unknown-name"},
+			stored: []*Orchestration{
+				orchestrationForName("some-name-1"),
+				orchestrationForName("some-name-2"),
+				orchestrationForName("some-name-3"),
 			},
 			expected: []string{},
 		},
@@ -81,8 +81,8 @@ func TestStore_Get_Correct(t *testing.T) {
 			func(t *testing.T) {
 				st := NewStore()
 
-				for _, bp := range test.stored {
-					err := st.Create(bp)
+				for _, o := range test.stored {
+					err := st.Create(o)
 					assert.Assert(t, err, "create asset error")
 				}
 
@@ -110,8 +110,8 @@ func TestStore_Get_Correct(t *testing.T) {
 	}
 }
 
-func blueprintForName(name string) *Blueprint {
-	return &Blueprint{
+func orchestrationForName(name string) *Orchestration {
+	return &Orchestration{
 		Name:  name,
 		Links: []string{"link-1", "link-2"},
 	}
