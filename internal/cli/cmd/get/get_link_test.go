@@ -9,7 +9,6 @@ import (
 	"gotest.tools/v3/assert"
 	"io/ioutil"
 	"net"
-	"regexp"
 	"testing"
 )
 
@@ -19,11 +18,10 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetLink_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name        string
-		defaultAddr bool
-		args        []string
-		links       []*resources.LinkSpec
-		output      [][]string
+		name   string
+		args   []string
+		links  []*resources.LinkSpec
+		output [][]string
 	}{
 		{
 			name:  "empty links",
@@ -63,46 +61,6 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple links",
 			args: []string{},
-			links: []*resources.LinkSpec{
-				linkForNum(1),
-				linkForNum(0),
-				linkForNum(2),
-			},
-			output: [][]string{
-				{
-					NameText,
-					SourceStageText,
-					SourceFieldText,
-					TargetStageText,
-					TargetFieldText,
-				},
-				{
-					linkNameForNum(0),
-					linkSourceStageForNum(0),
-					linkSourceFieldForNum(0),
-					linkTargetStageForNum(0),
-					linkTargetFieldForNum(0),
-				},
-				{
-					linkNameForNum(1),
-					linkSourceStageForNum(1),
-					linkSourceFieldForNum(1),
-					linkTargetStageForNum(1),
-					linkTargetFieldForNum(1),
-				},
-				{
-					linkNameForNum(2),
-					linkSourceStageForNum(2),
-					linkSourceFieldForNum(2),
-					linkTargetStageForNum(2),
-					linkTargetFieldForNum(2),
-				},
-			},
-		},
-		{
-			name:        "multiple links",
-			defaultAddr: true,
-			args:        []string{},
 			links: []*resources.LinkSpec{
 				linkForNum(1),
 				linkForNum(0),
@@ -377,18 +335,11 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
 
 				s, err := server.NewBuilder().WithGrpc().Build()
 				assert.NilError(t, err, "build server")
@@ -426,43 +377,6 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
-	}
-}
-
-// TestGetLink_CLIErrors performs integration testing on the GetLink
-// command with sets of flags that do no required the server to be running.
-func TestGetLink_CLIErrors(t *testing.T) {
-	tests := []struct {
-		name        string
-		args        []string
-		expectedOut string
-	}{
-		{
-			"server not connected",
-			[]string{},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
-		},
-	}
-	for _, test := range tests {
-		t.Run(
-			test.name, func(t *testing.T) {
-				b := bytes.NewBufferString("")
-				cmd := NewCmdGetLink()
-				cmd.SetOut(b)
-				cmd.SetArgs(test.args)
-				err := cmd.Execute()
-				assert.NilError(t, err, "execute error")
-				out, err := ioutil.ReadAll(b)
-				assert.NilError(t, err, "read output error")
-				// This is not ideal but its to match the not connected error
-				// with no ip. Detailed in GitHub issue
-				// https://github.com/DuarteMRAlves/maestro/issues/29.
-				matched, err := regexp.MatchString(
-					test.expectedOut,
-					string(out))
-				assert.NilError(t, err, "matched output")
-				assert.Assert(t, matched, "output not matched")
 			})
 	}
 }

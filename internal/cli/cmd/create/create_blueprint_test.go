@@ -181,11 +181,6 @@ func TestCreateBlueprintWithoutServer(t *testing.T) {
 			[]string{"blueprint-name"},
 			"invalid argument: please specify at least one link",
 		},
-		{
-			"server not connected",
-			[]string{"blueprint-name", "--link=link1,link2"},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
-		},
 	}
 	for _, test := range tests {
 		t.Run(

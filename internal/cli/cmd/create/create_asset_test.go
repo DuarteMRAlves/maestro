@@ -18,31 +18,21 @@ import (
 func TestCreateAssetWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"create an asset with an image",
-			false,
 			[]string{"asset-name", "--image", "image-name"},
 			"",
 		},
 		{
 			"create an asset without an image",
-			false,
-			[]string{"asset-name"},
-			"",
-		},
-		{
-			"create an asset on default address",
-			true,
 			[]string{"asset-name"},
 			"",
 		},
 		{
 			"create an asset invalid name",
-			false,
 			[]string{"invalid--name"},
 			"invalid argument: invalid name 'invalid--name'",
 		},
@@ -56,18 +46,11 @@ func TestCreateAssetWithServer(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
 
 				s, err := server.NewBuilder().WithGrpc().Build()
 				assert.NilError(t, err, "build server")
@@ -109,11 +92,6 @@ func TestCreateAssetWithoutServer(t *testing.T) {
 			"no name",
 			[]string{},
 			"invalid argument: please specify the asset name",
-		},
-		{
-			"server not connected",
-			[]string{"asset-name"},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
 		},
 	}
 	for _, test := range tests {

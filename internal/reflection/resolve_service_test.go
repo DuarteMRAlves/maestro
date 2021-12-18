@@ -234,27 +234,6 @@ func assertExtraInnerMessageType(
 	assert.Assert(t, repeatedString.IsRepeated())
 }
 
-func TestClient_ResolveServiceUnavailable(t *testing.T) {
-	addr := "localhost:50051"
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
-	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
-	}(conn)
-
-	serviceName := "pb.TestService"
-	c := NewClient(ctx, conn)
-	service, err := c.ResolveService(serviceName)
-
-	assert.Assert(t, errdefs.IsFailedPrecondition(err), "resolve service error")
-	assert.ErrorContains(t, err, "resolve service: ")
-	assert.Assert(t, service == nil, "service is not nil")
-}
-
 func TestClient_ResolveServiceNoReflection(t *testing.T) {
 	lis := testutil.ListenAvailablePort(t)
 	addr := lis.Addr().String()

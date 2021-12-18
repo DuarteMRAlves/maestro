@@ -18,19 +18,16 @@ import (
 func TestCreateWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
-		defaultAddr bool
 		args        []string
 		expectedOut string
 	}{
 		{
 			"multiple resources in a single file",
-			false,
 			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
 			"",
 		},
 		{
 			"multiple resources in multiple files",
-			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/stages.yml",
@@ -42,14 +39,7 @@ func TestCreateWithServer(t *testing.T) {
 			"",
 		},
 		{
-			"custom address",
-			true,
-			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
-			"",
-		},
-		{
 			"asset not found",
-			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/asset_not_found.yml",
@@ -58,7 +48,6 @@ func TestCreateWithServer(t *testing.T) {
 		},
 		{
 			"stage not found",
-			false,
 			[]string{
 				"-f",
 				"../../../../tests/resources/create/stage_not_found.yml",
@@ -75,18 +64,11 @@ func TestCreateWithServer(t *testing.T) {
 					err  error
 				)
 
-				if test.defaultAddr {
-					lis = testutil.LockAndListenDefaultAddr(t)
-					defer testutil.UnlockDefaultAddr()
-				} else {
-					lis = testutil.ListenAvailablePort(t)
-				}
+				lis = testutil.ListenAvailablePort(t)
 
 				addr = lis.Addr().String()
 
-				if !test.defaultAddr {
-					test.args = append(test.args, "--addr", addr)
-				}
+				test.args = append(test.args, "--addr", addr)
 
 				s, err := server.NewBuilder().WithGrpc().Build()
 				assert.NilError(t, err, "build server")
@@ -149,11 +131,6 @@ func TestCreateWithoutServer(t *testing.T) {
 				"../../../../tests/resources/create/invalid_specs.yml",
 			},
 			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
-		},
-		{
-			"server not connected",
-			[]string{"-f", "../../../../tests/resources/create/resources.yml"},
-			`unavailable: connection error: desc = "transport: Error while dialing dial tcp .+:50051: connect: connection refused"`,
 		},
 	}
 	for _, test := range tests {
