@@ -2,13 +2,13 @@ package get
 
 import (
 	"bytes"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"testing"
 )
 
@@ -19,123 +19,110 @@ import (
 // table.
 func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name           string
-		args           []string
-		orchestrations []*resources.OrchestrationSpec
-		output         [][]string
+		name          string
+		args          []string
+		validateQuery func(query *pb.Orchestration) bool
+		responses     []*pb.Orchestration
+		output        [][]string
 	}{
 		{
-			name:           "empty orchestrations",
-			args:           []string{},
-			orchestrations: []*resources.OrchestrationSpec{},
-			output:         [][]string{{NameText}},
+			name: "empty orchestrations",
+			args: []string{},
+			validateQuery: func(query *pb.Orchestration) bool {
+				return query.Name == "" && len(query.Links) == 0
+			},
+			responses: []*pb.Orchestration{},
+			output:    [][]string{{NameText}},
 		},
 		{
 			name: "one orchestration",
 			args: []string{},
-			orchestrations: []*resources.OrchestrationSpec{
-				orchestrationForNum(0),
+			validateQuery: func(query *pb.Orchestration) bool {
+				return query.Name == "" && len(query.Links) == 0
 			},
-			output: [][]string{
-				{NameText}, {orchestrationNameForNum(0)},
-			},
+			responses: []*pb.Orchestration{pbOrchestrationForNum(0)},
+			output:    [][]string{{NameText}, {orchestrationNameForNum(0)}},
 		},
 		{
 			name: "multiple orchestrations",
 			args: []string{},
-			orchestrations: []*resources.OrchestrationSpec{
-				orchestrationForNum(1),
-				orchestrationForNum(0),
-				orchestrationForNum(2),
+			validateQuery: func(query *pb.Orchestration) bool {
+				return query.Name == "" && len(query.Links) == 0
+			},
+			responses: []*pb.Orchestration{
+				pbOrchestrationForNum(1),
+				pbOrchestrationForNum(0),
+				pbOrchestrationForNum(2),
 			},
 			output: [][]string{
-				{
-					NameText,
-				},
-				{
-					orchestrationNameForNum(0),
-				},
-				{
-					orchestrationNameForNum(1),
-				},
-				{
-					orchestrationNameForNum(2),
-				},
+				{NameText},
+				{orchestrationNameForNum(0)},
+				{orchestrationNameForNum(1)},
+				{orchestrationNameForNum(2)},
 			},
 		},
 		{
 			name: "filter by name",
 			args: []string{orchestrationNameForNum(2)},
-			orchestrations: []*resources.OrchestrationSpec{
-				orchestrationForNum(2),
-				orchestrationForNum(1),
-				orchestrationForNum(0),
+			validateQuery: func(query *pb.Orchestration) bool {
+				return query.Name == orchestrationNameForNum(2) &&
+					len(query.Links) == 0
 			},
-			output: [][]string{
-				{
-					NameText,
-				},
-				{
-					orchestrationNameForNum(2),
-				},
-			},
+			responses: []*pb.Orchestration{pbOrchestrationForNum(2)},
+			output:    [][]string{{NameText}, {orchestrationNameForNum(2)}},
 		},
 		{
 			name: "no such name",
 			args: []string{orchestrationNameForNum(3)},
-			orchestrations: []*resources.OrchestrationSpec{
-				orchestrationForNum(2),
-				orchestrationForNum(1),
-				orchestrationForNum(0),
+			validateQuery: func(query *pb.Orchestration) bool {
+				return query.Name == orchestrationNameForNum(3) &&
+					len(query.Links) == 0
 			},
-			output: [][]string{
-				{
-					NameText,
-				},
-			},
+			responses: []*pb.Orchestration{},
+			output:    [][]string{{NameText}},
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().
-					WithGrpc().
-					WithLogger(testutil.NewLogger(t)).
-					Build()
-
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					OrchestrationManagementServer: &mock.OrchestrationManagementServer{
+						GetOrchestrationFn: func(
+							query *pb.Orchestration,
+							stream pb.OrchestrationManagement_GetServer,
+						) error {
+							if !test.validateQuery(query) {
+								return fmt.Errorf(
+									"validation failed with query %v",
+									query)
+							}
+							for _, o := range test.responses {
+								if err := stream.Send(o); err != nil {
+									return fmt.Errorf("send failed: %v", err)
+								}
+							}
+							return nil
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				// Stop the server. Any calls in the test should be finished.
-				// If not, an error should be raised.
-				defer s.StopGrpc()
-
-				err = populateOrchestrations(t, test.orchestrations, addr)
-				assert.NilError(t, err, "populate orchestrations")
+				defer grpcServer.Stop()
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetOrchestration()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
@@ -149,4 +136,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				assert.Equal(t, expectedOut, string(out), "output differs")
 			})
 	}
+}
+
+func pbOrchestrationForNum(num int) *pb.Orchestration {
+	return &pb.Orchestration{Name: orchestrationNameForNum(num), Links: nil}
 }

@@ -2,39 +2,48 @@ package get
 
 import (
 	"bytes"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"testing"
 )
 
-// TestGetAsset_CorrectDisplay performs integration testing on the GetAsset
-// command considering operations that produce table outputs. It runs a maestro
+// TestGetAsset_CorrectDisplay performs testing on the GetAsset command
+// considering operations that produce table outputs. It runs a mock maestro
 // server and then executes a get asset command with predetermined arguments,
 // verifying its output by comparing with an expected table.
 func TestGetAsset_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   []string
-		assets []*resources.AssetSpec
-		output [][]string
+		name          string
+		args          []string
+		validateQuery func(query *pb.Asset) bool
+		responses     []*pb.Asset
+		output        [][]string
 	}{
 		{
-			name:   "empty assets",
-			args:   []string{},
-			assets: []*resources.AssetSpec{},
+			name: "empty assets",
+			args: []string{},
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == "" && query.Image == ""
+			},
+			responses: []*pb.Asset{},
 			output: [][]string{
 				{NameText, ImageText},
 			},
 		},
 		{
-			name:   "one asset",
-			args:   []string{},
-			assets: []*resources.AssetSpec{assetForNum(0)},
+			name: "one asset",
+			args: []string{},
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == "" && query.Image == ""
+			},
+			responses: []*pb.Asset{
+				{Name: assetNameForNum(0), Image: assetImageForNum(0)},
+			},
 			output: [][]string{
 				{NameText, ImageText},
 				{assetNameForNum(0), assetImageForNum(0)},
@@ -43,10 +52,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple assets",
 			args: []string{},
-			assets: []*resources.AssetSpec{
-				assetForNum(0),
-				assetForNum(2),
-				assetForNum(1),
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == "" && query.Image == ""
+			},
+			responses: []*pb.Asset{
+				{Name: assetNameForNum(2), Image: assetImageForNum(2)},
+				{Name: assetNameForNum(1), Image: assetImageForNum(1)},
+				{Name: assetNameForNum(0), Image: assetImageForNum(0)},
 			},
 			output: [][]string{
 				{NameText, ImageText},
@@ -58,10 +70,11 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{assetNameForNum(1)},
-			assets: []*resources.AssetSpec{
-				assetForNum(2),
-				assetForNum(0),
-				assetForNum(1),
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == assetNameForNum(1) && query.Image == ""
+			},
+			responses: []*pb.Asset{
+				{Name: assetNameForNum(1), Image: assetImageForNum(1)},
 			},
 			output: [][]string{
 				{NameText, ImageText},
@@ -71,10 +84,11 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by image",
 			args: []string{"--image", assetImageForNum(2)},
-			assets: []*resources.AssetSpec{
-				assetForNum(1),
-				assetForNum(0),
-				assetForNum(2),
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == "" && query.Image == assetImageForNum(2)
+			},
+			responses: []*pb.Asset{
+				{Name: assetNameForNum(2), Image: assetImageForNum(2)},
 			},
 			output: [][]string{
 				{NameText, ImageText},
@@ -84,11 +98,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{assetNameForNum(3)},
-			assets: []*resources.AssetSpec{
-				assetForNum(2),
-				assetForNum(0),
-				assetForNum(1),
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == assetNameForNum(3) && query.Image == ""
 			},
+			responses: []*pb.Asset{},
 			output: [][]string{
 				{NameText, ImageText},
 			},
@@ -96,11 +109,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such image",
 			args: []string{"--image", assetImageForNum(4)},
-			assets: []*resources.AssetSpec{
-				assetForNum(1),
-				assetForNum(0),
-				assetForNum(2),
+			validateQuery: func(query *pb.Asset) bool {
+				return query.Name == "" && query.Image == assetImageForNum(4)
 			},
+			responses: []*pb.Asset{},
 			output: [][]string{
 				{NameText, ImageText},
 			},
@@ -111,39 +123,43 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().WithGrpc().Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					AssetManagementServer: &mock.AssetManagementServer{
+						GetAssetFn: func(
+							query *pb.Asset,
+							stream pb.AssetManagement_GetServer,
+						) error {
+							if !test.validateQuery(query) {
+								return fmt.Errorf(
+									"validation failed with query %v",
+									query)
+							}
+							for _, a := range test.responses {
+								if err := stream.Send(a); err != nil {
+									return fmt.Errorf("send failed: %v", err)
+								}
+							}
+							return nil
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				// Stop the server. Any calls in the test should be finished.
-				// If not, an error should be raised.
-				defer s.StopGrpc()
-
-				err = populateAssets(t, test.assets, addr)
-				assert.NilError(t, err, "populate assets")
+				defer grpcServer.Stop()
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
