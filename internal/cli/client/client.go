@@ -21,6 +21,10 @@ type Client interface {
 	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)
 	GetLink(ctx context.Context, query *pb.Link) ([]*pb.Link, error)
+	GetOrchestration(ctx context.Context, query *pb.Orchestration) (
+		[]*pb.Orchestration,
+		error,
+	)
 }
 
 type client struct {

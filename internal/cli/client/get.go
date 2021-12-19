@@ -86,3 +86,30 @@ func (c *client) GetLink(
 	}
 	return links, nil
 }
+
+func (c *client) GetOrchestration(
+	ctx context.Context,
+	query *pb.Orchestration,
+) ([]*pb.Orchestration, error) {
+
+	stub := pb.NewOrchestrationManagementClient(c.conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	stream, err := stub.Get(ctx, query)
+	if err != nil {
+		return nil, ErrorFromGrpcError(err)
+	}
+	orchestrations := make([]*pb.Orchestration, 0)
+	for {
+		o, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, ErrorFromGrpcError(err)
+		}
+		orchestrations = append(orchestrations, o)
+	}
+	return orchestrations, nil
+}
