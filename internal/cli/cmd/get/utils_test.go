@@ -47,6 +47,12 @@ func linkForNum(num int) *resources.LinkSpec {
 	}
 }
 
+// orchestrationForNum deterministically creates an orchestration resource with
+// the given number.
+func orchestrationForNum(num int) *resources.OrchestrationSpec {
+	return &resources.OrchestrationSpec{Name: orchestrationNameForNum(num)}
+}
+
 // assetNameForNum deterministically creates an asset name for a given number.
 func assetNameForNum(num int) string {
 	return fmt.Sprintf("asset-%v", num)
@@ -108,6 +114,12 @@ func linkTargetStageForNum(num int) string {
 // given number.
 func linkTargetFieldForNum(num int) string {
 	return fmt.Sprintf("target-field-%v", num)
+}
+
+// orchestrationNameForNum deterministically creates an orchestration name for a
+// given number.
+func orchestrationNameForNum(num int) string {
+	return fmt.Sprintf("orchestration-%v", num)
 }
 
 // populateAssets creates the assets in the server, asserting any occurred
@@ -190,6 +202,34 @@ func populateLinks(
 	for _, l := range links {
 		err := c.CreateLink(ctx, l)
 		assert.NilError(t, err, "populate with links")
+	}
+	return nil
+}
+
+// populateOrchestrations creates the orchestrations in the server, asserting
+// any occurred errors.
+func populateOrchestrations(
+	t *testing.T,
+	orchestrations []*resources.OrchestrationSpec,
+	addr string,
+) error {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		return errdefs.UnavailableWithMsg("create connection: %v", err)
+	}
+	defer conn.Close()
+
+	c := client.New(conn)
+
+	// Create asset before executing command
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Second)
+	defer cancel()
+
+	for _, o := range orchestrations {
+		err := c.CreateOrchestration(ctx, o)
+		assert.NilError(t, err, "populate with orchestrations")
 	}
 	return nil
 }
