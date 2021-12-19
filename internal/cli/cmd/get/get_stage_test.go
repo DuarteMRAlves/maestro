@@ -2,39 +2,54 @@ package get
 
 import (
 	"bytes"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"testing"
 )
 
-// TestGetStage_CorrectDisplay performs integration testing on the GetStage
-// command considering operations that produce table outputs. It runs a maestro
+// TestGetStage_CorrectDisplay performs testing on the GetStage command
+// considering operations that produce table outputs. It runs a mock maestro
 // server and then executes a get stage command with predetermined arguments,
 // verifying its output by comparing with an expected table.
 func TestGetStage_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name   string
-		args   []string
-		stages []*resources.StageSpec
-		output [][]string
+		name          string
+		args          []string
+		validateQuery func(query *pb.Stage) bool
+		responses     []*pb.Stage
+		output        [][]string
 	}{
 		{
-			name:   "empty stages",
-			args:   []string{},
-			stages: []*resources.StageSpec{},
+			name: "empty stages",
+			args: []string{},
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
 		},
 		{
-			name:   "one stage",
-			args:   []string{},
-			stages: []*resources.StageSpec{stageForNum(0)},
+			name: "one stage",
+			args: []string{},
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{pbStageForNum(0)},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 				{
@@ -49,10 +64,17 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple stages",
 			args: []string{},
-			stages: []*resources.StageSpec{
-				stageForNum(1),
-				stageForNum(0),
-				stageForNum(2),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(0),
+				pbStageForNum(2),
+				pbStageForNum(1),
 			},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
@@ -82,10 +104,15 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{stageNameForNum(2)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(1),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == stageNameForNum(2) &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(2),
 			},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
@@ -101,10 +128,15 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by asset",
 			args: []string{"--asset", assetNameForNum(2)},
-			stages: []*resources.StageSpec{
-				stageForNum(1),
-				stageForNum(2),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == assetNameForNum(2) &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(2),
 			},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
@@ -120,10 +152,15 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by service",
 			args: []string{"--service", stageServiceForNum(0)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(1),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == stageServiceForNum(0) &&
+					query.Method == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(0),
 			},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
@@ -139,10 +176,15 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by method",
 			args: []string{"--method", stageMethodForNum(1)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(0),
-				stageForNum(1),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == stageMethodForNum(1) &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(1),
 			},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
@@ -158,11 +200,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{stageNameForNum(3)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(1),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == stageNameForNum(3) &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
 			},
+			responses: []*pb.Stage{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
@@ -170,11 +215,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such asset",
 			args: []string{"--asset", assetNameForNum(3)},
-			stages: []*resources.StageSpec{
-				stageForNum(1),
-				stageForNum(2),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == assetNameForNum(3) &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == ""
 			},
+			responses: []*pb.Stage{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
@@ -182,11 +230,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such service",
 			args: []string{"--service", stageServiceForNum(4)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(1),
-				stageForNum(0),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == stageServiceForNum(4) &&
+					query.Method == "" &&
+					query.Address == ""
 			},
+			responses: []*pb.Stage{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
@@ -194,60 +245,75 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such method",
 			args: []string{"--method", stageMethodForNum(5)},
-			stages: []*resources.StageSpec{
-				stageForNum(2),
-				stageForNum(0),
-				stageForNum(1),
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == stageMethodForNum(5) &&
+					query.Address == ""
 			},
+			responses: []*pb.Stage{},
+			output: [][]string{
+				{NameText, AssetText, ServiceText, MethodText, AddressText},
+			},
+		},
+		{
+			name: "no such address",
+			args: []string{"--address", stageAddressForNum(6)},
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Method == "" &&
+					query.Address == stageAddressForNum(6)
+			},
+			responses: []*pb.Stage{},
 			output: [][]string{
 				{NameText, AssetText, ServiceText, MethodText, AddressText},
 			},
 		},
 	}
-	assets := []*resources.AssetSpec{
-		assetForNum(0),
-		assetForNum(1),
-		assetForNum(2),
-	}
 	for _, test := range tests {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().WithGrpc().Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					StageManagementServer: &mock.StageManagementServer{
+						GetStageFn: func(
+							query *pb.Stage,
+							stream pb.StageManagement_GetServer,
+						) error {
+							if !test.validateQuery(query) {
+								return fmt.Errorf(
+									"validation failed with query %v",
+									query)
+							}
+							for _, s := range test.responses {
+								if err := stream.Send(s); err != nil {
+									return fmt.Errorf("send failed: %v", err)
+								}
+							}
+							return nil
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				// Stop the server. Any calls in the test should be finished.
-				// If not, an error should be raised.
-				defer s.StopGrpc()
-
-				err = populateAssets(t, assets, addr)
-				assert.NilError(t, err, "populate assets")
-				err = populateStages(t, test.stages, addr)
-				assert.NilError(t, err, "populate stages")
+				defer grpcServer.Stop()
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdGetStage()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
@@ -260,5 +326,15 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
 			})
+	}
+}
+
+func pbStageForNum(num int) *pb.Stage {
+	return &pb.Stage{
+		Name:    stageNameForNum(num),
+		Asset:   assetNameForNum(num),
+		Service: stageServiceForNum(num),
+		Method:  stageMethodForNum(num),
+		Address: stageAddressForNum(num),
 	}
 }
