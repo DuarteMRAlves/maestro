@@ -3,32 +3,36 @@ package create
 import (
 	"bytes"
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"google.golang.org/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"regexp"
 	"testing"
-	"time"
 )
 
-// TestCreateStageWithServer performs integration testing on the CreateStage
-// command considering operations that require the server to be running.
-// It runs a maestro server and then executes a create asset command with
-// predetermined arguments, verifying its output.
+// TestCreateStageWithServer performs testing on the CreateStage command
+// considering operations that require the server to be running. It runs a mock
+// maestro server and then executes a create link command with predetermined
+// arguments, verifying its output.
 func TestCreateStageWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
+		validateCfg func(cfg *pb.Stage) bool
+		response    *emptypb.Empty
+		err         error
 		expectedOut string
 	}{
 		{
-			"create a stage with all arguments",
-			[]string{
+			name: "create a stage with all arguments",
+			args: []string{
 				"stage-name",
 				"--asset",
 				"asset-name",
@@ -39,78 +43,101 @@ func TestCreateStageWithServer(t *testing.T) {
 				"--address",
 				"some-address",
 			},
-			"",
+			validateCfg: func(cfg *pb.Stage) bool {
+				return cfg.Name == "stage-name" &&
+					cfg.Asset == "asset-name" &&
+					cfg.Service == "ServiceName" &&
+					cfg.Method == "MethodName" &&
+					cfg.Address == "some-address"
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create a stage with required arguments",
-			[]string{"stage-name"},
-			"",
+			name: "create a stage with required arguments",
+			args: []string{"stage-name"},
+			validateCfg: func(cfg *pb.Stage) bool {
+				return cfg.Name == "stage-name" &&
+					cfg.Asset == "" &&
+					cfg.Service == "" &&
+					cfg.Method == "" &&
+					cfg.Address == ""
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create a stage with invalid name",
-			[]string{"invalid--name"},
-			"invalid argument: invalid name 'invalid--name'",
+			name: "create a stage with invalid name",
+			args: []string{"invalid--name"},
+			validateCfg: func(cfg *pb.Stage) bool {
+				return cfg.Name == "invalid--name" &&
+					cfg.Asset == "" &&
+					cfg.Service == "" &&
+					cfg.Method == "" &&
+					cfg.Address == ""
+			},
+			response: nil,
+			err: status.Error(
+				codes.InvalidArgument,
+				errdefs.InvalidArgumentWithMsg(
+					"invalid name 'invalid--name'").Error()),
+			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
-			"create a stage no such asset",
-			[]string{"stage-name", "--asset", "does-not-exist"},
-			"not found: asset 'does-not-exist' not found",
+			name: "create a stage no such asset",
+			args: []string{"stage-name", "--asset", "does-not-exist"},
+			validateCfg: func(cfg *pb.Stage) bool {
+				return cfg.Name == "stage-name" &&
+					cfg.Asset == "does-not-exist" &&
+					cfg.Service == "" &&
+					cfg.Method == "" &&
+					cfg.Address == ""
+			},
+			response: nil,
+			err: status.Error(
+				codes.NotFound,
+				errdefs.NotFoundWithMsg(
+					"asset 'does-not-exist' not found").Error()),
+			expectedOut: "not found: asset 'does-not-exist' not found",
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().WithGrpc().Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					StageManagementServer: &mock.StageManagementServer{
+						CreateStageFn: func(
+							ctx context.Context,
+							cfg *pb.Stage,
+						) (*emptypb.Empty, error) {
+							if !test.validateCfg(cfg) {
+								return nil, fmt.Errorf(
+									"validation failed with cfg %v",
+									cfg)
+							}
+							return test.response, test.err
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				defer func() {
-					// Stop the server. Any calls in the test should be finished.
-					// If not, an error should be raised.
-					s.StopGrpc()
-				}()
-
-				conn, err := grpc.Dial(addr, grpc.WithInsecure())
-				assert.NilError(t, err, "dial error")
-				defer conn.Close()
-
-				c := client.New(conn)
-
-				// Create asset before executing command
-				ctx, cancel := context.WithTimeout(
-					context.Background(),
-					time.Second)
-				defer cancel()
-
-				assert.NilError(
-					t,
-					c.CreateAsset(
-						ctx,
-						&resources.AssetSpec{Name: "asset-name"}),
-					"create asset error")
+				defer grpcServer.Stop()
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdCreateStage()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")

@@ -2,76 +2,103 @@ package create
 
 import (
 	"bytes"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"context"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"regexp"
 	"testing"
 )
 
-// TestCreateAssetWithServer performs integration testing on the CreateAsset
-// command considering operations that require the server to be running.
-// It runs a maestro server and then executes a create asset command with
-// predetermined arguments, verifying its output.
+// TestCreateAssetWithServer performs testing on the CreateAsset command
+// considering operations that require the server to be running. It runs a mock
+// maestro server and then executes a create asset command with predetermined
+// arguments, verifying its output.
 func TestCreateAssetWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
+		validateCfg func(cfg *pb.Asset) bool
+		response    *emptypb.Empty
+		err         error
 		expectedOut string
 	}{
 		{
-			"create an asset with an image",
-			[]string{"asset-name", "--image", "image-name"},
-			"",
+			name: "create an asset with an image",
+			args: []string{"asset-name", "--image", "image-name"},
+			validateCfg: func(cfg *pb.Asset) bool {
+				return cfg.Name == "asset-name" && cfg.Image == "image-name"
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create an asset without an image",
-			[]string{"asset-name"},
-			"",
+			name: "create an asset without an image",
+			args: []string{"asset-name"},
+			validateCfg: func(cfg *pb.Asset) bool {
+				return cfg.Name == "asset-name" && cfg.Image == ""
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create an asset invalid name",
-			[]string{"invalid--name"},
-			"invalid argument: invalid name 'invalid--name'",
+			name: "create an asset invalid name",
+			args: []string{"invalid--name"},
+			validateCfg: func(cfg *pb.Asset) bool {
+				return cfg.Name == "invalid--name" && cfg.Image == ""
+			},
+			response: nil,
+			err: status.Error(
+				codes.InvalidArgument,
+				errdefs.InvalidArgumentWithMsg(
+					"invalid name 'invalid--name'").Error()),
+			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().WithGrpc().Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					AssetManagementServer: &mock.AssetManagementServer{
+						CreateAssetFn: func(
+							ctx context.Context,
+							cfg *pb.Asset,
+						) (*emptypb.Empty, error) {
+							if !test.validateCfg(cfg) {
+								return nil, fmt.Errorf(
+									"validation failed with cfg %v",
+									cfg)
+							}
+							return test.response, test.err
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				defer func() {
-					// Stop the server. Any calls in the test should be finished.
-					// If not, an error should be raised.
-					s.StopGrpc()
-				}()
+				defer grpcServer.Stop()
 
 				b := bytes.NewBufferString("")
 				cmd := NewCmdCreateAsset()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")

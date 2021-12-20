@@ -3,32 +3,36 @@ package create
 import (
 	"bytes"
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"google.golang.org/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"regexp"
 	"testing"
-	"time"
 )
 
-// TestCreateLinkWithServer performs integration testing on the CreateLink
-// command considering operations that require the server to be running.
-// It runs a maestro server and then executes a create asset command with
-// predetermined arguments, verifying its output.
+// TestCreateLinkWithServer performs testing on the CreateLink command
+// considering operations that require the server to be running. It runs a mock
+// maestro server and then executes a create link command with predetermined
+// arguments, verifying its output.
 func TestCreateLinkWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
+		validateCfg func(cfg *pb.Link) bool
+		response    *emptypb.Empty
+		err         error
 		expectedOut string
 	}{
 		{
-			"create a link with all arguments",
-			[]string{
+			name: "create a link with all arguments",
+			args: []string{
 				"link-name",
 				"--source-stage",
 				"source-name",
@@ -39,129 +43,142 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-field",
 				"TargetField",
 			},
-			"",
+			validateCfg: func(cfg *pb.Link) bool {
+				return cfg.Name == "link-name" &&
+					cfg.SourceStage == "source-name" &&
+					cfg.SourceField == "SourceField" &&
+					cfg.TargetStage == "target-name" &&
+					cfg.TargetField == "TargetField"
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create a link with required arguments",
-			[]string{
+			name: "create a link with required arguments",
+			args: []string{
 				"link-name",
 				"--source-stage",
 				"source-name",
 				"--target-stage",
 				"target-name",
 			},
-			"",
+			validateCfg: func(cfg *pb.Link) bool {
+				return cfg.Name == "link-name" &&
+					cfg.SourceStage == "source-name" &&
+					cfg.SourceField == "" &&
+					cfg.TargetStage == "target-name" &&
+					cfg.TargetField == ""
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
 		},
 		{
-			"create a link with invalid name",
-			[]string{
+			name: "create a link with invalid name",
+			args: []string{
 				"invalid--name",
 				"--source-stage",
 				"source-name",
 				"--target-stage",
 				"target-name",
 			},
-			"invalid argument: invalid name 'invalid--name'",
+			validateCfg: func(cfg *pb.Link) bool {
+				return cfg.Name == "invalid--name" &&
+					cfg.SourceStage == "source-name" &&
+					cfg.SourceField == "" &&
+					cfg.TargetStage == "target-name" &&
+					cfg.TargetField == ""
+			},
+			response: nil,
+			err: status.Error(
+				codes.InvalidArgument,
+				errdefs.InvalidArgumentWithMsg(
+					"invalid name 'invalid--name'").Error()),
+			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
-			"create a link no such source stage",
-			[]string{
+			name: "create a link no such source stage",
+			args: []string{
 				"link-name",
 				"--source-stage",
 				"does-not-exist",
 				"--target-stage",
 				"target-name",
 			},
-			"not found: source stage 'does-not-exist' not found",
+			validateCfg: func(cfg *pb.Link) bool {
+				return cfg.Name == "link-name" &&
+					cfg.SourceStage == "does-not-exist" &&
+					cfg.SourceField == "" &&
+					cfg.TargetStage == "target-name" &&
+					cfg.TargetField == ""
+			},
+			response: nil,
+			err: status.Error(
+				codes.NotFound,
+				errdefs.NotFoundWithMsg(
+					"source stage 'does-not-exist' not found").Error()),
+			expectedOut: "not found: source stage 'does-not-exist' not found",
 		},
 		{
-			"create a link no such target stage",
-			[]string{
+			name: "create a link no such target stage",
+			args: []string{
 				"link-name",
 				"--source-stage",
 				"source-name",
 				"--target-stage",
 				"does-not-exist",
 			},
-			"not found: target stage 'does-not-exist' not found",
+			validateCfg: func(cfg *pb.Link) bool {
+				return cfg.Name == "link-name" &&
+					cfg.SourceStage == "source-name" &&
+					cfg.SourceField == "" &&
+					cfg.TargetStage == "does-not-exist" &&
+					cfg.TargetField == ""
+			},
+			err: status.Error(
+				codes.NotFound,
+				errdefs.NotFoundWithMsg(
+					"target stage 'does-not-exist' not found").Error()),
+			expectedOut: "not found: target stage 'does-not-exist' not found",
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().
-					WithGrpc().
-					WithLogger(testutil.NewLogger(t)).
-					Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					LinkManagementServer: &mock.LinkManagementServer{
+						CreateLinkFn: func(
+							ctx context.Context,
+							cfg *pb.Link,
+						) (*emptypb.Empty, error) {
+							if !test.validateCfg(cfg) {
+								return nil, fmt.Errorf(
+									"validation failed with cfg %v",
+									cfg)
+							}
+							return test.response, test.err
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				defer func() {
-					// Stop the server. Any calls in the test should be finished.
-					// If not, an error should be raised.
-					s.StopGrpc()
-				}()
-
-				// Create asset before executing command
-				testResources := []*resources.Resource{
-					{
-						Kind: "asset",
-						Spec: &resources.AssetSpec{Name: "asset-name"},
-					},
-					{
-						Kind: "stage",
-						Spec: &resources.StageSpec{
-							Name: "source-name",
-						},
-					},
-					{
-						Kind: "stage",
-						Spec: &resources.StageSpec{
-							Name: "target-name",
-						},
-					},
-				}
-				conn, err := grpc.Dial(addr, grpc.WithInsecure())
-				assert.NilError(t, err, "dial error")
-				defer conn.Close()
-
-				c := client.New(conn)
-
-				ctx, cancel := context.WithTimeout(
-					context.Background(),
-					time.Second)
-				defer cancel()
-
-				for _, r := range testResources {
-					assert.NilError(
-						t,
-						c.CreateResource(ctx, r),
-						"create resource error")
-				}
+				defer grpcServer.Stop()
 
 				// Create link
 				b := bytes.NewBufferString("")
 				cmd := NewCmdCreateLink()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")

@@ -1,7 +1,7 @@
 kind: asset
 spec:
   name: asset-1
-  image: user-1/asset-1:latest
+  image: image-1
 ---
 kind: stage
 spec:
@@ -35,7 +35,7 @@ spec:
 kind: asset
 spec:
   name: asset-2
-  image: user-1/image-2:latest
+  image: image-2
 ---
 kind: link
 spec:

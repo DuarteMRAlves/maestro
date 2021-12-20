@@ -4,32 +4,43 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"google.golang.org/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
-	"net"
 	"regexp"
 	"testing"
-	"time"
 )
 
-// TestCreateOrchestrationWithServer performs integration testing on the
-// CreateOrchestration command considering operations that require the server to be
-// running. It runs a maestro server and then executes a create orchestration
-// command with predetermined arguments, verifying its output.
+// TestCreateOrchestrationWithServer performs testing on the CreateOrchestration
+// command considering operations that require the server to be running. It runs
+// a mock maestro server and then executes a create orchestration command with
+// predetermined arguments, verifying its output.
 func TestCreateOrchestrationWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
+		validateCfg func(cfg *pb.Orchestration) bool
+		response    *emptypb.Empty
+		err         error
 		expectedOut string
 	}{
 		{
-			name:        "create a orchestration with all arguments",
-			args:        []string{"orchestration-name", "--link=link1,link2"},
+			name: "create a orchestration with all arguments",
+			args: []string{"orchestration-name", "--link=link1,link2"},
+			validateCfg: func(cfg *pb.Orchestration) bool {
+				return cfg.Name == "orchestration-name" &&
+					len(cfg.Links) == 2 &&
+					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
+						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
 			expectedOut: "",
 		},
 		{
@@ -37,20 +48,46 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 			args: []string{
 				"orchestration-name",
 				"--link",
-				"link1",
-				"--link",
 				"link2",
+				"--link",
+				"link1",
 			},
+			validateCfg: func(cfg *pb.Orchestration) bool {
+				return cfg.Name == "orchestration-name" &&
+					len(cfg.Links) == 2 &&
+					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
+						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
 			expectedOut: "",
 		},
 		{
-			name:        "create a orchestration with required arguments",
-			args:        []string{"orchestration-name", "--link=link1"},
+			name: "create a orchestration with required arguments",
+			args: []string{"orchestration-name", "--link=link1"},
+			validateCfg: func(cfg *pb.Orchestration) bool {
+				return cfg.Name == "orchestration-name" &&
+					len(cfg.Links) == 1 &&
+					cfg.Links[0] == "link1"
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
 			expectedOut: "",
 		},
 		{
-			name:        "create a orchestration with invalid name",
-			args:        []string{"invalid--name", "--link=link1,link2"},
+			name: "create a orchestration with invalid name",
+			args: []string{"invalid--name", "--link=link1,link2"},
+			validateCfg: func(cfg *pb.Orchestration) bool {
+				return cfg.Name == "invalid--name" &&
+					len(cfg.Links) == 2 &&
+					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
+						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			},
+			response: nil,
+			err: status.Error(
+				codes.InvalidArgument,
+				errdefs.InvalidArgumentWithMsg(
+					"invalid name 'invalid--name'").Error()),
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
@@ -59,101 +96,56 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				"orchestration-name",
 				"--link=link1,does-not-exist",
 			},
+			validateCfg: func(cfg *pb.Orchestration) bool {
+				return cfg.Name == "orchestration-name" &&
+					len(cfg.Links) == 2 &&
+					((cfg.Links[0] == "link1" && cfg.Links[1] == "does-not-exist") ||
+						(cfg.Links[0] == "does-not-exist" && cfg.Links[1] == "link1"))
+			},
+			response: nil,
+			err: status.Error(
+				codes.NotFound,
+				errdefs.NotFoundWithMsg(
+					"link 'does-not-exist' not found").Error()),
 			expectedOut: "not found: link 'does-not-exist' not found",
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				var (
-					lis  net.Listener
-					addr string
-					err  error
-				)
+				lis := testutil.ListenAvailablePort(t)
 
-				lis = testutil.ListenAvailablePort(t)
-
-				addr = lis.Addr().String()
-
+				addr := lis.Addr().String()
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().
-					WithGrpc().
-					WithLogger(testutil.NewLogger(t)).
-					Build()
-				assert.NilError(t, err, "build server")
-
+				mockServer := mock.MaestroServer{
+					OrchestrationManagementServer: &mock.OrchestrationManagementServer{
+						CreateOrchestrationFn: func(
+							ctx context.Context,
+							cfg *pb.Orchestration,
+						) (*emptypb.Empty, error) {
+							if !test.validateCfg(cfg) {
+								return nil, fmt.Errorf(
+									"validation failed with cfg %v",
+									cfg)
+							}
+							return test.response, test.err
+						},
+					},
+				}
+				grpcServer := mockServer.GrpcServer()
 				go func() {
-					if err := s.ServeGrpc(lis); err != nil {
-						t.Errorf("Failed to serve: %v", err)
-						return
-					}
+					err := grpcServer.Serve(lis)
+					assert.NilError(t, err, "grpc server error")
 				}()
-				defer func() {
-					// Stop the server. Any calls in the test should be finished.
-					// If not, an error should be raised.
-					s.StopGrpc()
-				}()
-
-				// Create asset before executing command
-				testResources := []*resources.Resource{
-					{
-						Kind: "asset",
-						Spec: &resources.AssetSpec{Name: "asset-name"},
-					},
-					{
-						Kind: "stage",
-						Spec: &resources.StageSpec{
-							Name: "source-name",
-						},
-					},
-					{
-						Kind: "stage",
-						Spec: &resources.StageSpec{
-							Name: "target-name",
-						},
-					},
-					{
-						Kind: "link",
-						Spec: &resources.LinkSpec{
-							Name:        "link1",
-							SourceStage: "source-name",
-							TargetStage: "target-name",
-						},
-					},
-					{
-						Kind: "link",
-						Spec: &resources.LinkSpec{
-							Name:        "link2",
-							SourceStage: "source-name",
-							TargetStage: "target-name",
-						},
-					},
-				}
-				conn, err := grpc.Dial(addr, grpc.WithInsecure())
-				assert.NilError(t, err, "dial error")
-				defer conn.Close()
-
-				c := client.New(conn)
-
-				ctx, cancel := context.WithTimeout(
-					context.Background(),
-					time.Second)
-				defer cancel()
-
-				for _, r := range testResources {
-					assert.NilError(
-						t,
-						c.CreateResource(ctx, r),
-						"create resource error")
-				}
+				defer grpcServer.Stop()
 
 				// Create orchestration
 				b := bytes.NewBufferString("")
 				cmd := NewCmdCreateOrchestration()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err = cmd.Execute()
+				err := cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
