@@ -45,6 +45,7 @@ func NewCmdCreate() *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAsset())
 	cmd.AddCommand(NewCmdCreateStage())
 	cmd.AddCommand(NewCmdCreateLink())
+	cmd.AddCommand(NewCmdCreateOrchestration())
 
 	return cmd
 }
@@ -78,14 +79,17 @@ func (o *CreateOptions) run() error {
 	assets := resources.FilterAssets(parsed)
 	stages := resources.FilterStages(parsed)
 	links := resources.FilterLinks(parsed)
+	orchestrations := resources.FilterOrchestrations(parsed)
 
-	orderedResourcesSize := len(assets) + len(stages) + len(links)
+	orderedResourcesSize :=
+		len(assets) + len(stages) + len(links) + len(orchestrations)
 
 	resourcesByKind := make([]*resources.Resource, 0, orderedResourcesSize)
 
 	resourcesByKind = append(resourcesByKind, assets...)
 	resourcesByKind = append(resourcesByKind, stages...)
 	resourcesByKind = append(resourcesByKind, links...)
+	resourcesByKind = append(resourcesByKind, orchestrations...)
 
 	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
 	if err != nil {

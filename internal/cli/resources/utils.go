@@ -4,42 +4,20 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
-const (
-	AssetKind = "asset"
-	StageKind = "stage"
-	LinkKind  = "link"
-)
-
 func IsValidKinds(resources []*Resource) error {
 	for _, r := range resources {
-		if !IsValidKind(r.Kind) {
+		if !r.IsValidKind() {
 			return errdefs.InvalidArgumentWithMsg("invalid kind '%v'", r.Kind)
 		}
 	}
 	return nil
 }
 
-func IsValidKind(kind string) bool {
-	return kind == AssetKind || kind == StageKind || kind == LinkKind
-}
-
-func IsAssetKind(r *Resource) bool {
-	return r.Kind == AssetKind
-}
-
-func IsStageKind(r *Resource) bool {
-	return r.Kind == StageKind
-}
-
-func IsLinkKind(r *Resource) bool {
-	return r.Kind == LinkKind
-}
-
 // FilterAssets creates a new array with the resources whose kind is asset.
 func FilterAssets(resources []*Resource) []*Resource {
 	assets := make([]*Resource, 0)
 	for _, r := range resources {
-		if IsAssetKind(r) {
+		if r.IsAssetKind() {
 			assets = append(assets, r)
 		}
 	}
@@ -50,7 +28,7 @@ func FilterAssets(resources []*Resource) []*Resource {
 func FilterStages(resources []*Resource) []*Resource {
 	stages := make([]*Resource, 0)
 	for _, r := range resources {
-		if IsStageKind(r) {
+		if r.IsStageKind() {
 			stages = append(stages, r)
 		}
 	}
@@ -61,9 +39,21 @@ func FilterStages(resources []*Resource) []*Resource {
 func FilterLinks(resources []*Resource) []*Resource {
 	links := make([]*Resource, 0)
 	for _, r := range resources {
-		if IsLinkKind(r) {
+		if r.IsLinkKind() {
 			links = append(links, r)
 		}
 	}
 	return links
+}
+
+// FilterOrchestrations creates a new array with the resources whose kind is
+// orchestration.
+func FilterOrchestrations(resources []*Resource) []*Resource {
+	orchestrations := make([]*Resource, 0)
+	for _, r := range resources {
+		if r.IsOrchestrationKind() {
+			orchestrations = append(orchestrations, r)
+		}
+	}
+	return orchestrations
 }
