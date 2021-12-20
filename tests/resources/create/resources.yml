@@ -25,6 +25,13 @@ spec:
   method: Method2
   address: address-2
 ---
+kind: orchestration
+spec:
+  name: orchestration-2
+  links:
+    - link-stage-2-stage-1
+    - link-stage-1-stage-2
+---
 kind: asset
 spec:
   name: asset-2
@@ -37,3 +44,10 @@ spec:
   source_field: Field1
   target_stage: stage-2
   target_field: Field2
+---
+kind: orchestration
+spec:
+  name: orchestration-1
+  links:
+    - link-stage-1-stage-2
+    - link-stage-2-stage-1

@@ -14,7 +14,7 @@ func (c *client) CreateResource(
 	resource *resources.Resource,
 ) error {
 	switch {
-	case resources.IsAssetKind(resource):
+	case resource.IsAssetKind():
 		a, ok := resource.Spec.(*resources.AssetSpec)
 		if !ok {
 			return errdefs.InternalWithMsg("asset spec cast failed: %v", a)
@@ -23,7 +23,7 @@ func (c *client) CreateResource(
 			return err
 		}
 		return nil
-	case resources.IsStageKind(resource):
+	case resource.IsStageKind():
 		s, ok := resource.Spec.(*resources.StageSpec)
 		if !ok {
 			return errdefs.InternalWithMsg("stage spec cast failed: %v", s)
@@ -32,7 +32,7 @@ func (c *client) CreateResource(
 			return err
 		}
 		return nil
-	case resources.IsLinkKind(resource):
+	case resource.IsLinkKind():
 		l, ok := resource.Spec.(*resources.LinkSpec)
 		if !ok {
 			return errdefs.InternalWithMsg("link spec cast failed: %v", l)
@@ -41,8 +41,20 @@ func (c *client) CreateResource(
 			return err
 		}
 		return nil
+	case resource.IsOrchestrationKind():
+		o, ok := resource.Spec.(*resources.OrchestrationSpec)
+		if !ok {
+			return errdefs.InternalWithMsg(
+				"orchestration spec cast failed> %v",
+				o)
+		}
+		if err := c.CreateOrchestration(ctx, o); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errdefs.InvalidArgumentWithMsg("unknown kind %v", resource.Kind)
 	}
-	return errdefs.InvalidArgumentWithMsg("unknown kind %v", resource.Kind)
 }
 
 func (c *client) CreateAsset(

@@ -30,6 +30,8 @@ func TestCreateWithServer(t *testing.T) {
 			"multiple resources in multiple files",
 			[]string{
 				"-f",
+				"../../../../tests/resources/create/orchestrations.yml",
+				"-f",
 				"../../../../tests/resources/create/stages.yml",
 				"-f",
 				"../../../../tests/resources/create/links.yml",
@@ -54,6 +56,14 @@ func TestCreateWithServer(t *testing.T) {
 			},
 			"not found: target stage 'unknown-stage' not found",
 		},
+		{
+			"link not found",
+			[]string{
+				"-f",
+				"../../../../tests/resources/create/link_not_found.yml",
+			},
+			"not found: link 'unknown-link' not found",
+		},
 	}
 	for _, test := range tests {
 		t.Run(
@@ -70,7 +80,10 @@ func TestCreateWithServer(t *testing.T) {
 
 				test.args = append(test.args, "--addr", addr)
 
-				s, err := server.NewBuilder().WithGrpc().Build()
+				s, err := server.NewBuilder().
+					WithGrpc().
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				go func() {

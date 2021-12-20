@@ -12,6 +12,7 @@ func NewCmdGet() *cobra.Command {
 	cmd.AddCommand(NewCmdGetAsset())
 	cmd.AddCommand(NewCmdGetStage())
 	cmd.AddCommand(NewCmdGetLink())
+	cmd.AddCommand(NewCmdGetOrchestration())
 
 	return cmd
 }

@@ -5,9 +5,39 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
+const (
+	assetKind         = "asset"
+	stageKind         = "stage"
+	linkKind          = "link"
+	orchestrationKind = "orchestration"
+)
+
 type Resource struct {
 	Kind string      `yaml:"kind"`
 	Spec interface{} `yaml:"-"`
+}
+
+func (r *Resource) IsValidKind() bool {
+	return r.IsAssetKind() ||
+		r.IsStageKind() ||
+		r.IsLinkKind() ||
+		r.IsOrchestrationKind()
+}
+
+func (r *Resource) IsAssetKind() bool {
+	return r.Kind == assetKind
+}
+
+func (r *Resource) IsStageKind() bool {
+	return r.Kind == stageKind
+}
+
+func (r *Resource) IsLinkKind() bool {
+	return r.Kind == linkKind
+}
+
+func (r *Resource) IsOrchestrationKind() bool {
+	return r.Kind == orchestrationKind
 }
 
 func (r *Resource) String() string {
@@ -40,12 +70,14 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return errdefs.InvalidArgumentWithMsg("kind not specified")
 	}
 	switch r.Kind {
-	case AssetKind:
+	case assetKind:
 		r.Spec = new(AssetSpec)
-	case StageKind:
+	case stageKind:
 		r.Spec = new(StageSpec)
-	case LinkKind:
+	case linkKind:
 		r.Spec = new(LinkSpec)
+	case orchestrationKind:
+		r.Spec = new(OrchestrationSpec)
 	default:
 		return errdefs.InvalidArgumentWithMsg("unknown kind: '%v'", r.Kind)
 	}

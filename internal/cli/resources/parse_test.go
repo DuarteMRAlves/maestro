@@ -59,11 +59,11 @@ spec:
 
 var expected = []*Resource{
 	{
-		Kind: AssetKind,
+		Kind: assetKind,
 		Spec: &AssetSpec{Name: assetName, Image: assetImage},
 	},
 	{
-		Kind: StageKind,
+		Kind: stageKind,
 		Spec: &StageSpec{
 			Name:    stageName,
 			Asset:   stageAsset,
@@ -72,7 +72,7 @@ var expected = []*Resource{
 		},
 	},
 	{
-		Kind: LinkKind,
+		Kind: linkKind,
 		Spec: &LinkSpec{
 			Name:        linkName,
 			SourceStage: linkSourceStage,
