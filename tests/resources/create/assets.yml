@@ -1,14 +1,14 @@
 kind: asset
 spec:
   name: asset-4
-  image: user-1/image-4:latest
+  image: image-4
 ---
 kind: asset
 spec:
   name: asset-5
-  image: user-2/image-5:latest
+  image: image-5
 ---
 kind: asset
 spec:
   name: asset-6
-  image: user-1/image-6:latest
+  image: image-6
