@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-type service struct {
+type testService struct {
 	pb.UnimplementedTestServiceServer
 	pb.UnimplementedExtraServiceServer
 }
@@ -20,8 +20,8 @@ func startServer(
 	reflectionFlag bool,
 ) *grpc.Server {
 	testServer := grpc.NewServer()
-	pb.RegisterTestServiceServer(testServer, &service{})
-	pb.RegisterExtraServiceServer(testServer, &service{})
+	pb.RegisterTestServiceServer(testServer, &testService{})
+	pb.RegisterExtraServiceServer(testServer, &testService{})
 
 	if reflectionFlag {
 		reflection.Register(testServer)

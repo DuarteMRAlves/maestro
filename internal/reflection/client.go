@@ -16,7 +16,7 @@ const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 // Client exposes an API for grpc reflection operations
 type Client interface {
 	ListServices() ([]string, error)
-	ResolveService(name string) (*desc.ServiceDescriptor, error)
+	ResolveService(name string) (Service, error)
 }
 
 type client struct {
@@ -48,7 +48,18 @@ func (c *client) ListServices() ([]string, error) {
 }
 
 // ResolveService returns a descriptor for the service with the given name.
-func (c *client) ResolveService(name string) (*desc.ServiceDescriptor, error) {
+func (c *client) ResolveService(name string) (Service, error) {
+	desc, err := c.resolveServiceDesc(name)
+	if err != nil {
+		return nil, err
+	}
+	return newService(desc)
+}
+
+func (c *client) resolveServiceDesc(name string) (
+	*desc.ServiceDescriptor,
+	error,
+) {
 	descriptor, err := c.client.ResolveService(name)
 	if err != nil {
 		switch {
