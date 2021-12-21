@@ -28,8 +28,9 @@ func TestClient_ResolveService_TestService(t *testing.T) {
 	}(conn)
 
 	serviceName := "pb.TestService"
-	c := NewClient(ctx, conn)
-	descriptor, err := c.ResolveService(serviceName)
+	c, ok := NewClient(ctx, conn).(*client)
+	assert.Assert(t, ok, "client type assertion")
+	descriptor, err := c.resolveServiceDesc(serviceName)
 	assert.NilError(t, err, "resolve service error")
 	assertTestService(t, descriptor)
 }
@@ -141,8 +142,9 @@ func TestClient_ResolveService_ExtraService(t *testing.T) {
 	}(conn)
 
 	serviceName := "pb.ExtraService"
-	c := NewClient(ctx, conn)
-	descriptor, err := c.ResolveService(serviceName)
+	c, ok := NewClient(ctx, conn).(*client)
+	assert.Assert(t, ok, "client type assertion")
+	descriptor, err := c.resolveServiceDesc(serviceName)
 	assert.NilError(t, err, "resolve service error")
 	assertExtraService(t, descriptor)
 }
@@ -250,8 +252,9 @@ func TestClient_ResolveServiceNoReflection(t *testing.T) {
 	}(conn)
 
 	serviceName := "pb.TestService"
-	c := NewClient(ctx, conn)
-	service, err := c.ResolveService(serviceName)
+	c, ok := NewClient(ctx, conn).(*client)
+	assert.Assert(t, ok, "client type assertion")
+	service, err := c.resolveServiceDesc(serviceName)
 
 	assert.Assert(t, errdefs.IsFailedPrecondition(err), "resolve service error")
 	assert.ErrorContains(t, err, "resolve service: ")
@@ -274,8 +277,9 @@ func TestClient_ResolveServiceUnknownService(t *testing.T) {
 	}(conn)
 
 	serviceName := "pb.UnknownService"
-	c := NewClient(ctx, conn)
-	service, err := c.ResolveService(serviceName)
+	c, ok := NewClient(ctx, conn).(*client)
+	assert.Assert(t, ok, "client type assertion")
+	service, err := c.resolveServiceDesc(serviceName)
 
 	assert.Assert(t, errdefs.IsNotFound(err), "resolve service error")
 	expectedMsg := "resolve service: Service not found: pb.UnknownService"
