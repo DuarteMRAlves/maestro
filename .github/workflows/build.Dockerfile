@@ -1,12 +1,12 @@
-ARG GO=1.17.3
-ARG PROTOC="3.17.3"
+ARG GO=1.17.5
+ARG PROTOC="3.19.1"
 
 FROM debian:bullseye-slim AS builder
 ARG PROTOC
 
-RUN apt-get update && apt-get install -y curl unzip
-RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC}/protoc-${PROTOC}-linux-x86_64.zip
-RUN unzip protoc-${PROTOC}-linux-x86_64.zip -d /opt/protoc
+RUN apt-get update && apt-get install -y curl unzip && \
+    curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC}/protoc-${PROTOC}-linux-x86_64.zip &&  \
+    unzip protoc-${PROTOC}-linux-x86_64.zip -d /opt/protoc
 
 FROM golang:${GO}-bullseye
 ARG PROTOC
