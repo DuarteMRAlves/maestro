@@ -8,6 +8,7 @@ import (
 // Service describes a grpc service
 type Service interface {
 	fullyQualifiedName() string
+	RPCs() []RPC
 }
 
 type service struct {
@@ -24,4 +25,20 @@ func newService(desc *desc.ServiceDescriptor) (Service, error) {
 
 func (s *service) fullyQualifiedName() string {
 	return s.desc.GetFullyQualifiedName()
+}
+
+func (s *service) RPCs() []RPC {
+	methodDescriptors := s.desc.GetMethods()
+	rpcs := make([]RPC, 0, len(methodDescriptors))
+
+	for _, m := range methodDescriptors {
+		rpc, err := newRPC(m)
+		// Should never happen
+		if err != nil {
+			panic(err)
+		}
+		rpcs = append(rpcs, rpc)
+	}
+
+	return rpcs
 }

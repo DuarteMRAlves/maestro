@@ -67,22 +67,28 @@ func linkNameForNum(num int) string {
 // populateAssets creates the assets in the server, asserting any occurred
 // errors.
 func populateAssets(t *testing.T, s *Server, assets []*asset.Asset) {
+	// Bypass CreateAsset verifications
+	store := s.assetStore
 	for _, a := range assets {
-		assert.NilError(t, s.CreateAsset(a), "populate with assets")
+		assert.NilError(t, store.Create(a), "populate with assets")
 	}
 }
 
 // populateStages creates the stages in the server, asserting any occurred
 // errors.
 func populateStages(t *testing.T, s *Server, stages []*stage.Stage) {
+	// Bypass CreateStage verifications
+	store := s.stageStore
 	for _, st := range stages {
-		assert.NilError(t, s.CreateStage(st), "populate with stages")
+		assert.NilError(t, store.Create(st), "populate with stages")
 	}
 }
 
 // populateLinks creates the links in the server, asserting any occurred errors.
 func populateLinks(t *testing.T, s *Server, links []*link.Link) {
+	// Bypass CreateLink verifications
+	store := s.linkStore
 	for _, l := range links {
-		assert.NilError(t, s.CreateLink(l), "populate with links")
+		assert.NilError(t, store.Create(l), "populate with links")
 	}
 }

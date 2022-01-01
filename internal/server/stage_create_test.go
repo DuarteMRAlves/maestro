@@ -7,40 +7,79 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
+	"net"
 	"testing"
 )
 
 const stageName = "stage-name"
 
 func TestServer_CreateStage(t *testing.T) {
+	var (
+		lis                         net.Listener
+		registerTest, registerExtra bool
+	)
+
+	lis = testutil.ListenAvailablePort(t)
+	testAddr := lis.Addr().String()
+	registerTest, registerExtra = true, false
+	testServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	defer testServer.GracefulStop()
+
+	lis = testutil.ListenAvailablePort(t)
+	extraAddr := lis.Addr().String()
+	registerTest, registerExtra = false, true
+	extraServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	defer extraServer.GracefulStop()
+
+	lis = testutil.ListenAvailablePort(t)
+	bothAddr := lis.Addr().String()
+	registerTest, registerExtra = true, true
+	bothServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	defer bothServer.GracefulStop()
+
 	tests := []struct {
 		name   string
 		config *stage.Stage
 	}{
 		{
-			name: "correct with nil asset, service, method and address",
+			name: "correct with nil asset, service and method",
 			config: &stage.Stage{
 				Name: stageName,
+				// ExtraServer only has one server and method
+				Address: extraAddr,
 			},
 		},
 		{
-			name: "correct with empty asset, method and address",
-			config: &stage.Stage{
-				Name:    stageName,
-				Asset:   "",
-				Service: "",
-				Method:  "",
-				Address: "",
-			},
-		},
-		{
-			name: "correct with asset, service, method and address",
+			name: "correct with no service and specified method",
 			config: &stage.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
-				Service: "ServiceName",
-				Method:  "MethodName",
-				Address: "Address",
+				Service: "",
+				Method:  "ClientStream",
+				// testServer only has one service but four methods
+				Address: testAddr,
+			},
+		},
+		{
+			name: "correct with service and no method",
+			config: &stage.Stage{
+				Name:    stageName,
+				Asset:   assetNameForNum(0),
+				Service: "pb.ExtraService",
+				Method:  "",
+				// both has two services and one method for ExtraService
+				Address: bothAddr,
+			},
+		},
+		{
+			name: "correct with service and no method",
+			config: &stage.Stage{
+				Name:    stageName,
+				Asset:   assetNameForNum(0),
+				Service: "pb.TestService",
+				Method:  "BidiStream",
+				// both has two services and four methods for TestService
+				Address: bothAddr,
 			},
 		},
 	}
@@ -139,21 +178,149 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
 
+	lis := testutil.ListenAvailablePort(t)
+	bothAddr := lis.Addr().String()
+	bothServer := testutil.StartTestServer(t, lis, true, true)
+	defer bothServer.GracefulStop()
+
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
 	config := &stage.Stage{
-		Name:  stageName,
-		Asset: assetNameForNum(0),
+		Name:    stageName,
+		Asset:   assetNameForNum(0),
+		Service: "pb.TestService",
+		Method:  "BidiStream",
+		// both has two services and four methods for TestService
+		Address: bothAddr,
 	}
 
 	err = s.CreateStage(config)
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateStage(config)
-	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
+	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not AlreadyExists")
 	expectedMsg := fmt.Sprintf("stage '%v' already exists", stageName)
 	assert.Error(t, err, expectedMsg)
+}
+
+func TestServer_CreateStage_Error(t *testing.T) {
+	tests := []struct {
+		name            string
+		registerTest    bool
+		registerExtra   bool
+		config          *stage.Stage
+		verifyErrTypeFn func(err error) bool
+		expectedErrMsg  string
+	}{
+		{
+			name:          "no services",
+			registerTest:  false,
+			registerExtra: false,
+			config: &stage.Stage{
+				Name:  stageName,
+				Asset: assetNameForNum(0),
+				// Address injected during the test to point to the server
+			},
+			verifyErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg: fmt.Sprintf(
+				"find service without name for stage %v: expected 1 "+
+					"available service but 0 found",
+				stageName),
+		},
+		{
+			name:          "too many services",
+			registerTest:  true,
+			registerExtra: true,
+			config: &stage.Stage{
+				Name:  stageName,
+				Asset: assetNameForNum(0),
+				// Address injected during the test to point to the server
+			},
+			verifyErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg: fmt.Sprintf(
+				"find service without name for stage %v: expected 1 "+
+					"available service but 2 found",
+				stageName),
+		},
+		{
+			name:          "no such service",
+			registerTest:  true,
+			registerExtra: true,
+			config: &stage.Stage{
+				Name:    stageName,
+				Asset:   assetNameForNum(0),
+				Service: "NoSuchService",
+				// Address injected during the test to point to the server
+			},
+			verifyErrTypeFn: errdefs.IsNotFound,
+			expectedErrMsg: fmt.Sprintf(
+				"service with name NoSuchService not found for stage %v",
+				stageName),
+		},
+		{
+			name:         "too many methods",
+			registerTest: true,
+			config: &stage.Stage{
+				Name:  stageName,
+				Asset: assetNameForNum(0),
+				// Address injected during the test to point to the server
+			},
+			verifyErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg: fmt.Sprintf(
+				"find rpc without name for stage %v: expected 1 available "+
+					"rpc but 4 found",
+				stageName),
+		},
+		{
+			name:          "no such method",
+			registerTest:  true,
+			registerExtra: false,
+			config: &stage.Stage{
+				Name:   stageName,
+				Asset:  assetNameForNum(0),
+				Method: "NoSuchMethod",
+				// Address injected during the test to point to the server
+			},
+			verifyErrTypeFn: errdefs.IsNotFound,
+			expectedErrMsg: fmt.Sprintf(
+				"rpc with name NoSuchMethod not found for stage %v",
+				stageName),
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				var err error
+
+				lis := testutil.ListenAvailablePort(t)
+				bothAddr := lis.Addr().String()
+				bothServer := testutil.StartTestServer(
+					t,
+					lis,
+					test.registerTest,
+					test.registerExtra)
+				defer bothServer.GracefulStop()
+
+				s, err := NewBuilder().
+					WithGrpc().
+					WithLogger(testutil.NewLogger(t)).
+					Build()
+				assert.NilError(t, err, "build server")
+				populateForStages(t, s)
+
+				test.config.Address = bothAddr
+
+				err = s.CreateStage(test.config)
+				assert.Assert(
+					t,
+					test.verifyErrTypeFn(err),
+					"incorrect err type")
+				assert.Error(t, err, test.expectedErrMsg)
+			})
+	}
+
 }
 
 func populateForStages(t *testing.T, s *Server) {
