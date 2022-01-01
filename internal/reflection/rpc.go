@@ -7,6 +7,7 @@ import (
 
 // RPC describes a rpc method of a given service.
 type RPC interface {
+	Name() string
 	fullyQualifiedName() string
 }
 
@@ -20,6 +21,10 @@ func newRPC(desc *desc.MethodDescriptor) (RPC, error) {
 	}
 	r := &rpc{desc: desc}
 	return r, nil
+}
+
+func (r *rpc) Name() string {
+	return r.desc.GetName()
 }
 
 func (r *rpc) fullyQualifiedName() string {
