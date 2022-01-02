@@ -53,8 +53,8 @@ func NewCmdCreate() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // parse the command line arguments and run the command
 func (o *CreateOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr, addrHelp)
-	addFilesFlag(cmd, &o.files, fileHelp)
+	util.AddAddrFlag(cmd, &o.addr)
+	util.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
 }
 
 // validate verifies if the user inputs are valid and there are no conflits

@@ -55,7 +55,7 @@ func NewCmdCreateOrchestration() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
 func (o *CreateOrchestrationOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr, addrHelp)
+	util.AddAddrFlag(cmd, &o.addr)
 
 	cmd.Flags().StringSliceVar(
 		&o.links,

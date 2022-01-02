@@ -66,7 +66,7 @@ func NewCmdGetAsset() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr)
+	util.AddAddrFlag(cmd, &o.addr)
 
 	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
 }

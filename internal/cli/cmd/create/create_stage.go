@@ -76,7 +76,7 @@ func NewCmdCreateStage() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateStage command
 func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr, addrHelp)
+	util.AddAddrFlag(cmd, &o.addr)
 
 	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
 	cmd.Flags().StringVarP(
