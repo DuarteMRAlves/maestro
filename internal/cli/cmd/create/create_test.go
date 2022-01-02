@@ -54,6 +54,8 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "Service1",
 						Method:  "Method1",
 						Address: "address-1",
+						Host:    "",
+						Port:    0,
 					},
 					cfg,
 				) || equalStage(
@@ -63,6 +65,19 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "Service2",
 						Method:  "Method2",
 						Address: "address-2",
+						Host:    "",
+						Port:    0,
+					},
+					cfg,
+				) || equalStage(
+					&pb.Stage{
+						Name:    "stage-3",
+						Asset:   "asset-3",
+						Service: "Service3",
+						Method:  "Method3",
+						Address: "",
+						Host:    "host-3",
+						Port:    33333,
 					},
 					cfg,
 				)
@@ -143,6 +158,8 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "",
 						Method:  "",
 						Address: "",
+						Host:    "",
+						Port:    0,
 					},
 					cfg,
 				) || equalStage(
@@ -152,6 +169,8 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "",
 						Method:  "",
 						Address: "",
+						Host:    "",
+						Port:    0,
 					},
 					cfg,
 				) || equalStage(
@@ -161,6 +180,19 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "Service6",
 						Method:  "Method6",
 						Address: "stage-address",
+						Host:    "",
+						Port:    0,
+					},
+					cfg,
+				) || equalStage(
+					&pb.Stage{
+						Name:    "stage-7",
+						Asset:   "asset-7",
+						Service: "Service7",
+						Method:  "Method7",
+						Address: "",
+						Host:    "stage-host",
+						Port:    7777,
 					},
 					cfg,
 				)

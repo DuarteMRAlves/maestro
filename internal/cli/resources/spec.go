@@ -11,6 +11,8 @@ type StageSpec struct {
 	Service string `yaml:"service"`
 	Method  string `yaml:"method"`
 	Address string `yaml:"address"`
+	Host    string `yaml:"host"`
+	Port    int32  `yaml:"port"`
 }
 
 type LinkSpec struct {

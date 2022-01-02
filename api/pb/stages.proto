@@ -17,4 +17,6 @@ message Stage {
   string service = 4;
   string method = 5;
   string address = 6;
+  string host = 7;
+  int32 port = 8;
 }
