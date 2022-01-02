@@ -14,3 +14,12 @@ spec:
   service: Service6
   method: Method6
   address: stage-address
+---
+kind: stage
+spec:
+  name: stage-7
+  asset: asset-7
+  service: Service7
+  method: Method7
+  host: stage-host
+  port: 7777

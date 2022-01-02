@@ -40,6 +40,8 @@ type CreateStageOptions struct {
 	service string
 	method  string
 	address string
+	host    string
+	port    int32
 }
 
 // NewCmdCreateStage returns a new command that creates a stage from command
@@ -88,6 +90,8 @@ func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
 		serviceUsage)
 	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
 	cmd.Flags().StringVar(&o.address, addressFlag, "", addressUsage)
+	cmd.Flags().StringVar(&o.host, "host", "", "host where service is running")
+	cmd.Flags().Int32Var(&o.port, "port", 0, "port where service is running")
 }
 
 // complete fills any remaining information necessary to run the command that is
@@ -105,6 +109,14 @@ func (o *CreateStageOptions) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a stage name")
 	}
+	if o.address != "" && o.host != "" {
+		return errdefs.InvalidArgumentWithMsg(
+			"address and host options are incompatible")
+	}
+	if o.address != "" && o.port != 0 {
+		return errdefs.InvalidArgumentWithMsg(
+			"address and port options are incompatible")
+	}
 	return nil
 }
 
@@ -115,6 +127,8 @@ func (o *CreateStageOptions) run() error {
 		Service: o.service,
 		Method:  o.method,
 		Address: o.address,
+		Host:    o.host,
+		Port:    o.port,
 	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())

@@ -31,7 +31,7 @@ func TestCreateStageWithServer(t *testing.T) {
 		expectedOut string
 	}{
 		{
-			name: "create a stage with all arguments",
+			name: "create a stage with all arguments and address",
 			args: []string{
 				"stage-name",
 				"--asset",
@@ -48,7 +48,37 @@ func TestCreateStageWithServer(t *testing.T) {
 					cfg.Asset == "asset-name" &&
 					cfg.Service == "ServiceName" &&
 					cfg.Method == "MethodName" &&
-					cfg.Address == "some-address"
+					cfg.Address == "some-address" &&
+					cfg.Host == "" &&
+					cfg.Port == 0
+			},
+			response:    &emptypb.Empty{},
+			err:         nil,
+			expectedOut: "",
+		},
+		{
+			name: "create a stage with all arguments and host and port",
+			args: []string{
+				"stage-name",
+				"--asset",
+				"asset-name",
+				"--service",
+				"ServiceName",
+				"--method",
+				"MethodName",
+				"--host",
+				"some-host",
+				"--port",
+				"12345",
+			},
+			validateCfg: func(cfg *pb.Stage) bool {
+				return cfg.Name == "stage-name" &&
+					cfg.Asset == "asset-name" &&
+					cfg.Service == "ServiceName" &&
+					cfg.Method == "MethodName" &&
+					cfg.Address == "" &&
+					cfg.Host == "some-host" &&
+					cfg.Port == 12345
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -62,7 +92,9 @@ func TestCreateStageWithServer(t *testing.T) {
 					cfg.Asset == "" &&
 					cfg.Service == "" &&
 					cfg.Method == "" &&
-					cfg.Address == ""
+					cfg.Address == "" &&
+					cfg.Host == "" &&
+					cfg.Port == 0
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -76,7 +108,9 @@ func TestCreateStageWithServer(t *testing.T) {
 					cfg.Asset == "" &&
 					cfg.Service == "" &&
 					cfg.Method == "" &&
-					cfg.Address == ""
+					cfg.Address == "" &&
+					cfg.Host == "" &&
+					cfg.Port == 0
 			},
 			response: nil,
 			err: status.Error(
@@ -93,7 +127,9 @@ func TestCreateStageWithServer(t *testing.T) {
 					cfg.Asset == "does-not-exist" &&
 					cfg.Service == "" &&
 					cfg.Method == "" &&
-					cfg.Address == ""
+					cfg.Address == "" &&
+					cfg.Host == "" &&
+					cfg.Port == 0
 			},
 			response: nil,
 			err: status.Error(
@@ -155,9 +191,31 @@ func TestCreateStageWithoutServer(t *testing.T) {
 		expectedOut string
 	}{
 		{
-			"no name",
-			[]string{},
-			"invalid argument: please specify a stage name",
+			name:        "no name",
+			args:        []string{},
+			expectedOut: "invalid argument: please specify a stage name",
+		},
+		{
+			name: "address and host specified",
+			args: []string{
+				"stage-name",
+				"--address",
+				"address",
+				"--host",
+				"host",
+			},
+			expectedOut: "invalid argument: address and host options are incompatible",
+		},
+		{
+			name: "address and port specified",
+			args: []string{
+				"stage-name",
+				"--address",
+				"address",
+				"--port",
+				"12345",
+			},
+			expectedOut: "invalid argument: address and port options are incompatible",
 		},
 	}
 	for _, test := range tests {

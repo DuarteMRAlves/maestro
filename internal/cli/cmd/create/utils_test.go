@@ -14,7 +14,9 @@ func equalStage(expected *pb.Stage, actual *pb.Stage) bool {
 		expected.Asset == actual.Asset &&
 		expected.Service == actual.Service &&
 		expected.Method == actual.Method &&
-		expected.Address == actual.Address
+		expected.Address == actual.Address &&
+		expected.Host == actual.Host &&
+		expected.Port == actual.Port
 }
 
 func equalLink(expected *pb.Link, actual *pb.Link) bool {

@@ -25,6 +25,15 @@ spec:
   method: Method2
   address: address-2
 ---
+kind: stage
+spec:
+  name: stage-3
+  asset: asset-3
+  service: Service3
+  method: Method3
+  host: host-3
+  port: 33333
+---
 kind: orchestration
 spec:
   name: orchestration-2

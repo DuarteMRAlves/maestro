@@ -83,6 +83,8 @@ func (c *client) CreateStage(
 		Service: stage.Service,
 		Method:  stage.Method,
 		Address: stage.Address,
+		Host:    stage.Host,
+		Port:    stage.Port,
 	}
 
 	stub := pb.NewStageManagementClient(c.conn)
