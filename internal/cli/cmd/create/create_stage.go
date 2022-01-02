@@ -30,8 +30,8 @@ const (
 	addressUsage = "the address where the stage service is running"
 )
 
-// CreateStageOptions stores the flags for the CreateStage command and executes it
-type CreateStageOptions struct {
+// StageOpts stores the flags for the CreateStage command and executes it
+type StageOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -47,7 +47,7 @@ type CreateStageOptions struct {
 // NewCmdCreateStage returns a new command that creates a stage from command
 // line arguments
 func NewCmdCreateStage() *cobra.Command {
-	o := &CreateStageOptions{}
+	o := &StageOpts{}
 
 	cmd := &cobra.Command{
 		Use:   "stage name",
@@ -78,7 +78,7 @@ func NewCmdCreateStage() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateStage command
-func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
+func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
@@ -96,7 +96,7 @@ func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information necessary to run the command that is
 // not specified by the user flags and is in the positional arguments
-func (o *CreateStageOptions) complete(args []string) error {
+func (o *StageOpts) complete(args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -105,7 +105,7 @@ func (o *CreateStageOptions) complete(args []string) error {
 
 // validate verifies if the user options are valid and all necessary information
 // for the command to run is present
-func (o *CreateStageOptions) validate() error {
+func (o *StageOpts) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a stage name")
 	}
@@ -120,7 +120,7 @@ func (o *CreateStageOptions) validate() error {
 	return nil
 }
 
-func (o *CreateStageOptions) run() error {
+func (o *StageOpts) run() error {
 	stage := &resources.StageSpec{
 		Name:    o.name,
 		Asset:   o.asset,

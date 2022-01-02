@@ -16,8 +16,8 @@ const (
 	imageUsage = "Docker image for the asset"
 )
 
-// CreateAssetOptions executes a create asset command
-type CreateAssetOptions struct {
+// AssetOpts executes a create asset command
+type AssetOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -28,7 +28,7 @@ type CreateAssetOptions struct {
 // NewCmdCreateAsset returns a new command that creates an asset from command
 // line arguments
 func NewCmdCreateAsset() *cobra.Command {
-	o := &CreateAssetOptions{}
+	o := &AssetOpts{}
 
 	cmd := &cobra.Command{
 		Use:   "asset NAME",
@@ -59,7 +59,7 @@ func NewCmdCreateAsset() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *CreateAssetOptions) addFlags(cmd *cobra.Command) {
+func (o *AssetOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
@@ -67,7 +67,7 @@ func (o *CreateAssetOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *CreateAssetOptions) complete(args []string) error {
+func (o *AssetOpts) complete(args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -76,14 +76,14 @@ func (o *CreateAssetOptions) complete(args []string) error {
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *CreateAssetOptions) validate() error {
+func (o *AssetOpts) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify the asset name")
 	}
 	return nil
 }
 
-func (o *CreateAssetOptions) run() error {
+func (o *AssetOpts) run() error {
 	asset := &resources.AssetSpec{
 		Name:  o.name,
 		Image: o.image,

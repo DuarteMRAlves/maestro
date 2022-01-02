@@ -32,7 +32,7 @@ const (
 	addressUsage = "address to search"
 )
 
-type GetStageOpts struct {
+type StageOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -47,7 +47,7 @@ type GetStageOpts struct {
 }
 
 func NewCmdGetStage() *cobra.Command {
-	o := &GetStageOpts{}
+	o := &StageOpts{}
 
 	cmd := &cobra.Command{
 		Use:     "stage",
@@ -80,7 +80,7 @@ func NewCmdGetStage() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
+func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
@@ -96,7 +96,7 @@ func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetStageOpts) complete(cmd *cobra.Command, args []string) error {
+func (o *StageOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -106,12 +106,12 @@ func (o *GetStageOpts) complete(cmd *cobra.Command, args []string) error {
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *GetStageOpts) validate() error {
+func (o *StageOpts) validate() error {
 	return nil
 }
 
 // run executes the get link command
-func (o *GetStageOpts) run() error {
+func (o *StageOpts) run() error {
 	query := &pb.Stage{
 		Name:    o.name,
 		Asset:   o.asset,
@@ -138,7 +138,7 @@ func (o *GetStageOpts) run() error {
 	return o.displayStages(stages)
 }
 
-func (o *GetStageOpts) displayStages(stages []*pb.Stage) error {
+func (o *StageOpts) displayStages(stages []*pb.Stage) error {
 	sort.Slice(
 		stages,
 		func(i, j int) bool {

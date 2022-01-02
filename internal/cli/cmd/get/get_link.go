@@ -29,7 +29,7 @@ const (
 	targetFieldUsage = "field in the target message search"
 )
 
-type GetLinkOptions struct {
+type LinkOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -44,7 +44,7 @@ type GetLinkOptions struct {
 }
 
 func NewCmdGetLink() *cobra.Command {
-	o := &GetLinkOptions{}
+	o := &LinkOpts{}
 
 	cmd := &cobra.Command{
 		Use:     "link",
@@ -77,7 +77,7 @@ func NewCmdGetLink() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *GetLinkOptions) addFlags(cmd *cobra.Command) {
+func (o *LinkOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
@@ -88,7 +88,7 @@ func (o *GetLinkOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetLinkOptions) complete(cmd *cobra.Command, args []string) error {
+func (o *LinkOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -98,12 +98,12 @@ func (o *GetLinkOptions) complete(cmd *cobra.Command, args []string) error {
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *GetLinkOptions) validate() error {
+func (o *LinkOpts) validate() error {
 	return nil
 }
 
 // run executes the get link command
-func (o *GetLinkOptions) run() error {
+func (o *LinkOpts) run() error {
 	query := &pb.Link{
 		Name:        o.name,
 		SourceStage: o.sourceStage,
@@ -130,7 +130,7 @@ func (o *GetLinkOptions) run() error {
 	return o.displayLinks(links)
 }
 
-func (o *GetLinkOptions) displayLinks(links []*pb.Link) error {
+func (o *LinkOpts) displayLinks(links []*pb.Link) error {
 	sort.Slice(
 		links,
 		func(i, j int) bool {

@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-// CreateOrchestrationOptions stores the necessary information to execute the create
+// OrchestrationOpts stores the necessary information to execute the create
 // orchestration command.
-type CreateOrchestrationOptions struct {
+type OrchestrationOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -24,7 +24,7 @@ type CreateOrchestrationOptions struct {
 // NewCmdCreateOrchestration returns a new command that create a orchestration from
 // command line arguments.
 func NewCmdCreateOrchestration() *cobra.Command {
-	o := &CreateOrchestrationOptions{}
+	o := &OrchestrationOpts{}
 
 	cmd := &cobra.Command{
 		Use:   "orchestration name",
@@ -55,7 +55,7 @@ func NewCmdCreateOrchestration() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
-func (o *CreateOrchestrationOptions) addFlags(cmd *cobra.Command) {
+func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringSliceVar(
@@ -67,7 +67,7 @@ func (o *CreateOrchestrationOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information necessary to run the command that is
 // not specified by the user flags and is in the positional arguments
-func (o *CreateOrchestrationOptions) complete(args []string) error {
+func (o *OrchestrationOpts) complete(args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -76,7 +76,7 @@ func (o *CreateOrchestrationOptions) complete(args []string) error {
 
 // validate verifies if the user options are valid and all necessary information
 // for the command to run is present
-func (o *CreateOrchestrationOptions) validate() error {
+func (o *OrchestrationOpts) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a orchestration name")
 	}
@@ -90,7 +90,7 @@ func (o *CreateOrchestrationOptions) validate() error {
 
 // run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
-func (o *CreateOrchestrationOptions) run() error {
+func (o *OrchestrationOpts) run() error {
 	or := &resources.OrchestrationSpec{
 		Name:  o.name,
 		Links: o.links,

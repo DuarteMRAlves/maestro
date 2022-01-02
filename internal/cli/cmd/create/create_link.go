@@ -27,8 +27,8 @@ const (
 		"If not specified the entire message is used."
 )
 
-// CreateLinkOptions stores the flags for the CreateLink command and executes it
-type CreateLinkOptions struct {
+// LinkOpts stores the flags for the CreateLink command and executes it
+type LinkOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -42,7 +42,7 @@ type CreateLinkOptions struct {
 // NewCmdCreateLink returns a new command that creates a link from command line
 // arguments
 func NewCmdCreateLink() *cobra.Command {
-	o := &CreateLinkOptions{}
+	o := &LinkOpts{}
 
 	cmd := &cobra.Command{
 		Use:   "link name",
@@ -73,7 +73,7 @@ func NewCmdCreateLink() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
-func (o *CreateLinkOptions) addFlags(cmd *cobra.Command) {
+func (o *LinkOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
@@ -84,7 +84,7 @@ func (o *CreateLinkOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information necessary to run the command that is
 // not specified by the user flags and is in the positional arguments
-func (o *CreateLinkOptions) complete(args []string) error {
+func (o *LinkOpts) complete(args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -93,7 +93,7 @@ func (o *CreateLinkOptions) complete(args []string) error {
 
 // validate verifies if the user options are valid and all necessary information
 // for the command to run is present
-func (o *CreateLinkOptions) validate() error {
+func (o *LinkOpts) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a link name")
 	}
@@ -106,9 +106,9 @@ func (o *CreateLinkOptions) validate() error {
 	return nil
 }
 
-// CreateLinkOptions runs a CreateLink command with the specified options.
+// run executes a CreateLink command with the specified options.
 // It assumes the options were previously validated.
-func (o *CreateLinkOptions) run() error {
+func (o *LinkOpts) run() error {
 	link := &resources.LinkSpec{
 		Name:        o.name,
 		SourceStage: o.sourceStage,
