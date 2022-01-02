@@ -22,7 +22,8 @@ const (
 
 // GetAssetOptions executes a get asset command
 type GetAssetOptions struct {
-	addr string
+	// address for the maestro server
+	maestro string
 
 	name  string
 	image string
@@ -66,7 +67,7 @@ func NewCmdGetAsset() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
-	util.AddAddrFlag(cmd, &o.addr)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
 }
@@ -94,7 +95,7 @@ func (o *GetAssetOptions) run() error {
 		Image: o.image,
 	}
 
-	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
 	}

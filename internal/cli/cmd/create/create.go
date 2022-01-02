@@ -14,7 +14,8 @@ import (
 // CreateOptions store the flags defined by the user when executing the create
 // command and then executes the command.
 type CreateOptions struct {
-	addr string
+	// address for the maestro server
+	maestro string
 
 	files []string
 }
@@ -53,7 +54,7 @@ func NewCmdCreate() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // parse the command line arguments and run the command
 func (o *CreateOptions) addFlags(cmd *cobra.Command) {
-	util.AddAddrFlag(cmd, &o.addr)
+	util.AddMaestroFlag(cmd, &o.maestro)
 	util.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
 }
 
@@ -91,7 +92,7 @@ func (o *CreateOptions) run() error {
 	resourcesByKind = append(resourcesByKind, links...)
 	resourcesByKind = append(resourcesByKind, orchestrations...)
 
-	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
 	}

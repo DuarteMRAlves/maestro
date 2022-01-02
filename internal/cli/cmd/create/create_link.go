@@ -29,7 +29,8 @@ const (
 
 // CreateLinkOptions stores the flags for the CreateLink command and executes it
 type CreateLinkOptions struct {
-	addr string
+	// address for the maestro server
+	maestro string
 
 	name        string
 	sourceStage string
@@ -73,7 +74,7 @@ func NewCmdCreateLink() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
 func (o *CreateLinkOptions) addFlags(cmd *cobra.Command) {
-	util.AddAddrFlag(cmd, &o.addr)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
 	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
@@ -116,7 +117,7 @@ func (o *CreateLinkOptions) run() error {
 		TargetField: o.targetField,
 	}
 
-	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
 	}

@@ -116,7 +116,7 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				lis := testutil.ListenAvailablePort(t)
 
 				addr := lis.Addr().String()
-				test.args = append(test.args, "--addr", addr)
+				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := mock.MaestroServer{
 					OrchestrationManagementServer: &mock.OrchestrationManagementServer{

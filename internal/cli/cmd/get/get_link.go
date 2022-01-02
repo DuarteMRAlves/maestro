@@ -30,7 +30,8 @@ const (
 )
 
 type GetLinkOptions struct {
-	addr string
+	// address for the maestro server
+	maestro string
 
 	name        string
 	sourceStage string
@@ -77,7 +78,7 @@ func NewCmdGetLink() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *GetLinkOptions) addFlags(cmd *cobra.Command) {
-	util.AddAddrFlag(cmd, &o.addr)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
 	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
@@ -111,7 +112,7 @@ func (o *GetLinkOptions) run() error {
 		TargetField: o.targetField,
 	}
 
-	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
 	}
