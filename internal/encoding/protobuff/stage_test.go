@@ -3,14 +3,14 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestMarshalStage(t *testing.T) {
-	tests := []*stage.Stage{
+	tests := []*types.Stage{
 		{
 			Name:    stageName,
 			Asset:   stageAsset,
@@ -83,7 +83,7 @@ func TestUnmarshalStageNil(t *testing.T) {
 	assert.Assert(t, res == nil, "nil return value")
 }
 
-func assertStage(t *testing.T, expected *stage.Stage, actual *pb.Stage) {
+func assertStage(t *testing.T, expected *types.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
@@ -91,7 +91,7 @@ func assertStage(t *testing.T, expected *stage.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
 }
 
-func assertPbStage(t *testing.T, expected *pb.Stage, actual *stage.Stage) {
+func assertPbStage(t *testing.T, expected *pb.Stage, actual *types.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
