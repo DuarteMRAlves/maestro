@@ -2,9 +2,9 @@ package server
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"net"
@@ -39,11 +39,11 @@ func TestServer_CreateStage(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		config *stage.Stage
+		config *types.Stage
 	}{
 		{
 			name: "correct with nil asset, service and method",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name: stageName,
 				// ExtraServer only has one server and method
 				Address: extraAddr,
@@ -51,7 +51,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "correct with no service and specified method",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "",
@@ -62,7 +62,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "correct with service and no method",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.ExtraService",
@@ -73,7 +73,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "correct with service and no method",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.TestService",
@@ -114,25 +114,25 @@ func TestServer_CreateStage_NilConfig(t *testing.T) {
 func TestServer_CreateStage_InvalidName(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *stage.Stage
+		config *types.Stage
 	}{
 		{
 			name: "empty name",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  "",
 				Asset: assetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid characters in name",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  "some@name",
 				Asset: assetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid character sequence",
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  "other-/name",
 				Asset: assetNameForNum(0),
 			},
@@ -164,7 +164,7 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
-	config := &stage.Stage{
+	config := &types.Stage{
 		Name:  stageName,
 		Asset: assetNameForNum(1),
 	}
@@ -187,7 +187,7 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
-	config := &stage.Stage{
+	config := &types.Stage{
 		Name:    stageName,
 		Asset:   assetNameForNum(0),
 		Service: "pb.TestService",
@@ -209,7 +209,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 		name            string
 		registerTest    bool
 		registerExtra   bool
-		config          *stage.Stage
+		config          *types.Stage
 		verifyErrTypeFn func(err error) bool
 		expectedErrMsg  string
 	}{
@@ -217,7 +217,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no services",
 			registerTest:  false,
 			registerExtra: false,
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  stageName,
 				Asset: assetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -232,7 +232,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "too many services",
 			registerTest:  true,
 			registerExtra: true,
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  stageName,
 				Asset: assetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -247,7 +247,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no such service",
 			registerTest:  true,
 			registerExtra: true,
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "NoSuchService",
@@ -261,7 +261,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 		{
 			name:         "too many methods",
 			registerTest: true,
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:  stageName,
 				Asset: assetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -276,7 +276,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no such method",
 			registerTest:  true,
 			registerExtra: false,
-			config: &stage.Stage{
+			config: &types.Stage{
 				Name:   stageName,
 				Asset:  assetNameForNum(0),
 				Method: "NoSuchMethod",

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
@@ -14,23 +15,30 @@ import (
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateStage(config *stage.Stage) error {
+func (s *Server) CreateStage(config *types.Stage) error {
 	s.logger.Info("Create Stage.", logStage(config, "config")...)
 	if err := s.validateCreateStageConfig(config); err != nil {
 		return err
 	}
-	if err := s.validateRpcExists(config); err != nil {
+	st := stage.NewFromApi(config)
+	if err := s.validateRpcExists(st); err != nil {
 		return err
 	}
-	return s.stageStore.Create(config)
+	return s.stageStore.Create(st)
 }
 
-func (s *Server) GetStage(query *stage.Stage) []*stage.Stage {
+func (s *Server) GetStage(query *types.Stage) []*types.Stage {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	return s.stageStore.Get(query)
+	st := stage.NewFromApi(query)
+	stages := s.stageStore.Get(st)
+	apiStages := make([]*types.Stage, 0, len(stages))
+	for _, st := range stages {
+		apiStages = append(apiStages, st.ToApi())
+	}
+	return apiStages
 }
 
-func logStage(s *stage.Stage, field string) []zap.Field {
+func logStage(s *types.Stage, field string) []zap.Field {
 	if s == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}
@@ -45,7 +53,7 @@ func logStage(s *stage.Stage, field string) []zap.Field {
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (s *Server) validateCreateStageConfig(config *stage.Stage) error {
+func (s *Server) validateCreateStageConfig(config *types.Stage) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}

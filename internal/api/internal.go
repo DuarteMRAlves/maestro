@@ -1,10 +1,10 @@
 package api
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 )
 
 // InternalAPI is an interface that collects all the available commands
@@ -14,8 +14,8 @@ type InternalAPI interface {
 	CreateAsset(config *asset.Asset) error
 	GetAsset(query *asset.Asset) []*asset.Asset
 
-	CreateStage(config *stage.Stage) error
-	GetStage(query *stage.Stage) []*stage.Stage
+	CreateStage(config *types.Stage) error
+	GetStage(query *types.Stage) []*types.Stage
 
 	CreateLink(config *link.Link) error
 	GetLink(query *link.Link) []*link.Link

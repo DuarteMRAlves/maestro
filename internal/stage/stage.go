@@ -2,6 +2,7 @@ package stage
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
@@ -14,9 +15,29 @@ type Stage struct {
 	Address string
 }
 
+func NewFromApi(stage *types.Stage) *Stage {
+	return &Stage{
+		Name:    stage.Name,
+		Asset:   stage.Asset,
+		Service: stage.Service,
+		Method:  stage.Method,
+		Address: stage.Address,
+	}
+}
+
 // Clone creates a copy of the given stage, with the same attributes.
 func (s *Stage) Clone() *Stage {
 	return &Stage{
+		Name:    s.Name,
+		Asset:   s.Asset,
+		Service: s.Service,
+		Method:  s.Method,
+		Address: s.Address,
+	}
+}
+
+func (s *Stage) ToApi() *types.Stage {
+	return &types.Stage{
 		Name:    s.Name,
 		Asset:   s.Asset,
 		Service: s.Service,
