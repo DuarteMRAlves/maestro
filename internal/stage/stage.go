@@ -15,16 +15,6 @@ type Stage struct {
 	Address string
 }
 
-func NewFromApi(stage *types.Stage) *Stage {
-	return &Stage{
-		Name:    stage.Name,
-		Asset:   stage.Asset,
-		Service: stage.Service,
-		Method:  stage.Method,
-		Address: stage.Address,
-	}
-}
-
 // Clone creates a copy of the given stage, with the same attributes.
 func (s *Stage) Clone() *Stage {
 	return &Stage{

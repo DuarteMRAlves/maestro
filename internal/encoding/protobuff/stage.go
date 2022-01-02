@@ -19,6 +19,8 @@ func MarshalStage(s *types.Stage) (*pb.Stage, error) {
 		Service: s.Service,
 		Method:  s.Method,
 		Address: s.Address,
+		Host:    s.Host,
+		Port:    s.Port,
 	}
 	return pbStage, nil
 }
@@ -35,5 +37,7 @@ func UnmarshalStage(p *pb.Stage) (*types.Stage, error) {
 		Service: p.Service,
 		Method:  p.Method,
 		Address: p.Address,
+		Host:    p.Host,
+		Port:    p.Port,
 	}, nil
 }

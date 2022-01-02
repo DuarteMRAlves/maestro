@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
@@ -16,12 +17,15 @@ import (
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(config *types.Stage) error {
+	var (
+		st  *stage.Stage
+		err error
+	)
 	s.logger.Info("Create Stage.", logStage(config, "config")...)
-	if err := s.validateCreateStageConfig(config); err != nil {
+	if st, err = s.createStageFromConfig(config); err != nil {
 		return err
 	}
-	st := stage.NewFromApi(config)
-	if err := s.validateRpcExists(st); err != nil {
+	if err = s.validateRpcExists(st); err != nil {
 		return err
 	}
 	return s.stageStore.Create(st)
@@ -29,7 +33,12 @@ func (s *Server) CreateStage(config *types.Stage) error {
 
 func (s *Server) GetStage(query *types.Stage) []*types.Stage {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	st := stage.NewFromApi(query)
+	st := &stage.Stage{}
+	st.Name = query.Name
+	st.Service = query.Service
+	st.Method = query.Method
+	st.Asset = query.Asset
+	st.Address = query.Address
 	stages := s.stageStore.Get(st)
 	apiStages := make([]*types.Stage, 0, len(stages))
 	for _, st := range stages {
@@ -48,7 +57,36 @@ func logStage(s *types.Stage, field string) []zap.Field {
 		zap.String("service", s.Service),
 		zap.String("method", s.Method),
 		zap.String("address", s.Address),
+		zap.String("host", s.Host),
+		zap.Int32("port", s.Port),
 	}
+}
+
+func (s *Server) createStageFromConfig(
+	config *types.Stage,
+) (*stage.Stage, error) {
+	if err := s.validateCreateStageConfig(config); err != nil {
+		return nil, err
+	}
+	st := &stage.Stage{
+		Name:    config.Name,
+		Service: config.Service,
+		Method:  config.Method,
+		Asset:   config.Asset,
+		Address: config.Address,
+	}
+	// If address is empty, fill it from config host and port.
+	if st.Address == "" {
+		host, port := config.Host, config.Port
+		if host == "" {
+			host = "localhost"
+		}
+		if port == 0 {
+			port = 8061
+		}
+		st.Address = fmt.Sprintf("%s:%d", host, port)
+	}
+	return st, nil
 }
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
@@ -68,11 +106,19 @@ func (s *Server) validateCreateStageConfig(config *types.Stage) error {
 			"asset '%v' not found",
 			config.Asset)
 	}
+	if config.Address != "" && config.Host != "" {
+		return errdefs.InvalidArgumentWithMsg(
+			"Cannot simultaneously specify address and host for stage")
+	}
+	if config.Address != "" && config.Port != 0 {
+		return errdefs.InvalidArgumentWithMsg(
+			"Cannot simultaneously specify address and port for stage")
+	}
 	return nil
 }
 
 func (s *Server) validateRpcExists(config *stage.Stage) error {
-	address := inferAddress(config)
+	address := config.Address
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.InternalWithMsg("connect to %s: %s", address, err)
@@ -94,15 +140,6 @@ func (s *Server) validateRpcExists(config *stage.Stage) error {
 		return err
 	}
 	return validateRPC(config, service.RPCs())
-}
-
-func inferAddress(config *stage.Stage) string {
-	if config.Address != "" {
-		return config.Address
-	} else {
-		// FIXME: Add methods to infer address from partial address or asset.
-		return "localhost:8061"
-	}
 }
 
 // findService finds the service that should be used to call the stage method.

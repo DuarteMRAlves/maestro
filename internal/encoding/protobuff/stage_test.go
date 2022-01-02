@@ -17,6 +17,8 @@ func TestMarshalStage(t *testing.T) {
 			Service: stageService,
 			Method:  stageMethod,
 			Address: stageAddress,
+			Host:    stageHost,
+			Port:    stagePort,
 		},
 		{
 			Name:    "",
@@ -24,6 +26,8 @@ func TestMarshalStage(t *testing.T) {
 			Service: "",
 			Method:  "",
 			Address: "",
+			Host:    "",
+			Port:    0,
 		},
 	}
 
@@ -47,6 +51,8 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Service: stageService,
 			Method:  stageMethod,
 			Address: stageAddress,
+			Host:    stageHost,
+			Port:    stagePort,
 		},
 		{
 			Name:    "",
@@ -54,6 +60,8 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Service: "",
 			Method:  "",
 			Address: "",
+			Host:    "",
+			Port:    0,
 		},
 	}
 	for _, s := range tests {
@@ -89,6 +97,8 @@ func assertStage(t *testing.T, expected *types.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Method, actual.Method, "stage method")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
+	assert.Equal(t, expected.Host, actual.Host, "stage host")
+	assert.Equal(t, expected.Port, actual.Port, "stage port")
 }
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *types.Stage) {
@@ -97,4 +107,6 @@ func assertPbStage(t *testing.T, expected *pb.Stage, actual *types.Stage) {
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Method, actual.Method, "stage method")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
+	assert.Equal(t, expected.Host, actual.Host, "stage host")
+	assert.Equal(t, expected.Port, actual.Port, "stage port")
 }

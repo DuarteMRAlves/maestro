@@ -4,11 +4,13 @@ const (
 	assetName  = "Asset Name"
 	assetImage = "user/assetImage:version"
 
-	stageName    = "Stage Name"
-	stageAsset   = "Stage Asset"
-	stageService = "stageService"
-	stageMethod  = "stageMethod"
-	stageAddress = "stageAddress"
+	stageName          = "Stage Name"
+	stageAsset         = "Stage Asset"
+	stageService       = "stageService"
+	stageMethod        = "stageMethod"
+	stageAddress       = "stageAddress"
+	stageHost          = "stageHost"
+	stagePort    int32 = 12345
 
 	linkName        = "linkName"
 	linkSourceStage = "linkSourceStage"

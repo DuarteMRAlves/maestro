@@ -20,7 +20,11 @@ func TestServer_CreateStage(t *testing.T) {
 	)
 
 	lis = testutil.ListenAvailablePort(t)
-	testAddr := lis.Addr().String()
+	tcpAddr, ok := lis.Addr().(*net.TCPAddr)
+	assert.Assert(t, ok, "address type cast")
+	testAddr := tcpAddr.String()
+	testHost := tcpAddr.IP.String()
+	testPort := tcpAddr.Port
 	registerTest, registerExtra = true, false
 	testServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
 	defer testServer.GracefulStop()
@@ -42,7 +46,7 @@ func TestServer_CreateStage(t *testing.T) {
 		config *types.Stage
 	}{
 		{
-			name: "correct with nil asset, service and method",
+			name: "nil asset, service and method",
 			config: &types.Stage{
 				Name: stageName,
 				// ExtraServer only has one server and method
@@ -50,7 +54,7 @@ func TestServer_CreateStage(t *testing.T) {
 			},
 		},
 		{
-			name: "correct with no service and specified method",
+			name: "no service and specified method",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
@@ -61,7 +65,7 @@ func TestServer_CreateStage(t *testing.T) {
 			},
 		},
 		{
-			name: "correct with service and no method",
+			name: "with service and no method",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
@@ -72,7 +76,7 @@ func TestServer_CreateStage(t *testing.T) {
 			},
 		},
 		{
-			name: "correct with service and no method",
+			name: "with service and method",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
@@ -80,6 +84,18 @@ func TestServer_CreateStage(t *testing.T) {
 				Method:  "BidiStream",
 				// both has two services and four methods for TestService
 				Address: bothAddr,
+			},
+		},
+		{
+			name: "from host and port",
+			config: &types.Stage{
+				Name:    stageName,
+				Asset:   assetNameForNum(0),
+				Service: "pb.TestService",
+				Method:  "BidiStream",
+				// both has two services and four methods for TestService
+				Host: testHost,
+				Port: int32(testPort),
 			},
 		},
 	}
