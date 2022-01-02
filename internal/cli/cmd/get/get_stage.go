@@ -80,7 +80,7 @@ func NewCmdGetStage() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *GetStageOpts) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr)
+	util.AddAddrFlag(cmd, &o.addr)
 
 	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
 	cmd.Flags().StringVarP(

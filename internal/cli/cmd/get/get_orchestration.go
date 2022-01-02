@@ -61,7 +61,7 @@ func NewCmdGetOrchestration() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *GetOrchestrationOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr)
+	util.AddAddrFlag(cmd, &o.addr)
 }
 
 // complete fills any remaining information for the runner that is not specified

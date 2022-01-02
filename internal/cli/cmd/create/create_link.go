@@ -73,7 +73,7 @@ func NewCmdCreateLink() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateLink command
 func (o *CreateLinkOptions) addFlags(cmd *cobra.Command) {
-	addAddrFlag(cmd, &o.addr, addrHelp)
+	util.AddAddrFlag(cmd, &o.addr)
 
 	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
 	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
