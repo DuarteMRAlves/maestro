@@ -20,8 +20,8 @@ const (
 	imageUsage = "image name to search"
 )
 
-// GetAssetOptions executes a get asset command
-type GetAssetOptions struct {
+// AssetOpts executes a get asset command
+type AssetOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -33,7 +33,7 @@ type GetAssetOptions struct {
 }
 
 func NewCmdGetAsset() *cobra.Command {
-	o := &GetAssetOptions{}
+	o := &AssetOpts{}
 
 	cmd := &cobra.Command{
 		Use:     "asset",
@@ -66,7 +66,7 @@ func NewCmdGetAsset() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
+func (o *AssetOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
@@ -74,7 +74,7 @@ func (o *GetAssetOptions) addFlags(cmd *cobra.Command) {
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetAssetOptions) complete(cmd *cobra.Command, args []string) error {
+func (o *AssetOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -84,12 +84,12 @@ func (o *GetAssetOptions) complete(cmd *cobra.Command, args []string) error {
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *GetAssetOptions) validate() error {
+func (o *AssetOpts) validate() error {
 	return nil
 }
 
 // run executes the get asset command
-func (o *GetAssetOptions) run() error {
+func (o *AssetOpts) run() error {
 	query := &pb.Asset{
 		Name:  o.name,
 		Image: o.image,
@@ -113,7 +113,7 @@ func (o *GetAssetOptions) run() error {
 	return o.displayAssets(assets)
 }
 
-func (o *GetAssetOptions) displayAssets(assets []*pb.Asset) error {
+func (o *AssetOpts) displayAssets(assets []*pb.Asset) error {
 	sort.Slice(
 		assets,
 		func(i, j int) bool {

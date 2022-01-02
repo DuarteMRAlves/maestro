@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-// CreateOptions store the flags defined by the user when executing the create
+// Options store the flags defined by the user when executing the create
 // command and then executes the command.
-type CreateOptions struct {
+type Options struct {
 	// address for the maestro server
 	maestro string
 
@@ -21,7 +21,7 @@ type CreateOptions struct {
 }
 
 func NewCmdCreate() *cobra.Command {
-	o := &CreateOptions{}
+	o := &Options{}
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -53,13 +53,13 @@ func NewCmdCreate() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // parse the command line arguments and run the command
-func (o *CreateOptions) addFlags(cmd *cobra.Command) {
+func (o *Options) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 	util.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
 }
 
 // validate verifies if the user inputs are valid and there are no conflits
-func (o *CreateOptions) validate() error {
+func (o *Options) validate() error {
 	// In create, we only accept files
 	if len(o.files) == 0 {
 		return errdefs.InvalidArgumentWithMsg("please specify input files")
@@ -68,7 +68,7 @@ func (o *CreateOptions) validate() error {
 }
 
 // run executes the Create command
-func (o *CreateOptions) run() error {
+func (o *Options) run() error {
 	parsed, err := resources.ParseFiles(o.files)
 	if err != nil {
 		return err

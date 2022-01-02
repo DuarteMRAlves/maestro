@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-// GetOrchestrationOptions stores the necessary information to execute a get
+// OrchestrationOpts stores the necessary information to execute a get
 // orchestration command.
-type GetOrchestrationOptions struct {
+type OrchestrationOpts struct {
 	// address for the maestro server
 	maestro string
 
@@ -28,7 +28,7 @@ type GetOrchestrationOptions struct {
 }
 
 func NewCmdGetOrchestration() *cobra.Command {
-	o := &GetOrchestrationOptions{}
+	o := &OrchestrationOpts{}
 
 	cmd := &cobra.Command{
 		Use:     "orchestration",
@@ -61,13 +61,13 @@ func NewCmdGetOrchestration() *cobra.Command {
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *GetOrchestrationOptions) addFlags(cmd *cobra.Command) {
+func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 }
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *GetOrchestrationOptions) complete(
+func (o *OrchestrationOpts) complete(
 	cmd *cobra.Command,
 	args []string,
 ) error {
@@ -80,12 +80,12 @@ func (o *GetOrchestrationOptions) complete(
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *GetOrchestrationOptions) validate() error {
+func (o *OrchestrationOpts) validate() error {
 	return nil
 }
 
 // run executes the get link command
-func (o *GetOrchestrationOptions) run() error {
+func (o *OrchestrationOpts) run() error {
 	query := &pb.Orchestration{
 		Name: o.name,
 	}
@@ -108,7 +108,7 @@ func (o *GetOrchestrationOptions) run() error {
 	return o.displayOrchestrations(orchestrations)
 }
 
-func (o *GetOrchestrationOptions) displayOrchestrations(
+func (o *OrchestrationOpts) displayOrchestrations(
 	orchestrations []*pb.Orchestration,
 ) error {
 	sort.Slice(
