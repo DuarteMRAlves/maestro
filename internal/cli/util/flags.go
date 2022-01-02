@@ -2,12 +2,12 @@ package util
 
 import "github.com/spf13/cobra"
 
-// AddAddrFlag adds the flag that should be used to ask for the address to
+// AddMaestroFlag adds the flag that should be used to ask for the address to
 // connect to the maestro server.
-func AddAddrFlag(cmd *cobra.Command, value *string) {
+func AddMaestroFlag(cmd *cobra.Command, value *string) {
 	cmd.Flags().StringVar(
 		value,
-		"addr",
+		"maestro",
 		"localhost:50051",
 		"address to connect to the maestro server")
 }

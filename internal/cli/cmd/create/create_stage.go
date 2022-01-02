@@ -32,7 +32,8 @@ const (
 
 // CreateStageOptions stores the flags for the CreateStage command and executes it
 type CreateStageOptions struct {
-	addr string
+	// address for the maestro server
+	maestro string
 
 	name    string
 	asset   string
@@ -76,7 +77,7 @@ func NewCmdCreateStage() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // run the CreateStage command
 func (o *CreateStageOptions) addFlags(cmd *cobra.Command) {
-	util.AddAddrFlag(cmd, &o.addr)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
 	cmd.Flags().StringVarP(
@@ -116,7 +117,7 @@ func (o *CreateStageOptions) run() error {
 		Address: o.address,
 	}
 
-	conn, err := grpc.Dial(o.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
 	}

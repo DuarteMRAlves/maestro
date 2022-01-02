@@ -109,7 +109,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				lis := testutil.ListenAvailablePort(t)
 
 				addr := lis.Addr().String()
-				test.args = append(test.args, "--addr", addr)
+				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := mock.MaestroServer{
 					StageManagementServer: &mock.StageManagementServer{
