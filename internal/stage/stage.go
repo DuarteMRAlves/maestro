@@ -3,6 +3,7 @@ package stage
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
@@ -13,6 +14,8 @@ type Stage struct {
 	Service string
 	Method  string
 	Address string
+	// Descriptor for the Rpc that this stage calls.
+	Rpc reflection.RPC
 }
 
 // Clone creates a copy of the given stage, with the same attributes.
@@ -23,6 +26,7 @@ func (s *Stage) Clone() *Stage {
 		Service: s.Service,
 		Method:  s.Method,
 		Address: s.Address,
+		Rpc:     s.Rpc,
 	}
 }
 

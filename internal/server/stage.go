@@ -25,7 +25,7 @@ func (s *Server) CreateStage(config *types.Stage) error {
 	if st, err = s.createStageFromConfig(config); err != nil {
 		return err
 	}
-	if err = s.validateRpcExists(st); err != nil {
+	if err = s.inferRpc(st); err != nil {
 		return err
 	}
 	return s.stageStore.Create(st)
@@ -117,11 +117,15 @@ func (s *Server) validateCreateStageConfig(config *types.Stage) error {
 	return nil
 }
 
-func (s *Server) validateRpcExists(config *stage.Stage) error {
-	address := config.Address
+func (s *Server) inferRpc(st *stage.Stage) error {
+	address := st.Address
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		return errdefs.InternalWithMsg("connect to %s: %s", address, err)
+		return errdefs.InternalWithMsg(
+			"connect to %s for stage %s: %s",
+			address,
+			st.Name,
+			err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -131,7 +135,7 @@ func (s *Server) validateRpcExists(config *stage.Stage) error {
 	if err != nil {
 		return err
 	}
-	serviceName, err := findService(config, availableServices)
+	serviceName, err := findService(st, availableServices)
 	if err != nil {
 		return err
 	}
@@ -139,7 +143,7 @@ func (s *Server) validateRpcExists(config *stage.Stage) error {
 	if err != nil {
 		return err
 	}
-	return validateRPC(config, service.RPCs())
+	return inferRpcFromServices(st, service.RPCs())
 }
 
 // findService finds the service that should be used to call the stage method.
@@ -171,11 +175,11 @@ func findService(config *stage.Stage, available []string) (string, error) {
 	}
 }
 
-// validateRPC verifies that the rpc to be called for the stage exists. If a
+// inferRpcFromServices verifies that the rpc to be called for the stage exists. If a
 // rpc was specified in the config, then it verifies it exists in the available
 // methods. Otherwise, it verifies only a single method is available.
-func validateRPC(config *stage.Stage, available []reflection.RPC) error {
-	search := config.Method
+func inferRpcFromServices(st *stage.Stage, available []reflection.RPC) error {
+	search := st.Method
 	if search == "" {
 		if len(available) == 1 {
 			return nil
@@ -183,17 +187,18 @@ func validateRPC(config *stage.Stage, available []reflection.RPC) error {
 		return errdefs.InvalidArgumentWithMsg(
 			"find rpc without name for stage %v: expected 1 available "+
 				"rpc but %v found",
-			config.Name,
+			st.Name,
 			len(available))
 	} else {
 		for _, rpc := range available {
 			if search == rpc.Name() {
+				st.Rpc = rpc
 				return nil
 			}
 		}
 		return errdefs.NotFoundWithMsg(
 			"rpc with name %v not found for stage %v",
 			search,
-			config.Name)
+			st.Name)
 	}
 }
