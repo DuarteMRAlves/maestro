@@ -3,6 +3,7 @@ package asset
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -119,4 +120,108 @@ func lenAssets(st *store) int {
 			return true
 		})
 	return count
+}
+
+func TestStore_Get(t *testing.T) {
+	tests := []struct {
+		name  string
+		query *Asset
+		// numbers to store
+		stored []int
+		// names of the expected assets
+		expected []string
+	}{
+		{
+			name:     "zero elements store, nil query",
+			query:    nil,
+			stored:   []int{},
+			expected: []string{},
+		},
+		{
+			name:     "zero elements store, some query",
+			query:    &Asset{Name: "some-name"},
+			stored:   []int{},
+			expected: []string{},
+		},
+		{
+			name:     "one element stored, nil query",
+			query:    nil,
+			stored:   []int{0},
+			expected: []string{testutil.AssetNameForNum(0)},
+		},
+		{
+			name:   "multiple elements stored, nil query",
+			query:  nil,
+			stored: []int{0, 1, 2},
+			expected: []string{
+				testutil.AssetNameForNum(0),
+				testutil.AssetNameForNum(1),
+				testutil.AssetNameForNum(2),
+			},
+		},
+		{
+			name:     "multiple elements stored, matching name query",
+			query:    &Asset{Name: testutil.AssetNameForNum(2)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.AssetNameForNum(2)},
+		},
+		{
+			name:     "multiple elements stored, non-matching name query",
+			query:    &Asset{Name: "unknown-name"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name:     "multiple elements stored, matching image query",
+			query:    &Asset{Image: testutil.AssetImageForNum(2)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.AssetNameForNum(2)},
+		},
+		{
+			name:     "multiple elements stored, non-matching image query",
+			query:    &Asset{Image: "unknown-image"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				st := NewStore()
+
+				for _, n := range test.stored {
+					err := st.Create(assetForNum(n))
+					assert.NilError(t, err, "create asset error")
+				}
+
+				received := st.Get(test.query)
+				assert.Equal(t, len(test.expected), len(received))
+
+				seen := make(map[string]bool, 0)
+				for _, e := range test.expected {
+					seen[e] = false
+				}
+
+				for _, r := range received {
+					alreadySeen, exists := seen[r.Name]
+					assert.Assert(t, exists, "element should be expected")
+					// Elements can't be seen twice
+					assert.Assert(t, !alreadySeen, "element already seen")
+					seen[r.Name] = true
+				}
+
+				for _, e := range test.expected {
+					// All elements should be seen
+					assert.Assert(t, seen[e], "element not seen")
+				}
+			})
+	}
+}
+
+func assetForNum(num int) *Asset {
+	return &Asset{
+		Name:  testutil.AssetNameForNum(num),
+		Image: testutil.AssetImageForNum(num),
+	}
 }

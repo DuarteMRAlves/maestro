@@ -133,7 +133,7 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "multiple elements stored, non-matching asset query",
-			query:    &Stage{Asset: "unknown-name"},
+			query:    &Stage{Asset: "unknown-asset"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
@@ -192,7 +192,7 @@ func TestStore_Get(t *testing.T) {
 
 				for _, n := range test.stored {
 					err := st.Create(stageForNum(n))
-					assert.Assert(t, err, "create asset error")
+					assert.NilError(t, err, "create stage error")
 				}
 
 				received := st.Get(test.query)
