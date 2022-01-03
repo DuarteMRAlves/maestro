@@ -9,6 +9,8 @@ import (
 type RPC interface {
 	Name() string
 	fullyQualifiedName() string
+	Input() Message
+	Output() Message
 }
 
 type rpc struct {
@@ -29,4 +31,12 @@ func (r *rpc) Name() string {
 
 func (r *rpc) fullyQualifiedName() string {
 	return r.desc.GetFullyQualifiedName()
+}
+
+func (r *rpc) Input() Message {
+	return newMessageInternal(r.desc.GetInputType())
+}
+
+func (r *rpc) Output() Message {
+	return newMessageInternal(r.desc.GetOutputType())
 }
