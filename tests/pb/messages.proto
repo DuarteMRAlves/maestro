@@ -37,7 +37,7 @@ message TestMessageDiffNames {
   int32 fieldName1 = 1;
   double fieldName2 = 2;
   string fieldName3 = 3;
-  repeated InternalMessageDiffNames field4 = 4;
+  repeated InternalMessageDiffNames fieldName4 = 4;
 }
 
 // Should be compatible to InternalMessage1

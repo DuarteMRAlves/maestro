@@ -8,17 +8,22 @@ import (
 
 // Message describes a grpc message
 type Message interface {
-	fullyQualifiedName() string
+	FullyQualifiedName() string
 	// Compatible verifies if two Messages are compatible, meaning fields with
 	// equal numbers have the same type.
 	Compatible(other Message) bool
+	// GetMessageField searches for a message field with the given name. It
+	// returns a Message with the given field and true as the second value. If
+	// no field with the given name exists, or the field has the wrong type, nil
+	// and false is returned.
+	GetMessageField(name string) (Message, bool)
 }
 
 type message struct {
 	desc *desc.MessageDescriptor
 }
 
-func newMessage(desc *desc.MessageDescriptor) (Message, error) {
+func NewMessage(desc *desc.MessageDescriptor) (Message, error) {
 	if ok, err := validate.ArgNotNil(desc, "desc"); !ok {
 		return nil, err
 	}
@@ -31,7 +36,7 @@ func newMessageInternal(desc *desc.MessageDescriptor) Message {
 	return s
 }
 
-func (s *message) fullyQualifiedName() string {
+func (s *message) FullyQualifiedName() string {
 	return s.desc.GetFullyQualifiedName()
 }
 
@@ -74,4 +79,14 @@ func (s *message) cmpFields(o *message) bool {
 		}
 	}
 	return true
+}
+
+func (s *message) GetMessageField(name string) (Message, bool) {
+	field := s.desc.FindFieldByName(name)
+	if field == nil ||
+		field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+
+		return nil, false
+	}
+	return newMessageInternal(field.GetMessageType()), true
 }

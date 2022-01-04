@@ -8,7 +8,7 @@ import (
 // RPC describes a rpc method of a given service.
 type RPC interface {
 	Name() string
-	fullyQualifiedName() string
+	FullyQualifiedName() string
 	Input() Message
 	Output() Message
 }
@@ -29,7 +29,7 @@ func (r *rpc) Name() string {
 	return r.desc.GetName()
 }
 
-func (r *rpc) fullyQualifiedName() string {
+func (r *rpc) FullyQualifiedName() string {
 	return r.desc.GetFullyQualifiedName()
 }
 
