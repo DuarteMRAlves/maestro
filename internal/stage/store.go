@@ -9,6 +9,7 @@ import (
 type Store interface {
 	Create(s *Stage) error
 	Contains(name string) bool
+	GetByName(name string) (*Stage, bool)
 	Get(query *Stage) []*Stage
 }
 
@@ -36,6 +37,15 @@ func (st *store) Create(config *Stage) error {
 func (st *store) Contains(name string) bool {
 	_, ok := st.stages.Load(name)
 	return ok
+}
+
+func (st *store) GetByName(name string) (*Stage, bool) {
+	loaded, ok := st.stages.Load(name)
+	if !ok {
+		return nil, false
+	}
+	stage, ok := loaded.(*Stage)
+	return stage, ok
 }
 
 func (st *store) Get(query *Stage) []*Stage {

@@ -55,15 +55,50 @@ func (s *Server) validateCreateLinkConfig(config *link.Link) error {
 		return errdefs.InvalidArgumentWithMsg(
 			"source and target stages are equal")
 	}
-	if !s.stageStore.Contains(config.SourceStage) {
+	source, ok := s.stageStore.GetByName(config.SourceStage)
+	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"source stage '%v' not found",
 			config.SourceStage)
 	}
-	if !s.stageStore.Contains(config.TargetStage) {
+	target, ok := s.stageStore.GetByName(config.TargetStage)
+	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"target stage '%v' not found",
 			config.TargetStage)
+	}
+
+	sourceOutput := source.Rpc.Output()
+	targetInput := target.Rpc.Input()
+	if config.SourceField != "" {
+		sourceOutput, ok = sourceOutput.GetMessageField(config.SourceField)
+		if !ok {
+			return errdefs.NotFoundWithMsg(
+				"field with name %s not found for message %s for source stage "+
+					"in link %s",
+				config.SourceField,
+				source.Rpc.Output().FullyQualifiedName(),
+				config.Name)
+		}
+	}
+	if config.TargetField != "" {
+		targetInput, ok = targetInput.GetMessageField(config.TargetField)
+		if !ok {
+			return errdefs.NotFoundWithMsg(
+				"field with name %s not found for message %s for target stage "+
+					"in link %v",
+				config.TargetField,
+				target.Rpc.Input().FullyQualifiedName(),
+				config.Name)
+		}
+	}
+	if !sourceOutput.Compatible(targetInput) {
+		return errdefs.InvalidArgumentWithMsg(
+			"incompatible message types between source output %s and target"+
+				" input %s in link %s",
+			sourceOutput.FullyQualifiedName(),
+			targetInput.FullyQualifiedName(),
+			config.Name)
 	}
 	return nil
 }
