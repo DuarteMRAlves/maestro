@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	"github.com/pterm/pterm"
@@ -29,6 +30,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
@@ -36,7 +38,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 		{
@@ -44,16 +53,25 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
-			responses: []*pb.Stage{pbStageForNum(0)},
+			responses: []*pb.Stage{pbStageForNum(0, apitypes.StageRunning)},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(0),
+					string(apitypes.StageRunning),
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageRpcForNum(0),
@@ -66,20 +84,29 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(0),
-				pbStageForNum(2),
-				pbStageForNum(1),
+				pbStageForNum(0, apitypes.StagePending),
+				pbStageForNum(2, apitypes.StageRunning),
+				pbStageForNum(1, apitypes.StageFailed),
 			},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(0),
+					string(apitypes.StagePending),
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageRpcForNum(0),
@@ -87,6 +114,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					stageNameForNum(1),
+					string(apitypes.StageFailed),
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageRpcForNum(1),
@@ -94,6 +122,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					stageNameForNum(2),
+					string(apitypes.StageRunning),
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageRpcForNum(2),
@@ -106,18 +135,27 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{stageNameForNum(2)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == stageNameForNum(2) &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(2),
+				pbStageForNum(2, apitypes.StageSucceeded),
 			},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(2),
+					string(apitypes.StageSucceeded),
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageRpcForNum(2),
@@ -126,22 +164,64 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 		},
 		{
+			name: "filter by phase",
+			args: []string{"--phase", string(apitypes.StageRunning)},
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Phase == string(apitypes.StageRunning) &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Rpc == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{
+				pbStageForNum(1, apitypes.StageRunning),
+			},
+			output: [][]string{
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
+				{
+					stageNameForNum(1),
+					string(apitypes.StageRunning),
+					assetNameForNum(1),
+					stageServiceForNum(1),
+					stageRpcForNum(1),
+					stageAddressForNum(1),
+				},
+			},
+		},
+		{
 			name: "filter by asset",
 			args: []string{"--asset", assetNameForNum(2)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == assetNameForNum(2) &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(2),
+				pbStageForNum(2, apitypes.StagePending),
 			},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(2),
+					string(apitypes.StagePending),
 					assetNameForNum(2),
 					stageServiceForNum(2),
 					stageRpcForNum(2),
@@ -154,18 +234,27 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--service", stageServiceForNum(0)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == stageServiceForNum(0) &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(0),
+				pbStageForNum(0, apitypes.StageRunning),
 			},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(0),
+					string(apitypes.StageRunning),
 					assetNameForNum(0),
 					stageServiceForNum(0),
 					stageRpcForNum(0),
@@ -178,18 +267,27 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--rpc", stageRpcForNum(1)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == stageRpcForNum(1) &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(1),
+				pbStageForNum(1, apitypes.StagePending),
 			},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 				{
 					stageNameForNum(1),
+					string(apitypes.StagePending),
 					assetNameForNum(1),
 					stageServiceForNum(1),
 					stageRpcForNum(1),
@@ -202,6 +300,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{stageNameForNum(3)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == stageNameForNum(3) &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
@@ -209,7 +308,37 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
+			},
+		},
+		{
+			name: "no such phase",
+			args: []string{"--phase", string(apitypes.StagePending)},
+			validateQuery: func(query *pb.Stage) bool {
+				return query.Name == "" &&
+					query.Phase == string(apitypes.StagePending) &&
+					query.Asset == "" &&
+					query.Service == "" &&
+					query.Rpc == "" &&
+					query.Address == ""
+			},
+			responses: []*pb.Stage{},
+			output: [][]string{
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 		{
@@ -217,6 +346,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--asset", assetNameForNum(3)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == assetNameForNum(3) &&
 					query.Service == "" &&
 					query.Rpc == "" &&
@@ -224,7 +354,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 		{
@@ -232,6 +369,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--service", stageServiceForNum(4)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == stageServiceForNum(4) &&
 					query.Rpc == "" &&
@@ -239,7 +377,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 		{
@@ -247,6 +392,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--rpc", stageRpcForNum(5)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == stageRpcForNum(5) &&
@@ -254,7 +400,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 		{
@@ -262,6 +415,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			args: []string{"--address", stageAddressForNum(6)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
+					query.Phase == "" &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
@@ -269,7 +423,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
-				{NameText, AssetText, ServiceText, RpcText, AddressText},
+				{
+					NameText,
+					PhaseText,
+					AssetText,
+					ServiceText,
+					RpcText,
+					AddressText,
+				},
 			},
 		},
 	}
@@ -329,9 +490,10 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 	}
 }
 
-func pbStageForNum(num int) *pb.Stage {
+func pbStageForNum(num int, phase apitypes.StagePhase) *pb.Stage {
 	return &pb.Stage{
 		Name:    stageNameForNum(num),
+		Phase:   string(phase),
 		Asset:   assetNameForNum(num),
 		Service: stageServiceForNum(num),
 		Rpc:     stageRpcForNum(num),

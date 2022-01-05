@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -20,6 +21,7 @@ type StageOpts struct {
 	maestro string
 
 	name    string
+	phase   string
 	asset   string
 	service string
 	rpc     string
@@ -66,6 +68,7 @@ func NewCmdGetStage() *cobra.Command {
 func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
+	cmd.Flags().StringVar(&o.phase, "phase", "", "phase to search")
 	cmd.Flags().StringVar(&o.asset, "asset", "", "asset name to search")
 	cmd.Flags().StringVar(&o.service, "service", "", "service name to search")
 	cmd.Flags().StringVar(&o.rpc, "rpc", "", "rpc name to search")
@@ -85,6 +88,19 @@ func (o *StageOpts) complete(cmd *cobra.Command, args []string) error {
 // validate checks if the user options are compatible and the command can
 // be executed
 func (o *StageOpts) validate() error {
+	if o.phase != "" {
+		phase := apitypes.StagePhase(o.phase)
+		switch phase {
+		case
+			apitypes.StagePending,
+			apitypes.StageRunning,
+			apitypes.StageFailed,
+			apitypes.StageSucceeded:
+			// Do nothing
+		default:
+			return errdefs.InvalidArgumentWithMsg("unknown phase: %v", phase)
+		}
+	}
 	return nil
 }
 
@@ -92,6 +108,7 @@ func (o *StageOpts) validate() error {
 func (o *StageOpts) run() error {
 	query := &pb.Stage{
 		Name:    o.name,
+		Phase:   o.phase,
 		Asset:   o.asset,
 		Service: o.service,
 		Rpc:     o.rpc,
@@ -126,10 +143,24 @@ func (o *StageOpts) displayStages(stages []*pb.Stage) error {
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numStages+1)
 
-	head := []string{NameText, AssetText, ServiceText, RpcText, AddressText}
+	head := []string{
+		NameText,
+		PhaseText,
+		AssetText,
+		ServiceText,
+		RpcText,
+		AddressText,
+	}
 	data = append(data, head)
 	for _, s := range stages {
-		stageData := []string{s.Name, s.Asset, s.Service, s.Rpc, s.Address}
+		stageData := []string{
+			s.Name,
+			s.Phase,
+			s.Asset,
+			s.Service,
+			s.Rpc,
+			s.Address,
+		}
 		data = append(data, stageData)
 	}
 

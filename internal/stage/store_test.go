@@ -10,6 +10,7 @@ import (
 
 const (
 	stageName    = "stage-name"
+	stagePhase   = apitypes.StageFailed
 	stageAsset   = "asset-name"
 	stageAddress = "Address"
 )
@@ -23,6 +24,7 @@ func TestStore_Create(t *testing.T) {
 			name: "non default params",
 			config: &Stage{
 				Name:    stageName,
+				phase:   stagePhase,
 				Asset:   stageAsset,
 				Address: stageAddress,
 			},
@@ -31,6 +33,7 @@ func TestStore_Create(t *testing.T) {
 			name: "default params",
 			config: &Stage{
 				Name:    "",
+				phase:   "",
 				Asset:   "",
 				Address: "",
 			},
@@ -186,6 +189,87 @@ func TestStore_Get(t *testing.T) {
 
 				for _, n := range test.stored {
 					err := st.Create(stageForNum(n))
+					assert.NilError(t, err, "create stage error")
+				}
+
+				received := st.Get(test.query)
+				assert.Equal(t, len(test.expected), len(received))
+
+				seen := make(map[string]bool, 0)
+				for _, e := range test.expected {
+					seen[e] = false
+				}
+
+				for _, r := range received {
+					alreadySeen, exists := seen[r.Name]
+					assert.Assert(t, exists, "element should be expected")
+					// Elements can't be seen twice
+					assert.Assert(t, !alreadySeen, "element already seen")
+					seen[r.Name] = true
+				}
+
+				for _, e := range test.expected {
+					// All elements should be seen
+					assert.Assert(t, seen[e], "element not seen")
+				}
+			})
+	}
+}
+
+func TestStore_Get_ByPhase(t *testing.T) {
+	stored := []*Stage{
+		{
+			Name:  testutil.StageNameForNum(0),
+			phase: apitypes.StagePending,
+		},
+		{
+			Name:  testutil.StageNameForNum(1),
+			phase: apitypes.StageRunning,
+		},
+		{
+			Name:  testutil.StageNameForNum(2),
+			phase: apitypes.StagePending,
+		},
+	}
+	tests := []struct {
+		name  string
+		query *apitypes.Stage
+		// names of the expected stages
+		expected []string
+	}{
+		{
+			name: "single match for phase",
+			query: &apitypes.Stage{
+				Phase: apitypes.StageRunning,
+			},
+			expected: []string{testutil.StageNameForNum(1)},
+		},
+		{
+			name: "multiple match for phase",
+			query: &apitypes.Stage{
+				Phase: apitypes.StagePending,
+			},
+			expected: []string{
+				testutil.StageNameForNum(0),
+				testutil.StageNameForNum(2),
+			},
+		},
+		{
+			name: "no match for phase",
+			query: &apitypes.Stage{
+				Phase: apitypes.StageFailed,
+			},
+			expected: []string{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				st := NewStore()
+
+				for _, s := range stored {
+					err := st.Create(s)
 					assert.NilError(t, err, "create stage error")
 				}
 

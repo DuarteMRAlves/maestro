@@ -3,6 +3,7 @@ package get
 const (
 	NameText        = "NAME"
 	ImageText       = "IMAGE"
+	PhaseText       = "PHASE"
 	AssetText       = "ASSET"
 	ServiceText     = "SERVICE"
 	RpcText         = "RPC"
