@@ -7,7 +7,8 @@ import (
 
 // Service describes a grpc service
 type Service interface {
-	fullyQualifiedName() string
+	Name() string
+	FullyQualifiedName() string
 	RPCs() []RPC
 }
 
@@ -19,11 +20,19 @@ func newService(desc *desc.ServiceDescriptor) (Service, error) {
 	if ok, err := validate.ArgNotNil(desc, "desc"); !ok {
 		return nil, err
 	}
-	s := &service{desc: desc}
+	s := newServiceInternal(desc)
 	return s, nil
 }
 
-func (s *service) fullyQualifiedName() string {
+func newServiceInternal(desc *desc.ServiceDescriptor) Service {
+	return &service{desc: desc}
+}
+
+func (s *service) Name() string {
+	return s.desc.GetName()
+}
+
+func (s *service) FullyQualifiedName() string {
 	return s.desc.GetFullyQualifiedName()
 }
 

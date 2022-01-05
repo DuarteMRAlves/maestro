@@ -26,8 +26,6 @@ func stageForNum(num int) *stage.Stage {
 	return &stage.Stage{
 		Name:    name,
 		Asset:   assetName,
-		Service: fmt.Sprintf("service-%v", num),
-		Method:  fmt.Sprintf("method-%v", num),
 		Address: fmt.Sprintf("address-%v", num),
 	}
 }

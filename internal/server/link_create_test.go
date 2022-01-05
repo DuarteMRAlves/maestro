@@ -333,8 +333,6 @@ func populateForLinks(t *testing.T, s *Server) {
 	stage1 := &stage.Stage{
 		Name:    "stage-1",
 		Asset:   "asset-1",
-		Service: "service-1",
-		Method:  "method-1",
 		Address: "address-1",
 		Rpc: &mock.RPC{
 			Name_: "method-1",
@@ -347,8 +345,6 @@ func populateForLinks(t *testing.T, s *Server) {
 	stage2 := &stage.Stage{
 		Name:    "stage-2",
 		Asset:   "asset-2",
-		Service: "service-2",
-		Method:  "method-2",
 		Address: "address-2",
 		Rpc: &mock.RPC{
 			Name_: "method-2",
@@ -361,11 +357,9 @@ func populateForLinks(t *testing.T, s *Server) {
 	stageIncompatible := &stage.Stage{
 		Name:    "stage-incompatible-outer",
 		Asset:   "asset-incompatible",
-		Service: "service-incompatible",
-		Method:  "method-incompatible",
 		Address: "address-incompatible",
 		Rpc: &mock.RPC{
-			Name_: "method-2",
+			Name_: "method-incompatible",
 			FQN:   "service-2/method-incompatible",
 			In:    messageIncompatible,
 			Out:   messageIncompatible,

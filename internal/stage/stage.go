@@ -11,8 +11,6 @@ import (
 type Stage struct {
 	Name    string
 	Asset   string
-	Service string
-	Method  string
 	Address string
 	// Descriptor for the Rpc that this stage calls.
 	Rpc reflection.RPC
@@ -23,8 +21,6 @@ func (s *Stage) Clone() *Stage {
 	return &Stage{
 		Name:    s.Name,
 		Asset:   s.Asset,
-		Service: s.Service,
-		Method:  s.Method,
 		Address: s.Address,
 		Rpc:     s.Rpc,
 	}
@@ -34,8 +30,8 @@ func (s *Stage) ToApi() *types.Stage {
 	return &types.Stage{
 		Name:    s.Name,
 		Asset:   s.Asset,
-		Service: s.Service,
-		Method:  s.Method,
+		Service: s.Rpc.Service().Name(),
+		Method:  s.Rpc.Name(),
 		Address: s.Address,
 	}
 }
@@ -43,10 +39,9 @@ func (s *Stage) ToApi() *types.Stage {
 // String provides a string representation for the stage.
 func (s *Stage) String() string {
 	return fmt.Sprintf(
-		"Stage{Name:%v,Asset:%v,Service:%v,Method:%v,Address:%v}",
+		"Stage{Name:%v,Asset:%v,Rpc:%v,Address:%v}",
 		s.Name,
 		s.Asset,
-		s.Service,
-		s.Method,
+		s.Rpc.FullyQualifiedName(),
 		s.Address)
 }
