@@ -36,20 +36,20 @@ func newMessageInternal(desc *desc.MessageDescriptor) Message {
 	return s
 }
 
-func (s *message) FullyQualifiedName() string {
-	return s.desc.GetFullyQualifiedName()
+func (m *message) FullyQualifiedName() string {
+	return m.desc.GetFullyQualifiedName()
 }
 
-func (s *message) Compatible(other Message) bool {
+func (m *message) Compatible(other Message) bool {
 	otherMsg, ok := other.(*message)
 	if !ok {
 		return false
 	}
-	return s.cmpFields(otherMsg)
+	return m.cmpFields(otherMsg)
 }
 
-func (s *message) cmpFields(o *message) bool {
-	for _, sField := range s.desc.GetFields() {
+func (m *message) cmpFields(o *message) bool {
+	for _, sField := range m.desc.GetFields() {
 		number := sField.GetNumber()
 		oField := o.desc.FindFieldByNumber(number)
 
@@ -81,8 +81,8 @@ func (s *message) cmpFields(o *message) bool {
 	return true
 }
 
-func (s *message) GetMessageField(name string) (Message, bool) {
-	field := s.desc.FindFieldByName(name)
+func (m *message) GetMessageField(name string) (Message, bool) {
+	field := m.desc.FindFieldByName(name)
 	if field == nil ||
 		field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 
