@@ -11,25 +11,6 @@ import (
 	"time"
 )
 
-const (
-	assetFlag  = "asset"
-	assetShort = "a"
-	assetUsage = "name of the asset the stage executes (required)"
-
-	serviceFlag  = "service"
-	serviceShort = "s"
-	serviceUsage = "name of the grpc service to call " +
-		"(if not specified the asset must only have one service)"
-
-	methodFlag  = "method"
-	methodShort = "m"
-	methodUsage = "name of the grpc method to call " +
-		"(if not specified the service must only have on method to run)"
-
-	addressFlag  = "address"
-	addressUsage = "the address where the stage service is running"
-)
-
 // StageOpts stores the flags for the CreateStage command and executes it
 type StageOpts struct {
 	// address for the maestro server
@@ -81,15 +62,28 @@ func NewCmdCreateStage() *cobra.Command {
 func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
-	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
-	cmd.Flags().StringVarP(
-		&o.service,
-		serviceFlag,
-		serviceShort,
+	cmd.Flags().StringVar(
+		&o.asset,
+		"asset",
 		"",
-		serviceUsage)
-	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
-	cmd.Flags().StringVar(&o.address, addressFlag, "", addressUsage)
+		"name of the asset the stage executes (required)")
+	cmd.Flags().StringVar(
+		&o.service,
+		"service",
+		"",
+		"name of the grpc service to call (if not specified the asset must "+
+			"only have one service)")
+	cmd.Flags().StringVar(
+		&o.method,
+		"method",
+		"",
+		"name of the grpc method to call (if not specified the service must "+
+			"only have on method to run)")
+	cmd.Flags().StringVar(
+		&o.address,
+		"address",
+		"",
+		"the address where the stage service is running")
 	cmd.Flags().StringVar(&o.host, "host", "", "host where service is running")
 	cmd.Flags().Int32Var(&o.port, "port", 0, "port where service is running")
 }

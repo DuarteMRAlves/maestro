@@ -15,11 +15,6 @@ import (
 	"time"
 )
 
-const (
-	imageFlag  = "image"
-	imageUsage = "image name to search"
-)
-
 // AssetOpts executes a get asset command
 type AssetOpts struct {
 	// address for the maestro server
@@ -69,7 +64,7 @@ func NewCmdGetAsset() *cobra.Command {
 func (o *AssetOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
-	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
+	cmd.Flags().StringVar(&o.image, "image", "", "image name to search")
 }
 
 // complete fills any remaining information for the runner that is not specified
