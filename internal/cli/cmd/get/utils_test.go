@@ -29,7 +29,7 @@ func stageForNum(num int) *apitypes.Stage {
 		Name:    stageNameForNum(num),
 		Asset:   assetNameForNum(num),
 		Service: stageServiceForNum(num),
-		Method:  stageMethodForNum(num),
+		Rpc:     stageRpcForNum(num),
 		Address: stageAddressForNum(num),
 	}
 }
@@ -76,13 +76,13 @@ func stageServiceForNum(num int) string {
 	return fmt.Sprintf("service-%v", num)
 }
 
-// stageMethodForNum deterministically creates a stage method for a given
+// stageRpcForNum deterministically creates a stage rpc name for a given
 // number.
-func stageMethodForNum(num int) string {
-	return fmt.Sprintf("method-%v", num)
+func stageRpcForNum(num int) string {
+	return fmt.Sprintf("rpc-%v", num)
 }
 
-// stageAddressForNum deterministically creates a stage method for a given
+// stageAddressForNum deterministically creates a stage address for a given
 // number.
 func stageAddressForNum(num int) string {
 	return fmt.Sprintf("address-%v", num)

@@ -82,7 +82,7 @@ func (c *client) CreateStage(
 		Name:    stage.Name,
 		Asset:   stage.Asset,
 		Service: stage.Service,
-		Method:  stage.Method,
+		Rpc:     stage.Rpc,
 		Address: stage.Address,
 		Host:    stage.Host,
 		Port:    stage.Port,

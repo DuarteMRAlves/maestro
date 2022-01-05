@@ -49,7 +49,7 @@ func logStage(s *apitypes.Stage, field string) []zap.Field {
 		zap.String("name", s.Name),
 		zap.String("asset", s.Asset),
 		zap.String("service", s.Service),
-		zap.String("method", s.Method),
+		zap.String("rpc", s.Rpc),
 		zap.String("address", s.Address),
 		zap.String("host", s.Host),
 		zap.Int32("port", s.Port),
@@ -138,7 +138,7 @@ func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
 	return inferRpcFromServices(st, service.RPCs(), cfg)
 }
 
-// findService finds the service that should be used to call the stage method.
+// findService finds the service that should be used to call the stage rpc.
 // It tries to find the specified service among the available services. If the
 // service is not specified, then only one available service must exist that
 // will be used. An error is returned if none of the above conditions is
@@ -173,13 +173,13 @@ func findService(
 
 // inferRpcFromServices verifies that the rpc to be called for the stage exists. If a
 // rpc was specified in the config, then it verifies it exists in the available
-// methods. Otherwise, it verifies only a single method is available.
+// rpcs. Otherwise, it verifies only a single rpc is available.
 func inferRpcFromServices(
 	st *stage.Stage,
 	available []reflection.RPC,
 	cfg *apitypes.Stage,
 ) error {
-	search := cfg.Method
+	search := cfg.Rpc
 	if search == "" {
 		if len(available) == 1 {
 			return nil

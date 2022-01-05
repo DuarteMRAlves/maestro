@@ -19,7 +19,7 @@ type StageOpts struct {
 	name    string
 	asset   string
 	service string
-	method  string
+	rpc     string
 	address string
 	host    string
 	port    int32
@@ -74,11 +74,11 @@ func (o *StageOpts) addFlags(cmd *cobra.Command) {
 		"name of the grpc service to call (if not specified the asset must "+
 			"only have one service)")
 	cmd.Flags().StringVar(
-		&o.method,
-		"method",
+		&o.rpc,
+		"rpc",
 		"",
 		"name of the grpc method to call (if not specified the service must "+
-			"only have on method to run)")
+			"only have one method to run)")
 	cmd.Flags().StringVar(
 		&o.address,
 		"address",
@@ -119,7 +119,7 @@ func (o *StageOpts) run() error {
 		Name:    o.name,
 		Asset:   o.asset,
 		Service: o.service,
-		Method:  o.method,
+		Rpc:     o.rpc,
 		Address: o.address,
 		Host:    o.host,
 		Port:    o.port,

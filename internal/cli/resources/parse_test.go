@@ -15,7 +15,7 @@ const (
 	stageName    = "stageName"
 	stageAsset   = "stageAsset"
 	stageService = "stageService"
-	stageMethod  = "stageMethod"
+	stageRpc     = "stageRpc"
 
 	linkName        = "linkName"
 	linkSourceStage = "linkSourceStage"
@@ -37,7 +37,7 @@ spec:
   name: %v
   asset: %v
   service: %v
-  method: %v
+  rpc: %v
 ---
 kind: link
 spec:
@@ -51,7 +51,7 @@ spec:
 	stageName,
 	stageAsset,
 	stageService,
-	stageMethod,
+	stageRpc,
 	linkName,
 	linkSourceStage,
 	linkSourceField,
@@ -69,7 +69,7 @@ var expected = []*Resource{
 			Name:    stageName,
 			Asset:   stageAsset,
 			Service: stageService,
-			Method:  stageMethod,
+			Rpc:     stageRpc,
 		},
 	},
 	{

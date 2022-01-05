@@ -31,7 +31,7 @@ func (s *Stage) ToApi() *types.Stage {
 		Name:    s.Name,
 		Asset:   s.Asset,
 		Service: s.Rpc.Service().Name(),
-		Method:  s.Rpc.Name(),
+		Rpc:     s.Rpc.Name(),
 		Address: s.Address,
 	}
 }

@@ -22,7 +22,7 @@ type StageOpts struct {
 	name    string
 	asset   string
 	service string
-	method  string
+	rpc     string
 	address string
 
 	// Output for the cobra.Command to be executed in order to verify outputs.
@@ -68,7 +68,7 @@ func (o *StageOpts) addFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.asset, "asset", "", "asset name to search")
 	cmd.Flags().StringVar(&o.service, "service", "", "service name to search")
-	cmd.Flags().StringVar(&o.method, "method", "", "method name to search")
+	cmd.Flags().StringVar(&o.rpc, "rpc", "", "rpc name to search")
 	cmd.Flags().StringVar(&o.address, "address", "", "address to search")
 }
 
@@ -94,7 +94,7 @@ func (o *StageOpts) run() error {
 		Name:    o.name,
 		Asset:   o.asset,
 		Service: o.service,
-		Method:  o.method,
+		Rpc:     o.rpc,
 		Address: o.address,
 	}
 
@@ -126,10 +126,10 @@ func (o *StageOpts) displayStages(stages []*pb.Stage) error {
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numStages+1)
 
-	head := []string{NameText, AssetText, ServiceText, MethodText, AddressText}
+	head := []string{NameText, AssetText, ServiceText, RpcText, AddressText}
 	data = append(data, head)
 	for _, s := range stages {
-		stageData := []string{s.Name, s.Asset, s.Service, s.Method, s.Address}
+		stageData := []string{s.Name, s.Asset, s.Service, s.Rpc, s.Address}
 		data = append(data, stageData)
 	}
 

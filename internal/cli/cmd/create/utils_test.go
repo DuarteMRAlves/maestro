@@ -13,7 +13,7 @@ func equalStage(expected *pb.Stage, actual *pb.Stage) bool {
 	return expected.Name == actual.Name &&
 		expected.Asset == actual.Asset &&
 		expected.Service == actual.Service &&
-		expected.Method == actual.Method &&
+		expected.Rpc == actual.Rpc &&
 		expected.Address == actual.Address &&
 		expected.Host == actual.Host &&
 		expected.Port == actual.Port

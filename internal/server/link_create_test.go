@@ -335,8 +335,8 @@ func populateForLinks(t *testing.T, s *Server) {
 		Asset:   "asset-1",
 		Address: "address-1",
 		Rpc: &mock.RPC{
-			Name_: "method-1",
-			FQN:   "service-1/method-1",
+			Name_: "rpc-1",
+			FQN:   "service-1/rpc-1",
 			In:    message1,
 			Out:   message1,
 		},
@@ -347,8 +347,8 @@ func populateForLinks(t *testing.T, s *Server) {
 		Asset:   "asset-2",
 		Address: "address-2",
 		Rpc: &mock.RPC{
-			Name_: "method-2",
-			FQN:   "service-2/method-2",
+			Name_: "rpc-2",
+			FQN:   "service-2/rpc-2",
 			In:    message2,
 			Out:   message2,
 		},
@@ -359,8 +359,8 @@ func populateForLinks(t *testing.T, s *Server) {
 		Asset:   "asset-incompatible",
 		Address: "address-incompatible",
 		Rpc: &mock.RPC{
-			Name_: "method-incompatible",
-			FQN:   "service-2/method-incompatible",
+			Name_: "rpc-incompatible",
+			FQN:   "service-2/rpc-incompatible",
 			In:    messageIncompatible,
 			Out:   messageIncompatible,
 		},

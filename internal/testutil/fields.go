@@ -26,13 +26,13 @@ func StageServiceForNum(num int) string {
 	return fmt.Sprintf("service-%v", num)
 }
 
-// StageMethodForNum deterministically creates a stage method for a given
+// StageRpcForNum deterministically creates a stage rpc for a given
 // number.
-func StageMethodForNum(num int) string {
-	return fmt.Sprintf("method-%v", num)
+func StageRpcForNum(num int) string {
+	return fmt.Sprintf("rpc-%v", num)
 }
 
-// StageAddressForNum deterministically creates a stage method for a given
+// StageAddressForNum deterministically creates a stage address for a given
 // number.
 func StageAddressForNum(num int) string {
 	return fmt.Sprintf("address-%v", num)

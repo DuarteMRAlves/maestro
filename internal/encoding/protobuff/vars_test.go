@@ -7,7 +7,7 @@ const (
 	stageName          = "Stage Name"
 	stageAsset         = "Stage Asset"
 	stageService       = "stageService"
-	stageMethod        = "stageMethod"
+	stageRpc           = "stageRpc"
 	stageAddress       = "stageAddress"
 	stageHost          = "stageHost"
 	stagePort    int32 = 12345

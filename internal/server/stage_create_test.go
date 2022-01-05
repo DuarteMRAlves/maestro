@@ -46,43 +46,43 @@ func TestServer_CreateStage(t *testing.T) {
 		config *types.Stage
 	}{
 		{
-			name: "nil asset, service and method",
+			name: "nil asset, service and rpc",
 			config: &types.Stage{
 				Name: stageName,
-				// ExtraServer only has one server and method
+				// ExtraServer only has one server and rpc
 				Address: extraAddr,
 			},
 		},
 		{
-			name: "no service and specified method",
+			name: "no service and specified rpc",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "",
-				Method:  "ClientStream",
-				// testServer only has one service but four methods
+				Rpc:     "ClientStream",
+				// testServer only has one service but four rpcs
 				Address: testAddr,
 			},
 		},
 		{
-			name: "with service and no method",
+			name: "with service and no rpc",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.ExtraService",
-				Method:  "",
-				// both has two services and one method for ExtraService
+				Rpc:     "",
+				// both has two services and one rpc for ExtraService
 				Address: bothAddr,
 			},
 		},
 		{
-			name: "with service and method",
+			name: "with service and rpc",
 			config: &types.Stage{
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.TestService",
-				Method:  "BidiStream",
-				// both has two services and four methods for TestService
+				Rpc:     "BidiStream",
+				// both has two services and four rpcs for TestService
 				Address: bothAddr,
 			},
 		},
@@ -92,8 +92,8 @@ func TestServer_CreateStage(t *testing.T) {
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.TestService",
-				Method:  "BidiStream",
-				// both has two services and four methods for TestService
+				Rpc:     "BidiStream",
+				// both has two services and four rpcs for TestService
 				Host: testHost,
 				Port: int32(testPort),
 			},
@@ -207,8 +207,8 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 		Name:    stageName,
 		Asset:   assetNameForNum(0),
 		Service: "pb.TestService",
-		Method:  "BidiStream",
-		// both has two services and four methods for TestService
+		Rpc:     "BidiStream",
+		// both has two services and four rpcs for TestService
 		Address: bothAddr,
 	}
 
@@ -275,7 +275,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 				stageName),
 		},
 		{
-			name:         "too many methods",
+			name:         "too many rpcs",
 			registerTest: true,
 			config: &types.Stage{
 				Name:  stageName,
@@ -289,18 +289,18 @@ func TestServer_CreateStage_Error(t *testing.T) {
 				stageName),
 		},
 		{
-			name:          "no such method",
+			name:          "no such rpc",
 			registerTest:  true,
 			registerExtra: false,
 			config: &types.Stage{
-				Name:   stageName,
-				Asset:  assetNameForNum(0),
-				Method: "NoSuchMethod",
+				Name:  stageName,
+				Asset: assetNameForNum(0),
+				Rpc:   "NoSuchRpc",
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
-				"rpc with name NoSuchMethod not found for stage %v",
+				"rpc with name NoSuchRpc not found for stage %v",
 				stageName),
 		},
 	}

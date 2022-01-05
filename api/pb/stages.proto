@@ -15,7 +15,7 @@ message Stage {
   string name = 2;
   string asset = 3;
   string service = 4;
-  string method = 5;
+  string rpc = 5;
   string address = 6;
   string host = 7;
   int32 port = 8;

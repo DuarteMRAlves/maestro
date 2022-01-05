@@ -5,7 +5,7 @@ const (
 	ImageText       = "IMAGE"
 	AssetText       = "ASSET"
 	ServiceText     = "SERVICE"
-	MethodText      = "METHOD"
+	RpcText         = "RPC"
 	AddressText     = "ADDRESS"
 	SourceStageText = "SOURCE STAGE"
 	SourceFieldText = "SOURCE FIELD"
