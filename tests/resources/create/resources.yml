@@ -8,7 +8,7 @@ spec:
   name: stage-1
   asset: asset-1
   service: Service1
-  method: Method1
+  rpc: Rpc1
   address: address-1
 ---
 kind: link
@@ -22,7 +22,7 @@ spec:
   name: stage-2
   asset: asset-2
   service: Service2
-  method: Method2
+  rpc: Rpc2
   address: address-2
 ---
 kind: stage
@@ -30,7 +30,7 @@ spec:
   name: stage-3
   asset: asset-3
   service: Service3
-  method: Method3
+  rpc: Rpc3
   host: host-3
   port: 33333
 ---

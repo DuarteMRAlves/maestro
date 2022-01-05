@@ -92,11 +92,11 @@ func buildQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 				return s.Rpc.Service().Name() == query.Service
 			})
 	}
-	if query.Method != "" {
+	if query.Rpc != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Rpc.Name() == query.Method
+				return s.Rpc.Name() == query.Rpc
 			})
 	}
 	if query.Address != "" {

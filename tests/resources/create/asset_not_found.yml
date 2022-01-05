@@ -3,4 +3,4 @@ spec:
   name: stage-unknown-asset
   asset: unknown-asset
   service: Service1
-  method: Method1
+  rpc: Rpc1

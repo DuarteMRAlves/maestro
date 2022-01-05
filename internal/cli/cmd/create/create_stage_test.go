@@ -38,8 +38,8 @@ func TestCreateStageWithServer(t *testing.T) {
 				"asset-name",
 				"--service",
 				"ServiceName",
-				"--method",
-				"MethodName",
+				"--rpc",
+				"RpcName",
 				"--address",
 				"some-address",
 			},
@@ -47,7 +47,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				return cfg.Name == "stage-name" &&
 					cfg.Asset == "asset-name" &&
 					cfg.Service == "ServiceName" &&
-					cfg.Method == "MethodName" &&
+					cfg.Rpc == "RpcName" &&
 					cfg.Address == "some-address" &&
 					cfg.Host == "" &&
 					cfg.Port == 0
@@ -64,8 +64,8 @@ func TestCreateStageWithServer(t *testing.T) {
 				"asset-name",
 				"--service",
 				"ServiceName",
-				"--method",
-				"MethodName",
+				"--rpc",
+				"RpcName",
 				"--host",
 				"some-host",
 				"--port",
@@ -75,7 +75,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				return cfg.Name == "stage-name" &&
 					cfg.Asset == "asset-name" &&
 					cfg.Service == "ServiceName" &&
-					cfg.Method == "MethodName" &&
+					cfg.Rpc == "RpcName" &&
 					cfg.Address == "" &&
 					cfg.Host == "some-host" &&
 					cfg.Port == 12345
@@ -91,7 +91,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				return cfg.Name == "stage-name" &&
 					cfg.Asset == "" &&
 					cfg.Service == "" &&
-					cfg.Method == "" &&
+					cfg.Rpc == "" &&
 					cfg.Address == "" &&
 					cfg.Host == "" &&
 					cfg.Port == 0
@@ -107,7 +107,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				return cfg.Name == "invalid--name" &&
 					cfg.Asset == "" &&
 					cfg.Service == "" &&
-					cfg.Method == "" &&
+					cfg.Rpc == "" &&
 					cfg.Address == "" &&
 					cfg.Host == "" &&
 					cfg.Port == 0
@@ -126,7 +126,7 @@ func TestCreateStageWithServer(t *testing.T) {
 				return cfg.Name == "stage-name" &&
 					cfg.Asset == "does-not-exist" &&
 					cfg.Service == "" &&
-					cfg.Method == "" &&
+					cfg.Rpc == "" &&
 					cfg.Address == "" &&
 					cfg.Host == "" &&
 					cfg.Port == 0

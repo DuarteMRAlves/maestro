@@ -144,14 +144,14 @@ func TestStore_Get(t *testing.T) {
 			expected: []string{},
 		},
 		{
-			name:     "multiple elements stored, matching method query",
-			query:    &apitypes.Stage{Method: testutil.StageMethodForNum(0)},
+			name:     "multiple elements stored, matching rpc query",
+			query:    &apitypes.Stage{Rpc: testutil.StageRpcForNum(0)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(0)},
 		},
 		{
-			name:     "multiple elements stored, non-matching method query",
-			query:    &apitypes.Stage{Method: "unknown-method"},
+			name:     "multiple elements stored, non-matching rpc query",
+			query:    &apitypes.Stage{Rpc: "unknown-rpc"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
@@ -219,7 +219,7 @@ func stageForNum(num int) *Stage {
 		Asset:   testutil.AssetNameForNum(num),
 		Address: testutil.StageAddressForNum(num),
 		Rpc: &mock.RPC{
-			Name_: testutil.StageMethodForNum(num),
+			Name_: testutil.StageRpcForNum(num),
 			Service_: &mock.Service{
 				Name_: testutil.StageServiceForNum(num),
 			},

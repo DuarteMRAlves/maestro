@@ -12,7 +12,7 @@ spec:
   name: stage-6
   asset: asset-6
   service: Service6
-  method: Method6
+  rpc: Rpc6
   address: stage-address
 ---
 kind: stage
@@ -20,6 +20,6 @@ spec:
   name: stage-7
   asset: asset-7
   service: Service7
-  method: Method7
+  rpc: Rpc7
   host: stage-host
   port: 7777

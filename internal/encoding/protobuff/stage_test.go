@@ -15,7 +15,7 @@ func TestMarshalStage(t *testing.T) {
 			Name:    stageName,
 			Asset:   stageAsset,
 			Service: stageService,
-			Method:  stageMethod,
+			Rpc:     stageRpc,
 			Address: stageAddress,
 			Host:    stageHost,
 			Port:    stagePort,
@@ -24,7 +24,7 @@ func TestMarshalStage(t *testing.T) {
 			Name:    "",
 			Asset:   "",
 			Service: "",
-			Method:  "",
+			Rpc:     "",
 			Address: "",
 			Host:    "",
 			Port:    0,
@@ -49,7 +49,7 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Name:    stageName,
 			Asset:   stageAsset,
 			Service: stageService,
-			Method:  stageMethod,
+			Rpc:     stageRpc,
 			Address: stageAddress,
 			Host:    stageHost,
 			Port:    stagePort,
@@ -58,7 +58,7 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Name:    "",
 			Asset:   "",
 			Service: "",
-			Method:  "",
+			Rpc:     "",
 			Address: "",
 			Host:    "",
 			Port:    0,
@@ -95,7 +95,7 @@ func assertStage(t *testing.T, expected *types.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
-	assert.Equal(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
 	assert.Equal(t, expected.Host, actual.Host, "stage host")
 	assert.Equal(t, expected.Port, actual.Port, "stage port")
@@ -105,7 +105,7 @@ func assertPbStage(t *testing.T, expected *pb.Stage, actual *types.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
 	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
-	assert.Equal(t, expected.Method, actual.Method, "stage method")
+	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
 	assert.Equal(t, expected.Host, actual.Host, "stage host")
 	assert.Equal(t, expected.Port, actual.Port, "stage port")
