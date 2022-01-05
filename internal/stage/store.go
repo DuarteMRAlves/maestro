@@ -78,6 +78,13 @@ func buildQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 				return s.Name == query.Name
 			})
 	}
+	if query.Phase != "" {
+		filters = append(
+			filters,
+			func(s *Stage) bool {
+				return s.phase == query.Phase
+			})
+	}
 	if query.Asset != "" {
 		filters = append(
 			filters,

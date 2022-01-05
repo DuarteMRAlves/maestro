@@ -6,6 +6,10 @@ type Stage struct {
 	// Name that should be associated with the stage. Is required and should be
 	// unique.
 	Name string `yaml:"name" info:"required"`
+	// Phase specifies the current phase of the Stage. This field should not be
+	// specified in a yaml file as it is a value defined by the current state
+	// of the system.
+	Phase StagePhase `yaml:"-"`
 	// Name of the grpc service that contains the rpc to execute. May be
 	// omitted if the target grpc server only has one service.
 	// (optional)
@@ -30,3 +34,22 @@ type Stage struct {
 	// (optional)
 	Asset string `yaml:"asset"`
 }
+
+// StagePhase is an enum that describes the current status of a stage
+type StagePhase string
+
+const (
+	// StagePending means the stage was accepted by the system and is awaiting
+	// to be executed. In this phase, the stage can be linked to other stages
+	// in the orchestration.
+	StagePending StagePhase = "Pending"
+
+	// StageRunning means the stage is currently running.
+	StageRunning StagePhase = "Running"
+
+	// StageSucceeded means the stage voluntarily terminated with no errors.
+	StageSucceeded StagePhase = "Succeeded"
+
+	// StageFailed means the stage exited terminated with a failure.
+	StageFailed StagePhase = "Failed"
+)

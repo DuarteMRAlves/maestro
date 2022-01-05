@@ -62,11 +62,10 @@ func (s *Server) createStageFromConfig(
 	if err := s.validateCreateStageConfig(config); err != nil {
 		return nil, err
 	}
-	st := &stage.Stage{
-		Name:    config.Name,
-		Asset:   config.Asset,
-		Address: config.Address,
-	}
+	st := stage.NewDefault()
+	st.Name = config.Name
+	st.Asset = config.Asset
+	st.Address = config.Address
 	// If address is empty, fill it from config host and port.
 	if st.Address == "" {
 		host, port := config.Host, config.Port
@@ -91,6 +90,9 @@ func (s *Server) validateCreateStageConfig(config *apitypes.Stage) error {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			config.Name)
+	}
+	if config.Phase != "" {
+		return errdefs.InvalidArgumentWithMsg("phase should not be specified")
 	}
 	// Asset is not required but if specified should exist.
 	if config.Asset != "" && !s.assetStore.Contains(config.Asset) {
