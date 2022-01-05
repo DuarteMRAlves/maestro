@@ -1,6 +1,7 @@
 package link
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -90,4 +91,157 @@ func lenLinks(st *store) int {
 			return true
 		})
 	return count
+}
+
+func TestStore_Get(t *testing.T) {
+	tests := []struct {
+		name  string
+		query *Link
+		// numbers to be stored
+		stored []int
+		// names of the expected Links
+		expected []string
+	}{
+		{
+			name:     "zero elements stored, nil query",
+			query:    nil,
+			stored:   []int{},
+			expected: []string{},
+		},
+		{
+			name:     "zero elements stored, some query",
+			query:    &Link{Name: "some-name"},
+			stored:   []int{},
+			expected: []string{},
+		},
+		{
+			name:     "one element stored, nil query",
+			query:    nil,
+			stored:   []int{0},
+			expected: []string{testutil.LinkNameForNum(0)},
+		},
+		{
+			name:   "multiple elements stored, nil query",
+			query:  nil,
+			stored: []int{0, 1, 2},
+			expected: []string{
+				testutil.LinkNameForNum(0),
+				testutil.LinkNameForNum(1),
+				testutil.LinkNameForNum(2),
+			},
+		},
+		{
+			name:     "multiple elements stored, matching name query",
+			query:    &Link{Name: testutil.LinkNameForNum(2)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.LinkNameForNum(2)},
+		},
+		{
+			name:     "multiple elements stored, non-matching name query",
+			query:    &Link{Name: "unknown-name"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name:     "multiple elements stored, matching source stage query",
+			query:    &Link{SourceStage: testutil.LinkSourceStageForNum(2)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.LinkNameForNum(2)},
+		},
+		{
+			name:     "multiple elements stored, non-matching source stage query",
+			query:    &Link{SourceStage: "unknown-stage"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name:     "multiple elements stored, matching source field query",
+			query:    &Link{SourceField: testutil.LinkSourceFieldForNum(1)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.LinkNameForNum(1)},
+		},
+		{
+			name:     "multiple elements stored, non-matching source field query",
+			query:    &Link{SourceField: "UnknownField"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name:     "multiple elements stored, matching target stage query",
+			query:    &Link{TargetStage: testutil.LinkTargetStageForNum(0)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.LinkNameForNum(0)},
+		},
+		{
+			name:     "multiple elements stored, non-matching target stage query",
+			query:    &Link{TargetStage: "unknown-stage"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name:     "multiple elements stored, matching target field query",
+			query:    &Link{TargetField: testutil.LinkTargetFieldForNum(2)},
+			stored:   []int{0, 1, 2},
+			expected: []string{testutil.LinkNameForNum(2)},
+		},
+		{
+			name:     "multiple elements stored, non-matching target field query",
+			query:    &Link{TargetField: "UnknownField"},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+		{
+			name: "multiple elements stored, exclusive query",
+			query: &Link{
+				SourceStage: testutil.LinkSourceStageForNum(1),
+				TargetStage: testutil.LinkTargetStageForNum(2),
+			},
+			stored:   []int{0, 1, 2},
+			expected: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				st := NewStore()
+
+				for _, n := range test.stored {
+					err := st.Create(linkForNum(n))
+					assert.NilError(t, err, "create Link error")
+				}
+
+				received := st.Get(test.query)
+				assert.Equal(t, len(test.expected), len(received))
+
+				seen := make(map[string]bool, 0)
+				for _, e := range test.expected {
+					seen[e] = false
+				}
+
+				for _, r := range received {
+					alreadySeen, exists := seen[r.Name]
+					assert.Assert(t, exists, "element should be expected")
+					// Elements can't be seen twice
+					assert.Assert(t, !alreadySeen, "element already seen")
+					seen[r.Name] = true
+				}
+
+				for _, e := range test.expected {
+					// All elements should be seen
+					assert.Assert(t, seen[e], "element not seen")
+				}
+			})
+	}
+}
+
+func linkForNum(num int) *Link {
+	return &Link{
+		Name:        testutil.LinkNameForNum(num),
+		SourceStage: testutil.LinkSourceStageForNum(num),
+		SourceField: testutil.LinkSourceFieldForNum(num),
+		TargetStage: testutil.LinkTargetStageForNum(num),
+		TargetField: testutil.LinkTargetFieldForNum(num),
+	}
 }
