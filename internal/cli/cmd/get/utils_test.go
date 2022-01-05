@@ -3,6 +3,7 @@ package get
 import (
 	"context"
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -23,8 +24,8 @@ func assetForNum(num int) *resources.AssetSpec {
 
 // stageForNum deterministically creates a stage resource with the given number.
 // The associated asset name is the one used in assetForNum.
-func stageForNum(num int) *resources.StageSpec {
-	return &resources.StageSpec{
+func stageForNum(num int) *apitypes.Stage {
+	return &apitypes.Stage{
 		Name:    stageNameForNum(num),
 		Asset:   assetNameForNum(num),
 		Service: stageServiceForNum(num),
@@ -155,7 +156,7 @@ func populateAssets(
 // errors.
 func populateStages(
 	t *testing.T,
-	stages []*resources.StageSpec,
+	stages []*apitypes.Stage,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())

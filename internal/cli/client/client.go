@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"google.golang.org/grpc"
 )
@@ -11,7 +12,7 @@ import (
 type Client interface {
 	CreateResource(ctx context.Context, r *resources.Resource) error
 	CreateAsset(ctx context.Context, a *resources.AssetSpec) error
-	CreateStage(ctx context.Context, s *resources.StageSpec) error
+	CreateStage(ctx context.Context, s *apitypes.Stage) error
 	CreateLink(ctx context.Context, l *resources.LinkSpec) error
 	CreateOrchestration(
 		ctx context.Context,
