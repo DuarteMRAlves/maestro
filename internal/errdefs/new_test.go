@@ -1,6 +1,7 @@
 package errdefs
 
 import (
+	"fmt"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -157,4 +158,73 @@ func TestUnknownWithMessage(t *testing.T) {
 	assert.Assert(t, ok, "unknown struct")
 	msg := err.Error()
 	assert.Equal(t, dummyErrMsg, msg, "error message")
+}
+
+func TestPrependMsg(t *testing.T) {
+	prependFormat := "prepend message with %s, %s"
+	prependArgs := []interface{}{"arg1", "arg2"}
+
+	prependMsg := fmt.Sprintf(prependFormat, prependArgs...)
+	expectedMsg := fmt.Sprintf("%s: %s", prependMsg, dummyErrMsg)
+
+	tests := []struct {
+		name      string
+		err       error
+		valTypeFn func(err error) bool
+	}{
+		{
+			name:      "already exists error",
+			err:       AlreadyExistsWithMsg(dummyErrMsg),
+			valTypeFn: IsAlreadyExists,
+		},
+		{
+			name:      "not found error",
+			err:       NotFoundWithMsg(dummyErrMsg),
+			valTypeFn: IsNotFound,
+		},
+		{
+			name:      "invalid argument error",
+			err:       InvalidArgumentWithMsg(dummyErrMsg),
+			valTypeFn: IsInvalidArgument,
+		},
+		{
+			name:      "failed precondition error",
+			err:       FailedPreconditionWithMsg(dummyErrMsg),
+			valTypeFn: IsFailedPrecondition,
+		},
+		{
+			name:      "unavailable error",
+			err:       UnavailableWithMsg(dummyErrMsg),
+			valTypeFn: IsUnavailable,
+		},
+		{
+			name:      "internal error",
+			err:       InternalWithMsg(dummyErrMsg),
+			valTypeFn: IsInternal,
+		},
+		{
+			name:      "unknown error",
+			err:       UnknownWithMsg(dummyErrMsg),
+			valTypeFn: IsUnknown,
+		},
+		{
+			name:      "fmt error",
+			err:       fmt.Errorf(dummyErrMsg),
+			valTypeFn: IsUnknown,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				wrappedErr := PrependMsg(
+					test.err,
+					prependFormat,
+					prependArgs...)
+				assert.Assert(t, test.valTypeFn(wrappedErr), "correct type")
+				msg := wrappedErr.Error()
+				assert.Equal(t, expectedMsg, msg, "correct message")
+			})
+	}
 }
