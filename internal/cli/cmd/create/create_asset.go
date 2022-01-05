@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-const (
-	imageFlag  = "image"
-	imageUsage = "Docker image for the asset"
-)
-
 // AssetOpts executes a create asset command
 type AssetOpts struct {
 	// address for the maestro server
@@ -62,7 +57,7 @@ func NewCmdCreateAsset() *cobra.Command {
 func (o *AssetOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
-	cmd.Flags().StringVar(&o.image, imageFlag, "", imageUsage)
+	cmd.Flags().StringVar(&o.image, "image", "", "Docker image for the asset")
 }
 
 // complete fills any remaining information for the runner that is not specified

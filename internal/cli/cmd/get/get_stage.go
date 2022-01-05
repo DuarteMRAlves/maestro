@@ -15,23 +15,6 @@ import (
 	"time"
 )
 
-const (
-	assetFlag  = "asset"
-	assetShort = "a"
-	assetUsage = "asset name to search"
-
-	serviceFlag  = "service"
-	serviceShort = "s"
-	serviceUsage = "service name to search"
-
-	methodFlag  = "method"
-	methodShort = "m"
-	methodUsage = "method name to search"
-
-	addressFlag  = "address"
-	addressUsage = "address to search"
-)
-
 type StageOpts struct {
 	// address for the maestro server
 	maestro string
@@ -83,15 +66,10 @@ func NewCmdGetStage() *cobra.Command {
 func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
-	cmd.Flags().StringVarP(&o.asset, assetFlag, assetShort, "", assetUsage)
-	cmd.Flags().StringVarP(
-		&o.service,
-		serviceFlag,
-		serviceShort,
-		"",
-		serviceUsage)
-	cmd.Flags().StringVarP(&o.method, methodFlag, methodShort, "", methodUsage)
-	cmd.Flags().StringVar(&o.address, addressFlag, "", addressUsage)
+	cmd.Flags().StringVar(&o.asset, "asset", "", "asset name to search")
+	cmd.Flags().StringVar(&o.service, "service", "", "service name to search")
+	cmd.Flags().StringVar(&o.method, "method", "", "method name to search")
+	cmd.Flags().StringVar(&o.address, "address", "", "address to search")
 }
 
 // complete fills any remaining information for the runner that is not specified

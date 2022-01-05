@@ -11,22 +11,6 @@ import (
 	"time"
 )
 
-const (
-	sourceStageFlag  = "source-stage"
-	sourceStageUsage = "name of the source stage to link (required)"
-
-	sourceFieldFlag  = "source-field"
-	sourceFieldUsage = "field in the source message to use. " +
-		"If not specified the whole message is used."
-
-	targetStageFlag  = "target-stage"
-	targetStageUsage = "name of the target stage to link (required)"
-
-	targetFieldFlag  = "target-field"
-	targetFieldUsage = "field in the target message to set. " +
-		"If not specified the entire message is used."
-)
-
 // LinkOpts stores the flags for the CreateLink command and executes it
 type LinkOpts struct {
 	// address for the maestro server
@@ -76,10 +60,27 @@ func NewCmdCreateLink() *cobra.Command {
 func (o *LinkOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 
-	cmd.Flags().StringVar(&o.sourceStage, sourceStageFlag, "", sourceStageUsage)
-	cmd.Flags().StringVar(&o.sourceField, sourceFieldFlag, "", sourceFieldUsage)
-	cmd.Flags().StringVar(&o.targetStage, targetStageFlag, "", targetStageUsage)
-	cmd.Flags().StringVar(&o.targetField, targetFieldFlag, "", targetFieldUsage)
+	cmd.Flags().StringVar(
+		&o.sourceStage,
+		"source-stage",
+		"",
+		"name of the source stage to link (required)")
+	cmd.Flags().StringVar(&o.sourceField,
+		"source-field",
+		"",
+		"field in the source message to use. If not specified the whole "+
+			"message is used.")
+	cmd.Flags().StringVar(
+		&o.targetStage,
+		"target-stage",
+		"",
+		"name of the target stage to link (required)")
+	cmd.Flags().StringVar(
+		&o.targetField,
+		"target-field",
+		"",
+		"field in the target message to set. If not specified the entire "+
+			"message is used.")
 }
 
 // complete fills any remaining information necessary to run the command that is
