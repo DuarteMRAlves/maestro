@@ -1,6 +1,7 @@
 package stage
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
@@ -10,7 +11,7 @@ type Store interface {
 	Create(s *Stage) error
 	Contains(name string) bool
 	GetByName(name string) (*Stage, bool)
-	Get(query *Stage) []*Stage
+	Get(query *apitypes.Stage) []*Stage
 }
 
 type store struct {
@@ -48,9 +49,9 @@ func (st *store) GetByName(name string) (*Stage, bool) {
 	return stage, ok
 }
 
-func (st *store) Get(query *Stage) []*Stage {
+func (st *store) Get(query *apitypes.Stage) []*Stage {
 	if query == nil {
-		query = &Stage{}
+		query = &apitypes.Stage{}
 	}
 	filter := buildQueryFilter(query)
 	res := make([]*Stage, 0)
@@ -68,7 +69,7 @@ func (st *store) Get(query *Stage) []*Stage {
 	return res
 }
 
-func buildQueryFilter(query *Stage) func(s *Stage) bool {
+func buildQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 	filters := make([]func(s *Stage) bool, 0)
 	if query.Name != "" {
 		filters = append(
@@ -88,14 +89,14 @@ func buildQueryFilter(query *Stage) func(s *Stage) bool {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Service == query.Service
+				return s.Rpc.Service().Name() == query.Service
 			})
 	}
 	if query.Method != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Method == query.Method
+				return s.Rpc.Name() == query.Method
 			})
 	}
 	if query.Address != "" {

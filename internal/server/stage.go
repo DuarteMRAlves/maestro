@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
@@ -16,7 +16,7 @@ import (
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateStage(config *types.Stage) error {
+func (s *Server) CreateStage(config *apitypes.Stage) error {
 	var (
 		st  *stage.Stage
 		err error
@@ -25,29 +25,23 @@ func (s *Server) CreateStage(config *types.Stage) error {
 	if st, err = s.createStageFromConfig(config); err != nil {
 		return err
 	}
-	if err = s.inferRpc(st); err != nil {
+	if err = s.inferRpc(st, config); err != nil {
 		return err
 	}
 	return s.stageStore.Create(st)
 }
 
-func (s *Server) GetStage(query *types.Stage) []*types.Stage {
+func (s *Server) GetStage(query *apitypes.Stage) []*apitypes.Stage {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	st := &stage.Stage{}
-	st.Name = query.Name
-	st.Service = query.Service
-	st.Method = query.Method
-	st.Asset = query.Asset
-	st.Address = query.Address
-	stages := s.stageStore.Get(st)
-	apiStages := make([]*types.Stage, 0, len(stages))
+	stages := s.stageStore.Get(query)
+	apiStages := make([]*apitypes.Stage, 0, len(stages))
 	for _, st := range stages {
 		apiStages = append(apiStages, st.ToApi())
 	}
 	return apiStages
 }
 
-func logStage(s *types.Stage, field string) []zap.Field {
+func logStage(s *apitypes.Stage, field string) []zap.Field {
 	if s == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}
@@ -63,15 +57,13 @@ func logStage(s *types.Stage, field string) []zap.Field {
 }
 
 func (s *Server) createStageFromConfig(
-	config *types.Stage,
+	config *apitypes.Stage,
 ) (*stage.Stage, error) {
 	if err := s.validateCreateStageConfig(config); err != nil {
 		return nil, err
 	}
 	st := &stage.Stage{
 		Name:    config.Name,
-		Service: config.Service,
-		Method:  config.Method,
 		Asset:   config.Asset,
 		Address: config.Address,
 	}
@@ -91,7 +83,7 @@ func (s *Server) createStageFromConfig(
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (s *Server) validateCreateStageConfig(config *types.Stage) error {
+func (s *Server) validateCreateStageConfig(config *apitypes.Stage) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
@@ -117,7 +109,7 @@ func (s *Server) validateCreateStageConfig(config *types.Stage) error {
 	return nil
 }
 
-func (s *Server) inferRpc(st *stage.Stage) error {
+func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
 	address := st.Address
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -135,7 +127,7 @@ func (s *Server) inferRpc(st *stage.Stage) error {
 	if err != nil {
 		return err
 	}
-	serviceName, err := findService(st, availableServices)
+	serviceName, err := findService(st, availableServices, cfg)
 	if err != nil {
 		return err
 	}
@@ -143,7 +135,7 @@ func (s *Server) inferRpc(st *stage.Stage) error {
 	if err != nil {
 		return err
 	}
-	return inferRpcFromServices(st, service.RPCs())
+	return inferRpcFromServices(st, service.RPCs(), cfg)
 }
 
 // findService finds the service that should be used to call the stage method.
@@ -151,8 +143,12 @@ func (s *Server) inferRpc(st *stage.Stage) error {
 // service is not specified, then only one available service must exist that
 // will be used. An error is returned if none of the above conditions is
 // verified.
-func findService(config *stage.Stage, available []string) (string, error) {
-	search := config.Service
+func findService(
+	st *stage.Stage,
+	available []string,
+	cfg *apitypes.Stage,
+) (string, error) {
+	search := cfg.Service
 	if search == "" {
 		if len(available) == 1 {
 			return available[0], nil
@@ -160,7 +156,7 @@ func findService(config *stage.Stage, available []string) (string, error) {
 		return "", errdefs.InvalidArgumentWithMsg(
 			"find service without name for stage %v: expected 1 "+
 				"available service but %v found",
-			config.Name,
+			st.Name,
 			len(available))
 	} else {
 		for _, s := range available {
@@ -171,15 +167,19 @@ func findService(config *stage.Stage, available []string) (string, error) {
 		return "", errdefs.NotFoundWithMsg(
 			"service with name %v not found for stage %v",
 			search,
-			config.Name)
+			st.Name)
 	}
 }
 
 // inferRpcFromServices verifies that the rpc to be called for the stage exists. If a
 // rpc was specified in the config, then it verifies it exists in the available
 // methods. Otherwise, it verifies only a single method is available.
-func inferRpcFromServices(st *stage.Stage, available []reflection.RPC) error {
-	search := st.Method
+func inferRpcFromServices(
+	st *stage.Stage,
+	available []reflection.RPC,
+	cfg *apitypes.Stage,
+) error {
+	search := cfg.Method
 	if search == "" {
 		if len(available) == 1 {
 			return nil

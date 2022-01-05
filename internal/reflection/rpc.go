@@ -9,6 +9,7 @@ import (
 type RPC interface {
 	Name() string
 	FullyQualifiedName() string
+	Service() Service
 	Input() Message
 	Output() Message
 }
@@ -31,6 +32,10 @@ func (r *rpc) Name() string {
 
 func (r *rpc) FullyQualifiedName() string {
 	return r.desc.GetFullyQualifiedName()
+}
+
+func (r *rpc) Service() Service {
+	return newServiceInternal(r.desc.GetService())
 }
 
 func (r *rpc) Input() Message {

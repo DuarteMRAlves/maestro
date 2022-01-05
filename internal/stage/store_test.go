@@ -1,7 +1,9 @@
 package stage
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -9,8 +11,6 @@ import (
 const (
 	stageName    = "stage-name"
 	stageAsset   = "asset-name"
-	stageService = "ServiceName"
-	stageMethod  = "MethodName"
 	stageAddress = "Address"
 )
 
@@ -24,8 +24,6 @@ func TestStore_Create(t *testing.T) {
 			config: &Stage{
 				Name:    stageName,
 				Asset:   stageAsset,
-				Service: stageService,
-				Method:  stageMethod,
 				Address: stageAddress,
 			},
 		},
@@ -34,8 +32,6 @@ func TestStore_Create(t *testing.T) {
 			config: &Stage{
 				Name:    "",
 				Asset:   "",
-				Service: "",
-				Method:  "",
 				Address: "",
 			},
 		},
@@ -60,8 +56,6 @@ func TestStore_Create(t *testing.T) {
 				assert.Assert(t, ok, "stage type assertion failed")
 				assert.Equal(t, cfg.Name, s.Name, "correct name")
 				assert.Equal(t, cfg.Asset, s.Asset, "correct asset")
-				assert.Equal(t, cfg.Service, s.Service, "correct service")
-				assert.Equal(t, cfg.Method, s.Method, "correct method")
 			})
 	}
 }
@@ -79,7 +73,7 @@ func lenStages(st *store) int {
 func TestStore_Get(t *testing.T) {
 	tests := []struct {
 		name  string
-		query *Stage
+		query *apitypes.Stage
 		// numbers to be stores
 		stored []int
 		// names of the expected stages
@@ -93,7 +87,7 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "zero elements stored, some query",
-			query:    &Stage{Name: "some-name"},
+			query:    &apitypes.Stage{Name: "some-name"},
 			stored:   []int{},
 			expected: []string{},
 		},
@@ -115,67 +109,67 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "multiple elements stored, matching name query",
-			query:    &Stage{Name: testutil.StageNameForNum(2)},
+			query:    &apitypes.Stage{Name: testutil.StageNameForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
-			query:    &Stage{Name: "unknown-name"},
+			query:    &apitypes.Stage{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching asset query",
-			query:    &Stage{Asset: testutil.AssetNameForNum(2)},
+			query:    &apitypes.Stage{Asset: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching asset query",
-			query:    &Stage{Asset: "unknown-asset"},
+			query:    &apitypes.Stage{Asset: "unknown-asset"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching service query",
-			query:    &Stage{Service: testutil.StageServiceForNum(1)},
+			query:    &apitypes.Stage{Service: testutil.StageServiceForNum(1)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(1)},
 		},
 		{
 			name:     "multiple elements stored, non-matching service query",
-			query:    &Stage{Service: "unknown-service"},
+			query:    &apitypes.Stage{Service: "unknown-service"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching method query",
-			query:    &Stage{Method: testutil.StageMethodForNum(0)},
+			query:    &apitypes.Stage{Method: testutil.StageMethodForNum(0)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(0)},
 		},
 		{
 			name:     "multiple elements stored, non-matching method query",
-			query:    &Stage{Method: "unknown-method"},
+			query:    &apitypes.Stage{Method: "unknown-method"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching address query",
-			query:    &Stage{Address: testutil.StageAddressForNum(2)},
+			query:    &apitypes.Stage{Address: testutil.StageAddressForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching address query",
-			query:    &Stage{Address: "unknown-address"},
+			query:    &apitypes.Stage{Address: "unknown-address"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name: "multiple elements stored, exclusive query",
-			query: &Stage{
+			query: &apitypes.Stage{
 				Asset:   testutil.AssetNameForNum(1),
 				Address: testutil.StageAddressForNum(2),
 			},
@@ -223,8 +217,12 @@ func stageForNum(num int) *Stage {
 	return &Stage{
 		Name:    testutil.StageNameForNum(num),
 		Asset:   testutil.AssetNameForNum(num),
-		Service: testutil.StageServiceForNum(num),
-		Method:  testutil.StageMethodForNum(num),
 		Address: testutil.StageAddressForNum(num),
+		Rpc: &mock.RPC{
+			Name_: testutil.StageMethodForNum(num),
+			Service_: &mock.Service{
+				Name_: testutil.StageServiceForNum(num),
+			},
+		},
 	}
 }
