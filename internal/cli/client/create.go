@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -24,7 +25,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsStageKind():
-		s, ok := resource.Spec.(*resources.StageSpec)
+		s, ok := resource.Spec.(*apitypes.Stage)
 		if !ok {
 			return errdefs.InternalWithMsg("stage spec cast failed: %v", s)
 		}
@@ -75,7 +76,7 @@ func (c *client) CreateAsset(
 
 func (c *client) CreateStage(
 	ctx context.Context,
-	stage *resources.StageSpec,
+	stage *apitypes.Stage,
 ) error {
 	s := &pb.Stage{
 		Name:    stage.Name,

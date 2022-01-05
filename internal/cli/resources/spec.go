@@ -5,16 +5,6 @@ type AssetSpec struct {
 	Image string `yaml:"image"`
 }
 
-type StageSpec struct {
-	Name    string `yaml:"name" info:"required"`
-	Asset   string `yaml:"asset"`
-	Service string `yaml:"service"`
-	Method  string `yaml:"method"`
-	Address string `yaml:"address"`
-	Host    string `yaml:"host"`
-	Port    int32  `yaml:"port"`
-}
-
 type LinkSpec struct {
 	Name        string `yaml:"name" info:"required"`
 	SourceStage string `yaml:"source_stage" info:"required"`

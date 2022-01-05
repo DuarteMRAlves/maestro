@@ -2,8 +2,8 @@ package create
 
 import (
 	"context"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
@@ -115,7 +115,7 @@ func (o *StageOpts) validate() error {
 }
 
 func (o *StageOpts) run() error {
-	stage := &resources.StageSpec{
+	stage := &apitypes.Stage{
 		Name:    o.name,
 		Asset:   o.asset,
 		Service: o.service,
