@@ -113,5 +113,15 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 			targetInput.FullyQualifiedName(),
 			config.Name)
 	}
+	if source.Phase != apitypes.StagePending {
+		return errdefs.FailedPreconditionWithMsg(
+			"source stage is not in Pending phase for link %s",
+			config.Name)
+	}
+	if target.Phase != apitypes.StagePending {
+		return errdefs.FailedPreconditionWithMsg(
+			"target stage is not in Pending phase for link %s",
+			config.Name)
+	}
 	return nil
 }
