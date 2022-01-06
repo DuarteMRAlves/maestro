@@ -24,7 +24,7 @@ func TestStore_Create(t *testing.T) {
 			name: "non default params",
 			config: &Stage{
 				Name:    stageName,
-				phase:   stagePhase,
+				Phase:   stagePhase,
 				Asset:   stageAsset,
 				Address: stageAddress,
 			},
@@ -33,7 +33,7 @@ func TestStore_Create(t *testing.T) {
 			name: "default params",
 			config: &Stage{
 				Name:    "",
-				phase:   "",
+				Phase:   "",
 				Asset:   "",
 				Address: "",
 			},
@@ -220,15 +220,15 @@ func TestStore_Get_ByPhase(t *testing.T) {
 	stored := []*Stage{
 		{
 			Name:  testutil.StageNameForNum(0),
-			phase: apitypes.StagePending,
+			Phase: apitypes.StagePending,
 		},
 		{
 			Name:  testutil.StageNameForNum(1),
-			phase: apitypes.StageRunning,
+			Phase: apitypes.StageRunning,
 		},
 		{
 			Name:  testutil.StageNameForNum(2),
-			phase: apitypes.StagePending,
+			Phase: apitypes.StagePending,
 		},
 	}
 	tests := []struct {
