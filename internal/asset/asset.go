@@ -2,6 +2,7 @@ package asset
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
 const IdSize = 10
@@ -16,6 +17,13 @@ type Asset struct {
 
 func (a *Asset) Clone() *Asset {
 	return &Asset{
+		Name:  a.Name,
+		Image: a.Image,
+	}
+}
+
+func (a *Asset) ToApi() *apitypes.Asset {
+	return &apitypes.Asset{
 		Name:  a.Name,
 		Image: a.Image,
 	}

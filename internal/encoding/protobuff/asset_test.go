@@ -3,7 +3,7 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,17 +11,17 @@ import (
 
 func TestMarshalAsset(t *testing.T) {
 	tests := []struct {
-		in asset.Asset
+		in apitypes.Asset
 	}{
-		{asset.Asset{Name: assetName, Image: assetImage}},
+		{apitypes.Asset{Name: assetName, Image: assetImage}},
 		{
-			asset.Asset{
+			apitypes.Asset{
 				Name:  assetName,
 				Image: assetImage,
 			},
 		},
-		{asset.Asset{Name: assetName}},
-		{asset.Asset{Image: assetImage}},
+		{apitypes.Asset{Name: assetName}},
+		{apitypes.Asset{Image: assetImage}},
 	}
 
 	for _, inner := range tests {

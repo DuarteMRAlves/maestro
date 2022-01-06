@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
@@ -19,11 +19,11 @@ func TestServer_CreateLink(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		config *link.Link
+		config *apitypes.Link
 	}{
 		{
 			name: "correct with nil fields",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        linkName,
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -31,7 +31,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "correct with empty fields",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        linkName,
 				SourceStage: "stage-1",
 				SourceField: "",
@@ -41,7 +41,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "correct with fields",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        linkName,
 				SourceStage: "stage-1",
 				SourceField: "field4",
@@ -51,7 +51,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "incompatible outer but compatible inner",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        linkName,
 				SourceStage: "stage-1",
 				SourceField: "field4",
@@ -91,11 +91,11 @@ func TestServer_CreateLink_NilConfig(t *testing.T) {
 func TestServer_CreateLink_InvalidName(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *link.Link
+		config *apitypes.Link
 	}{
 		{
 			name: "empty name",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        "",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -103,7 +103,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid characters in name",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        "some'character",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -111,7 +111,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid character sequence",
-			config: &link.Link{
+			config: &apitypes.Link{
 				Name:        "//invalid-name",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -144,7 +144,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "",
 		TargetStage: "stage-2",
@@ -163,7 +163,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-2",
 		TargetStage: "",
@@ -182,7 +182,7 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		TargetStage: "stage-1",
@@ -198,7 +198,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-3",
 		TargetStage: "stage-2",
@@ -215,7 +215,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		TargetStage: "stage-3",
@@ -234,7 +234,7 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
@@ -253,7 +253,7 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		SourceField: "unknown-field",
@@ -274,7 +274,7 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
@@ -295,7 +295,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
-	config := &link.Link{
+	config := &apitypes.Link{
 		Name:        linkName,
 		SourceStage: "stage-1",
 		TargetStage: "stage-incompatible-outer",

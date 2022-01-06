@@ -1,6 +1,7 @@
 package server
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
@@ -10,20 +11,29 @@ import (
 
 // CreateAsset creates a new asset with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateAsset(config *asset.Asset) error {
+func (s *Server) CreateAsset(config *apitypes.Asset) error {
 	s.logger.Info("Create Asset.", logAsset(config, "config")...)
 	if err := s.validateCreateAssetConfig(config); err != nil {
 		return err
 	}
-	return s.assetStore.Create(config)
+	a := &asset.Asset{
+		Name:  config.Name,
+		Image: config.Image,
+	}
+	return s.assetStore.Create(a)
 }
 
-func (s *Server) GetAsset(query *asset.Asset) []*asset.Asset {
+func (s *Server) GetAsset(query *apitypes.Asset) []*apitypes.Asset {
 	s.logger.Info("Get Asset.", logAsset(query, "query")...)
-	return s.assetStore.Get(query)
+	assets := s.assetStore.Get(query)
+	apiAssets := make([]*apitypes.Asset, 0, len(assets))
+	for _, a := range assets {
+		apiAssets = append(apiAssets, a.ToApi())
+	}
+	return apiAssets
 }
 
-func logAsset(a *asset.Asset, field string) []zap.Field {
+func logAsset(a *apitypes.Asset, field string) []zap.Field {
 	if a == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}
@@ -32,7 +42,7 @@ func logAsset(a *asset.Asset, field string) []zap.Field {
 
 // validateCreateAssetConfig verifies if all conditions to create an asset are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (s *Server) validateCreateAssetConfig(config *asset.Asset) error {
+func (s *Server) validateCreateAssetConfig(config *apitypes.Asset) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}

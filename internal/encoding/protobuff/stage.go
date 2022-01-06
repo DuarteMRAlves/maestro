@@ -2,14 +2,14 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 // MarshalStage creates a protobuf message representing the Stage from the Stage
 // structure.
-func MarshalStage(s *types.Stage) (*pb.Stage, error) {
+func MarshalStage(s *apitypes.Stage) (*pb.Stage, error) {
 	if ok, err := validate.ArgNotNil(s, "s"); !ok {
 		return nil, err
 	}
@@ -27,11 +27,11 @@ func MarshalStage(s *types.Stage) (*pb.Stage, error) {
 
 // UnmarshalStage creates a Stage struct from a protobuf message representing
 // the stage.
-func UnmarshalStage(p *pb.Stage) (*types.Stage, error) {
+func UnmarshalStage(p *pb.Stage) (*apitypes.Stage, error) {
 	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, errdefs.InvalidArgumentWithError(err)
 	}
-	return &types.Stage{
+	return &apitypes.Stage{
 		Name:    p.Name,
 		Asset:   p.Asset,
 		Service: p.Service,

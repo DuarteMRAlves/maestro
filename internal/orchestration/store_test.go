@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -74,7 +75,7 @@ func lenOrchestrations(st *store) int {
 func TestStore_Get_Correct(t *testing.T) {
 	tests := []struct {
 		name   string
-		query  *Orchestration
+		query  *apitypes.Orchestration
 		stored []*Orchestration
 		// names of the expected orchestrations
 		expected []string
@@ -87,7 +88,7 @@ func TestStore_Get_Correct(t *testing.T) {
 		},
 		{
 			name:     "zero elements stored, some query",
-			query:    &Orchestration{Name: "some-name"},
+			query:    &apitypes.Orchestration{Name: "some-name"},
 			stored:   []*Orchestration{},
 			expected: []string{},
 		},
@@ -99,13 +100,13 @@ func TestStore_Get_Correct(t *testing.T) {
 		},
 		{
 			name:     "one element stored, matching query",
-			query:    &Orchestration{Name: "some-name"},
+			query:    &apitypes.Orchestration{Name: "some-name"},
 			stored:   []*Orchestration{orchestrationForName("some-name")},
 			expected: []string{"some-name"},
 		},
 		{
 			name:     "one element stored, non-matching query",
-			query:    &Orchestration{Name: "unknown-name"},
+			query:    &apitypes.Orchestration{Name: "unknown-name"},
 			stored:   []*Orchestration{orchestrationForName("some-name")},
 			expected: []string{},
 		},
@@ -121,7 +122,7 @@ func TestStore_Get_Correct(t *testing.T) {
 		},
 		{
 			name:  "multiple elements stored, matching query",
-			query: &Orchestration{Name: "some-name-2"},
+			query: &apitypes.Orchestration{Name: "some-name-2"},
 			stored: []*Orchestration{
 				orchestrationForName("some-name-1"),
 				orchestrationForName("some-name-2"),
@@ -131,7 +132,7 @@ func TestStore_Get_Correct(t *testing.T) {
 		},
 		{
 			name:  "multiple elements stored, non-matching query",
-			query: &Orchestration{Name: "unknown-name"},
+			query: &apitypes.Orchestration{Name: "unknown-name"},
 			stored: []*Orchestration{
 				orchestrationForName("some-name-1"),
 				orchestrationForName("some-name-2"),

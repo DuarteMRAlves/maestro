@@ -3,14 +3,14 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestMarshalLink(t *testing.T) {
-	tests := []*link.Link{
+	tests := []*apitypes.Link{
 		{
 			Name:        linkName,
 			SourceStage: linkSourceStage,
@@ -83,7 +83,7 @@ func TestUnmarshalLinkNil(t *testing.T) {
 	assert.Assert(t, res == nil, "nil return value")
 }
 
-func assertLink(t *testing.T, expected *link.Link, actual *pb.Link) {
+func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
 	assert.Equal(t, expected.Name, actual.Name, "name")
 	assert.Equal(t, expected.SourceStage, actual.SourceStage, "source id")
 	assert.Equal(
@@ -99,7 +99,7 @@ func assertLink(t *testing.T, expected *link.Link, actual *pb.Link) {
 		"target field")
 }
 
-func assertPbLink(t *testing.T, expected *pb.Link, actual *link.Link) {
+func assertPbLink(t *testing.T, expected *pb.Link, actual *apitypes.Link) {
 	assert.Equal(t, expected.Name, actual.Name, "name")
 	assert.Equal(t, expected.SourceStage, actual.SourceStage, "source id")
 	assert.Equal(

@@ -2,12 +2,12 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 // MarshalOrchestration returns a protobuf encoding of the given orchestration.
-func MarshalOrchestration(o *orchestration.Orchestration) (
+func MarshalOrchestration(o *apitypes.Orchestration) (
 	*pb.Orchestration,
 	error,
 ) {
@@ -25,9 +25,10 @@ func MarshalOrchestration(o *orchestration.Orchestration) (
 	return protoBp, nil
 }
 
-// UnmarshalOrchestration returns a orchestration from the orchestration protobuf encoding.
+// UnmarshalOrchestration returns an orchestration from the orchestration
+// protobuf encoding.
 func UnmarshalOrchestration(p *pb.Orchestration) (
-	*orchestration.Orchestration,
+	*apitypes.Orchestration,
 	error,
 ) {
 	if ok, err := validate.ArgNotNil(p, "p"); !ok {
@@ -39,7 +40,7 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 		links = append(links, l)
 	}
 
-	return &orchestration.Orchestration{
+	return &apitypes.Orchestration{
 		Name:  p.Name,
 		Links: links,
 	}, nil

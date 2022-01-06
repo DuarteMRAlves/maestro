@@ -1,6 +1,7 @@
 package server
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
@@ -11,26 +12,35 @@ import (
 // CreateOrchestration creates a orchestration from the given config.
 // The function returns an error if the orchestration name is not valid or if
 // one of the links does not exist.
-func (s *Server) CreateOrchestration(config *orchestration.Orchestration) error {
+func (s *Server) CreateOrchestration(config *apitypes.Orchestration) error {
 	s.logger.Info(
 		"Create Orchestration.",
 		logOrchestration(config, "config")...)
 	if err := s.validateCreateOrchestrationConfig(config); err != nil {
 		return err
 	}
-	return s.orchestrationStore.Create(config)
+	o := &orchestration.Orchestration{
+		Name:  config.Name,
+		Links: config.Links,
+	}
+	return s.orchestrationStore.Create(o)
 }
 
 // GetOrchestration returns a list of orchestrations that match the received query.
 func (s *Server) GetOrchestration(
-	query *orchestration.Orchestration,
-) []*orchestration.Orchestration {
+	query *apitypes.Orchestration,
+) []*apitypes.Orchestration {
 	s.logger.Info("Get Orchestration.", logOrchestration(query, "query")...)
-	return s.orchestrationStore.Get(query)
+	orchestrations := s.orchestrationStore.Get(query)
+	apiOrchestrations := make([]*apitypes.Orchestration, 0, len(orchestrations))
+	for _, o := range orchestrations {
+		apiOrchestrations = append(apiOrchestrations, o.ToApi())
+	}
+	return apiOrchestrations
 }
 
 func logOrchestration(
-	o *orchestration.Orchestration,
+	o *apitypes.Orchestration,
 	field string,
 ) []zap.Field {
 	if o == nil {
@@ -46,7 +56,7 @@ func logOrchestration(
 // orchestration are met. It returns an error if one condition is not met and nil
 // otherwise.
 func (s *Server) validateCreateOrchestrationConfig(
-	config *orchestration.Orchestration,
+	config *apitypes.Orchestration,
 ) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err

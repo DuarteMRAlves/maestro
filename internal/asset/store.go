@@ -1,6 +1,7 @@
 package asset
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
@@ -9,7 +10,7 @@ import (
 type Store interface {
 	Create(description *Asset) error
 	Contains(name string) bool
-	Get(query *Asset) []*Asset
+	Get(query *apitypes.Asset) []*Asset
 }
 
 type store struct {
@@ -40,9 +41,9 @@ func (st *store) Contains(name string) bool {
 	return ok
 }
 
-func (st *store) Get(query *Asset) []*Asset {
+func (st *store) Get(query *apitypes.Asset) []*Asset {
 	if query == nil {
-		query = &Asset{}
+		query = &apitypes.Asset{}
 	}
 	filter := buildQueryFilter(query)
 	res := make([]*Asset, 0)
@@ -60,7 +61,7 @@ func (st *store) Get(query *Asset) []*Asset {
 	return res
 }
 
-func buildQueryFilter(query *Asset) func(a *Asset) bool {
+func buildQueryFilter(query *apitypes.Asset) func(a *Asset) bool {
 	filters := make([]func(a *Asset) bool, 0)
 	if query.Name != "" {
 		filters = append(

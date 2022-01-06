@@ -2,6 +2,7 @@ package asset
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
@@ -125,7 +126,7 @@ func lenAssets(st *store) int {
 func TestStore_Get(t *testing.T) {
 	tests := []struct {
 		name  string
-		query *Asset
+		query *apitypes.Asset
 		// numbers to store
 		stored []int
 		// names of the expected assets
@@ -139,7 +140,7 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "zero elements store, some query",
-			query:    &Asset{Name: "some-name"},
+			query:    &apitypes.Asset{Name: "some-name"},
 			stored:   []int{},
 			expected: []string{},
 		},
@@ -161,25 +162,25 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "multiple elements stored, matching name query",
-			query:    &Asset{Name: testutil.AssetNameForNum(2)},
+			query:    &apitypes.Asset{Name: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.AssetNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
-			query:    &Asset{Name: "unknown-name"},
+			query:    &apitypes.Asset{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching image query",
-			query:    &Asset{Image: testutil.AssetImageForNum(2)},
+			query:    &apitypes.Asset{Image: testutil.AssetImageForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.AssetNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching image query",
-			query:    &Asset{Image: "unknown-image"},
+			query:    &apitypes.Asset{Image: "unknown-image"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
