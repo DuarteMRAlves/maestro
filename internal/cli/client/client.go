@@ -11,13 +11,10 @@ import (
 // Client offers an interface to connect to the maestro server
 type Client interface {
 	CreateResource(ctx context.Context, r *resources.Resource) error
-	CreateAsset(ctx context.Context, a *resources.AssetSpec) error
+	CreateAsset(ctx context.Context, a *apitypes.Asset) error
 	CreateStage(ctx context.Context, s *apitypes.Stage) error
-	CreateLink(ctx context.Context, l *resources.LinkSpec) error
-	CreateOrchestration(
-		ctx context.Context,
-		o *resources.OrchestrationSpec,
-	) error
+	CreateLink(ctx context.Context, l *apitypes.Link) error
+	CreateOrchestration(ctx context.Context, o *apitypes.Orchestration) error
 
 	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)

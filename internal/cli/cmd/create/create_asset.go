@@ -2,8 +2,8 @@ package create
 
 import (
 	"context"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
@@ -79,7 +79,7 @@ func (o *AssetOpts) validate() error {
 }
 
 func (o *AssetOpts) run() error {
-	asset := &resources.AssetSpec{
+	asset := &apitypes.Asset{
 		Name:  o.name,
 		Image: o.image,
 	}

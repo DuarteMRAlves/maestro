@@ -16,7 +16,7 @@ func (c *client) CreateResource(
 ) error {
 	switch {
 	case resource.IsAssetKind():
-		a, ok := resource.Spec.(*resources.AssetSpec)
+		a, ok := resource.Spec.(*apitypes.Asset)
 		if !ok {
 			return errdefs.InternalWithMsg("asset spec cast failed: %v", a)
 		}
@@ -34,7 +34,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsLinkKind():
-		l, ok := resource.Spec.(*resources.LinkSpec)
+		l, ok := resource.Spec.(*apitypes.Link)
 		if !ok {
 			return errdefs.InternalWithMsg("link spec cast failed: %v", l)
 		}
@@ -43,7 +43,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsOrchestrationKind():
-		o, ok := resource.Spec.(*resources.OrchestrationSpec)
+		o, ok := resource.Spec.(*apitypes.Orchestration)
 		if !ok {
 			return errdefs.InternalWithMsg(
 				"orchestration spec cast failed> %v",
@@ -58,10 +58,7 @@ func (c *client) CreateResource(
 	}
 }
 
-func (c *client) CreateAsset(
-	ctx context.Context,
-	asset *resources.AssetSpec,
-) error {
+func (c *client) CreateAsset(ctx context.Context, asset *apitypes.Asset) error {
 	a := &pb.Asset{
 		Name:  asset.Name,
 		Image: asset.Image,
@@ -74,10 +71,7 @@ func (c *client) CreateAsset(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateStage(
-	ctx context.Context,
-	stage *apitypes.Stage,
-) error {
+func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 	s := &pb.Stage{
 		Name:    stage.Name,
 		Asset:   stage.Asset,
@@ -95,10 +89,7 @@ func (c *client) CreateStage(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateLink(
-	ctx context.Context,
-	link *resources.LinkSpec,
-) error {
+func (c *client) CreateLink(ctx context.Context, link *apitypes.Link) error {
 	l := &pb.Link{
 		Name:        link.Name,
 		SourceStage: link.SourceStage,
@@ -116,7 +107,7 @@ func (c *client) CreateLink(
 
 func (c *client) CreateOrchestration(
 	ctx context.Context,
-	orchestration *resources.OrchestrationSpec,
+	orchestration *apitypes.Orchestration,
 ) error {
 	o := &pb.Orchestration{
 		Name:  orchestration.Name,

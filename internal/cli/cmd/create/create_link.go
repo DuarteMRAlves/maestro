@@ -2,8 +2,8 @@ package create
 
 import (
 	"context"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
@@ -110,7 +110,7 @@ func (o *LinkOpts) validate() error {
 // run executes a CreateLink command with the specified options.
 // It assumes the options were previously validated.
 func (o *LinkOpts) run() error {
-	link := &resources.LinkSpec{
+	link := &apitypes.Link{
 		Name:        o.name,
 		SourceStage: o.sourceStage,
 		SourceField: o.sourceField,
