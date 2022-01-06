@@ -1,8 +1,10 @@
 package protobuff
 
+import apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+
 const (
-	assetName  = "Asset Name"
-	assetImage = "user/assetImage:version"
+	assetName  apitypes.AssetName = "Asset Name"
+	assetImage                    = "user/assetImage:version"
 
 	stageName          = "Stage Name"
 	stageAsset         = "Stage Asset"

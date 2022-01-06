@@ -1,14 +1,15 @@
 package asset
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestAsset_Clone(t *testing.T) {
 	const (
-		assetName  = "Asset-Name"
-		assetImage = "Asset-Image"
+		assetName  apitypes.AssetName = "Asset-Name"
+		assetImage                    = "Asset-Image"
 	)
 	src := &Asset{Name: assetName, Image: assetImage}
 	dst := src.Clone()

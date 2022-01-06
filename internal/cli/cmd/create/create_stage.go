@@ -117,7 +117,7 @@ func (o *StageOpts) validate() error {
 func (o *StageOpts) run() error {
 	stage := &apitypes.Stage{
 		Name:    o.name,
-		Asset:   o.asset,
+		Asset:   apitypes.AssetName(o.asset),
 		Service: o.service,
 		Rpc:     o.rpc,
 		Address: o.address,

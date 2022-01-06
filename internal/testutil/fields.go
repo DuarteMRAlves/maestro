@@ -2,11 +2,17 @@ package testutil
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
 // AssetNameForNum deterministically creates an asset name for a given number.
-func AssetNameForNum(num int) string {
-	return fmt.Sprintf("asset-%v", num)
+func AssetNameForNum(num int) apitypes.AssetName {
+	return apitypes.AssetName(fmt.Sprintf("asset-%v", num))
+}
+
+// AssetNameForNumStr deterministically creates an asset name for a given number.
+func AssetNameForNumStr(num int) string {
+	return string(AssetImageForNum(num))
 }
 
 // AssetImageForNum deterministically creates an image for a given number.

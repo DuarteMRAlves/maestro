@@ -43,13 +43,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNum(0),
+					Name:  testutil.AssetNameForNumStr(0),
 					Image: testutil.AssetImageForNum(0),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNum(0), testutil.AssetImageForNum(0)},
+				{testutil.AssetNameForNumStr(0), testutil.AssetImageForNum(0)},
 			},
 		},
 		{
@@ -60,41 +60,41 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNum(2),
+					Name:  testutil.AssetNameForNumStr(2),
 					Image: testutil.AssetImageForNum(2),
 				},
 				{
-					Name:  testutil.AssetNameForNum(1),
+					Name:  testutil.AssetNameForNumStr(1),
 					Image: testutil.AssetImageForNum(1),
 				},
 				{
-					Name:  testutil.AssetNameForNum(0),
+					Name:  testutil.AssetNameForNumStr(0),
 					Image: testutil.AssetImageForNum(0),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNum(0), testutil.AssetImageForNum(0)},
-				{testutil.AssetNameForNum(1), testutil.AssetImageForNum(1)},
-				{testutil.AssetNameForNum(2), testutil.AssetImageForNum(2)},
+				{testutil.AssetNameForNumStr(0), testutil.AssetImageForNum(0)},
+				{testutil.AssetNameForNumStr(1), testutil.AssetImageForNum(1)},
+				{testutil.AssetNameForNumStr(2), testutil.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{testutil.AssetNameForNum(1)},
+			args: []string{testutil.AssetNameForNumStr(1)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == testutil.AssetNameForNum(1) &&
+				return query.Name == testutil.AssetNameForNumStr(1) &&
 					query.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNum(1),
+					Name:  testutil.AssetNameForNumStr(1),
 					Image: testutil.AssetImageForNum(1),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNum(1), testutil.AssetImageForNum(1)},
+				{testutil.AssetNameForNumStr(1), testutil.AssetImageForNum(1)},
 			},
 		},
 		{
@@ -106,20 +106,20 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNum(2),
+					Name:  testutil.AssetNameForNumStr(2),
 					Image: testutil.AssetImageForNum(2),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNum(2), testutil.AssetImageForNum(2)},
+				{testutil.AssetNameForNumStr(2), testutil.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{testutil.AssetNameForNum(3)},
+			args: []string{testutil.AssetNameForNumStr(3)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == testutil.AssetNameForNum(3) &&
+				return query.Name == testutil.AssetNameForNumStr(3) &&
 					query.Image == ""
 			},
 			responses: []*pb.Asset{},

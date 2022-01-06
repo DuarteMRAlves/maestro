@@ -82,8 +82,8 @@ func TestStore_CreateInvalidArguments(t *testing.T) {
 
 func TestStore_CreateAlreadyExists(t *testing.T) {
 	const (
-		assetName  = "Asset-Name"
-		assetImage = "Asset-Image"
+		assetName  apitypes.AssetName = "Asset-Name"
+		assetImage                    = "Asset-Image"
 	)
 	config := &Asset{
 		Name:  assetName,
@@ -139,31 +139,31 @@ func TestStore_Get(t *testing.T) {
 		// numbers to store
 		stored []int
 		// names of the expected assets
-		expected []string
+		expected []apitypes.AssetName
 	}{
 		{
 			name:     "zero elements store, nil query",
 			query:    nil,
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.AssetName{},
 		},
 		{
 			name:     "zero elements store, some query",
 			query:    &apitypes.Asset{Name: "some-name"},
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.AssetName{},
 		},
 		{
 			name:     "one element stored, nil query",
 			query:    nil,
 			stored:   []int{0},
-			expected: []string{testutil.AssetNameForNum(0)},
+			expected: []apitypes.AssetName{testutil.AssetNameForNum(0)},
 		},
 		{
 			name:   "multiple elements stored, nil query",
 			query:  nil,
 			stored: []int{0, 1, 2},
-			expected: []string{
+			expected: []apitypes.AssetName{
 				testutil.AssetNameForNum(0),
 				testutil.AssetNameForNum(1),
 				testutil.AssetNameForNum(2),
@@ -173,25 +173,25 @@ func TestStore_Get(t *testing.T) {
 			name:     "multiple elements stored, matching name query",
 			query:    &apitypes.Asset{Name: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.AssetNameForNum(2)},
+			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
 			query:    &apitypes.Asset{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.AssetName{},
 		},
 		{
 			name:     "multiple elements stored, matching image query",
 			query:    &apitypes.Asset{Image: testutil.AssetImageForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.AssetNameForNum(2)},
+			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching image query",
 			query:    &apitypes.Asset{Image: "unknown-image"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.AssetName{},
 		},
 	}
 	for _, test := range tests {
@@ -208,7 +208,7 @@ func TestStore_Get(t *testing.T) {
 				received := st.Get(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[string]bool, 0)
+				seen := make(map[apitypes.AssetName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}

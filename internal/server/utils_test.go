@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
@@ -48,8 +49,8 @@ func linkForNum(num int) *link.Link {
 }
 
 // assetNameForNum deterministically creates an asset name for a given number.
-func assetNameForNum(num int) string {
-	return fmt.Sprintf("asset-%v", num)
+func assetNameForNum(num int) apitypes.AssetName {
+	return apitypes.AssetName(fmt.Sprintf("asset-%v", num))
 }
 
 // stageNameForNum deterministically creates a stage name for a given number.

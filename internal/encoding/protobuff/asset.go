@@ -11,7 +11,7 @@ func MarshalAsset(a *apitypes.Asset) (*pb.Asset, error) {
 	if ok, err := validate.ArgNotNil(a, "a"); !ok {
 		return nil, err
 	}
-	return &pb.Asset{Name: a.Name, Image: a.Image}, nil
+	return &pb.Asset{Name: string(a.Name), Image: a.Image}, nil
 }
 
 // UnmarshalAsset returns a new asset from its protobuf representation.
@@ -20,7 +20,7 @@ func UnmarshalAsset(p *pb.Asset) (*apitypes.Asset, error) {
 		return nil, err
 	}
 	return &apitypes.Asset{
-		Name:  p.Name,
+		Name:  apitypes.AssetName(p.Name),
 		Image: p.Image,
 	}, nil
 }

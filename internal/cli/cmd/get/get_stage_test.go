@@ -72,7 +72,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(0),
 					string(apitypes.StageRunning),
-					testutil.AssetNameForNum(0),
+					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
 					testutil.StageAddressForNum(0),
@@ -107,7 +107,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(0),
 					string(apitypes.StagePending),
-					testutil.AssetNameForNum(0),
+					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
 					testutil.StageAddressForNum(0),
@@ -115,7 +115,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(1),
 					string(apitypes.StageFailed),
-					testutil.AssetNameForNum(1),
+					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
 					testutil.StageAddressForNum(1),
@@ -123,7 +123,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(2),
 					string(apitypes.StageRunning),
-					testutil.AssetNameForNum(2),
+					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
 					testutil.StageAddressForNum(2),
@@ -156,7 +156,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(2),
 					string(apitypes.StageSucceeded),
-					testutil.AssetNameForNum(2),
+					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
 					testutil.StageAddressForNum(2),
@@ -189,7 +189,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(1),
 					string(apitypes.StageRunning),
-					testutil.AssetNameForNum(1),
+					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
 					testutil.StageAddressForNum(1),
@@ -198,11 +198,11 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "filter by asset",
-			args: []string{"--asset", testutil.AssetNameForNum(2)},
+			args: []string{"--asset", testutil.AssetNameForNumStr(2)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
 					query.Phase == "" &&
-					query.Asset == testutil.AssetNameForNum(2) &&
+					query.Asset == testutil.AssetNameForNumStr(2) &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
@@ -222,7 +222,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(2),
 					string(apitypes.StagePending),
-					testutil.AssetNameForNum(2),
+					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
 					testutil.StageAddressForNum(2),
@@ -255,7 +255,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(0),
 					string(apitypes.StageRunning),
-					testutil.AssetNameForNum(0),
+					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
 					testutil.StageAddressForNum(0),
@@ -288,7 +288,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				{
 					testutil.StageNameForNum(1),
 					string(apitypes.StagePending),
-					testutil.AssetNameForNum(1),
+					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
 					testutil.StageAddressForNum(1),
@@ -343,11 +343,11 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such asset",
-			args: []string{"--asset", testutil.AssetNameForNum(3)},
+			args: []string{"--asset", testutil.AssetNameForNumStr(3)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
 					query.Phase == "" &&
-					query.Asset == testutil.AssetNameForNum(3) &&
+					query.Asset == testutil.AssetNameForNumStr(3) &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
@@ -494,7 +494,7 @@ func pbStageForNum(num int, phase apitypes.StagePhase) *pb.Stage {
 	return &pb.Stage{
 		Name:    testutil.StageNameForNum(num),
 		Phase:   string(phase),
-		Asset:   testutil.AssetNameForNum(num),
+		Asset:   testutil.AssetNameForNumStr(num),
 		Service: testutil.StageServiceForNum(num),
 		Rpc:     testutil.StageRpcForNum(num),
 		Address: testutil.StageAddressForNum(num),

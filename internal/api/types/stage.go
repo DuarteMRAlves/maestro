@@ -33,7 +33,7 @@ type Stage struct {
 	Port int32 `yaml:"port"`
 	// Asset that should be used to run the stage
 	// (optional)
-	Asset string `yaml:"asset"`
+	Asset AssetName `yaml:"asset"`
 }
 
 // StagePhase is an enum that describes the current status of a stage

@@ -14,7 +14,7 @@ import (
 type Stage struct {
 	Name    string
 	Phase   apitypes.StagePhase
-	Asset   string
+	Asset   apitypes.AssetName
 	Address string
 
 	// Descriptor for the Rpc that this stage calls.
