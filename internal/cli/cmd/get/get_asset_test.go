@@ -42,11 +42,14 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				return query.Name == "" && query.Image == ""
 			},
 			responses: []*pb.Asset{
-				{Name: assetNameForNum(0), Image: assetImageForNum(0)},
+				{
+					Name:  testutil.AssetNameForNum(0),
+					Image: testutil.AssetImageForNum(0),
+				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{assetNameForNum(0), assetImageForNum(0)},
+				{testutil.AssetNameForNum(0), testutil.AssetImageForNum(0)},
 			},
 		},
 		{
@@ -56,50 +59,68 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				return query.Name == "" && query.Image == ""
 			},
 			responses: []*pb.Asset{
-				{Name: assetNameForNum(2), Image: assetImageForNum(2)},
-				{Name: assetNameForNum(1), Image: assetImageForNum(1)},
-				{Name: assetNameForNum(0), Image: assetImageForNum(0)},
+				{
+					Name:  testutil.AssetNameForNum(2),
+					Image: testutil.AssetImageForNum(2),
+				},
+				{
+					Name:  testutil.AssetNameForNum(1),
+					Image: testutil.AssetImageForNum(1),
+				},
+				{
+					Name:  testutil.AssetNameForNum(0),
+					Image: testutil.AssetImageForNum(0),
+				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{assetNameForNum(0), assetImageForNum(0)},
-				{assetNameForNum(1), assetImageForNum(1)},
-				{assetNameForNum(2), assetImageForNum(2)},
+				{testutil.AssetNameForNum(0), testutil.AssetImageForNum(0)},
+				{testutil.AssetNameForNum(1), testutil.AssetImageForNum(1)},
+				{testutil.AssetNameForNum(2), testutil.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{assetNameForNum(1)},
+			args: []string{testutil.AssetNameForNum(1)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == assetNameForNum(1) && query.Image == ""
+				return query.Name == testutil.AssetNameForNum(1) &&
+					query.Image == ""
 			},
 			responses: []*pb.Asset{
-				{Name: assetNameForNum(1), Image: assetImageForNum(1)},
+				{
+					Name:  testutil.AssetNameForNum(1),
+					Image: testutil.AssetImageForNum(1),
+				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{assetNameForNum(1), assetImageForNum(1)},
+				{testutil.AssetNameForNum(1), testutil.AssetImageForNum(1)},
 			},
 		},
 		{
 			name: "filter by image",
-			args: []string{"--image", assetImageForNum(2)},
+			args: []string{"--image", testutil.AssetImageForNum(2)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" && query.Image == assetImageForNum(2)
+				return query.Name == "" &&
+					query.Image == testutil.AssetImageForNum(2)
 			},
 			responses: []*pb.Asset{
-				{Name: assetNameForNum(2), Image: assetImageForNum(2)},
+				{
+					Name:  testutil.AssetNameForNum(2),
+					Image: testutil.AssetImageForNum(2),
+				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{assetNameForNum(2), assetImageForNum(2)},
+				{testutil.AssetNameForNum(2), testutil.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{assetNameForNum(3)},
+			args: []string{testutil.AssetNameForNum(3)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == assetNameForNum(3) && query.Image == ""
+				return query.Name == testutil.AssetNameForNum(3) &&
+					query.Image == ""
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{
@@ -108,9 +129,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such image",
-			args: []string{"--image", assetImageForNum(4)},
+			args: []string{"--image", testutil.AssetImageForNum(4)},
 			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" && query.Image == assetImageForNum(4)
+				return query.Name == "" &&
+					query.Image == testutil.AssetImageForNum(4)
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{

@@ -65,11 +65,11 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(0),
-					linkSourceStageForNum(0),
-					linkSourceFieldForNum(0),
-					linkTargetStageForNum(0),
-					linkTargetFieldForNum(0),
+					testutil.LinkNameForNum(0),
+					testutil.LinkSourceStageForNum(0),
+					testutil.LinkSourceFieldForNum(0),
+					testutil.LinkTargetStageForNum(0),
+					testutil.LinkTargetFieldForNum(0),
 				},
 			},
 		},
@@ -97,33 +97,33 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(0),
-					linkSourceStageForNum(0),
-					linkSourceFieldForNum(0),
-					linkTargetStageForNum(0),
-					linkTargetFieldForNum(0),
+					testutil.LinkNameForNum(0),
+					testutil.LinkSourceStageForNum(0),
+					testutil.LinkSourceFieldForNum(0),
+					testutil.LinkTargetStageForNum(0),
+					testutil.LinkTargetFieldForNum(0),
 				},
 				{
-					linkNameForNum(1),
-					linkSourceStageForNum(1),
-					linkSourceFieldForNum(1),
-					linkTargetStageForNum(1),
-					linkTargetFieldForNum(1),
+					testutil.LinkNameForNum(1),
+					testutil.LinkSourceStageForNum(1),
+					testutil.LinkSourceFieldForNum(1),
+					testutil.LinkTargetStageForNum(1),
+					testutil.LinkTargetFieldForNum(1),
 				},
 				{
-					linkNameForNum(2),
-					linkSourceStageForNum(2),
-					linkSourceFieldForNum(2),
-					linkTargetStageForNum(2),
-					linkTargetFieldForNum(2),
+					testutil.LinkNameForNum(2),
+					testutil.LinkSourceStageForNum(2),
+					testutil.LinkSourceFieldForNum(2),
+					testutil.LinkTargetStageForNum(2),
+					testutil.LinkTargetFieldForNum(2),
 				},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{linkNameForNum(2)},
+			args: []string{testutil.LinkNameForNum(2)},
 			validateQuery: func(query *pb.Link) bool {
-				return query.Name == linkNameForNum(2) &&
+				return query.Name == testutil.LinkNameForNum(2) &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
@@ -139,20 +139,20 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(2),
-					linkSourceStageForNum(2),
-					linkSourceFieldForNum(2),
-					linkTargetStageForNum(2),
-					linkTargetFieldForNum(2),
+					testutil.LinkNameForNum(2),
+					testutil.LinkSourceStageForNum(2),
+					testutil.LinkSourceFieldForNum(2),
+					testutil.LinkTargetStageForNum(2),
+					testutil.LinkTargetFieldForNum(2),
 				},
 			},
 		},
 		{
 			name: "filter by source stage",
-			args: []string{"--source-stage", linkSourceStageForNum(2)},
+			args: []string{"--source-stage", testutil.LinkSourceStageForNum(2)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
-					query.SourceStage == linkSourceStageForNum(2) &&
+					query.SourceStage == testutil.LinkSourceStageForNum(2) &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
 					query.TargetField == ""
@@ -167,21 +167,21 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(2),
-					linkSourceStageForNum(2),
-					linkSourceFieldForNum(2),
-					linkTargetStageForNum(2),
-					linkTargetFieldForNum(2),
+					testutil.LinkNameForNum(2),
+					testutil.LinkSourceStageForNum(2),
+					testutil.LinkSourceFieldForNum(2),
+					testutil.LinkTargetStageForNum(2),
+					testutil.LinkTargetFieldForNum(2),
 				},
 			},
 		},
 		{
 			name: "filter by source field",
-			args: []string{"--source-field", linkSourceFieldForNum(0)},
+			args: []string{"--source-field", testutil.LinkSourceFieldForNum(0)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
-					query.SourceField == linkSourceFieldForNum(0) &&
+					query.SourceField == testutil.LinkSourceFieldForNum(0) &&
 					query.TargetStage == "" &&
 					query.TargetField == ""
 			},
@@ -195,22 +195,22 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(0),
-					linkSourceStageForNum(0),
-					linkSourceFieldForNum(0),
-					linkTargetStageForNum(0),
-					linkTargetFieldForNum(0),
+					testutil.LinkNameForNum(0),
+					testutil.LinkSourceStageForNum(0),
+					testutil.LinkSourceFieldForNum(0),
+					testutil.LinkTargetStageForNum(0),
+					testutil.LinkTargetFieldForNum(0),
 				},
 			},
 		},
 		{
 			name: "filter by target stage",
-			args: []string{"--target-stage", linkTargetStageForNum(1)},
+			args: []string{"--target-stage", testutil.LinkTargetStageForNum(1)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
-					query.TargetStage == linkTargetStageForNum(1) &&
+					query.TargetStage == testutil.LinkTargetStageForNum(1) &&
 					query.TargetField == ""
 			},
 			responses: []*pb.Link{pbLinkForNum(1)},
@@ -223,23 +223,23 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(1),
-					linkSourceStageForNum(1),
-					linkSourceFieldForNum(1),
-					linkTargetStageForNum(1),
-					linkTargetFieldForNum(1),
+					testutil.LinkNameForNum(1),
+					testutil.LinkSourceStageForNum(1),
+					testutil.LinkSourceFieldForNum(1),
+					testutil.LinkTargetStageForNum(1),
+					testutil.LinkTargetFieldForNum(1),
 				},
 			},
 		},
 		{
 			name: "filter by target field",
-			args: []string{"--target-field", linkTargetFieldForNum(2)},
+			args: []string{"--target-field", testutil.LinkTargetFieldForNum(2)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
-					query.TargetField == linkTargetFieldForNum(2)
+					query.TargetField == testutil.LinkTargetFieldForNum(2)
 			},
 			responses: []*pb.Link{pbLinkForNum(2)},
 			output: [][]string{
@@ -251,19 +251,19 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 					TargetFieldText,
 				},
 				{
-					linkNameForNum(2),
-					linkSourceStageForNum(2),
-					linkSourceFieldForNum(2),
-					linkTargetStageForNum(2),
-					linkTargetFieldForNum(2),
+					testutil.LinkNameForNum(2),
+					testutil.LinkSourceStageForNum(2),
+					testutil.LinkSourceFieldForNum(2),
+					testutil.LinkTargetStageForNum(2),
+					testutil.LinkTargetFieldForNum(2),
 				},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{linkNameForNum(3)},
+			args: []string{testutil.LinkNameForNum(3)},
 			validateQuery: func(query *pb.Link) bool {
-				return query.Name == linkNameForNum(3) &&
+				return query.Name == testutil.LinkNameForNum(3) &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
@@ -282,10 +282,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such source stage",
-			args: []string{"--source-stage", linkSourceStageForNum(3)},
+			args: []string{"--source-stage", testutil.LinkSourceStageForNum(3)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
-					query.SourceStage == linkSourceStageForNum(3) &&
+					query.SourceStage == testutil.LinkSourceStageForNum(3) &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
 					query.TargetField == ""
@@ -303,11 +303,11 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such source field",
-			args: []string{"--source-field", linkSourceFieldForNum(4)},
+			args: []string{"--source-field", testutil.LinkSourceFieldForNum(4)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
-					query.SourceField == linkSourceFieldForNum(4) &&
+					query.SourceField == testutil.LinkSourceFieldForNum(4) &&
 					query.TargetStage == "" &&
 					query.TargetField == ""
 			},
@@ -324,12 +324,12 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such target stage",
-			args: []string{"--target-stage", linkTargetStageForNum(5)},
+			args: []string{"--target-stage", testutil.LinkTargetStageForNum(5)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
-					query.TargetStage == linkTargetStageForNum(5) &&
+					query.TargetStage == testutil.LinkTargetStageForNum(5) &&
 					query.TargetField == ""
 			},
 			responses: []*pb.Link{},
@@ -345,13 +345,13 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such target field",
-			args: []string{"--target-field", linkTargetFieldForNum(6)},
+			args: []string{"--target-field", testutil.LinkTargetFieldForNum(6)},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
 					query.SourceField == "" &&
 					query.TargetStage == "" &&
-					query.TargetField == linkTargetFieldForNum(6)
+					query.TargetField == testutil.LinkTargetFieldForNum(6)
 			},
 			responses: []*pb.Link{},
 			output: [][]string{
@@ -423,10 +423,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 
 func pbLinkForNum(num int) *pb.Link {
 	return &pb.Link{
-		Name:        linkNameForNum(num),
-		SourceStage: linkSourceStageForNum(num),
-		SourceField: linkSourceFieldForNum(num),
-		TargetStage: linkTargetStageForNum(num),
-		TargetField: linkTargetFieldForNum(num),
+		Name:        testutil.LinkNameForNum(num),
+		SourceStage: testutil.LinkSourceStageForNum(num),
+		SourceField: testutil.LinkSourceFieldForNum(num),
+		TargetStage: testutil.LinkTargetStageForNum(num),
+		TargetField: testutil.LinkTargetFieldForNum(num),
 	}
 }
