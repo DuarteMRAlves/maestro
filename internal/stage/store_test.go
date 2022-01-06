@@ -8,14 +8,13 @@ import (
 	"testing"
 )
 
-const (
-	stageName    = "stage-name"
-	stagePhase   = apitypes.StageFailed
-	stageAsset   = "asset-name"
-	stageAddress = "Address"
-)
-
 func TestStore_Create(t *testing.T) {
+	const (
+		stageName    = "stage-name"
+		stagePhase   = apitypes.StageFailed
+		stageAsset   = "asset-name"
+		stageAddress = "Address"
+	)
 	tests := []struct {
 		name   string
 		config *Stage

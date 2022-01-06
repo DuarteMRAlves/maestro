@@ -5,14 +5,13 @@ import (
 	"testing"
 )
 
-const (
-	oldBpName = "Old Orchestration Name"
-	newBpName = "New Orchestration Name"
-	link1     = "Link 1"
-	link2     = "Link 2"
-)
-
 func TestOrchestration_Clone(t *testing.T) {
+	const (
+		oldBpName = "Old Orchestration Name"
+		newBpName = "New Orchestration Name"
+		link1     = "Link 1"
+		link2     = "Link 2"
+	)
 	o := &Orchestration{
 		Name:  oldBpName,
 		Links: []string{link1},

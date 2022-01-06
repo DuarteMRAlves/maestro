@@ -6,9 +6,8 @@ import (
 	"testing"
 )
 
-const oName = "Orchestration Name"
-
 func TestStore_CreateCorrect(t *testing.T) {
+	const oName = "Orchestration Name"
 	tests := []struct {
 		name   string
 		config *Orchestration
