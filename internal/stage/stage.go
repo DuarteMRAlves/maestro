@@ -5,6 +5,7 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/worker"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
@@ -17,6 +18,8 @@ type Stage struct {
 
 	// Descriptor for the Rpc that this stage calls.
 	Rpc reflection.RPC
+
+	Worker worker.Worker
 
 	// Input and Output describe the connections to other stages
 	Input  Input
