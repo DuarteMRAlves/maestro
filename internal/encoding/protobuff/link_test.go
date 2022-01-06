@@ -10,13 +10,20 @@ import (
 )
 
 func TestMarshalLink(t *testing.T) {
+	const (
+		name        = "name"
+		sourceStage = "sourceStage"
+		sourceField = "sourceField"
+		targetStage = "targetStage"
+		targetField = "targetField"
+	)
 	tests := []*apitypes.Link{
 		{
-			Name:        linkName,
-			SourceStage: linkSourceStage,
-			SourceField: linkSourceField,
-			TargetStage: linkTargetStage,
-			TargetField: linkTargetField,
+			Name:        name,
+			SourceStage: sourceStage,
+			SourceField: sourceField,
+			TargetStage: targetStage,
+			TargetField: targetField,
 		},
 		{
 			Name:        "",
@@ -40,13 +47,20 @@ func TestMarshalLink(t *testing.T) {
 }
 
 func TestUnmarshalLinkCorrect(t *testing.T) {
+	const (
+		name        = "name"
+		sourceStage = "sourceStage"
+		sourceField = "sourceField"
+		targetStage = "targetStage"
+		targetField = "targetField"
+	)
 	tests := []*pb.Link{
 		{
-			Name:        linkName,
-			SourceStage: linkSourceStage,
-			SourceField: linkSourceField,
-			TargetStage: linkTargetStage,
-			TargetField: linkTargetField,
+			Name:        name,
+			SourceStage: sourceStage,
+			SourceField: sourceField,
+			TargetStage: targetStage,
+			TargetField: targetField,
 		},
 		{
 			Name:        "",

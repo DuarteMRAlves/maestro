@@ -9,6 +9,12 @@ import (
 )
 
 func TestMarshalOrchestration(t *testing.T) {
+	const (
+		name  = "OrchestrationName"
+		link1 = "Link Name 1"
+		link2 = "Link Name 2"
+		link3 = "Link Name 3"
+	)
 	tests := []struct {
 		name string
 		o    *apitypes.Orchestration
@@ -16,8 +22,8 @@ func TestMarshalOrchestration(t *testing.T) {
 		{
 			name: "all fields with non default values",
 			o: &apitypes.Orchestration{
-				Name:  orchestrationName,
-				Links: []string{oLink1, oLink2, oLink3},
+				Name:  name,
+				Links: []string{link1, link2, link3},
 			},
 		},
 		{
@@ -49,6 +55,12 @@ func TestMarshalOrchestration(t *testing.T) {
 }
 
 func TestUnmarshalOrchestrationCorrect(t *testing.T) {
+	const (
+		name  = "OrchestrationName"
+		link1 = "Link Name 1"
+		link2 = "Link Name 2"
+		link3 = "Link Name 3"
+	)
 	tests := []struct {
 		name string
 		o    *pb.Orchestration
@@ -56,8 +68,8 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 		{
 			name: "all fields with non default values",
 			o: &pb.Orchestration{
-				Name:  orchestrationName,
-				Links: []string{oLink1, oLink2, oLink3},
+				Name:  name,
+				Links: []string{link1, link2, link3},
 			},
 		},
 		{

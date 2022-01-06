@@ -10,6 +10,15 @@ import (
 )
 
 func TestMarshalStage(t *testing.T) {
+	const (
+		stageName          = "Stage Name"
+		stageAsset         = "Stage Asset"
+		stageService       = "stageService"
+		stageRpc           = "stageRpc"
+		stageAddress       = "stageAddress"
+		stageHost          = "stageHost"
+		stagePort    int32 = 12345
+	)
 	tests := []*apitypes.Stage{
 		{
 			Name:    stageName,
@@ -44,6 +53,15 @@ func TestMarshalStage(t *testing.T) {
 }
 
 func TestUnmarshalStageCorrect(t *testing.T) {
+	const (
+		stageName          = "Stage Name"
+		stageAsset         = "Stage Asset"
+		stageService       = "stageService"
+		stageRpc           = "stageRpc"
+		stageAddress       = "stageAddress"
+		stageHost          = "stageHost"
+		stagePort    int32 = 12345
+	)
 	tests := []*pb.Stage{
 		{
 			Name:    stageName,
