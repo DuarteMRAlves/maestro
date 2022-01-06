@@ -9,6 +9,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/worker"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
@@ -26,6 +27,9 @@ func (s *Server) CreateStage(config *apitypes.Stage) error {
 		return err
 	}
 	if err = s.inferRpc(st, config); err != nil {
+		return err
+	}
+	if st.Worker, err = worker.NewWorker(st.Address, st.Rpc); err != nil {
 		return err
 	}
 	return s.stageStore.Create(st)
@@ -114,6 +118,7 @@ func (s *Server) validateCreateStageConfig(config *apitypes.Stage) error {
 func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
 	address := st.Address
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	defer conn.Close()
 	if err != nil {
 		return errdefs.InternalWithMsg(
 			"connect to %s for stage %s: %s",
@@ -184,6 +189,7 @@ func inferRpcFromServices(
 	search := cfg.Rpc
 	if search == "" {
 		if len(available) == 1 {
+			st.Rpc = available[0]
 			return nil
 		}
 		return errdefs.InvalidArgumentWithMsg(

@@ -12,6 +12,7 @@ type RPC struct {
 	Service_ reflection.Service
 	In       reflection.Message
 	Out      reflection.Message
+	Unary    bool
 }
 
 func (r *RPC) Name() string {
@@ -32,4 +33,8 @@ func (r *RPC) Input() reflection.Message {
 
 func (r *RPC) Output() reflection.Message {
 	return r.Out
+}
+
+func (r *RPC) IsUnary() bool {
+	return r.Unary
 }

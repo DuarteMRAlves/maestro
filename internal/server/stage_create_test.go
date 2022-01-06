@@ -59,7 +59,7 @@ func TestServer_CreateStage(t *testing.T) {
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "",
-				Rpc:     "ClientStream",
+				Rpc:     "Unary",
 				// testServer only has one service but four rpcs
 				Address: testAddr,
 			},
@@ -81,7 +81,7 @@ func TestServer_CreateStage(t *testing.T) {
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.TestService",
-				Rpc:     "BidiStream",
+				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
 				Address: bothAddr,
 			},
@@ -92,7 +92,7 @@ func TestServer_CreateStage(t *testing.T) {
 				Name:    stageName,
 				Asset:   assetNameForNum(0),
 				Service: "pb.TestService",
-				Rpc:     "BidiStream",
+				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
 				Host: testHost,
 				Port: int32(testPort),
@@ -207,7 +207,7 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 		Name:    stageName,
 		Asset:   assetNameForNum(0),
 		Service: "pb.TestService",
-		Rpc:     "BidiStream",
+		Rpc:     "Unary",
 		// both has two services and four rpcs for TestService
 		Address: bothAddr,
 	}

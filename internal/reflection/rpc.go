@@ -12,6 +12,7 @@ type RPC interface {
 	Service() Service
 	Input() Message
 	Output() Message
+	IsUnary() bool
 }
 
 type rpc struct {
@@ -44,4 +45,8 @@ func (r *rpc) Input() Message {
 
 func (r *rpc) Output() Message {
 	return newMessageInternal(r.desc.GetOutputType())
+}
+
+func (r *rpc) IsUnary() bool {
+	return !r.desc.IsServerStreaming() && !r.desc.IsClientStreaming()
 }
