@@ -41,7 +41,10 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				return query.Name == "" && len(query.Links) == 0
 			},
 			responses: []*pb.Orchestration{pbOrchestrationForNum(0)},
-			output:    [][]string{{NameText}, {orchestrationNameForNum(0)}},
+			output: [][]string{
+				{NameText},
+				{testutil.OrchestrationNameForNum(0)},
+			},
 		},
 		{
 			name: "multiple orchestrations",
@@ -56,26 +59,29 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			},
 			output: [][]string{
 				{NameText},
-				{orchestrationNameForNum(0)},
-				{orchestrationNameForNum(1)},
-				{orchestrationNameForNum(2)},
+				{testutil.OrchestrationNameForNum(0)},
+				{testutil.OrchestrationNameForNum(1)},
+				{testutil.OrchestrationNameForNum(2)},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{orchestrationNameForNum(2)},
+			args: []string{testutil.OrchestrationNameForNum(2)},
 			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == orchestrationNameForNum(2) &&
+				return query.Name == testutil.OrchestrationNameForNum(2) &&
 					len(query.Links) == 0
 			},
 			responses: []*pb.Orchestration{pbOrchestrationForNum(2)},
-			output:    [][]string{{NameText}, {orchestrationNameForNum(2)}},
+			output: [][]string{
+				{NameText},
+				{testutil.OrchestrationNameForNum(2)},
+			},
 		},
 		{
 			name: "no such name",
-			args: []string{orchestrationNameForNum(3)},
+			args: []string{testutil.OrchestrationNameForNum(3)},
 			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == orchestrationNameForNum(3) &&
+				return query.Name == testutil.OrchestrationNameForNum(3) &&
 					len(query.Links) == 0
 			},
 			responses: []*pb.Orchestration{},
@@ -139,5 +145,5 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 }
 
 func pbOrchestrationForNum(num int) *pb.Orchestration {
-	return &pb.Orchestration{Name: orchestrationNameForNum(num), Links: nil}
+	return &pb.Orchestration{Name: testutil.OrchestrationNameForNum(num), Links: nil}
 }
