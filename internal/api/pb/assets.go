@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -23,7 +23,7 @@ func (s *assetManagementServer) Create(
 	pbAsset *pb.Asset,
 ) (*emptypb.Empty, error) {
 
-	var a *asset.Asset
+	var a *apitypes.Asset
 	var err error
 	var grpcErr error = nil
 
@@ -42,7 +42,7 @@ func (s *assetManagementServer) Get(
 	stream pb.AssetManagement_GetServer,
 ) error {
 
-	var query *asset.Asset
+	var query *apitypes.Asset
 	var err error
 
 	if query, err = protobuff.UnmarshalAsset(pbQuery); err != nil {

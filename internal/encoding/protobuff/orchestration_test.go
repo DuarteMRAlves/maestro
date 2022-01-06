@@ -2,8 +2,8 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -11,18 +11,18 @@ import (
 func TestMarshalOrchestration(t *testing.T) {
 	tests := []struct {
 		name string
-		o    *orchestration.Orchestration
+		o    *apitypes.Orchestration
 	}{
 		{
 			name: "all fields with non default values",
-			o: &orchestration.Orchestration{
+			o: &apitypes.Orchestration{
 				Name:  orchestrationName,
 				Links: []string{oLink1, oLink2, oLink3},
 			},
 		},
 		{
 			name: "all field with default values",
-			o: &orchestration.Orchestration{
+			o: &apitypes.Orchestration{
 				Name:  "",
 				Links: nil,
 			},

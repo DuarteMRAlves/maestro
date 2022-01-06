@@ -1,6 +1,7 @@
 package link
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -96,7 +97,7 @@ func lenLinks(st *store) int {
 func TestStore_Get(t *testing.T) {
 	tests := []struct {
 		name  string
-		query *Link
+		query *apitypes.Link
 		// numbers to be stored
 		stored []int
 		// names of the expected Links
@@ -110,7 +111,7 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "zero elements stored, some query",
-			query:    &Link{Name: "some-name"},
+			query:    &apitypes.Link{Name: "some-name"},
 			stored:   []int{},
 			expected: []string{},
 		},
@@ -132,67 +133,67 @@ func TestStore_Get(t *testing.T) {
 		},
 		{
 			name:     "multiple elements stored, matching name query",
-			query:    &Link{Name: testutil.LinkNameForNum(2)},
+			query:    &apitypes.Link{Name: testutil.LinkNameForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
-			query:    &Link{Name: "unknown-name"},
+			query:    &apitypes.Link{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching source stage query",
-			query:    &Link{SourceStage: testutil.LinkSourceStageForNum(2)},
+			query:    &apitypes.Link{SourceStage: testutil.LinkSourceStageForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching source stage query",
-			query:    &Link{SourceStage: "unknown-stage"},
+			query:    &apitypes.Link{SourceStage: "unknown-stage"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching source field query",
-			query:    &Link{SourceField: testutil.LinkSourceFieldForNum(1)},
+			query:    &apitypes.Link{SourceField: testutil.LinkSourceFieldForNum(1)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.LinkNameForNum(1)},
 		},
 		{
 			name:     "multiple elements stored, non-matching source field query",
-			query:    &Link{SourceField: "UnknownField"},
+			query:    &apitypes.Link{SourceField: "UnknownField"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching target stage query",
-			query:    &Link{TargetStage: testutil.LinkTargetStageForNum(0)},
+			query:    &apitypes.Link{TargetStage: testutil.LinkTargetStageForNum(0)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.LinkNameForNum(0)},
 		},
 		{
 			name:     "multiple elements stored, non-matching target stage query",
-			query:    &Link{TargetStage: "unknown-stage"},
+			query:    &apitypes.Link{TargetStage: "unknown-stage"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name:     "multiple elements stored, matching target field query",
-			query:    &Link{TargetField: testutil.LinkTargetFieldForNum(2)},
+			query:    &apitypes.Link{TargetField: testutil.LinkTargetFieldForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []string{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching target field query",
-			query:    &Link{TargetField: "UnknownField"},
+			query:    &apitypes.Link{TargetField: "UnknownField"},
 			stored:   []int{0, 1, 2},
 			expected: []string{},
 		},
 		{
 			name: "multiple elements stored, exclusive query",
-			query: &Link{
+			query: &apitypes.Link{
 				SourceStage: testutil.LinkSourceStageForNum(1),
 				TargetStage: testutil.LinkTargetStageForNum(2),
 			},

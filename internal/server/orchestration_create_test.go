@@ -2,10 +2,10 @@ package server
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
@@ -17,32 +17,32 @@ const oName = "orchestration-name"
 func TestServer_CreateOrchestration(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *orchestration.Orchestration
+		config *apitypes.Orchestration
 	}{
 		{
 			name: "correct with nil links",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name:  oName,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with empty links",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name:  oName,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with one link",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name:  oName,
 				Links: []string{linkNameForNum(0)},
 			},
 		},
 		{
 			name: "correct with multiple links",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name: oName,
 				Links: []string{
 					linkNameForNum(0),
@@ -84,11 +84,11 @@ func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
 func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *orchestration.Orchestration
+		config *apitypes.Orchestration
 	}{
 		{
 			name: "empty name",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name: "",
 				Links: []string{
 					linkNameForNum(0),
@@ -99,7 +99,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid characters in name",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name: "?orchestration-name",
 				Links: []string{
 					linkNameForNum(0),
@@ -110,7 +110,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid character sequence",
-			config: &orchestration.Orchestration{
+			config: &apitypes.Orchestration{
 				Name: "invalid//name",
 				Links: []string{
 					linkNameForNum(0),
@@ -146,7 +146,7 @@ func TestServer_CreateOrchestration_LinkNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForOrchestrations(t, s)
 
-	config := &orchestration.Orchestration{
+	config := &apitypes.Orchestration{
 		Name: oName,
 		Links: []string{
 			linkNameForNum(0),
@@ -169,7 +169,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForOrchestrations(t, s)
 
-	config := &orchestration.Orchestration{
+	config := &apitypes.Orchestration{
 		Name: oName,
 		Links: []string{
 			linkNameForNum(0),

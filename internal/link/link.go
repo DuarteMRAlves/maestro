@@ -2,6 +2,7 @@ package link
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
 type Link struct {
@@ -14,6 +15,16 @@ type Link struct {
 
 func (l *Link) Clone() *Link {
 	return &Link{
+		Name:        l.Name,
+		SourceStage: l.SourceStage,
+		SourceField: l.SourceField,
+		TargetStage: l.TargetStage,
+		TargetField: l.TargetField,
+	}
+}
+
+func (l *Link) ToApi() *apitypes.Link {
+	return &apitypes.Link{
 		Name:        l.Name,
 		SourceStage: l.SourceStage,
 		SourceField: l.SourceField,

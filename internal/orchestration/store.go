@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
@@ -9,7 +10,7 @@ import (
 // Store manages the storage of created orchestrations.
 type Store interface {
 	Create(b *Orchestration) error
-	Get(query *Orchestration) []*Orchestration
+	Get(query *apitypes.Orchestration) []*Orchestration
 }
 
 type store struct {
@@ -38,9 +39,9 @@ func (st *store) Create(config *Orchestration) error {
 // Get retrieves copies of the stored orchestrations that match the received query.
 // The query is a orchestration with the fields that the returned orchestrations should
 // have. If a field is empty, then all values for that field are accepted.
-func (st *store) Get(query *Orchestration) []*Orchestration {
+func (st *store) Get(query *apitypes.Orchestration) []*Orchestration {
 	if query == nil {
-		query = &Orchestration{}
+		query = &apitypes.Orchestration{}
 	}
 	filter := buildQueryFilter(query)
 	res := make([]*Orchestration, 0)
@@ -58,7 +59,7 @@ func (st *store) Get(query *Orchestration) []*Orchestration {
 	return res
 }
 
-func buildQueryFilter(query *Orchestration) func(b *Orchestration) bool {
+func buildQueryFilter(query *apitypes.Orchestration) func(b *Orchestration) bool {
 	filters := make([]func(b *Orchestration) bool, 0)
 	if query.Name != "" {
 		filters = append(

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -23,7 +23,7 @@ func (s *stageManagementServer) Create(
 	pbStage *pb.Stage,
 ) (*emptypb.Empty, error) {
 
-	var stage *types.Stage
+	var stage *apitypes.Stage
 	var err error
 	var grpcErr error = nil
 
@@ -43,7 +43,7 @@ func (s *stageManagementServer) Get(
 ) error {
 
 	var (
-		query *types.Stage
+		query *apitypes.Stage
 		err   error
 	)
 

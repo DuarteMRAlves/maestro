@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
@@ -14,24 +14,24 @@ const assetName = "asset-name"
 func TestServer_CreateAsset(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *asset.Asset
+		config *apitypes.Asset
 	}{
 		{
 			name: "correct nil image",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name: assetName,
 			},
 		},
 		{
 			name: "correct with empty image",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name:  assetName,
 				Image: "",
 			},
 		},
 		{
 			name: "correct with image",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name:  assetName,
 				Image: "image-name",
 			},
@@ -66,23 +66,23 @@ func TestServer_CreateAsset_NilConfig(t *testing.T) {
 func TestServer_CreateAsset_InvalidName(t *testing.T) {
 	tests := []struct {
 		name   string
-		config *asset.Asset
+		config *apitypes.Asset
 	}{
 		{
 			name: "empty name",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name: "",
 			},
 		},
 		{
 			name: "invalid characters in name",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name: "%some-name%",
 			},
 		},
 		{
 			name: "invalid character sequence",
-			config: &asset.Asset{
+			config: &apitypes.Asset{
 				Name: "invalid..name",
 			},
 		},
@@ -113,7 +113,7 @@ func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 
-	config := &asset.Asset{
+	config := &apitypes.Asset{
 		Name: assetName,
 	}
 

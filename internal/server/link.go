@@ -1,6 +1,7 @@
 package server
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
@@ -10,20 +11,32 @@ import (
 
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateLink(config *link.Link) error {
+func (s *Server) CreateLink(config *apitypes.Link) error {
 	s.logger.Info("Create Link.", logLink(config, "config")...)
 	if err := s.validateCreateLinkConfig(config); err != nil {
 		return err
 	}
-	return s.linkStore.Create(config)
+	l := &link.Link{
+		Name:        config.Name,
+		SourceStage: config.SourceStage,
+		SourceField: config.SourceField,
+		TargetStage: config.TargetStage,
+		TargetField: config.TargetField,
+	}
+	return s.linkStore.Create(l)
 }
 
-func (s *Server) GetLink(query *link.Link) []*link.Link {
+func (s *Server) GetLink(query *apitypes.Link) []*apitypes.Link {
 	s.logger.Info("Get Link.", logLink(query, "query")...)
-	return s.linkStore.Get(query)
+	links := s.linkStore.Get(query)
+	apiLinks := make([]*apitypes.Link, 0, len(links))
+	for _, l := range links {
+		apiLinks = append(apiLinks, l.ToApi())
+	}
+	return apiLinks
 }
 
-func logLink(l *link.Link, field string) []zap.Field {
+func logLink(l *apitypes.Link, field string) []zap.Field {
 	if l == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}
@@ -38,7 +51,7 @@ func logLink(l *link.Link, field string) []zap.Field {
 
 // validateCreateLinkConfig verifies if all conditions to create a link are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (s *Server) validateCreateLinkConfig(config *link.Link) error {
+func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}

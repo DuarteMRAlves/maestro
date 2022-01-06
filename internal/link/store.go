@@ -1,6 +1,7 @@
 package link
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"sync"
@@ -9,7 +10,7 @@ import (
 type Store interface {
 	Create(l *Link) error
 	Contains(name string) bool
-	Get(query *Link) []*Link
+	Get(query *apitypes.Link) []*Link
 }
 
 type store struct {
@@ -40,9 +41,9 @@ func (st *store) Contains(name string) bool {
 	return ok
 }
 
-func (st *store) Get(query *Link) []*Link {
+func (st *store) Get(query *apitypes.Link) []*Link {
 	if query == nil {
-		query = &Link{}
+		query = &apitypes.Link{}
 	}
 	filter := buildQueryFilter(query)
 	res := make([]*Link, 0)
@@ -60,7 +61,7 @@ func (st *store) Get(query *Link) []*Link {
 	return res
 }
 
-func buildQueryFilter(query *Link) func(l *Link) bool {
+func buildQueryFilter(query *apitypes.Link) func(l *Link) bool {
 	filters := make([]func(l *Link) bool, 0)
 	if query.Name != "" {
 		filters = append(

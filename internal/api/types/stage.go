@@ -3,12 +3,13 @@ package types
 // Stage represents a node of the pipeline where a specific grpc method is
 // executed.
 type Stage struct {
-	// Name that should be associated with the stage. Is required and should be
-	// unique.
+	// Name that should be associated with the stage.
+	// (required, unique)
 	Name string `yaml:"name" info:"required"`
 	// Phase specifies the current phase of the Stage. This field should not be
 	// specified in a yaml file as it is a value defined by the current state
 	// of the system.
+	// (optional)
 	Phase StagePhase `yaml:"-"`
 	// Name of the grpc service that contains the rpc to execute. May be
 	// omitted if the target grpc server only has one service.

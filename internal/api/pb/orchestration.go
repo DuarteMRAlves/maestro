@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -26,7 +26,7 @@ func (s *orchestrationManagementServer) Create(
 ) (*emptypb.Empty, error) {
 
 	var (
-		o       *orchestration.Orchestration
+		o       *apitypes.Orchestration
 		err     error
 		grpcErr error = nil
 	)
@@ -46,7 +46,7 @@ func (s *orchestrationManagementServer) Get(
 	stream pb.OrchestrationManagement_GetServer,
 ) error {
 
-	var query *orchestration.Orchestration
+	var query *apitypes.Orchestration
 	var err error
 
 	if query, err = protobuff.UnmarshalOrchestration(pbQuery); err != nil {
