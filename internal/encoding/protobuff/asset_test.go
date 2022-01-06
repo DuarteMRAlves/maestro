@@ -10,18 +10,22 @@ import (
 )
 
 func TestMarshalAsset(t *testing.T) {
+	const (
+		name  apitypes.AssetName = "Asset Name"
+		image                    = "user/image:version"
+	)
 	tests := []struct {
 		in apitypes.Asset
 	}{
-		{apitypes.Asset{Name: assetName, Image: assetImage}},
+		{apitypes.Asset{Name: name, Image: image}},
 		{
 			apitypes.Asset{
-				Name:  assetName,
-				Image: assetImage,
+				Name:  name,
+				Image: image,
 			},
 		},
-		{apitypes.Asset{Name: assetName}},
-		{apitypes.Asset{Image: assetImage}},
+		{apitypes.Asset{Name: name}},
+		{apitypes.Asset{Image: image}},
 	}
 
 	for _, inner := range tests {
