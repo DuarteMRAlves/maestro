@@ -9,9 +9,9 @@ import (
 	"testing"
 )
 
-const assetName = "asset-name"
-
 func TestServer_CreateAsset(t *testing.T) {
+	const name = "asset-name"
+
 	tests := []struct {
 		name   string
 		config *apitypes.Asset
@@ -19,20 +19,20 @@ func TestServer_CreateAsset(t *testing.T) {
 		{
 			name: "correct nil image",
 			config: &apitypes.Asset{
-				Name: assetName,
+				Name: name,
 			},
 		},
 		{
 			name: "correct with empty image",
 			config: &apitypes.Asset{
-				Name:  assetName,
+				Name:  name,
 				Image: "",
 			},
 		},
 		{
 			name: "correct with image",
 			config: &apitypes.Asset{
-				Name:  assetName,
+				Name:  name,
 				Image: "image-name",
 			},
 		},
@@ -109,18 +109,19 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 
 func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	var err error
+	const name = "asset-name"
 
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 
 	config := &apitypes.Asset{
-		Name: assetName,
+		Name: name,
 	}
 
 	err = s.CreateAsset(config)
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateAsset(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("asset '%v' already exists", assetName)
+	expectedMsg := fmt.Sprintf("asset '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
 }

@@ -13,10 +13,8 @@ import (
 	"testing"
 )
 
-const linkName = "link-name"
-
 func TestServer_CreateLink(t *testing.T) {
-
+	const name = "link-name"
 	tests := []struct {
 		name   string
 		config *apitypes.Link
@@ -24,7 +22,7 @@ func TestServer_CreateLink(t *testing.T) {
 		{
 			name: "correct with nil fields",
 			config: &apitypes.Link{
-				Name:        linkName,
+				Name:        name,
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
 			},
@@ -32,7 +30,7 @@ func TestServer_CreateLink(t *testing.T) {
 		{
 			name: "correct with empty fields",
 			config: &apitypes.Link{
-				Name:        linkName,
+				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "",
 				TargetStage: "stage-2",
@@ -42,7 +40,7 @@ func TestServer_CreateLink(t *testing.T) {
 		{
 			name: "correct with fields",
 			config: &apitypes.Link{
-				Name:        linkName,
+				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "field4",
 				TargetStage: "stage-2",
@@ -52,7 +50,7 @@ func TestServer_CreateLink(t *testing.T) {
 		{
 			name: "incompatible outer but compatible inner",
 			config: &apitypes.Link{
-				Name:        linkName,
+				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "field4",
 				TargetStage: "stage-incompatible-outer",
@@ -140,12 +138,13 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateLink_SourceEmpty(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "",
 		TargetStage: "stage-2",
 	}
@@ -159,12 +158,13 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetEmpty(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-2",
 		TargetStage: "",
 	}
@@ -178,12 +178,13 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 }
 
 func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-1",
 	}
@@ -194,12 +195,13 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 }
 
 func TestServer_CreateLink_SourceNotFound(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-3",
 		TargetStage: "stage-2",
 	}
@@ -211,12 +213,13 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 }
 
 func TestServer_CreateLink_TargetNotFound(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-3",
 	}
@@ -229,13 +232,13 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 
 func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	var err error
-
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
 	}
@@ -244,17 +247,18 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("link '%v' already exists", linkName)
+	expectedMsg := fmt.Sprintf("link '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		SourceField: "unknown-field",
 		TargetStage: "stage-2",
@@ -265,17 +269,18 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	expectedMsg := fmt.Sprintf(
 		"field with name unknown-field not found for message "+
 			"pb.TestMessage1 for source stage in link %v",
-		linkName)
+		name)
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
 		TargetField: "unknown-field",
@@ -286,17 +291,18 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	expectedMsg := fmt.Sprintf(
 		"field with name unknown-field not found for message "+
 			"pb.TestMessageDiffNames for target stage in link %v",
-		linkName)
+		name)
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
+	const name = "link-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
 	config := &apitypes.Link{
-		Name:        linkName,
+		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-incompatible-outer",
 	}
@@ -306,7 +312,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	expectedMsg := fmt.Sprintf(
 		"incompatible message types between source output pb.TestMessage1 "+
 			"and target input pb.TestWrongOuterFieldType in link %v",
-		linkName)
+		name)
 	assert.Error(t, err, expectedMsg)
 }
 
