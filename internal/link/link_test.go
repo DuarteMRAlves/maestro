@@ -5,21 +5,20 @@ import (
 	"testing"
 )
 
-const (
-	oldName        = "OldName"
-	oldSourceStage = "OldSourceStage"
-	oldSourceField = "OldSourceField"
-	oldTargetStage = "OldTargetStage"
-	oldTargetField = "OldTargetField"
-
-	newName        = "NewName"
-	newSourceStage = "NewSourceStage"
-	newSourceField = "NewSourceField"
-	newTargetStage = "NewTargetStage"
-	newTargetField = "NewTargetField"
-)
-
 func TestLink_Clone(t *testing.T) {
+	const (
+		oldName        = "OldName"
+		oldSourceStage = "OldSourceStage"
+		oldSourceField = "OldSourceField"
+		oldTargetStage = "OldTargetStage"
+		oldTargetField = "OldTargetField"
+
+		newName        = "NewName"
+		newSourceStage = "NewSourceStage"
+		newSourceField = "NewSourceField"
+		newTargetStage = "NewTargetStage"
+		newTargetField = "NewTargetField"
+	)
 	s := &Link{
 		Name:        oldName,
 		SourceStage: oldSourceStage,

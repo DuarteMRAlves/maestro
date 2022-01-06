@@ -7,15 +7,14 @@ import (
 	"testing"
 )
 
-const (
-	linkName        = "link-name"
-	linkSourceStage = "linkSourceStage"
-	linkSourceField = "linkSourceField"
-	linkTargetStage = "linkTargetStage"
-	linkTargetField = "linkTargetField"
-)
-
 func TestStore_Create(t *testing.T) {
+	const (
+		linkName        = "link-name"
+		linkSourceStage = "linkSourceStage"
+		linkSourceField = "linkSourceField"
+		linkTargetStage = "linkTargetStage"
+		linkTargetField = "linkTargetField"
+	)
 	tests := []struct {
 		name   string
 		config *Link

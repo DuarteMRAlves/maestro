@@ -6,19 +6,18 @@ import (
 	"testing"
 )
 
-const (
-	oldName    = "Old Name"
-	oldPhase   = apitypes.StageRunning
-	oldAsset   = "Old Asset Name"
-	oldAddress = "OldAddress"
-
-	newName    = "New Name"
-	newPhase   = apitypes.StageFailed
-	newAsset   = "New Asset Name"
-	newAddress = "NewAddress"
-)
-
 func TestStage_Clone(t *testing.T) {
+	const (
+		oldName    = "Old Name"
+		oldPhase   = apitypes.StageRunning
+		oldAsset   = "Old Asset Name"
+		oldAddress = "OldAddress"
+
+		newName    = "New Name"
+		newPhase   = apitypes.StageFailed
+		newAsset   = "New Asset Name"
+		newAddress = "NewAddress"
+	)
 	s := &Stage{
 		Name:    oldName,
 		Phase:   oldPhase,

@@ -10,6 +10,10 @@ import (
 )
 
 func TestStore_CreateCorrect(t *testing.T) {
+	const (
+		assetName  = "Asset-Name"
+		assetImage = "Asset-Image"
+	)
 	tests := []struct {
 		name   string
 		config *Asset
@@ -45,6 +49,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 }
 
 func TestStore_CreateInvalidArguments(t *testing.T) {
+	const assetName = "Asset-Name"
 	tests := []struct {
 		name   string
 		config *Asset
@@ -76,6 +81,10 @@ func TestStore_CreateInvalidArguments(t *testing.T) {
 }
 
 func TestStore_CreateAlreadyExists(t *testing.T) {
+	const (
+		assetName  = "Asset-Name"
+		assetImage = "Asset-Image"
+	)
 	config := &Asset{
 		Name:  assetName,
 		Image: assetImage,
