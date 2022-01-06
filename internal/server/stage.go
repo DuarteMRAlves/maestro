@@ -51,7 +51,7 @@ func logStage(s *apitypes.Stage, field string) []zap.Field {
 	}
 	return []zap.Field{
 		zap.String("name", s.Name),
-		zap.String("asset", s.Asset),
+		zap.String("asset", string(s.Asset)),
 		zap.String("service", s.Service),
 		zap.String("rpc", s.Rpc),
 		zap.String("address", s.Address),

@@ -60,7 +60,7 @@ func (c *client) CreateResource(
 
 func (c *client) CreateAsset(ctx context.Context, asset *apitypes.Asset) error {
 	a := &pb.Asset{
-		Name:  asset.Name,
+		Name:  string(asset.Name),
 		Image: asset.Image,
 	}
 
@@ -74,7 +74,7 @@ func (c *client) CreateAsset(ctx context.Context, asset *apitypes.Asset) error {
 func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 	s := &pb.Stage{
 		Name:    stage.Name,
-		Asset:   stage.Asset,
+		Asset:   string(stage.Asset),
 		Service: stage.Service,
 		Rpc:     stage.Rpc,
 		Address: stage.Address,

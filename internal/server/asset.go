@@ -37,7 +37,10 @@ func logAsset(a *apitypes.Asset, field string) []zap.Field {
 	if a == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}
-	return []zap.Field{zap.String("name", a.Name), zap.String("image", a.Image)}
+	return []zap.Field{
+		zap.String("name", string(a.Name)),
+		zap.String("image", a.Image),
+	}
 }
 
 // validateCreateAssetConfig verifies if all conditions to create an asset are met.
@@ -46,7 +49,7 @@ func (s *Server) validateCreateAssetConfig(config *apitypes.Asset) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
-	if !naming.IsValidName(config.Name) {
+	if !naming.IsValidName(string(config.Name)) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			config.Name)

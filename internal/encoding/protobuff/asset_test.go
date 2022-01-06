@@ -32,7 +32,7 @@ func TestMarshalAsset(t *testing.T) {
 			name, func(t *testing.T) {
 				res, err := MarshalAsset(&in)
 				assert.NilError(t, err, "marshal error")
-				assert.Equal(t, in.Name, res.Name, "Asset Name")
+				assert.Equal(t, string(in.Name), res.Name, "Asset Name")
 				assert.Equal(t, in.Image, res.Image, "Asset Image")
 			})
 	}
@@ -54,7 +54,7 @@ func TestUnmarshalAsset(t *testing.T) {
 			name, func(t *testing.T) {
 				res, err := UnmarshalAsset(in)
 				assert.Equal(t, nil, err, "Error")
-				assert.Equal(t, in.Name, res.Name, "Asset Name")
+				assert.Equal(t, in.Name, string(res.Name), "Asset Name")
 			})
 	}
 }

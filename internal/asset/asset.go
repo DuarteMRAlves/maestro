@@ -5,13 +5,11 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
-const IdSize = 10
-
 // Asset represents components that can be orchestrated
 // They have a protobuf definition and an associated
 // docker image to be executed
 type Asset struct {
-	Name  string
+	Name  apitypes.AssetName
 	Image string
 }
 

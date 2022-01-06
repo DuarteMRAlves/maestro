@@ -80,7 +80,7 @@ func (o *AssetOpts) validate() error {
 
 func (o *AssetOpts) run() error {
 	asset := &apitypes.Asset{
-		Name:  o.name,
+		Name:  apitypes.AssetName(o.name),
 		Image: o.image,
 	}
 

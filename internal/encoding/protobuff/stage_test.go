@@ -93,7 +93,7 @@ func TestUnmarshalStageNil(t *testing.T) {
 
 func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
-	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
+	assert.Equal(t, string(expected.Asset), actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
@@ -103,7 +103,7 @@ func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *apitypes.Stage) {
 	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
-	assert.Equal(t, expected.Asset, actual.Asset, "asset id")
+	assert.Equal(t, expected.Asset, string(actual.Asset), "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")

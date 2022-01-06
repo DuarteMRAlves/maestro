@@ -9,7 +9,7 @@ import (
 
 type Store interface {
 	Create(description *Asset) error
-	Contains(name string) bool
+	Contains(name apitypes.AssetName) bool
 	Get(query *apitypes.Asset) []*Asset
 }
 
@@ -36,7 +36,7 @@ func (st *store) Create(config *Asset) error {
 	return nil
 }
 
-func (st *store) Contains(name string) bool {
+func (st *store) Contains(name apitypes.AssetName) bool {
 	_, ok := st.assets.Load(name)
 	return ok
 }
