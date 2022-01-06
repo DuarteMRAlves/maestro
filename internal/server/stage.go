@@ -33,7 +33,7 @@ func (s *Server) CreateStage(config *apitypes.Stage) error {
 
 func (s *Server) GetStage(query *apitypes.Stage) []*apitypes.Stage {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	stages := s.stageStore.Get(query)
+	stages := s.stageStore.GetMatching(query)
 	apiStages := make([]*apitypes.Stage, 0, len(stages))
 	for _, st := range stages {
 		apiStages = append(apiStages, st.ToApi())

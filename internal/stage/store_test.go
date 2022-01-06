@@ -192,7 +192,7 @@ func TestStore_Get(t *testing.T) {
 					assert.NilError(t, err, "create stage error")
 				}
 
-				received := st.Get(test.query)
+				received := st.GetMatching(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
 				seen := make(map[string]bool, 0)
@@ -273,7 +273,7 @@ func TestStore_Get_ByPhase(t *testing.T) {
 					assert.NilError(t, err, "create stage error")
 				}
 
-				received := st.Get(test.query)
+				received := st.GetMatching(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
 				seen := make(map[string]bool, 0)
