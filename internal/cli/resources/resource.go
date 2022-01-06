@@ -2,7 +2,7 @@ package resources
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
@@ -72,13 +72,13 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	switch r.Kind {
 	case assetKind:
-		r.Spec = new(AssetSpec)
+		r.Spec = new(apitypes.Asset)
 	case stageKind:
-		r.Spec = new(types.Stage)
+		r.Spec = new(apitypes.Stage)
 	case linkKind:
-		r.Spec = new(LinkSpec)
+		r.Spec = new(apitypes.Link)
 	case orchestrationKind:
-		r.Spec = new(OrchestrationSpec)
+		r.Spec = new(apitypes.Orchestration)
 	default:
 		return errdefs.InvalidArgumentWithMsg("unknown kind: '%v'", r.Kind)
 	}

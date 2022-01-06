@@ -5,7 +5,6 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
@@ -15,8 +14,8 @@ import (
 
 // assetForNum deterministically creates an asset resource with the given
 // number.
-func assetForNum(num int) *resources.AssetSpec {
-	return &resources.AssetSpec{
+func assetForNum(num int) *apitypes.Asset {
+	return &apitypes.Asset{
 		Name:  assetNameForNum(num),
 		Image: assetImageForNum(num),
 	}
@@ -38,8 +37,8 @@ func stageForNum(num int) *apitypes.Stage {
 // The associated source stage name is the one used in stageForNum with the num
 // argument. The associated target stage name is the one used in the stageForNum
 // with the num+1 argument.
-func linkForNum(num int) *resources.LinkSpec {
-	return &resources.LinkSpec{
+func linkForNum(num int) *apitypes.Link {
+	return &apitypes.Link{
 		Name:        linkNameForNum(num),
 		SourceStage: linkSourceStageForNum(num),
 		SourceField: linkSourceFieldForNum(num),
@@ -50,8 +49,8 @@ func linkForNum(num int) *resources.LinkSpec {
 
 // orchestrationForNum deterministically creates an orchestration resource with
 // the given number.
-func orchestrationForNum(num int) *resources.OrchestrationSpec {
-	return &resources.OrchestrationSpec{Name: orchestrationNameForNum(num)}
+func orchestrationForNum(num int) *apitypes.Orchestration {
+	return &apitypes.Orchestration{Name: orchestrationNameForNum(num)}
 }
 
 // assetNameForNum deterministically creates an asset name for a given number.
@@ -127,7 +126,7 @@ func orchestrationNameForNum(num int) string {
 // errors.
 func populateAssets(
 	t *testing.T,
-	assets []*resources.AssetSpec,
+	assets []*apitypes.Asset,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -183,7 +182,7 @@ func populateStages(
 // populateLinks creates the links in the server, asserting any occurred errors.
 func populateLinks(
 	t *testing.T,
-	links []*resources.LinkSpec,
+	links []*apitypes.Link,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -211,7 +210,7 @@ func populateLinks(
 // any occurred errors.
 func populateOrchestrations(
 	t *testing.T,
-	orchestrations []*resources.OrchestrationSpec,
+	orchestrations []*apitypes.Orchestration,
 	addr string,
 ) error {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())

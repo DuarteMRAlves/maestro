@@ -61,7 +61,7 @@ spec:
 var expected = []*Resource{
 	{
 		Kind: assetKind,
-		Spec: &AssetSpec{Name: assetName, Image: assetImage},
+		Spec: &apitypes.Asset{Name: assetName, Image: assetImage},
 	},
 	{
 		Kind: stageKind,
@@ -74,7 +74,7 @@ var expected = []*Resource{
 	},
 	{
 		Kind: linkKind,
-		Spec: &LinkSpec{
+		Spec: &apitypes.Link{
 			Name:        linkName,
 			SourceStage: linkSourceStage,
 			SourceField: linkSourceField,

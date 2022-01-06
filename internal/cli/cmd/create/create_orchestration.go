@@ -2,8 +2,8 @@ package create
 
 import (
 	"context"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
@@ -91,7 +91,7 @@ func (o *OrchestrationOpts) validate() error {
 // run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
 func (o *OrchestrationOpts) run() error {
-	or := &resources.OrchestrationSpec{
+	or := &apitypes.Orchestration{
 		Name:  o.name,
 		Links: o.links,
 	}
