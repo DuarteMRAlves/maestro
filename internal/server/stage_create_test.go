@@ -11,13 +11,12 @@ import (
 	"testing"
 )
 
-const stageName = "stage-name"
-
 func TestServer_CreateStage(t *testing.T) {
 	var (
 		lis                         net.Listener
 		registerTest, registerExtra bool
 	)
+	const name = "stage-name"
 
 	lis = testutil.ListenAvailablePort(t)
 	tcpAddr, ok := lis.Addr().(*net.TCPAddr)
@@ -48,7 +47,7 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "nil asset, service and rpc",
 			config: &types.Stage{
-				Name: stageName,
+				Name: name,
 				// ExtraServer only has one server and rpc
 				Address: extraAddr,
 			},
@@ -56,8 +55,8 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "no service and specified rpc",
 			config: &types.Stage{
-				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Name:    name,
+				Asset:   testutil.AssetNameForNum(0),
 				Service: "",
 				Rpc:     "Unary",
 				// testServer only has one service but four rpcs
@@ -67,8 +66,8 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "with service and no rpc",
 			config: &types.Stage{
-				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Name:    name,
+				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.ExtraService",
 				Rpc:     "",
 				// both has two services and one rpc for ExtraService
@@ -78,8 +77,8 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "with service and rpc",
 			config: &types.Stage{
-				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Name:    name,
+				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.TestService",
 				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
@@ -89,8 +88,8 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "from host and port",
 			config: &types.Stage{
-				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Name:    name,
+				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.TestService",
 				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
@@ -136,21 +135,21 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 			name: "empty name",
 			config: &types.Stage{
 				Name:  "",
-				Asset: assetNameForNum(0),
+				Asset: testutil.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid characters in name",
 			config: &types.Stage{
 				Name:  "some@name",
-				Asset: assetNameForNum(0),
+				Asset: testutil.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid character sequence",
 			config: &types.Stage{
 				Name:  "other-/name",
-				Asset: assetNameForNum(0),
+				Asset: testutil.AssetNameForNum(0),
 			},
 		},
 	}
@@ -176,23 +175,25 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateStage_AssetNotFound(t *testing.T) {
+	const name = "stage-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForStages(t, s)
 
 	config := &types.Stage{
-		Name:  stageName,
-		Asset: assetNameForNum(1),
+		Name:  name,
+		Asset: testutil.AssetNameForNum(1),
 	}
 
 	err = s.CreateStage(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("asset '%v' not found", assetNameForNum(1))
+	expectedMsg := fmt.Sprintf("asset '%v' not found", testutil.AssetNameForNum(1))
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
+	const name = "stage-name"
 
 	lis := testutil.ListenAvailablePort(t)
 	bothAddr := lis.Addr().String()
@@ -204,8 +205,8 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	populateForStages(t, s)
 
 	config := &types.Stage{
-		Name:    stageName,
-		Asset:   assetNameForNum(0),
+		Name:    name,
+		Asset:   testutil.AssetNameForNum(0),
 		Service: "pb.TestService",
 		Rpc:     "Unary",
 		// both has two services and four rpcs for TestService
@@ -216,11 +217,12 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateStage(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not AlreadyExists")
-	expectedMsg := fmt.Sprintf("stage '%v' already exists", stageName)
+	expectedMsg := fmt.Sprintf("stage '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateStage_Error(t *testing.T) {
+	const name = "stage-name"
 	tests := []struct {
 		name            string
 		registerTest    bool
@@ -234,74 +236,74 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerTest:  false,
 			registerExtra: false,
 			config: &types.Stage{
-				Name:  stageName,
-				Asset: assetNameForNum(0),
+				Name:  name,
+				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
 				"find service without name for stage %v: expected 1 "+
 					"available service but 0 found",
-				stageName),
+				name),
 		},
 		{
 			name:          "too many services",
 			registerTest:  true,
 			registerExtra: true,
 			config: &types.Stage{
-				Name:  stageName,
-				Asset: assetNameForNum(0),
+				Name:  name,
+				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
 				"find service without name for stage %v: expected 1 "+
 					"available service but 2 found",
-				stageName),
+				name),
 		},
 		{
 			name:          "no such service",
 			registerTest:  true,
 			registerExtra: true,
 			config: &types.Stage{
-				Name:    stageName,
-				Asset:   assetNameForNum(0),
+				Name:    name,
+				Asset:   testutil.AssetNameForNum(0),
 				Service: "NoSuchService",
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
 				"service with name NoSuchService not found for stage %v",
-				stageName),
+				name),
 		},
 		{
 			name:         "too many rpcs",
 			registerTest: true,
 			config: &types.Stage{
-				Name:  stageName,
-				Asset: assetNameForNum(0),
+				Name:  name,
+				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
 				"find rpc without name for stage %v: expected 1 available "+
 					"rpc but 4 found",
-				stageName),
+				name),
 		},
 		{
 			name:          "no such rpc",
 			registerTest:  true,
 			registerExtra: false,
 			config: &types.Stage{
-				Name:  stageName,
-				Asset: assetNameForNum(0),
+				Name:  name,
+				Asset: testutil.AssetNameForNum(0),
 				Rpc:   "NoSuchRpc",
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
 				"rpc with name NoSuchRpc not found for stage %v",
-				stageName),
+				name),
 		},
 	}
 	for _, test := range tests {

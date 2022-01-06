@@ -2,17 +2,17 @@ package server
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 // assetForNum deterministically creates an asset with the given number.
 func assetForNum(num int) *asset.Asset {
-	name := assetNameForNum(num)
+	name := testutil.AssetNameForNum(num)
 	return &asset.Asset{
 		Name:  name,
 		Image: fmt.Sprintf("image-%v", name),
@@ -22,8 +22,8 @@ func assetForNum(num int) *asset.Asset {
 // stageForNum deterministically creates a stage with the given number.
 // The associated asset name is the one used in assetForNum.
 func stageForNum(num int) *stage.Stage {
-	name := stageNameForNum(num)
-	assetName := assetNameForNum(num)
+	name := testutil.StageNameForNum(num)
+	assetName := testutil.AssetNameForNum(num)
 	return &stage.Stage{
 		Name:    name,
 		Asset:   assetName,
@@ -36,9 +36,9 @@ func stageForNum(num int) *stage.Stage {
 // argument. The associated target stage name is the one used in the stageForNum
 // with the num+1 argument.
 func linkForNum(num int) *link.Link {
-	name := linkNameForNum(num)
-	sourceStage := stageNameForNum(num)
-	targetStage := stageNameForNum(num + 1)
+	name := testutil.LinkNameForNum(num)
+	sourceStage := testutil.StageNameForNum(num)
+	targetStage := testutil.StageNameForNum(num + 1)
 	return &link.Link{
 		Name:        name,
 		SourceStage: sourceStage,
@@ -46,21 +46,6 @@ func linkForNum(num int) *link.Link {
 		TargetStage: targetStage,
 		TargetField: fmt.Sprintf("target-field-%v", num),
 	}
-}
-
-// assetNameForNum deterministically creates an asset name for a given number.
-func assetNameForNum(num int) apitypes.AssetName {
-	return apitypes.AssetName(fmt.Sprintf("asset-%v", num))
-}
-
-// stageNameForNum deterministically creates a stage name for a given number.
-func stageNameForNum(num int) string {
-	return fmt.Sprintf("stage-%v", num)
-}
-
-// linkNameForNum deterministically creates a link name for a given number.
-func linkNameForNum(num int) string {
-	return fmt.Sprintf("link-%v", num)
 }
 
 // populateAssets creates the assets in the server, asserting any occurred

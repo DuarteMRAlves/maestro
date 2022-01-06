@@ -12,9 +12,8 @@ import (
 	"testing"
 )
 
-const oName = "orchestration-name"
-
 func TestServer_CreateOrchestration(t *testing.T) {
+	const name = "orchestration-name"
 	tests := []struct {
 		name   string
 		config *apitypes.Orchestration
@@ -22,32 +21,32 @@ func TestServer_CreateOrchestration(t *testing.T) {
 		{
 			name: "correct with nil links",
 			config: &apitypes.Orchestration{
-				Name:  oName,
+				Name:  name,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with empty links",
 			config: &apitypes.Orchestration{
-				Name:  oName,
+				Name:  name,
 				Links: []string{},
 			},
 		},
 		{
 			name: "correct with one link",
 			config: &apitypes.Orchestration{
-				Name:  oName,
-				Links: []string{linkNameForNum(0)},
+				Name:  name,
+				Links: []string{testutil.LinkNameForNum(0)},
 			},
 		},
 		{
 			name: "correct with multiple links",
 			config: &apitypes.Orchestration{
-				Name: oName,
+				Name: name,
 				Links: []string{
-					linkNameForNum(0),
-					linkNameForNum(2),
-					linkNameForNum(1),
+					testutil.LinkNameForNum(0),
+					testutil.LinkNameForNum(2),
+					testutil.LinkNameForNum(1),
 				},
 			},
 		},
@@ -91,9 +90,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			config: &apitypes.Orchestration{
 				Name: "",
 				Links: []string{
-					linkNameForNum(0),
-					linkNameForNum(1),
-					linkNameForNum(2),
+					testutil.LinkNameForNum(0),
+					testutil.LinkNameForNum(1),
+					testutil.LinkNameForNum(2),
 				},
 			},
 		},
@@ -102,9 +101,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			config: &apitypes.Orchestration{
 				Name: "?orchestration-name",
 				Links: []string{
-					linkNameForNum(0),
-					linkNameForNum(1),
-					linkNameForNum(2),
+					testutil.LinkNameForNum(0),
+					testutil.LinkNameForNum(1),
+					testutil.LinkNameForNum(2),
 				},
 			},
 		},
@@ -113,9 +112,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			config: &apitypes.Orchestration{
 				Name: "invalid//name",
 				Links: []string{
-					linkNameForNum(0),
-					linkNameForNum(1),
-					linkNameForNum(2),
+					testutil.LinkNameForNum(0),
+					testutil.LinkNameForNum(1),
+					testutil.LinkNameForNum(2),
 				},
 			},
 		},
@@ -142,39 +141,40 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 }
 
 func TestServer_CreateOrchestration_LinkNotFound(t *testing.T) {
+	const name = "orchestration-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForOrchestrations(t, s)
 
 	config := &apitypes.Orchestration{
-		Name: oName,
+		Name: name,
 		Links: []string{
-			linkNameForNum(0),
+			testutil.LinkNameForNum(0),
 			// This link does not exist
-			linkNameForNum(3),
-			linkNameForNum(2),
+			testutil.LinkNameForNum(3),
+			testutil.LinkNameForNum(2),
 		},
 	}
 
 	err = s.CreateOrchestration(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("link '%v' not found", linkNameForNum(3))
+	expectedMsg := fmt.Sprintf("link '%v' not found", testutil.LinkNameForNum(3))
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	var err error
-
+	const name = "orchestration-name"
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
 	populateForOrchestrations(t, s)
 
 	config := &apitypes.Orchestration{
-		Name: oName,
+		Name: name,
 		Links: []string{
-			linkNameForNum(0),
-			linkNameForNum(1),
-			linkNameForNum(2),
+			testutil.LinkNameForNum(0),
+			testutil.LinkNameForNum(1),
+			testutil.LinkNameForNum(2),
 		},
 	}
 
@@ -182,7 +182,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateOrchestration(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
-	expectedMsg := fmt.Sprintf("orchestration '%v' already exists", oName)
+	expectedMsg := fmt.Sprintf("orchestration '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
 }
 
