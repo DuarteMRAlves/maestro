@@ -11,7 +11,7 @@ type Store interface {
 	Create(s *Stage) error
 	Contains(name string) bool
 	GetByName(name string) (*Stage, bool)
-	Get(query *apitypes.Stage) []*Stage
+	GetMatching(query *apitypes.Stage) []*Stage
 }
 
 type store struct {
@@ -49,7 +49,7 @@ func (st *store) GetByName(name string) (*Stage, bool) {
 	return stage, ok
 }
 
-func (st *store) Get(query *apitypes.Stage) []*Stage {
+func (st *store) GetMatching(query *apitypes.Stage) []*Stage {
 	if query == nil {
 		query = &apitypes.Stage{}
 	}
