@@ -3,8 +3,9 @@ package stage
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/stage/input"
+	"github.com/DuarteMRAlves/maestro/internal/stage/output"
 	"github.com/DuarteMRAlves/maestro/internal/worker"
 )
 
@@ -22,19 +23,15 @@ type Stage struct {
 	Worker worker.Worker
 
 	// Input and Output describe the connections to other stages
-	Input  Input
-	Output Output
+	Input  *input.Input
+	Output *output.Output
 }
 
 func NewDefault() *Stage {
 	return &Stage{
-		Phase: apitypes.StagePending,
-		Input: Input{
-			connections: map[string]link.Link{},
-		},
-		Output: Output{
-			connections: map[string]link.Link{},
-		},
+		Phase:  apitypes.StagePending,
+		Input:  input.NewDefault(),
+		Output: output.NewDefault(),
 	}
 }
 
@@ -59,16 +56,6 @@ func (s *Stage) ToApi() *apitypes.Stage {
 		Rpc:     s.Rpc.Name(),
 		Address: s.Address,
 	}
-}
-
-// Input represents the several input fields
-type Input struct {
-	connections map[string]link.Link
-}
-
-// Output represents the several input fields
-type Output struct {
-	connections map[string]link.Link
 }
 
 // String provides a string representation for the stage.
