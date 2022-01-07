@@ -46,7 +46,7 @@ func (s *Server) validateCreateAssetConfig(config *apitypes.Asset) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
-	if !naming.IsValidName(string(config.Name)) {
+	if !naming.IsValidAssetName(config.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			config.Name)
