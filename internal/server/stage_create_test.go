@@ -242,8 +242,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
-				"find service without name for stage %v: expected 1 "+
-					"available service but 0 found",
+				"stage %s: find rpc: find service without name: expected 1 "+
+					"available service but found 0",
 				name),
 		},
 		{
@@ -257,8 +257,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
-				"find service without name for stage %v: expected 1 "+
-					"available service but 2 found",
+				"stage %s: find rpc: find service without name: expected 1 "+
+					"available service but found 2",
 				name),
 		},
 		{
@@ -273,7 +273,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			},
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
-				"service with name NoSuchService not found for stage %v",
+				"stage %s: find rpc: find service with name NoSuchService:"+
+					" not found",
 				name),
 		},
 		{
@@ -286,8 +287,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg: fmt.Sprintf(
-				"find rpc without name for stage %v: expected 1 available "+
-					"rpc but 4 found",
+				"stage %v: find rpc: find rpc without name: expected 1 "+
+					"available rpc but found 4",
 				name),
 		},
 		{
@@ -302,7 +303,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			},
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
-				"rpc with name NoSuchRpc not found for stage %v",
+				"stage %v: find rpc: find rpc with name NoSuchRpc: not found",
 				name),
 		},
 	}

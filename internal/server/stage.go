@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/discovery"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"github.com/DuarteMRAlves/maestro/internal/worker"
@@ -129,84 +129,13 @@ func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	reflectionClient := reflection.NewClient(ctx, conn)
-	availableServices, err := reflectionClient.ListServices()
+	rpcDiscoveryCfg := &discovery.Config{
+		Service: cfg.Service,
+		Rpc:     cfg.Rpc,
+	}
+	st.Rpc, err = discovery.FindRpc(ctx, conn, rpcDiscoveryCfg)
 	if err != nil {
-		return err
+		return errdefs.PrependMsg(err, "stage %v", st.Name)
 	}
-	serviceName, err := findService(st, availableServices, cfg)
-	if err != nil {
-		return err
-	}
-	service, err := reflectionClient.ResolveService(serviceName)
-	if err != nil {
-		return err
-	}
-	return inferRpcFromServices(st, service.RPCs(), cfg)
-}
-
-// findService finds the service that should be used to call the stage rpc.
-// It tries to find the specified service among the available services. If the
-// service is not specified, then only one available service must exist that
-// will be used. An error is returned if none of the above conditions is
-// verified.
-func findService(
-	st *stage.Stage,
-	available []string,
-	cfg *apitypes.Stage,
-) (string, error) {
-	search := cfg.Service
-	if search == "" {
-		if len(available) == 1 {
-			return available[0], nil
-		}
-		return "", errdefs.InvalidArgumentWithMsg(
-			"find service without name for stage %v: expected 1 "+
-				"available service but %v found",
-			st.Name,
-			len(available))
-	} else {
-		for _, s := range available {
-			if search == s {
-				return search, nil
-			}
-		}
-		return "", errdefs.NotFoundWithMsg(
-			"service with name %v not found for stage %v",
-			search,
-			st.Name)
-	}
-}
-
-// inferRpcFromServices verifies that the rpc to be called for the stage exists. If a
-// rpc was specified in the config, then it verifies it exists in the available
-// rpcs. Otherwise, it verifies only a single rpc is available.
-func inferRpcFromServices(
-	st *stage.Stage,
-	available []reflection.RPC,
-	cfg *apitypes.Stage,
-) error {
-	search := cfg.Rpc
-	if search == "" {
-		if len(available) == 1 {
-			st.Rpc = available[0]
-			return nil
-		}
-		return errdefs.InvalidArgumentWithMsg(
-			"find rpc without name for stage %v: expected 1 available "+
-				"rpc but %v found",
-			st.Name,
-			len(available))
-	} else {
-		for _, rpc := range available {
-			if search == rpc.Name() {
-				st.Rpc = rpc
-				return nil
-			}
-		}
-		return errdefs.NotFoundWithMsg(
-			"rpc with name %v not found for stage %v",
-			search,
-			st.Name)
-	}
+	return nil
 }
