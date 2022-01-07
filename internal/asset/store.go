@@ -27,11 +27,11 @@ func (st *store) Create(config *Asset) error {
 	}
 
 	asset := config.Clone()
-	_, prev := st.assets.LoadOrStore(asset.Name, asset)
+	_, prev := st.assets.LoadOrStore(asset.Name(), asset)
 	if prev {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",
-			asset.Name)
+			asset.Name())
 	}
 	return nil
 }
@@ -67,14 +67,14 @@ func buildQueryFilter(query *apitypes.Asset) func(a *Asset) bool {
 		filters = append(
 			filters,
 			func(a *Asset) bool {
-				return a.Name == query.Name
+				return a.Name() == query.Name
 			})
 	}
 	if query.Image != "" {
 		filters = append(
 			filters,
 			func(a *Asset) bool {
-				return a.Image == query.Image
+				return a.Image() == query.Image
 			})
 	}
 	if len(filters) > 0 {

@@ -13,10 +13,8 @@ import (
 // assetForNum deterministically creates an asset with the given number.
 func assetForNum(num int) *asset.Asset {
 	name := testutil.AssetNameForNum(num)
-	return &asset.Asset{
-		Name:  name,
-		Image: fmt.Sprintf("image-%v", name),
-	}
+	img := testutil.AssetImageForNum(num)
+	return asset.New(name, img)
 }
 
 // stageForNum deterministically creates a stage with the given number.
