@@ -22,21 +22,21 @@ func TestStore_Create(t *testing.T) {
 		{
 			name: "non default parameters",
 			config: &Link{
-				Name:        linkName,
-				SourceStage: linkSourceStage,
-				SourceField: linkSourceField,
-				TargetStage: linkTargetStage,
-				TargetField: linkTargetField,
+				name:        linkName,
+				sourceStage: linkSourceStage,
+				sourceField: linkSourceField,
+				targetStage: linkTargetStage,
+				targetField: linkTargetField,
 			},
 		},
 		{
 			name: "default parameters",
 			config: &Link{
-				Name:        "",
-				SourceStage: "",
-				SourceField: "",
-				TargetStage: "",
-				TargetField: "",
+				name:        "",
+				sourceStage: "",
+				sourceField: "",
+				targetStage: "",
+				targetField: "",
 			},
 		},
 	}
@@ -54,30 +54,30 @@ func TestStore_Create(t *testing.T) {
 				err := st.Create(cfg)
 				assert.NilError(t, err, "create error")
 				assert.Equal(t, 1, lenLinks(st), "store size")
-				stored, ok := st.links.Load(cfg.Name)
+				stored, ok := st.links.Load(cfg.name)
 				assert.Assert(t, ok, "link exists")
 				s, ok := stored.(*Link)
 				assert.Assert(t, ok, "link type assertion failed")
-				assert.Equal(t, cfg.Name, s.Name, "correct name")
+				assert.Equal(t, cfg.name, s.name, "correct name")
 				assert.Equal(
 					t,
-					cfg.SourceStage,
-					s.SourceStage,
+					cfg.sourceStage,
+					s.sourceStage,
 					"correct source stage")
 				assert.Equal(
 					t,
-					cfg.SourceField,
-					s.SourceField,
+					cfg.sourceField,
+					s.sourceField,
 					"correct source field")
 				assert.Equal(
 					t,
-					cfg.TargetStage,
-					s.TargetStage,
+					cfg.targetStage,
+					s.targetStage,
 					"correct target stage")
 				assert.Equal(
 					t,
-					cfg.TargetField,
-					s.TargetField,
+					cfg.targetField,
+					s.targetField,
 					"correct target field")
 			})
 	}
@@ -221,11 +221,11 @@ func TestStore_Get(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.Name]
+					alreadySeen, exists := seen[r.name]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.Name] = true
+					seen[r.name] = true
 				}
 
 				for _, e := range test.expected {
@@ -238,10 +238,10 @@ func TestStore_Get(t *testing.T) {
 
 func linkForNum(num int) *Link {
 	return &Link{
-		Name:        testutil.LinkNameForNum(num),
-		SourceStage: testutil.LinkSourceStageForNum(num),
-		SourceField: testutil.LinkSourceFieldForNum(num),
-		TargetStage: testutil.LinkTargetStageForNum(num),
-		TargetField: testutil.LinkTargetFieldForNum(num),
+		name:        testutil.LinkNameForNum(num),
+		sourceStage: testutil.LinkSourceStageForNum(num),
+		sourceField: testutil.LinkSourceFieldForNum(num),
+		targetStage: testutil.LinkTargetStageForNum(num),
+		targetField: testutil.LinkTargetFieldForNum(num),
 	}
 }

@@ -16,13 +16,13 @@ func (s *Server) CreateLink(config *apitypes.Link) error {
 	if err := s.validateCreateLinkConfig(config); err != nil {
 		return err
 	}
-	l := &link.Link{
-		Name:        config.Name,
-		SourceStage: config.SourceStage,
-		SourceField: config.SourceField,
-		TargetStage: config.TargetStage,
-		TargetField: config.TargetField,
-	}
+	l := link.New(
+		config.Name,
+		config.SourceStage,
+		config.SourceField,
+		config.TargetStage,
+		config.TargetField,
+	)
 	return s.linkStore.Create(l)
 }
 
