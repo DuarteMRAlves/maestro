@@ -27,9 +27,9 @@ func (st *store) Create(config *Link) error {
 	}
 
 	l := config.Clone()
-	_, prev := st.links.LoadOrStore(l.Name, l)
+	_, prev := st.links.LoadOrStore(l.name, l)
 	if prev {
-		return errdefs.AlreadyExistsWithMsg("link '%v' already exists", l.Name)
+		return errdefs.AlreadyExistsWithMsg("link '%v' already exists", l.name)
 	}
 	return nil
 }
@@ -67,35 +67,35 @@ func buildQueryFilter(query *apitypes.Link) func(l *Link) bool {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.Name == query.Name
+				return l.name == query.Name
 			})
 	}
 	if query.SourceStage != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.SourceStage == query.SourceStage
+				return l.sourceStage == query.SourceStage
 			})
 	}
 	if query.SourceField != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.SourceField == query.SourceField
+				return l.sourceField == query.SourceField
 			})
 	}
 	if query.TargetStage != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.TargetStage == query.TargetStage
+				return l.targetStage == query.TargetStage
 			})
 	}
 	if query.TargetField != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.TargetField == query.TargetField
+				return l.targetField == query.TargetField
 			})
 	}
 	switch len(filters) {

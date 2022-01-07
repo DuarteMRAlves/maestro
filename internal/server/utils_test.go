@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
@@ -32,15 +31,11 @@ func stageForNum(num int) *stage.Stage {
 // with the num+1 argument.
 func linkForNum(num int) *link.Link {
 	name := testutil.LinkNameForNum(num)
-	sourceStage := testutil.StageNameForNum(num)
-	targetStage := testutil.StageNameForNum(num + 1)
-	return &link.Link{
-		Name:        name,
-		SourceStage: sourceStage,
-		SourceField: fmt.Sprintf("source-field-%v", num),
-		TargetStage: targetStage,
-		TargetField: fmt.Sprintf("target-field-%v", num),
-	}
+	sourceStage := testutil.LinkSourceStageForNum(num)
+	sourceField := testutil.LinkSourceFieldForNum(num)
+	targetStage := testutil.LinkTargetStageForNum(num)
+	targetField := testutil.LinkTargetFieldForNum(num)
+	return link.New(name, sourceStage, sourceField, targetStage, targetField)
 }
 
 // populateAssets creates the assets in the server, asserting any occurred
