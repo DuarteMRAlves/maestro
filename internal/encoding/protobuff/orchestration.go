@@ -19,7 +19,7 @@ func MarshalOrchestration(o *apitypes.Orchestration) (
 		links = append(links, l)
 	}
 	protoBp := &pb.Orchestration{
-		Name:  o.Name,
+		Name:  string(o.Name),
 		Links: links,
 	}
 	return protoBp, nil
@@ -41,7 +41,7 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 	}
 
 	return &apitypes.Orchestration{
-		Name:  p.Name,
+		Name:  apitypes.OrchestrationName(p.Name),
 		Links: links,
 	}, nil
 }

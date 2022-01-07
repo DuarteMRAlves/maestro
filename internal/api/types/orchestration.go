@@ -5,8 +5,11 @@ package types
 type Orchestration struct {
 	// Name that should be associated with the orchestration.
 	// (required, unique)
-	Name string `yaml:"name" info:"required"`
+	Name OrchestrationName `yaml:"name" info:"required"`
 	// Links specifies the name of the links that compose this orchestration.
 	// (required, non-empty)
 	Links []string `yaml:"links" info:"required"`
 }
+
+// OrchestrationName is a name that uniquely identifies an Orchestration.
+type OrchestrationName string

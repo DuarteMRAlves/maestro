@@ -7,7 +7,7 @@ import (
 )
 
 func TestStore_CreateCorrect(t *testing.T) {
-	const oName = "Orchestration Name"
+	const oName apitypes.OrchestrationName = "Orchestration Name"
 	tests := []struct {
 		name   string
 		config *Orchestration
@@ -77,37 +77,37 @@ func TestStore_Get_Correct(t *testing.T) {
 		query  *apitypes.Orchestration
 		stored []*Orchestration
 		// names of the expected orchestrations
-		expected []string
+		expected []apitypes.OrchestrationName
 	}{
 		{
 			name:     "zero elements stored, nil query",
 			query:    nil,
 			stored:   []*Orchestration{},
-			expected: []string{},
+			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:     "zero elements stored, some query",
 			query:    &apitypes.Orchestration{Name: "some-name"},
 			stored:   []*Orchestration{},
-			expected: []string{},
+			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:     "one element stored, nil query",
 			query:    nil,
 			stored:   []*Orchestration{orchestrationForName("some-name")},
-			expected: []string{"some-name"},
+			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
 			name:     "one element stored, matching query",
 			query:    &apitypes.Orchestration{Name: "some-name"},
 			stored:   []*Orchestration{orchestrationForName("some-name")},
-			expected: []string{"some-name"},
+			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
 			name:     "one element stored, non-matching query",
 			query:    &apitypes.Orchestration{Name: "unknown-name"},
 			stored:   []*Orchestration{orchestrationForName("some-name")},
-			expected: []string{},
+			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:  "multiple elements stored, nil query",
@@ -117,7 +117,11 @@ func TestStore_Get_Correct(t *testing.T) {
 				orchestrationForName("some-name-2"),
 				orchestrationForName("some-name-3"),
 			},
-			expected: []string{"some-name-1", "some-name-2", "some-name-3"},
+			expected: []apitypes.OrchestrationName{
+				"some-name-1",
+				"some-name-2",
+				"some-name-3",
+			},
 		},
 		{
 			name:  "multiple elements stored, matching query",
@@ -127,7 +131,7 @@ func TestStore_Get_Correct(t *testing.T) {
 				orchestrationForName("some-name-2"),
 				orchestrationForName("some-name-3"),
 			},
-			expected: []string{"some-name-2"},
+			expected: []apitypes.OrchestrationName{"some-name-2"},
 		},
 		{
 			name:  "multiple elements stored, non-matching query",
@@ -137,7 +141,7 @@ func TestStore_Get_Correct(t *testing.T) {
 				orchestrationForName("some-name-2"),
 				orchestrationForName("some-name-3"),
 			},
-			expected: []string{},
+			expected: []apitypes.OrchestrationName{},
 		},
 	}
 
@@ -155,7 +159,7 @@ func TestStore_Get_Correct(t *testing.T) {
 				received := st.Get(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[string]bool, 0)
+				seen := make(map[apitypes.OrchestrationName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}
@@ -176,7 +180,7 @@ func TestStore_Get_Correct(t *testing.T) {
 	}
 }
 
-func orchestrationForName(name string) *Orchestration {
+func orchestrationForName(name apitypes.OrchestrationName) *Orchestration {
 	return &Orchestration{
 		name:  name,
 		links: []string{"link-1", "link-2"},

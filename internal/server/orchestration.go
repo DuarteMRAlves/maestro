@@ -44,7 +44,7 @@ func logOrchestration(
 		return []zap.Field{zap.String(field, "null")}
 	}
 	return []zap.Field{
-		zap.String("name", o.Name),
+		zap.String("name", string(o.Name)),
 		zap.Strings("links", o.Links),
 	}
 }
@@ -58,7 +58,7 @@ func (s *Server) validateCreateOrchestrationConfig(
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
-	if !naming.IsValidName(config.Name) {
+	if !naming.IsValidName(string(config.Name)) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 	for _, l := range config.Links {

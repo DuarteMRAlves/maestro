@@ -110,7 +110,7 @@ func (c *client) CreateOrchestration(
 	orchestration *apitypes.Orchestration,
 ) error {
 	o := &pb.Orchestration{
-		Name:  orchestration.Name,
+		Name:  string(orchestration.Name),
 		Links: orchestration.Links,
 	}
 

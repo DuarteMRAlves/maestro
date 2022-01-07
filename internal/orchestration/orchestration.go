@@ -8,19 +8,19 @@ import (
 // Orchestration defines a set of links and stages that will be executed.
 type Orchestration struct {
 	// name defines a unique name for the orchestrations.
-	name string
+	name apitypes.OrchestrationName
 	// links specifies the names of the links contained in the orchestration.
 	links []string
 }
 
-func New(name string, links []string) *Orchestration {
+func New(name apitypes.OrchestrationName, links []string) *Orchestration {
 	return &Orchestration{
 		name:  name,
 		links: links,
 	}
 }
 
-func (o *Orchestration) Name() string {
+func (o *Orchestration) Name() apitypes.OrchestrationName {
 	return o.name
 }
 
