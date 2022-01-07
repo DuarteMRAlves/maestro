@@ -22,19 +22,19 @@ func TestStore_Create(t *testing.T) {
 		{
 			name: "non default params",
 			config: &Stage{
-				Name:    stageName,
-				Phase:   stagePhase,
-				Asset:   stageAsset,
-				Address: stageAddress,
+				name:    stageName,
+				phase:   stagePhase,
+				asset:   stageAsset,
+				address: stageAddress,
 			},
 		},
 		{
 			name: "default params",
 			config: &Stage{
-				Name:    "",
-				Phase:   "",
-				Asset:   "",
-				Address: "",
+				name:    "",
+				phase:   "",
+				asset:   "",
+				address: "",
 			},
 		},
 	}
@@ -52,12 +52,12 @@ func TestStore_Create(t *testing.T) {
 				err := st.Create(cfg)
 				assert.NilError(t, err, "create error")
 				assert.Equal(t, 1, lenStages(st), "store size")
-				stored, ok := st.stages.Load(cfg.Name)
+				stored, ok := st.stages.Load(cfg.name)
 				assert.Assert(t, ok, "stage exists")
 				s, ok := stored.(*Stage)
 				assert.Assert(t, ok, "stage type assertion failed")
-				assert.Equal(t, cfg.Name, s.Name, "correct name")
-				assert.Equal(t, cfg.Asset, s.Asset, "correct asset")
+				assert.Equal(t, cfg.name, s.name, "correct name")
+				assert.Equal(t, cfg.asset, s.asset, "correct asset")
 			})
 	}
 }
@@ -200,11 +200,11 @@ func TestStore_Get(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.Name]
+					alreadySeen, exists := seen[r.name]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.Name] = true
+					seen[r.name] = true
 				}
 
 				for _, e := range test.expected {
@@ -218,16 +218,16 @@ func TestStore_Get(t *testing.T) {
 func TestStore_Get_ByPhase(t *testing.T) {
 	stored := []*Stage{
 		{
-			Name:  testutil.StageNameForNum(0),
-			Phase: apitypes.StagePending,
+			name:  testutil.StageNameForNum(0),
+			phase: apitypes.StagePending,
 		},
 		{
-			Name:  testutil.StageNameForNum(1),
-			Phase: apitypes.StageRunning,
+			name:  testutil.StageNameForNum(1),
+			phase: apitypes.StageRunning,
 		},
 		{
-			Name:  testutil.StageNameForNum(2),
-			Phase: apitypes.StagePending,
+			name:  testutil.StageNameForNum(2),
+			phase: apitypes.StagePending,
 		},
 	}
 	tests := []struct {
@@ -281,11 +281,11 @@ func TestStore_Get_ByPhase(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.Name]
+					alreadySeen, exists := seen[r.name]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.Name] = true
+					seen[r.name] = true
 				}
 
 				for _, e := range test.expected {
@@ -298,10 +298,10 @@ func TestStore_Get_ByPhase(t *testing.T) {
 
 func stageForNum(num int) *Stage {
 	return &Stage{
-		Name:    testutil.StageNameForNum(num),
-		Asset:   testutil.AssetNameForNum(num),
-		Address: testutil.StageAddressForNum(num),
-		Rpc: &mock.RPC{
+		name:    testutil.StageNameForNum(num),
+		asset:   testutil.AssetNameForNum(num),
+		address: testutil.StageAddressForNum(num),
+		rpc: &mock.RPC{
 			Name_: testutil.StageRpcForNum(num),
 			Service_: &mock.Service{
 				Name_: testutil.StageServiceForNum(num),

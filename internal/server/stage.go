@@ -7,9 +7,9 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/discovery"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
-	"github.com/DuarteMRAlves/maestro/internal/worker"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
@@ -18,20 +18,17 @@ import (
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(config *apitypes.Stage) error {
-	var (
-		st  *stage.Stage
-		err error
-	)
+	var err error
 	s.logger.Info("Create Stage.", logStage(config, "config")...)
-	if st, err = s.createStageFromConfig(config); err != nil {
+	if err := s.validateCreateStageConfig(config); err != nil {
 		return err
 	}
-	if err = s.inferRpc(st, config); err != nil {
+	address := s.inferStageAddress(config)
+	rpc, err := s.inferRpc(address, config)
+	if err != nil {
 		return err
 	}
-	if st.Worker, err = worker.NewWorker(st.Address, st.Rpc); err != nil {
-		return err
-	}
+	st := stage.New(config.Name, address, config.Asset, rpc)
 	return s.stageStore.Create(st)
 }
 
@@ -58,30 +55,6 @@ func logStage(s *apitypes.Stage, field string) []zap.Field {
 		zap.String("host", s.Host),
 		zap.Int32("port", s.Port),
 	}
-}
-
-func (s *Server) createStageFromConfig(
-	config *apitypes.Stage,
-) (*stage.Stage, error) {
-	if err := s.validateCreateStageConfig(config); err != nil {
-		return nil, err
-	}
-	st := stage.NewDefault()
-	st.Name = config.Name
-	st.Asset = config.Asset
-	st.Address = config.Address
-	// If address is empty, fill it from config host and port.
-	if st.Address == "" {
-		host, port := config.Host, config.Port
-		if host == "" {
-			host = "localhost"
-		}
-		if port == 0 {
-			port = 8061
-		}
-		st.Address = fmt.Sprintf("%s:%d", host, port)
-	}
-	return st, nil
 }
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
@@ -115,15 +88,33 @@ func (s *Server) validateCreateStageConfig(config *apitypes.Stage) error {
 	return nil
 }
 
-func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
-	address := st.Address
+func (s *Server) inferStageAddress(config *apitypes.Stage) string {
+	address := config.Address
+	// If address is empty, fill it from config host and port.
+	if address == "" {
+		host, port := config.Host, config.Port
+		if host == "" {
+			host = "localhost"
+		}
+		if port == 0 {
+			port = 8061
+		}
+		address = fmt.Sprintf("%s:%d", host, port)
+	}
+	return address
+}
+
+func (s *Server) inferRpc(
+	address string,
+	cfg *apitypes.Stage,
+) (reflection.RPC, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	defer conn.Close()
 	if err != nil {
-		return errdefs.InternalWithMsg(
+		return nil, errdefs.InternalWithMsg(
 			"connect to %s for stage %s: %s",
 			address,
-			st.Name,
+			cfg.Name,
 			err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -133,9 +124,9 @@ func (s *Server) inferRpc(st *stage.Stage, cfg *apitypes.Stage) error {
 		Service: cfg.Service,
 		Rpc:     cfg.Rpc,
 	}
-	st.Rpc, err = discovery.FindRpc(ctx, conn, rpcDiscoveryCfg)
+	rpc, err := discovery.FindRpc(ctx, conn, rpcDiscoveryCfg)
 	if err != nil {
-		return errdefs.PrependMsg(err, "stage %v", st.Name)
+		return nil, errdefs.PrependMsg(err, "stage %v", cfg.Name)
 	}
-	return nil
+	return rpc, nil
 }
