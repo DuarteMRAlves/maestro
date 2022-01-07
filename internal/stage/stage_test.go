@@ -19,29 +19,29 @@ func TestStage_Clone(t *testing.T) {
 		newAddress                    = "NewAddress"
 	)
 	s := &Stage{
-		Name:    oldName,
-		Phase:   oldPhase,
-		Asset:   oldAsset,
-		Address: oldAddress,
+		name:    oldName,
+		phase:   oldPhase,
+		asset:   oldAsset,
+		address: oldAddress,
 	}
 	c := s.Clone()
-	assert.Equal(t, oldName, c.Name, "cloned old Name")
-	assert.Equal(t, oldPhase, c.Phase, "cloned old phase")
-	assert.Equal(t, oldAsset, c.Asset, "cloned old asset id")
-	assert.Equal(t, oldAddress, c.Address, "cloned old address")
+	assert.Equal(t, oldName, c.name, "cloned old Name")
+	assert.Equal(t, oldPhase, c.phase, "cloned old phase")
+	assert.Equal(t, oldAsset, c.asset, "cloned old asset id")
+	assert.Equal(t, oldAddress, c.address, "cloned old address")
 
-	c.Name = newName
-	c.Phase = newPhase
-	c.Asset = newAsset
-	c.Address = newAddress
+	c.name = newName
+	c.phase = newPhase
+	c.asset = newAsset
+	c.address = newAddress
 
-	assert.Equal(t, oldName, s.Name, "source old Name")
-	assert.Equal(t, oldPhase, s.Phase, "source old phase")
-	assert.Equal(t, oldAsset, s.Asset, "source old asset id")
-	assert.Equal(t, oldAddress, s.Address, "source old address")
+	assert.Equal(t, oldName, s.name, "source old Name")
+	assert.Equal(t, oldPhase, s.phase, "source old phase")
+	assert.Equal(t, oldAsset, s.asset, "source old asset id")
+	assert.Equal(t, oldAddress, s.address, "source old address")
 
-	assert.Equal(t, newName, c.Name, "cloned new Name")
-	assert.Equal(t, newPhase, c.Phase, "cloned new phase")
-	assert.Equal(t, newAsset, c.Asset, "cloned new asset id")
-	assert.Equal(t, newAddress, c.Address, "cloned new address")
+	assert.Equal(t, newName, c.name, "cloned new Name")
+	assert.Equal(t, newPhase, c.phase, "cloned new phase")
+	assert.Equal(t, newAsset, c.asset, "cloned new asset id")
+	assert.Equal(t, newAddress, c.address, "cloned new address")
 }

@@ -81,8 +81,8 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 			config.TargetStage)
 	}
 
-	sourceOutput := source.Rpc.Output()
-	targetInput := target.Rpc.Input()
+	sourceOutput := source.Rpc().Output()
+	targetInput := target.Rpc().Input()
 	if config.SourceField != "" {
 		sourceOutput, ok = sourceOutput.GetMessageField(config.SourceField)
 		if !ok {
@@ -90,7 +90,7 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 				"field with name %s not found for message %s for source stage "+
 					"in link %s",
 				config.SourceField,
-				source.Rpc.Output().FullyQualifiedName(),
+				source.Rpc().Output().FullyQualifiedName(),
 				config.Name)
 		}
 	}
@@ -101,7 +101,7 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 				"field with name %s not found for message %s for target stage "+
 					"in link %v",
 				config.TargetField,
-				target.Rpc.Input().FullyQualifiedName(),
+				target.Rpc().Input().FullyQualifiedName(),
 				config.Name)
 		}
 	}
@@ -113,12 +113,12 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 			targetInput.FullyQualifiedName(),
 			config.Name)
 	}
-	if source.Phase != apitypes.StagePending {
+	if !source.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
 			config.Name)
 	}
-	if target.Phase != apitypes.StagePending {
+	if !target.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
 			config.Name)

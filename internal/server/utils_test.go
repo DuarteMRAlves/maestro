@@ -22,11 +22,8 @@ func assetForNum(num int) *asset.Asset {
 func stageForNum(num int) *stage.Stage {
 	name := testutil.StageNameForNum(num)
 	assetName := testutil.AssetNameForNum(num)
-	return &stage.Stage{
-		Name:    name,
-		Asset:   assetName,
-		Address: fmt.Sprintf("address-%v", num),
-	}
+	address := testutil.StageAddressForNum(num)
+	return stage.New(name, address, assetName, nil)
 }
 
 // linkForNum deterministically creates a link with the given number.

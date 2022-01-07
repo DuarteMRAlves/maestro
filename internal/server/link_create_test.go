@@ -336,38 +336,38 @@ func populateForLinks(t *testing.T, s *Server) {
 	messageIncompatible, err := reflection.NewMessage(testIncompatibleDesc)
 	assert.NilError(t, err, "test message 2")
 
-	stage1 := stage.NewDefault()
-	stage1.Name = "stage-1"
-	stage1.Asset = "asset-1"
-	stage1.Address = "address-1"
-	stage1.Rpc = &mock.RPC{
-		Name_: "rpc-1",
-		FQN:   "service-1/rpc-1",
-		In:    message1,
-		Out:   message1,
-	}
+	stage1 := stage.New(
+		"stage-1",
+		"asset-1",
+		"address-1",
+		&mock.RPC{
+			Name_: "rpc-1",
+			FQN:   "service-1/rpc-1",
+			In:    message1,
+			Out:   message1,
+		})
 
-	stage2 := stage.NewDefault()
-	stage2.Name = "stage-2"
-	stage2.Asset = "asset-2"
-	stage2.Address = "address-2"
-	stage2.Rpc = &mock.RPC{
-		Name_: "rpc-2",
-		FQN:   "service-2/rpc-2",
-		In:    message2,
-		Out:   message2,
-	}
+	stage2 := stage.New(
+		"stage-2",
+		"asset-2",
+		"address-2",
+		&mock.RPC{
+			Name_: "rpc-2",
+			FQN:   "service-2/rpc-2",
+			In:    message2,
+			Out:   message2,
+		})
 
-	stageIncompatible := stage.NewDefault()
-	stageIncompatible.Name = "stage-incompatible-outer"
-	stageIncompatible.Asset = "asset-incompatible"
-	stageIncompatible.Address = "address-incompatible"
-	stageIncompatible.Rpc = &mock.RPC{
-		Name_: "rpc-incompatible",
-		FQN:   "service-2/rpc-incompatible",
-		In:    messageIncompatible,
-		Out:   messageIncompatible,
-	}
+	stageIncompatible := stage.New(
+		"stage-incompatible-outer",
+		"asset-incompatible",
+		"address-incompatible",
+		&mock.RPC{
+			Name_: "rpc-incompatible",
+			FQN:   "service-2/rpc-incompatible",
+			In:    messageIncompatible,
+			Out:   messageIncompatible,
+		})
 
 	stages := []*stage.Stage{stage1, stage2, stageIncompatible}
 

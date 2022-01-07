@@ -28,9 +28,9 @@ func (st *store) Create(config *Stage) error {
 	}
 
 	s := config.Clone()
-	_, prev := st.stages.LoadOrStore(s.Name, s)
+	_, prev := st.stages.LoadOrStore(s.name, s)
 	if prev {
-		return errdefs.AlreadyExistsWithMsg("stage '%v' already exists", s.Name)
+		return errdefs.AlreadyExistsWithMsg("stage '%v' already exists", s.name)
 	}
 	return nil
 }
@@ -75,42 +75,42 @@ func buildQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Name == query.Name
+				return s.name == query.Name
 			})
 	}
 	if query.Phase != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Phase == query.Phase
+				return s.phase == query.Phase
 			})
 	}
 	if query.Asset != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Asset == query.Asset
+				return s.asset == query.Asset
 			})
 	}
 	if query.Service != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Rpc.Service().Name() == query.Service
+				return s.rpc.Service().Name() == query.Service
 			})
 	}
 	if query.Rpc != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Rpc.Name() == query.Rpc
+				return s.rpc.Name() == query.Rpc
 			})
 	}
 	if query.Address != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.Address == query.Address
+				return s.address == query.Address
 			})
 	}
 	switch len(filters) {
