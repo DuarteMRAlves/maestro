@@ -24,15 +24,19 @@ func TestStore_CreateCorrect(t *testing.T) {
 			config: &Orchestration{name: name, phase: phase, links: nil},
 		},
 		{
-			name:   "test empty links",
-			config: &Orchestration{name: name, phase: phase, links: []string{}},
+			name: "test empty links",
+			config: &Orchestration{
+				name:  name,
+				phase: phase,
+				links: []apitypes.LinkName{},
+			},
 		},
 		{
 			name: "test links with one element",
 			config: &Orchestration{
 				name:  name,
 				phase: phase,
-				links: []string{"link-1"},
+				links: []apitypes.LinkName{"link-1"},
 			},
 		},
 		{
@@ -40,7 +44,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 			config: &Orchestration{
 				name:  name,
 				phase: phase,
-				links: []string{"link-1", "link-2", "link-3"},
+				links: []apitypes.LinkName{"link-1", "link-2", "link-3"},
 			},
 		},
 	}
@@ -62,7 +66,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 				assert.Equal(t, test.config.name, o.name, "correct name")
 				assert.Equal(t, test.config.phase, o.phase, "correct phase")
 				if test.config.links == nil {
-					assert.DeepEqual(t, []string{}, o.links)
+					assert.DeepEqual(t, []apitypes.LinkName{}, o.links)
 				} else {
 					assert.DeepEqual(t, test.config.links, o.links)
 				}
@@ -222,6 +226,6 @@ func orchestrationForName(
 	return &Orchestration{
 		name:  name,
 		phase: phase,
-		links: []string{"link-1", "link-2"},
+		links: []apitypes.LinkName{"link-1", "link-2"},
 	}
 }

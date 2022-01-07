@@ -12,13 +12,13 @@ func TestOrchestration_Clone(t *testing.T) {
 		oldPhase                            = apitypes.OrchestrationRunning
 		newName  apitypes.OrchestrationName = "New Orchestration Name"
 		newPhase                            = apitypes.OrchestrationFailed
-		link1                               = "Link 1"
-		link2                               = "Link 2"
+		link1    apitypes.LinkName          = "Link 1"
+		link2    apitypes.LinkName          = "Link 2"
 	)
 	o := &Orchestration{
 		name:  oldName,
 		phase: oldPhase,
-		links: []string{link1},
+		links: []apitypes.LinkName{link1},
 	}
 	c := o.Clone()
 

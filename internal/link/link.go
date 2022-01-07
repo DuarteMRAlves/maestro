@@ -6,7 +6,7 @@ import (
 )
 
 type Link struct {
-	name        string
+	name        apitypes.LinkName
 	sourceStage apitypes.StageName
 	sourceField string
 	targetStage apitypes.StageName
@@ -14,7 +14,7 @@ type Link struct {
 }
 
 func New(
-	name string,
+	name apitypes.LinkName,
 	sourceStage apitypes.StageName,
 	sourceField string,
 	targetStage apitypes.StageName,

@@ -16,7 +16,7 @@ func MarshalOrchestration(o *apitypes.Orchestration) (
 	}
 	links := make([]string, 0, len(o.Links))
 	for _, l := range o.Links {
-		links = append(links, l)
+		links = append(links, string(l))
 	}
 	protoBp := &pb.Orchestration{
 		Name:  string(o.Name),
@@ -36,9 +36,9 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 		return nil, err
 	}
 
-	links := make([]string, 0, len(p.Links))
+	links := make([]apitypes.LinkName, 0, len(p.Links))
 	for _, l := range p.Links {
-		links = append(links, l)
+		links = append(links, apitypes.LinkName(l))
 	}
 
 	return &apitypes.Orchestration{

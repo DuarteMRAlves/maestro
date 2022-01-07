@@ -91,7 +91,7 @@ func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 
 func (c *client) CreateLink(ctx context.Context, link *apitypes.Link) error {
 	l := &pb.Link{
-		Name:        link.Name,
+		Name:        string(link.Name),
 		SourceStage: string(link.SourceStage),
 		SourceField: link.SourceField,
 		TargetStage: string(link.TargetStage),
@@ -109,9 +109,13 @@ func (c *client) CreateOrchestration(
 	ctx context.Context,
 	orchestration *apitypes.Orchestration,
 ) error {
+	links := make([]string, 0, len(orchestration.Links))
+	for _, l := range orchestration.Links {
+		links = append(links, string(l))
+	}
 	o := &pb.Orchestration{
 		Name:  string(orchestration.Name),
-		Links: orchestration.Links,
+		Links: links,
 	}
 
 	stub := pb.NewOrchestrationManagementClient(c.conn)

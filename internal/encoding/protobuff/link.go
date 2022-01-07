@@ -12,7 +12,7 @@ func MarshalLink(l *apitypes.Link) (*pb.Link, error) {
 		return nil, err
 	}
 	pbLink := &pb.Link{
-		Name:        l.Name,
+		Name:        string(l.Name),
 		SourceStage: string(l.SourceStage),
 		SourceField: l.SourceField,
 		TargetStage: string(l.TargetStage),
@@ -27,7 +27,7 @@ func UnmarshalLink(p *pb.Link) (*apitypes.Link, error) {
 		return nil, err
 	}
 	return &apitypes.Link{
-		Name:        p.Name,
+		Name:        apitypes.LinkName(p.Name),
 		SourceStage: apitypes.StageName(p.SourceStage),
 		SourceField: p.SourceField,
 		TargetStage: apitypes.StageName(p.TargetStage),

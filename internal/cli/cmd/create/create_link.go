@@ -111,7 +111,7 @@ func (o *LinkOpts) validate() error {
 // It assumes the options were previously validated.
 func (o *LinkOpts) run() error {
 	link := &apitypes.Link{
-		Name:        o.name,
+		Name:        apitypes.LinkName(o.name),
 		SourceStage: apitypes.StageName(o.sourceStage),
 		SourceField: o.sourceField,
 		TargetStage: apitypes.StageName(o.targetStage),

@@ -41,7 +41,7 @@ func logLink(l *apitypes.Link, field string) []zap.Field {
 		return []zap.Field{zap.String(field, "null")}
 	}
 	return []zap.Field{
-		zap.String("name", l.Name),
+		zap.String("name", string(l.Name)),
 		zap.String("source-stage", string(l.SourceStage)),
 		zap.String("source-field", l.SourceField),
 		zap.String("target-stage", string(l.TargetStage)),
@@ -55,7 +55,7 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
-	if !naming.IsValidName(config.Name) {
+	if !naming.IsValidLinkName(config.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 	if config.SourceStage == "" {

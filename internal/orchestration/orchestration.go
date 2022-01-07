@@ -12,10 +12,10 @@ type Orchestration struct {
 	// phase defines the current phase of this Orchestration.
 	phase apitypes.OrchestrationPhase
 	// links specifies the names of the links contained in the orchestration.
-	links []string
+	links []apitypes.LinkName
 }
 
-func New(name apitypes.OrchestrationName, links []string) *Orchestration {
+func New(name apitypes.OrchestrationName, links []apitypes.LinkName) *Orchestration {
 	return &Orchestration{
 		name:  name,
 		phase: apitypes.OrchestrationPending,
@@ -27,12 +27,12 @@ func (o *Orchestration) Name() apitypes.OrchestrationName {
 	return o.name
 }
 
-func (o *Orchestration) Links() []string {
+func (o *Orchestration) Links() []apitypes.LinkName {
 	return o.links
 }
 
 func (o *Orchestration) Clone() *Orchestration {
-	links := make([]string, 0, len(o.links))
+	links := make([]apitypes.LinkName, 0, len(o.links))
 	for _, l := range o.links {
 		links = append(links, l)
 	}
@@ -45,7 +45,7 @@ func (o *Orchestration) Clone() *Orchestration {
 }
 
 func (o *Orchestration) ToApi() *apitypes.Orchestration {
-	links := make([]string, 0, len(o.links))
+	links := make([]apitypes.LinkName, 0, len(o.links))
 	for _, l := range o.links {
 		links = append(links, l)
 	}

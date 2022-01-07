@@ -5,7 +5,7 @@ package types
 type Link struct {
 	// Name that should be associated with the link.
 	// (required, unique)
-	Name string `yaml:"name" info:"required"`
+	Name LinkName `yaml:"name" info:"required"`
 	// SourceStage defines the name of the stage that is the source of the link.
 	// The messages returned by the rpc executed in this stage are transferred
 	// through this link to the next stage.
@@ -30,3 +30,6 @@ type Link struct {
 	// (optional)
 	TargetField string `yaml:"target_field"`
 }
+
+// LinkName is a name that uniquely identifies a Link
+type LinkName string

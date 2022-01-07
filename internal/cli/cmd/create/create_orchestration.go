@@ -91,9 +91,13 @@ func (o *OrchestrationOpts) validate() error {
 // run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
 func (o *OrchestrationOpts) run() error {
+	links := make([]apitypes.LinkName, 0, len(o.links))
+	for _, l := range o.links {
+		links = append(links, apitypes.LinkName(l))
+	}
 	or := &apitypes.Orchestration{
 		Name:  apitypes.OrchestrationName(o.name),
-		Links: o.links,
+		Links: links,
 	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
