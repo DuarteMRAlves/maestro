@@ -5,7 +5,7 @@ package types
 type Stage struct {
 	// Name that should be associated with the stage.
 	// (required, unique)
-	Name string `yaml:"name" info:"required"`
+	Name StageName `yaml:"name" info:"required"`
 	// Phase specifies the current phase of the Stage. This field should not be
 	// specified in a yaml file as it is a value defined by the current state
 	// of the system.
@@ -35,6 +35,9 @@ type Stage struct {
 	// (optional)
 	Asset AssetName `yaml:"asset"`
 }
+
+// StageName is a name that uniquely identifies a Stage
+type StageName string
 
 // StagePhase is an enum that describes the current status of a stage
 type StagePhase string

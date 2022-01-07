@@ -11,13 +11,13 @@ import (
 
 func TestMarshalStage(t *testing.T) {
 	const (
-		stageName          = "Stage Name"
-		stageAsset         = "Stage Asset"
-		stageService       = "stageService"
-		stageRpc           = "stageRpc"
-		stageAddress       = "stageAddress"
-		stageHost          = "stageHost"
-		stagePort    int32 = 12345
+		stageName    apitypes.StageName = "Stage Name"
+		stageAsset                      = "Stage Asset"
+		stageService                    = "stageService"
+		stageRpc                        = "stageRpc"
+		stageAddress                    = "stageAddress"
+		stageHost                       = "stageHost"
+		stagePort    int32              = 12345
 	)
 	tests := []*apitypes.Stage{
 		{
@@ -110,7 +110,7 @@ func TestUnmarshalStageNil(t *testing.T) {
 }
 
 func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
-	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
+	assert.Equal(t, string(expected.Name), actual.Name, "stage assetName")
 	assert.Equal(t, string(expected.Asset), actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
@@ -120,7 +120,7 @@ func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 }
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *apitypes.Stage) {
-	assert.Equal(t, expected.Name, actual.Name, "stage assetName")
+	assert.Equal(t, expected.Name, string(actual.Name), "stage assetName")
 	assert.Equal(t, expected.Asset, string(actual.Asset), "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")

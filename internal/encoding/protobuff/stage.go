@@ -14,7 +14,7 @@ func MarshalStage(s *apitypes.Stage) (*pb.Stage, error) {
 		return nil, err
 	}
 	pbStage := &pb.Stage{
-		Name:    s.Name,
+		Name:    string(s.Name),
 		Asset:   string(s.Asset),
 		Service: s.Service,
 		Rpc:     s.Rpc,
@@ -32,7 +32,7 @@ func UnmarshalStage(p *pb.Stage) (*apitypes.Stage, error) {
 		return nil, errdefs.InvalidArgumentWithError(err)
 	}
 	return &apitypes.Stage{
-		Name:    p.Name,
+		Name:    apitypes.StageName(p.Name),
 		Asset:   apitypes.AssetName(p.Asset),
 		Service: p.Service,
 		Rpc:     p.Rpc,

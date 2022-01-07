@@ -73,7 +73,7 @@ func (c *client) CreateAsset(ctx context.Context, asset *apitypes.Asset) error {
 
 func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 	s := &pb.Stage{
-		Name:    stage.Name,
+		Name:    string(stage.Name),
 		Asset:   string(stage.Asset),
 		Service: stage.Service,
 		Rpc:     stage.Rpc,
@@ -92,9 +92,9 @@ func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 func (c *client) CreateLink(ctx context.Context, link *apitypes.Link) error {
 	l := &pb.Link{
 		Name:        link.Name,
-		SourceStage: link.SourceStage,
+		SourceStage: string(link.SourceStage),
 		SourceField: link.SourceField,
-		TargetStage: link.TargetStage,
+		TargetStage: string(link.TargetStage),
 		TargetField: link.TargetField,
 	}
 

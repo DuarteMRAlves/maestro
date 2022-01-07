@@ -8,12 +8,12 @@ import (
 
 func TestStage_Clone(t *testing.T) {
 	const (
-		oldName                       = "Old Name"
+		oldName    apitypes.StageName = "Old Name"
 		oldPhase                      = apitypes.StageRunning
 		oldAsset   apitypes.AssetName = "Old Asset Name"
 		oldAddress                    = "OldAddress"
 
-		newName                       = "New Name"
+		newName    apitypes.StageName = "New Name"
 		newPhase                      = apitypes.StageFailed
 		newAsset   apitypes.AssetName = "New Asset Name"
 		newAddress                    = "NewAddress"

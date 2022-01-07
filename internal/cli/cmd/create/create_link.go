@@ -112,9 +112,9 @@ func (o *LinkOpts) validate() error {
 func (o *LinkOpts) run() error {
 	link := &apitypes.Link{
 		Name:        o.name,
-		SourceStage: o.sourceStage,
+		SourceStage: apitypes.StageName(o.sourceStage),
 		SourceField: o.sourceField,
-		TargetStage: o.targetStage,
+		TargetStage: apitypes.StageName(o.targetStage),
 		TargetField: o.targetField,
 	}
 

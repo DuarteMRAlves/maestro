@@ -11,7 +11,7 @@ import (
 // Stage represents a node of the pipeline where a specific rpc method is
 // executed.
 type Stage struct {
-	name    string
+	name    apitypes.StageName
 	phase   apitypes.StagePhase
 	asset   apitypes.AssetName
 	address string
@@ -27,7 +27,7 @@ type Stage struct {
 }
 
 func New(
-	name string,
+	name apitypes.StageName,
 	address string,
 	asset apitypes.AssetName,
 	rpc reflection.RPC,

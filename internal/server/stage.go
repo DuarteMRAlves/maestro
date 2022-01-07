@@ -47,7 +47,7 @@ func logStage(s *apitypes.Stage, field string) []zap.Field {
 		return []zap.Field{zap.String(field, "null")}
 	}
 	return []zap.Field{
-		zap.String("name", s.Name),
+		zap.String("name", string(s.Name)),
 		zap.String("asset", string(s.Asset)),
 		zap.String("service", s.Service),
 		zap.String("rpc", s.Rpc),
@@ -63,7 +63,7 @@ func (s *Server) validateCreateStageConfig(config *apitypes.Stage) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
-	if !naming.IsValidName(config.Name) {
+	if !naming.IsValidStageName(config.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			config.Name)

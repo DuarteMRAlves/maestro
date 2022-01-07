@@ -79,31 +79,31 @@ func TestStore_Get(t *testing.T) {
 		// numbers to be stores
 		stored []int
 		// names of the expected stages
-		expected []string
+		expected []apitypes.StageName
 	}{
 		{
 			name:     "zero elements stored, nil query",
 			query:    nil,
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "zero elements stored, some query",
 			query:    &apitypes.Stage{Name: "some-name"},
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "one element stored, nil query",
 			query:    nil,
 			stored:   []int{0},
-			expected: []string{testutil.StageNameForNum(0)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(0)},
 		},
 		{
 			name:   "multiple elements stored, nil query",
 			query:  nil,
 			stored: []int{0, 1, 2},
-			expected: []string{
+			expected: []apitypes.StageName{
 				testutil.StageNameForNum(0),
 				testutil.StageNameForNum(1),
 				testutil.StageNameForNum(2),
@@ -113,61 +113,61 @@ func TestStore_Get(t *testing.T) {
 			name:     "multiple elements stored, matching name query",
 			query:    &apitypes.Stage{Name: testutil.StageNameForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.StageNameForNum(2)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
 			query:    &apitypes.Stage{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "multiple elements stored, matching asset query",
 			query:    &apitypes.Stage{Asset: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.StageNameForNum(2)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching asset query",
 			query:    &apitypes.Stage{Asset: "unknown-asset"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "multiple elements stored, matching service query",
 			query:    &apitypes.Stage{Service: testutil.StageServiceForNum(1)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.StageNameForNum(1)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(1)},
 		},
 		{
 			name:     "multiple elements stored, non-matching service query",
 			query:    &apitypes.Stage{Service: "unknown-service"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "multiple elements stored, matching rpc query",
 			query:    &apitypes.Stage{Rpc: testutil.StageRpcForNum(0)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.StageNameForNum(0)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(0)},
 		},
 		{
 			name:     "multiple elements stored, non-matching rpc query",
 			query:    &apitypes.Stage{Rpc: "unknown-rpc"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name:     "multiple elements stored, matching address query",
 			query:    &apitypes.Stage{Address: testutil.StageAddressForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.StageNameForNum(2)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching address query",
 			query:    &apitypes.Stage{Address: "unknown-address"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 		{
 			name: "multiple elements stored, exclusive query",
@@ -176,7 +176,7 @@ func TestStore_Get(t *testing.T) {
 				Address: testutil.StageAddressForNum(2),
 			},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 	}
 
@@ -194,7 +194,7 @@ func TestStore_Get(t *testing.T) {
 				received := st.GetMatching(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[string]bool, 0)
+				seen := make(map[apitypes.StageName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}
@@ -234,21 +234,21 @@ func TestStore_Get_ByPhase(t *testing.T) {
 		name  string
 		query *apitypes.Stage
 		// names of the expected stages
-		expected []string
+		expected []apitypes.StageName
 	}{
 		{
 			name: "single match for phase",
 			query: &apitypes.Stage{
 				Phase: apitypes.StageRunning,
 			},
-			expected: []string{testutil.StageNameForNum(1)},
+			expected: []apitypes.StageName{testutil.StageNameForNum(1)},
 		},
 		{
 			name: "multiple match for phase",
 			query: &apitypes.Stage{
 				Phase: apitypes.StagePending,
 			},
-			expected: []string{
+			expected: []apitypes.StageName{
 				testutil.StageNameForNum(0),
 				testutil.StageNameForNum(2),
 			},
@@ -258,7 +258,7 @@ func TestStore_Get_ByPhase(t *testing.T) {
 			query: &apitypes.Stage{
 				Phase: apitypes.StageFailed,
 			},
-			expected: []string{},
+			expected: []apitypes.StageName{},
 		},
 	}
 	for _, test := range tests {
@@ -275,7 +275,7 @@ func TestStore_Get_ByPhase(t *testing.T) {
 				received := st.GetMatching(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[string]bool, 0)
+				seen := make(map[apitypes.StageName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}
