@@ -9,6 +9,8 @@ import (
 type Orchestration struct {
 	// name defines a unique name for the orchestrations.
 	name apitypes.OrchestrationName
+	// phase defines the current phase of this Orchestration.
+	phase apitypes.OrchestrationPhase
 	// links specifies the names of the links contained in the orchestration.
 	links []string
 }
@@ -16,6 +18,7 @@ type Orchestration struct {
 func New(name apitypes.OrchestrationName, links []string) *Orchestration {
 	return &Orchestration{
 		name:  name,
+		phase: apitypes.OrchestrationPending,
 		links: links,
 	}
 }
@@ -36,6 +39,7 @@ func (o *Orchestration) Clone() *Orchestration {
 
 	return &Orchestration{
 		name:  o.name,
+		phase: o.phase,
 		links: links,
 	}
 }
@@ -48,13 +52,15 @@ func (o *Orchestration) ToApi() *apitypes.Orchestration {
 
 	return &apitypes.Orchestration{
 		Name:  o.name,
+		Phase: o.phase,
 		Links: links,
 	}
 }
 
 func (o *Orchestration) String() string {
 	return fmt.Sprintf(
-		"Orchestration{name:%v,links:%v}",
+		"Orchestration{name:%v,phase:%v,links:%v}",
 		o.name,
+		o.phase,
 		o.links)
 }

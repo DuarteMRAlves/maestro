@@ -11,6 +11,7 @@ import (
 func TestMarshalOrchestration(t *testing.T) {
 	const (
 		name  apitypes.OrchestrationName = "OrchestrationName"
+		phase                            = apitypes.OrchestrationRunning
 		link1                            = "Link Name 1"
 		link2                            = "Link Name 2"
 		link3                            = "Link Name 3"
@@ -23,6 +24,7 @@ func TestMarshalOrchestration(t *testing.T) {
 			name: "all fields with non default values",
 			o: &apitypes.Orchestration{
 				Name:  name,
+				Phase: phase,
 				Links: []string{link1, link2, link3},
 			},
 		},
@@ -30,6 +32,7 @@ func TestMarshalOrchestration(t *testing.T) {
 			name: "all field with default values",
 			o: &apitypes.Orchestration{
 				Name:  "",
+				Phase: "",
 				Links: nil,
 			},
 		},
@@ -42,6 +45,7 @@ func TestMarshalOrchestration(t *testing.T) {
 				res, err := MarshalOrchestration(o)
 				assert.NilError(t, err, "marshal error")
 				assert.Equal(t, string(o.Name), res.Name, "orchestration name")
+				assert.Equal(t, string(o.Phase), res.Phase, "orchestration phase")
 				assert.Equal(
 					t,
 					len(o.Links),
@@ -57,6 +61,7 @@ func TestMarshalOrchestration(t *testing.T) {
 func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 	const (
 		name  = "OrchestrationName"
+		phase = string(apitypes.OrchestrationPending)
 		link1 = "Link Name 1"
 		link2 = "Link Name 2"
 		link3 = "Link Name 3"
@@ -69,6 +74,7 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 			name: "all fields with non default values",
 			o: &pb.Orchestration{
 				Name:  name,
+				Phase: phase,
 				Links: []string{link1, link2, link3},
 			},
 		},
@@ -76,6 +82,7 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 			name: "all field with default values",
 			o: &pb.Orchestration{
 				Name:  "",
+				Phase: "",
 				Links: nil,
 			},
 		},
@@ -89,6 +96,7 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 				res, err := UnmarshalOrchestration(o)
 				assert.Equal(t, nil, err, "unmarshal error")
 				assert.Equal(t, o.Name, string(res.Name), "orchestration name")
+				assert.Equal(t, o.Phase, string(res.Phase), "orchestration phase")
 				assert.Equal(
 					t,
 					len(o.Links),
