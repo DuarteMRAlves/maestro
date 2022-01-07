@@ -3,9 +3,8 @@ package stage
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/stage/input"
-	"github.com/DuarteMRAlves/maestro/internal/stage/output"
 	"github.com/DuarteMRAlves/maestro/internal/worker"
 )
 
@@ -23,8 +22,8 @@ type Stage struct {
 	worker worker.Worker
 
 	// input and output describe the connections to other stages
-	input  *input.Input
-	output *output.Output
+	input  *flow.Input
+	output *flow.Output
 }
 
 func New(
@@ -39,8 +38,8 @@ func New(
 		asset:   asset,
 		rpc:     rpc,
 		phase:   apitypes.StagePending,
-		input:   input.NewDefault(),
-		output:  output.NewDefault(),
+		input:   flow.NewInput(),
+		output:  flow.NewOutput(),
 	}
 }
 
