@@ -58,7 +58,7 @@ func (s *Server) validateCreateOrchestrationConfig(
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
-	if !naming.IsValidName(string(config.Name)) {
+	if !naming.IsValidOrchestrationName(config.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 	for _, l := range config.Links {
