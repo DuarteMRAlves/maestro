@@ -7,31 +7,39 @@ import (
 )
 
 func TestStore_CreateCorrect(t *testing.T) {
-	const oName apitypes.OrchestrationName = "Orchestration Name"
+	const (
+		name  apitypes.OrchestrationName = "Orchestration Name"
+		phase                            = apitypes.OrchestrationRunning
+	)
 	tests := []struct {
 		name   string
 		config *Orchestration
 	}{
 		{
 			name:   "test no links variable",
-			config: &Orchestration{name: oName},
+			config: &Orchestration{name: name, phase: phase},
 		},
 		{
 			name:   "test nil links",
-			config: &Orchestration{name: oName, links: nil},
+			config: &Orchestration{name: name, phase: phase, links: nil},
 		},
 		{
 			name:   "test empty links",
-			config: &Orchestration{name: oName, links: []string{}},
+			config: &Orchestration{name: name, phase: phase, links: []string{}},
 		},
 		{
-			name:   "test links with one element",
-			config: &Orchestration{name: oName, links: []string{"link-1"}},
+			name: "test links with one element",
+			config: &Orchestration{
+				name:  name,
+				phase: phase,
+				links: []string{"link-1"},
+			},
 		},
 		{
 			name: "test links with multiple elements",
 			config: &Orchestration{
-				name:  oName,
+				name:  name,
+				phase: phase,
 				links: []string{"link-1", "link-2", "link-3"},
 			},
 		},
@@ -46,12 +54,13 @@ func TestStore_CreateCorrect(t *testing.T) {
 				assert.NilError(t, err, "create error")
 				assert.Equal(t, 1, lenOrchestrations(st), "store size")
 
-				stored, ok := st.orchestrations.Load(oName)
+				stored, ok := st.orchestrations.Load(name)
 				assert.Assert(t, ok, "orchestration exists")
 
 				o, ok := stored.(*Orchestration)
 				assert.Assert(t, ok, "orchestration type assertion failed")
 				assert.Equal(t, test.config.name, o.name, "correct name")
+				assert.Equal(t, test.config.phase, o.phase, "correct phase")
 				if test.config.links == nil {
 					assert.DeepEqual(t, []string{}, o.links)
 				} else {
@@ -92,30 +101,36 @@ func TestStore_Get_Correct(t *testing.T) {
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
-			name:     "one element stored, nil query",
-			query:    nil,
-			stored:   []*Orchestration{orchestrationForName("some-name")},
+			name:  "one element stored, nil query",
+			query: nil,
+			stored: []*Orchestration{
+				orchestrationForName("some-name", apitypes.OrchestrationFailed),
+			},
 			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
-			name:     "one element stored, matching query",
-			query:    &apitypes.Orchestration{Name: "some-name"},
-			stored:   []*Orchestration{orchestrationForName("some-name")},
+			name:  "one element stored, matching name query",
+			query: &apitypes.Orchestration{Name: "some-name"},
+			stored: []*Orchestration{
+				orchestrationForName("some-name", apitypes.OrchestrationRunning),
+			},
 			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
-			name:     "one element stored, non-matching query",
-			query:    &apitypes.Orchestration{Name: "unknown-name"},
-			stored:   []*Orchestration{orchestrationForName("some-name")},
+			name:  "one element stored, non-matching name query",
+			query: &apitypes.Orchestration{Name: "unknown-name"},
+			stored: []*Orchestration{
+				orchestrationForName("some-name", apitypes.OrchestrationPending),
+			},
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:  "multiple elements stored, nil query",
 			query: nil,
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1"),
-				orchestrationForName("some-name-2"),
-				orchestrationForName("some-name-3"),
+				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-2", apitypes.OrchestrationSucceeded),
+				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
 			},
 			expected: []apitypes.OrchestrationName{
 				"some-name-1",
@@ -124,22 +139,42 @@ func TestStore_Get_Correct(t *testing.T) {
 			},
 		},
 		{
-			name:  "multiple elements stored, matching query",
+			name:  "multiple elements stored, matching name query",
 			query: &apitypes.Orchestration{Name: "some-name-2"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1"),
-				orchestrationForName("some-name-2"),
-				orchestrationForName("some-name-3"),
+				orchestrationForName("some-name-1", apitypes.OrchestrationRunning),
+				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
 			},
 			expected: []apitypes.OrchestrationName{"some-name-2"},
 		},
 		{
-			name:  "multiple elements stored, non-matching query",
+			name:  "multiple elements stored, non-matching name query",
 			query: &apitypes.Orchestration{Name: "unknown-name"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1"),
-				orchestrationForName("some-name-2"),
-				orchestrationForName("some-name-3"),
+				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-3", apitypes.OrchestrationRunning),
+			},
+			expected: []apitypes.OrchestrationName{},
+		},
+		{
+			name:  "multiple elements stored, matching phase query",
+			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationFailed},
+			stored: []*Orchestration{
+				orchestrationForName("some-name-1", apitypes.OrchestrationRunning),
+				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
+			},
+			expected: []apitypes.OrchestrationName{"some-name-3"},
+		},
+		{
+			name:  "multiple elements stored, non-matching phase query",
+			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationSucceeded},
+			stored: []*Orchestration{
+				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
+				orchestrationForName("some-name-3", apitypes.OrchestrationRunning),
 			},
 			expected: []apitypes.OrchestrationName{},
 		},
@@ -180,9 +215,13 @@ func TestStore_Get_Correct(t *testing.T) {
 	}
 }
 
-func orchestrationForName(name apitypes.OrchestrationName) *Orchestration {
+func orchestrationForName(
+	name apitypes.OrchestrationName,
+	phase apitypes.OrchestrationPhase,
+) *Orchestration {
 	return &Orchestration{
 		name:  name,
+		phase: phase,
 		links: []string{"link-1", "link-2"},
 	}
 }

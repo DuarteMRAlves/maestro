@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -21,7 +22,8 @@ type OrchestrationOpts struct {
 	// address for the maestro server
 	maestro string
 
-	name string
+	name  string
+	phase string
 
 	// Output for the cobra.command
 	outWriter io.Writer
@@ -63,6 +65,8 @@ func NewCmdGetOrchestration() *cobra.Command {
 // execute
 func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
+
+	cmd.Flags().StringVar(&o.phase, "phase", "", "phase to search")
 }
 
 // complete fills any remaining information for the runner that is not specified
@@ -81,13 +85,27 @@ func (o *OrchestrationOpts) complete(
 // validate checks if the user options are compatible and the command can
 // be executed
 func (o *OrchestrationOpts) validate() error {
+	if o.phase != "" {
+		phase := apitypes.OrchestrationPhase(o.phase)
+		switch phase {
+		case
+			apitypes.OrchestrationPending,
+			apitypes.OrchestrationRunning,
+			apitypes.OrchestrationSucceeded,
+			apitypes.OrchestrationFailed:
+			// Do nothing
+		default:
+			return errdefs.InvalidArgumentWithMsg("unknown phase: %v", phase)
+		}
+	}
 	return nil
 }
 
 // run executes the get link command
 func (o *OrchestrationOpts) run() error {
 	query := &pb.Orchestration{
-		Name: o.name,
+		Name:  o.name,
+		Phase: o.phase,
 	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
@@ -120,11 +138,11 @@ func (o *OrchestrationOpts) displayOrchestrations(
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numOrchestrations+1)
 
-	headers := []string{NameText}
+	headers := []string{NameText, PhaseText}
 	data = append(data, headers)
 
 	for _, orchestration := range orchestrations {
-		orchestrationData := []string{orchestration.Name}
+		orchestrationData := []string{orchestration.Name, orchestration.Phase}
 		data = append(data, orchestrationData)
 	}
 

@@ -20,6 +20,7 @@ func MarshalOrchestration(o *apitypes.Orchestration) (
 	}
 	protoBp := &pb.Orchestration{
 		Name:  string(o.Name),
+		Phase: string(o.Phase),
 		Links: links,
 	}
 	return protoBp, nil
@@ -42,6 +43,7 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 
 	return &apitypes.Orchestration{
 		Name:  apitypes.OrchestrationName(p.Name),
+		Phase: apitypes.OrchestrationPhase(p.Phase),
 		Links: links,
 	}, nil
 }

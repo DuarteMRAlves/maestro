@@ -68,6 +68,13 @@ func buildQueryFilter(query *apitypes.Orchestration) func(b *Orchestration) bool
 				return b.Name() == query.Name
 			})
 	}
+	if query.Phase != "" {
+		filters = append(
+			filters,
+			func(o *Orchestration) bool {
+				return o.phase == query.Phase
+			})
+	}
 	switch len(filters) {
 	case 0:
 		return func(b *Orchestration) bool { return true }
