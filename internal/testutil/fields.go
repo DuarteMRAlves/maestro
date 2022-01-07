@@ -12,7 +12,7 @@ func AssetNameForNum(num int) apitypes.AssetName {
 
 // AssetNameForNumStr deterministically creates an asset name for a given number.
 func AssetNameForNumStr(num int) string {
-	return string(AssetImageForNum(num))
+	return string(AssetNameForNum(num))
 }
 
 // AssetImageForNum deterministically creates an image for a given number.
@@ -22,8 +22,13 @@ func AssetImageForNum(num int) string {
 }
 
 // StageNameForNum deterministically creates a stage name for a given number.
-func StageNameForNum(num int) string {
-	return fmt.Sprintf("stage-%v", num)
+func StageNameForNum(num int) apitypes.StageName {
+	return apitypes.StageName(fmt.Sprintf("stage-%v", num))
+}
+
+// StageNameForNumStr deterministically creates a stage name for a given number.
+func StageNameForNumStr(num int) string {
+	return string(StageNameForNum(num))
 }
 
 // StageServiceForNum deterministically creates a stage service for a given
@@ -51,8 +56,14 @@ func LinkNameForNum(num int) string {
 
 // LinkSourceStageForNum deterministically creates a link source stage for a
 // given number.
-func LinkSourceStageForNum(num int) string {
+func LinkSourceStageForNum(num int) apitypes.StageName {
 	return StageNameForNum(num)
+}
+
+// LinkSourceStageForNumStr deterministically creates a link source stage for a
+// given number.
+func LinkSourceStageForNumStr(num int) string {
+	return string(LinkSourceStageForNum(num))
 }
 
 // LinkSourceFieldForNum deterministically creates a link source field for a
@@ -63,8 +74,14 @@ func LinkSourceFieldForNum(num int) string {
 
 // LinkTargetStageForNum deterministically creates a link target stage for a
 // given number.
-func LinkTargetStageForNum(num int) string {
+func LinkTargetStageForNum(num int) apitypes.StageName {
 	return StageNameForNum(num + 1)
+}
+
+// LinkTargetStageForNumStr deterministically creates a link target stage for a
+// given number.
+func LinkTargetStageForNumStr(num int) string {
+	return string(LinkTargetStageForNum(num + 1))
 }
 
 // LinkTargetFieldForNum deterministically creates a link target field for a

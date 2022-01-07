@@ -11,6 +11,10 @@ func IsValidAssetName(name apitypes.AssetName) bool {
 	return IsValidName(string(name))
 }
 
+func IsValidStageName(name apitypes.StageName) bool {
+	return IsValidName(string(name))
+}
+
 func IsValidOrchestrationName(name apitypes.OrchestrationName) bool {
 	return IsValidName(string(name))
 }

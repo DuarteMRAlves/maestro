@@ -7,17 +7,17 @@ import (
 
 type Link struct {
 	name        string
-	sourceStage string
+	sourceStage apitypes.StageName
 	sourceField string
-	targetStage string
+	targetStage apitypes.StageName
 	targetField string
 }
 
 func New(
 	name string,
-	sourceStage string,
+	sourceStage apitypes.StageName,
 	sourceField string,
-	targetStage string,
+	targetStage apitypes.StageName,
 	targetField string,
 ) *Link {
 	return &Link{

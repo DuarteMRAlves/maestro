@@ -10,7 +10,7 @@ type Link struct {
 	// The messages returned by the rpc executed in this stage are transferred
 	// through this link to the next stage.
 	// (required)
-	SourceStage string `yaml:"source_stage" info:"required"`
+	SourceStage StageName `yaml:"source_stage" info:"required"`
 	// SourceField defines the field of the source message that should be sent
 	// through the link. If specified, the message transferred through this link
 	// is the field with the given name from the message returned by SourceStage.
@@ -21,7 +21,7 @@ type Link struct {
 	// The messages that are transferred through this link are used as input for
 	// the rpc method in this stage.
 	// (required)
-	TargetStage string `yaml:"target_stage" info:"required"`
+	TargetStage StageName `yaml:"target_stage" info:"required"`
 	// TargetField defines the field of the input of TargetStage that should be
 	// filled with the messages transferred with this link. If specified, the
 	// field TargetField of message that is the input of TargetStage is set to

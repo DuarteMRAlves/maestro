@@ -11,11 +11,11 @@ import (
 
 func TestMarshalLink(t *testing.T) {
 	const (
-		name        = "name"
-		sourceStage = "sourceStage"
-		sourceField = "sourceField"
-		targetStage = "targetStage"
-		targetField = "targetField"
+		name                           = "name"
+		sourceStage apitypes.StageName = "sourceStage"
+		sourceField                    = "sourceField"
+		targetStage apitypes.StageName = "targetStage"
+		targetField                    = "targetField"
 	)
 	tests := []*apitypes.Link{
 		{
@@ -99,13 +99,13 @@ func TestUnmarshalLinkNil(t *testing.T) {
 
 func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
 	assert.Equal(t, expected.Name, actual.Name, "name")
-	assert.Equal(t, expected.SourceStage, actual.SourceStage, "source id")
+	assert.Equal(t, string(expected.SourceStage), actual.SourceStage, "source id")
 	assert.Equal(
 		t,
 		expected.SourceField,
 		actual.SourceField,
 		"source field")
-	assert.Equal(t, expected.TargetStage, actual.TargetStage, "target id")
+	assert.Equal(t, string(expected.TargetStage), actual.TargetStage, "target id")
 	assert.Equal(
 		t,
 		expected.TargetField,
@@ -115,13 +115,13 @@ func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
 
 func assertPbLink(t *testing.T, expected *pb.Link, actual *apitypes.Link) {
 	assert.Equal(t, expected.Name, actual.Name, "name")
-	assert.Equal(t, expected.SourceStage, actual.SourceStage, "source id")
+	assert.Equal(t, expected.SourceStage, string(actual.SourceStage), "source id")
 	assert.Equal(
 		t,
 		expected.SourceField,
 		actual.SourceField,
 		"source field")
-	assert.Equal(t, expected.TargetStage, actual.TargetStage, "target id")
+	assert.Equal(t, expected.TargetStage, string(actual.TargetStage), "target id")
 	assert.Equal(
 		t,
 		expected.TargetField,

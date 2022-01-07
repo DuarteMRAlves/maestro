@@ -42,9 +42,9 @@ func logLink(l *apitypes.Link, field string) []zap.Field {
 	}
 	return []zap.Field{
 		zap.String("name", l.Name),
-		zap.String("source-stage", l.SourceStage),
+		zap.String("source-stage", string(l.SourceStage)),
 		zap.String("source-field", l.SourceField),
-		zap.String("target-stage", l.TargetStage),
+		zap.String("target-stage", string(l.TargetStage)),
 		zap.String("target-field", l.TargetField),
 	}
 }

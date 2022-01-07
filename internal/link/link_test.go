@@ -1,23 +1,24 @@
 package link
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestLink_Clone(t *testing.T) {
 	const (
-		oldName        = "OldName"
-		oldSourceStage = "OldSourceStage"
-		oldSourceField = "OldSourceField"
-		oldTargetStage = "OldTargetStage"
-		oldTargetField = "OldTargetField"
+		oldName                           = "OldName"
+		oldSourceStage apitypes.StageName = "OldSourceStage"
+		oldSourceField                    = "OldSourceField"
+		oldTargetStage apitypes.StageName = "OldTargetStage"
+		oldTargetField                    = "OldTargetField"
 
-		newName        = "NewName"
-		newSourceStage = "NewSourceStage"
-		newSourceField = "NewSourceField"
-		newTargetStage = "NewTargetStage"
-		newTargetField = "NewTargetField"
+		newName                           = "NewName"
+		newSourceStage apitypes.StageName = "NewSourceStage"
+		newSourceField                    = "NewSourceField"
+		newTargetStage apitypes.StageName = "NewTargetStage"
+		newTargetField                    = "NewTargetField"
 	)
 	s := &Link{
 		name:        oldName,
