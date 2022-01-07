@@ -13,24 +13,24 @@ func TestOrchestration_Clone(t *testing.T) {
 		link2     = "Link 2"
 	)
 	o := &Orchestration{
-		Name:  oldBpName,
-		Links: []string{link1},
+		name:  oldBpName,
+		links: []string{link1},
 	}
 	c := o.Clone()
 
-	assert.Equal(t, oldBpName, c.Name, "cloned old name")
-	assert.Equal(t, 1, len(c.Links), "cloned old Links length")
-	assert.Equal(t, link1, c.Links[0], "cloned old link")
+	assert.Equal(t, oldBpName, c.name, "cloned old name")
+	assert.Equal(t, 1, len(c.links), "cloned old Links length")
+	assert.Equal(t, link1, c.links[0], "cloned old link")
 
-	c.Name = newBpName
-	c.Links = append(c.Links, link2)
+	c.name = newBpName
+	c.links = append(c.links, link2)
 
-	assert.Equal(t, oldBpName, o.Name, "source old name")
-	assert.Equal(t, 1, len(o.Links), "source old Links length")
-	assert.Equal(t, link1, o.Links[0], "source old link name")
+	assert.Equal(t, oldBpName, o.name, "source old name")
+	assert.Equal(t, 1, len(o.links), "source old Links length")
+	assert.Equal(t, link1, o.links[0], "source old link name")
 
-	assert.Equal(t, newBpName, c.Name, "cloned new name")
-	assert.Equal(t, 2, len(c.Links), "cloned new Links length")
-	assert.Equal(t, link1, c.Links[0], "cloned new link 1")
-	assert.Equal(t, link2, c.Links[1], "cloned new link 2")
+	assert.Equal(t, newBpName, c.name, "cloned new name")
+	assert.Equal(t, 2, len(c.links), "cloned new Links length")
+	assert.Equal(t, link1, c.links[0], "cloned new link 1")
+	assert.Equal(t, link2, c.links[1], "cloned new link 2")
 }
