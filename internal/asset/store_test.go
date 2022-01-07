@@ -20,11 +20,11 @@ func TestStore_CreateCorrect(t *testing.T) {
 	}{
 		{
 			name:   "non default params",
-			config: &Asset{Name: assetName, Image: assetImage},
+			config: New(assetName, assetImage),
 		},
 		{
 			name:   "default params",
-			config: &Asset{Name: "", Image: ""},
+			config: New("", ""),
 		},
 	}
 	for _, test := range tests {
@@ -38,12 +38,12 @@ func TestStore_CreateCorrect(t *testing.T) {
 				e := st.Create(config)
 				assert.NilError(t, e, "error not nil")
 				assert.Equal(t, 1, lenAssets(st), "store size")
-				stored, ok := st.assets.Load(config.Name)
+				stored, ok := st.assets.Load(config.Name())
 				assert.Assert(t, ok, "config does not exist")
 				asset, ok := stored.(*Asset)
 				assert.Assert(t, ok, "config type assertion failed")
-				assert.Equal(t, asset.Name, config.Name, "name not correct")
-				assert.Equal(t, asset.Image, config.Image, "image not correct")
+				assert.Equal(t, asset.Name(), config.Name(), "name not correct")
+				assert.Equal(t, asset.Image(), config.Image(), "image not correct")
 			})
 	}
 }
@@ -85,10 +85,7 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 		assetName  apitypes.AssetName = "Asset-Name"
 		assetImage                    = "Asset-Image"
 	)
-	config := &Asset{
-		Name:  assetName,
-		Image: assetImage,
-	}
+	config := New(assetName, assetImage)
 	st, ok := NewStore().(*store)
 	assert.Assert(t, ok, "type assertion failed for store")
 
@@ -100,26 +97,26 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 	assert.Assert(t, ok, "asset does not exist")
 	asset, ok := stored.(*Asset)
 	assert.Assert(t, ok, "asset type assertion failed")
-	assert.Equal(t, assetName, asset.Name, "name not correct")
-	assert.Equal(t, assetImage, asset.Image, "image not correct")
+	assert.Equal(t, assetName, asset.Name(), "name not correct")
+	assert.Equal(t, assetImage, asset.Image(), "image not correct")
 
 	// Create new image
-	config.Image = fmt.Sprintf("%v-new", assetImage)
+	config.image = fmt.Sprintf("%v-new", assetImage)
 	err = st.Create(config)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
 	assert.ErrorContains(
 		t,
 		err,
-		fmt.Sprintf("asset '%v' already exists", config.Name))
+		fmt.Sprintf("asset '%v' already exists", config.Name()))
 	// Store should keep old asset
 	assert.Equal(t, 1, lenAssets(st), "store size")
 	stored, ok = st.assets.Load(assetName)
 	assert.Assert(t, ok, "asset does not exist")
 	asset, ok = stored.(*Asset)
 	assert.Assert(t, ok, "asset type assertion failed")
-	assert.Equal(t, assetName, asset.Name, "name not correct")
+	assert.Equal(t, assetName, asset.Name(), "name not correct")
 	// Still should be old image as asset is not replaced
-	assert.Equal(t, assetImage, asset.Image, "image not correct")
+	assert.Equal(t, assetImage, asset.Image(), "image not correct")
 }
 
 func lenAssets(st *store) int {
@@ -214,11 +211,11 @@ func TestStore_Get(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.Name]
+					alreadySeen, exists := seen[r.Name()]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.Name] = true
+					seen[r.Name()] = true
 				}
 
 				for _, e := range test.expected {
@@ -230,8 +227,5 @@ func TestStore_Get(t *testing.T) {
 }
 
 func assetForNum(num int) *Asset {
-	return &Asset{
-		Name:  testutil.AssetNameForNum(num),
-		Image: testutil.AssetImageForNum(num),
-	}
+	return New(testutil.AssetNameForNum(num), testutil.AssetImageForNum(num))
 }

@@ -11,10 +11,10 @@ func TestAsset_Clone(t *testing.T) {
 		assetName  apitypes.AssetName = "Asset-Name"
 		assetImage                    = "Asset-Image"
 	)
-	src := &Asset{Name: assetName, Image: assetImage}
+	src := New(assetName, assetImage)
 	dst := src.Clone()
-	assert.Equal(t, assetName, src.Name, "source name")
-	assert.Equal(t, assetImage, src.Image, "source image")
-	assert.Equal(t, assetName, dst.Name, "dest name")
-	assert.Equal(t, assetImage, dst.Image, "dest image")
+	assert.Equal(t, assetName, src.Name(), "source name")
+	assert.Equal(t, assetImage, src.Image(), "source image")
+	assert.Equal(t, assetName, dst.Name(), "dest name")
+	assert.Equal(t, assetImage, dst.Image(), "dest image")
 }

@@ -16,10 +16,7 @@ func (s *Server) CreateAsset(config *apitypes.Asset) error {
 	if err := s.validateCreateAssetConfig(config); err != nil {
 		return err
 	}
-	a := &asset.Asset{
-		Name:  config.Name,
-		Image: config.Image,
-	}
+	a := asset.New(config.Name, config.Image)
 	return s.assetStore.Create(a)
 }
 
