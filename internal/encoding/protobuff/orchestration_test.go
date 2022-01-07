@@ -10,10 +10,10 @@ import (
 
 func TestMarshalOrchestration(t *testing.T) {
 	const (
-		name  = "OrchestrationName"
-		link1 = "Link Name 1"
-		link2 = "Link Name 2"
-		link3 = "Link Name 3"
+		name  apitypes.OrchestrationName = "OrchestrationName"
+		link1                            = "Link Name 1"
+		link2                            = "Link Name 2"
+		link3                            = "Link Name 3"
 	)
 	tests := []struct {
 		name string
@@ -41,7 +41,7 @@ func TestMarshalOrchestration(t *testing.T) {
 				o := test.o
 				res, err := MarshalOrchestration(o)
 				assert.NilError(t, err, "marshal error")
-				assert.Equal(t, o.Name, res.Name, "orchestration name")
+				assert.Equal(t, string(o.Name), res.Name, "orchestration name")
 				assert.Equal(
 					t,
 					len(o.Links),
@@ -88,7 +88,7 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 				o := test.o
 				res, err := UnmarshalOrchestration(o)
 				assert.Equal(t, nil, err, "unmarshal error")
-				assert.Equal(t, o.Name, res.Name, "orchestration name")
+				assert.Equal(t, o.Name, string(res.Name), "orchestration name")
 				assert.Equal(
 					t,
 					len(o.Links),

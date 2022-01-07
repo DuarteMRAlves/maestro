@@ -1,16 +1,17 @@
 package orchestration
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestOrchestration_Clone(t *testing.T) {
 	const (
-		oldBpName = "Old Orchestration Name"
-		newBpName = "New Orchestration Name"
-		link1     = "Link 1"
-		link2     = "Link 2"
+		oldBpName apitypes.OrchestrationName = "Old Orchestration Name"
+		newBpName apitypes.OrchestrationName = "New Orchestration Name"
+		link1                                = "Link 1"
+		link2                                = "Link 2"
 	)
 	o := &Orchestration{
 		name:  oldBpName,

@@ -92,7 +92,7 @@ func (o *OrchestrationOpts) validate() error {
 // It assumes the options were previously validated.
 func (o *OrchestrationOpts) run() error {
 	or := &apitypes.Orchestration{
-		Name:  o.name,
+		Name:  apitypes.OrchestrationName(o.name),
 		Links: o.links,
 	}
 
