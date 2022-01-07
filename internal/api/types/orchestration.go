@@ -13,7 +13,7 @@ type Orchestration struct {
 	Phase OrchestrationPhase `yaml:"-"`
 	// Links specifies the name of the links that compose this orchestration.
 	// (required, non-empty)
-	Links []string `yaml:"links" info:"required"`
+	Links []LinkName `yaml:"links" info:"required"`
 }
 
 // OrchestrationName is a name that uniquely identifies an Orchestration.

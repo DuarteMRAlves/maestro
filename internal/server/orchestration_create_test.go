@@ -22,28 +22,28 @@ func TestServer_CreateOrchestration(t *testing.T) {
 			name: "correct with nil links",
 			config: &apitypes.Orchestration{
 				Name:  name,
-				Links: []string{},
+				Links: []apitypes.LinkName{},
 			},
 		},
 		{
 			name: "correct with empty links",
 			config: &apitypes.Orchestration{
 				Name:  name,
-				Links: []string{},
+				Links: []apitypes.LinkName{},
 			},
 		},
 		{
 			name: "correct with one link",
 			config: &apitypes.Orchestration{
 				Name:  name,
-				Links: []string{testutil.LinkNameForNum(0)},
+				Links: []apitypes.LinkName{testutil.LinkNameForNum(0)},
 			},
 		},
 		{
 			name: "correct with multiple links",
 			config: &apitypes.Orchestration{
 				Name: name,
-				Links: []string{
+				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(2),
 					testutil.LinkNameForNum(1),
@@ -89,7 +89,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "empty name",
 			config: &apitypes.Orchestration{
 				Name: "",
-				Links: []string{
+				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -100,7 +100,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "invalid characters in name",
 			config: &apitypes.Orchestration{
 				Name: "?orchestration-name",
-				Links: []string{
+				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -111,7 +111,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "invalid character sequence",
 			config: &apitypes.Orchestration{
 				Name: "invalid//name",
-				Links: []string{
+				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -148,7 +148,7 @@ func TestServer_CreateOrchestration_LinkNotFound(t *testing.T) {
 
 	config := &apitypes.Orchestration{
 		Name: name,
-		Links: []string{
+		Links: []apitypes.LinkName{
 			testutil.LinkNameForNum(0),
 			// This link does not exist
 			testutil.LinkNameForNum(3),
@@ -171,7 +171,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 
 	config := &apitypes.Orchestration{
 		Name: name,
-		Links: []string{
+		Links: []apitypes.LinkName{
 			testutil.LinkNameForNum(0),
 			testutil.LinkNameForNum(1),
 			testutil.LinkNameForNum(2),

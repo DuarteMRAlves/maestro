@@ -100,31 +100,31 @@ func TestStore_Get(t *testing.T) {
 		// numbers to be stored
 		stored []int
 		// names of the expected Links
-		expected []string
+		expected []apitypes.LinkName
 	}{
 		{
 			name:     "zero elements stored, nil query",
 			query:    nil,
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "zero elements stored, some query",
 			query:    &apitypes.Link{Name: "some-name"},
 			stored:   []int{},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "one element stored, nil query",
 			query:    nil,
 			stored:   []int{0},
-			expected: []string{testutil.LinkNameForNum(0)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(0)},
 		},
 		{
 			name:   "multiple elements stored, nil query",
 			query:  nil,
 			stored: []int{0, 1, 2},
-			expected: []string{
+			expected: []apitypes.LinkName{
 				testutil.LinkNameForNum(0),
 				testutil.LinkNameForNum(1),
 				testutil.LinkNameForNum(2),
@@ -134,61 +134,61 @@ func TestStore_Get(t *testing.T) {
 			name:     "multiple elements stored, matching name query",
 			query:    &apitypes.Link{Name: testutil.LinkNameForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.LinkNameForNum(2)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name query",
 			query:    &apitypes.Link{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "multiple elements stored, matching source stage query",
 			query:    &apitypes.Link{SourceStage: testutil.LinkSourceStageForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.LinkNameForNum(2)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching source stage query",
 			query:    &apitypes.Link{SourceStage: "unknown-stage"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "multiple elements stored, matching source field query",
 			query:    &apitypes.Link{SourceField: testutil.LinkSourceFieldForNum(1)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.LinkNameForNum(1)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(1)},
 		},
 		{
 			name:     "multiple elements stored, non-matching source field query",
 			query:    &apitypes.Link{SourceField: "UnknownField"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "multiple elements stored, matching target stage query",
 			query:    &apitypes.Link{TargetStage: testutil.LinkTargetStageForNum(0)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.LinkNameForNum(0)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(0)},
 		},
 		{
 			name:     "multiple elements stored, non-matching target stage query",
 			query:    &apitypes.Link{TargetStage: "unknown-stage"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name:     "multiple elements stored, matching target field query",
 			query:    &apitypes.Link{TargetField: testutil.LinkTargetFieldForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []string{testutil.LinkNameForNum(2)},
+			expected: []apitypes.LinkName{testutil.LinkNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching target field query",
 			query:    &apitypes.Link{TargetField: "UnknownField"},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 		{
 			name: "multiple elements stored, exclusive query",
@@ -197,7 +197,7 @@ func TestStore_Get(t *testing.T) {
 				TargetStage: testutil.LinkTargetStageForNum(2),
 			},
 			stored:   []int{0, 1, 2},
-			expected: []string{},
+			expected: []apitypes.LinkName{},
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestStore_Get(t *testing.T) {
 				received := st.Get(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[string]bool, 0)
+				seen := make(map[apitypes.LinkName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}

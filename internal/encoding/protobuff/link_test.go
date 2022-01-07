@@ -11,7 +11,7 @@ import (
 
 func TestMarshalLink(t *testing.T) {
 	const (
-		name                           = "name"
+		name        apitypes.LinkName  = "name"
 		sourceStage apitypes.StageName = "sourceStage"
 		sourceField                    = "sourceField"
 		targetStage apitypes.StageName = "targetStage"
@@ -98,7 +98,7 @@ func TestUnmarshalLinkNil(t *testing.T) {
 }
 
 func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
-	assert.Equal(t, expected.Name, actual.Name, "name")
+	assert.Equal(t, string(expected.Name), actual.Name, "name")
 	assert.Equal(t, string(expected.SourceStage), actual.SourceStage, "source id")
 	assert.Equal(
 		t,
@@ -114,7 +114,7 @@ func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
 }
 
 func assertPbLink(t *testing.T, expected *pb.Link, actual *apitypes.Link) {
-	assert.Equal(t, expected.Name, actual.Name, "name")
+	assert.Equal(t, expected.Name, string(actual.Name), "name")
 	assert.Equal(t, expected.SourceStage, string(actual.SourceStage), "source id")
 	assert.Equal(
 		t,

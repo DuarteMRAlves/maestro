@@ -9,7 +9,7 @@ import (
 
 type Store interface {
 	Create(l *Link) error
-	Contains(name string) bool
+	Contains(name apitypes.LinkName) bool
 	Get(query *apitypes.Link) []*Link
 }
 
@@ -36,7 +36,7 @@ func (st *store) Create(config *Link) error {
 
 // Contains returns true if a link with the given name exists and false
 // otherwise.
-func (st *store) Contains(name string) bool {
+func (st *store) Contains(name apitypes.LinkName) bool {
 	_, ok := st.links.Load(name)
 	return ok
 }

@@ -8,13 +8,13 @@ import (
 
 func TestLink_Clone(t *testing.T) {
 	const (
-		oldName                           = "OldName"
+		oldName        apitypes.LinkName  = "OldName"
 		oldSourceStage apitypes.StageName = "OldSourceStage"
 		oldSourceField                    = "OldSourceField"
 		oldTargetStage apitypes.StageName = "OldTargetStage"
 		oldTargetField                    = "OldTargetField"
 
-		newName                           = "NewName"
+		newName        apitypes.LinkName  = "NewName"
 		newSourceStage apitypes.StageName = "NewSourceStage"
 		newSourceField                    = "NewSourceField"
 		newTargetStage apitypes.StageName = "NewTargetStage"

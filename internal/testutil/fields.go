@@ -50,8 +50,13 @@ func StageAddressForNum(num int) string {
 }
 
 // LinkNameForNum deterministically creates a link name for a given number.
-func LinkNameForNum(num int) string {
-	return fmt.Sprintf("link-%v", num)
+func LinkNameForNum(num int) apitypes.LinkName {
+	return apitypes.LinkName(fmt.Sprintf("link-%v", num))
+}
+
+// LinkNameForNumStr deterministically creates a link name for a given number.
+func LinkNameForNumStr(num int) string {
+	return string(LinkNameForNum(num))
 }
 
 // LinkSourceStageForNum deterministically creates a link source stage for a

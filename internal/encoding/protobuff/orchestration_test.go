@@ -12,9 +12,9 @@ func TestMarshalOrchestration(t *testing.T) {
 	const (
 		name  apitypes.OrchestrationName = "OrchestrationName"
 		phase                            = apitypes.OrchestrationRunning
-		link1                            = "Link Name 1"
-		link2                            = "Link Name 2"
-		link3                            = "Link Name 3"
+		link1 apitypes.LinkName          = "Link Name 1"
+		link2 apitypes.LinkName          = "Link Name 2"
+		link3 apitypes.LinkName          = "Link Name 3"
 	)
 	tests := []struct {
 		name string
@@ -25,7 +25,7 @@ func TestMarshalOrchestration(t *testing.T) {
 			o: &apitypes.Orchestration{
 				Name:  name,
 				Phase: phase,
-				Links: []string{link1, link2, link3},
+				Links: []apitypes.LinkName{link1, link2, link3},
 			},
 		},
 		{
@@ -52,7 +52,7 @@ func TestMarshalOrchestration(t *testing.T) {
 					len(res.Links),
 					"orchestration links len")
 				for i, l := range o.Links {
-					assert.Equal(t, l, res.Links[i], "link %d equal", i)
+					assert.Equal(t, string(l), res.Links[i], "link %d equal", i)
 				}
 			})
 	}
@@ -103,7 +103,7 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 					len(res.Links),
 					"orchestration links len")
 				for i, l := range o.Links {
-					assert.Equal(t, l, res.Links[i], "link %d equal", i)
+					assert.Equal(t, l, string(res.Links[i]), "link %d equal", i)
 				}
 			})
 	}
