@@ -14,25 +14,25 @@ func TestStore_CreateCorrect(t *testing.T) {
 	}{
 		{
 			name:   "test no links variable",
-			config: &Orchestration{Name: oName},
+			config: &Orchestration{name: oName},
 		},
 		{
 			name:   "test nil links",
-			config: &Orchestration{Name: oName, Links: nil},
+			config: &Orchestration{name: oName, links: nil},
 		},
 		{
 			name:   "test empty links",
-			config: &Orchestration{Name: oName, Links: []string{}},
+			config: &Orchestration{name: oName, links: []string{}},
 		},
 		{
 			name:   "test links with one element",
-			config: &Orchestration{Name: oName, Links: []string{"link-1"}},
+			config: &Orchestration{name: oName, links: []string{"link-1"}},
 		},
 		{
 			name: "test links with multiple elements",
 			config: &Orchestration{
-				Name:  oName,
-				Links: []string{"link-1", "link-2", "link-3"},
+				name:  oName,
+				links: []string{"link-1", "link-2", "link-3"},
 			},
 		},
 	}
@@ -51,11 +51,11 @@ func TestStore_CreateCorrect(t *testing.T) {
 
 				o, ok := stored.(*Orchestration)
 				assert.Assert(t, ok, "orchestration type assertion failed")
-				assert.Equal(t, test.config.Name, o.Name, "correct name")
-				if test.config.Links == nil {
-					assert.DeepEqual(t, []string{}, o.Links)
+				assert.Equal(t, test.config.name, o.name, "correct name")
+				if test.config.links == nil {
+					assert.DeepEqual(t, []string{}, o.links)
 				} else {
-					assert.DeepEqual(t, test.config.Links, o.Links)
+					assert.DeepEqual(t, test.config.links, o.links)
 				}
 			})
 	}
@@ -161,11 +161,11 @@ func TestStore_Get_Correct(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.Name]
+					alreadySeen, exists := seen[r.name]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.Name] = true
+					seen[r.name] = true
 				}
 
 				for _, e := range test.expected {
@@ -178,7 +178,7 @@ func TestStore_Get_Correct(t *testing.T) {
 
 func orchestrationForName(name string) *Orchestration {
 	return &Orchestration{
-		Name:  name,
-		Links: []string{"link-1", "link-2"},
+		name:  name,
+		links: []string{"link-1", "link-2"},
 	}
 }

@@ -19,10 +19,7 @@ func (s *Server) CreateOrchestration(config *apitypes.Orchestration) error {
 	if err := s.validateCreateOrchestrationConfig(config); err != nil {
 		return err
 	}
-	o := &orchestration.Orchestration{
-		Name:  config.Name,
-		Links: config.Links,
-	}
+	o := orchestration.New(config.Name, config.Links)
 	return s.orchestrationStore.Create(o)
 }
 

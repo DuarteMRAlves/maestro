@@ -27,11 +27,11 @@ func (st *store) Create(config *Orchestration) error {
 	}
 
 	o := config.Clone()
-	_, prev := st.orchestrations.LoadOrStore(o.Name, o)
+	_, prev := st.orchestrations.LoadOrStore(o.Name(), o)
 	if prev {
 		return errdefs.AlreadyExistsWithMsg(
 			"orchestration '%v' already exists",
-			o.Name)
+			o.Name())
 	}
 	return nil
 }
@@ -65,7 +65,7 @@ func buildQueryFilter(query *apitypes.Orchestration) func(b *Orchestration) bool
 		filters = append(
 			filters,
 			func(b *Orchestration) bool {
-				return b.Name == query.Name
+				return b.Name() == query.Name
 			})
 	}
 	switch len(filters) {
