@@ -1,6 +1,9 @@
 package flow
 
-import "github.com/DuarteMRAlves/maestro/internal/link"
+import (
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/link"
+)
 
 // Output receives the output flow.State for a given stage and sends it to the
 // next stages.
@@ -10,8 +13,8 @@ type Output interface {
 
 // OutputCfg represents the several output flows for a stage
 type OutputCfg struct {
-	typ         OutputType
-	connections map[string]*link.Link
+	typ   OutputType
+	links []*link.Link
 }
 
 // OutputType defines the type of output the stage.Stage associated with this
@@ -36,10 +39,37 @@ const (
 	OutputDuplicate OutputType = "Duplicate"
 )
 
-func NewOutputCfg() *OutputCfg {
+func newOutputCfg() *OutputCfg {
 	return &OutputCfg{
-		typ:         OutputInfer,
-		connections: map[string]*link.Link{},
+		typ:   OutputInfer,
+		links: []*link.Link{},
+	}
+}
+
+func (o *OutputCfg) register(link *link.Link) error {
+	for _, l := range o.links {
+		if link.Name() == l.Name() {
+			return errdefs.InvalidArgumentWithMsg(
+				"link with an equal name already registered: %s",
+				l.Name())
+		}
+	}
+
+	o.links = append(o.links, link)
+	return nil
+}
+
+func (o *OutputCfg) unregisterIfExists(search *link.Link) {
+	idx := -1
+	for i, l := range o.links {
+		if l.Name() == search.Name() {
+			idx = i
+			break
+		}
+	}
+	if idx != -1 {
+		o.links[idx] = o.links[len(o.links)-1]
+		o.links = o.links[:len(o.links)-1]
 	}
 }
 

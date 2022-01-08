@@ -3,7 +3,6 @@ package stage
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/worker"
 )
@@ -20,10 +19,6 @@ type Stage struct {
 	rpc reflection.RPC
 
 	worker worker.Worker
-
-	// input and output describe the connections to other stages
-	input  *flow.InputCfg
-	output *flow.OutputCfg
 }
 
 func New(
@@ -38,9 +33,11 @@ func New(
 		asset:   asset,
 		rpc:     rpc,
 		phase:   apitypes.StagePending,
-		input:   flow.NewInputCfg(),
-		output:  flow.NewOutputCfg(),
 	}
+}
+
+func (s *Stage) Name() apitypes.StageName {
+	return s.name
 }
 
 func (s *Stage) Rpc() reflection.RPC {

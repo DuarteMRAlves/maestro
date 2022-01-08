@@ -5,6 +5,7 @@ import (
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
@@ -47,6 +48,7 @@ func (b *Builder) Build() (*Server, error) {
 	}
 	s := &Server{}
 	initStores(s)
+	s.flowManager = flow.NewManager()
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}

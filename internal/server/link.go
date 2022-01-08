@@ -23,6 +23,17 @@ func (s *Server) CreateLink(config *apitypes.Link) error {
 		config.TargetStage,
 		config.TargetField,
 	)
+	source, ok := s.stageStore.GetByName(config.SourceStage)
+	if !ok {
+		return errdefs.InternalWithMsg("source not found")
+	}
+	target, ok := s.stageStore.GetByName(config.TargetStage)
+	if !ok {
+		return errdefs.InternalWithMsg("target not found")
+	}
+	if err := s.flowManager.Register(source, target, l); err != nil {
+		return err
+	}
 	return s.linkStore.Create(l)
 }
 
@@ -58,6 +69,9 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 	if !naming.IsValidLinkName(config.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
+	if s.linkStore.Contains(config.Name) {
+		return errdefs.AlreadyExistsWithMsg("link '%v' already exists", config.Name)
+	}
 	if config.SourceStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty source stage name")
 	}
@@ -81,38 +95,6 @@ func (s *Server) validateCreateLinkConfig(config *apitypes.Link) error {
 			config.TargetStage)
 	}
 
-	sourceOutput := source.Rpc().Output()
-	targetInput := target.Rpc().Input()
-	if config.SourceField != "" {
-		sourceOutput, ok = sourceOutput.GetMessageField(config.SourceField)
-		if !ok {
-			return errdefs.NotFoundWithMsg(
-				"field with name %s not found for message %s for source stage "+
-					"in link %s",
-				config.SourceField,
-				source.Rpc().Output().FullyQualifiedName(),
-				config.Name)
-		}
-	}
-	if config.TargetField != "" {
-		targetInput, ok = targetInput.GetMessageField(config.TargetField)
-		if !ok {
-			return errdefs.NotFoundWithMsg(
-				"field with name %s not found for message %s for target stage "+
-					"in link %v",
-				config.TargetField,
-				target.Rpc().Input().FullyQualifiedName(),
-				config.Name)
-		}
-	}
-	if !sourceOutput.Compatible(targetInput) {
-		return errdefs.InvalidArgumentWithMsg(
-			"incompatible message types between source output %s and target"+
-				" input %s in link %s",
-			sourceOutput.FullyQualifiedName(),
-			targetInput.FullyQualifiedName(),
-			config.Name)
-	}
 	if !source.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
