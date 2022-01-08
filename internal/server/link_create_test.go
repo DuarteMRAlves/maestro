@@ -122,7 +122,6 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 			func(t *testing.T) {
 				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
-				populateForOrchestrations(t, s)
 
 				err = s.CreateLink(test.config)
 				assert.Assert(

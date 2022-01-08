@@ -29,6 +29,18 @@ func New(
 	}
 }
 
+func (l *Link) Name() apitypes.LinkName {
+	return l.name
+}
+
+func (l *Link) SourceField() string {
+	return l.sourceField
+}
+
+func (l *Link) TargetField() string {
+	return l.targetField
+}
+
 func (l *Link) Clone() *Link {
 	return &Link{
 		name:        l.name,

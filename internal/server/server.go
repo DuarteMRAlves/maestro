@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
+	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
@@ -20,7 +21,10 @@ type Server struct {
 	stageStore         stage.Store
 	linkStore          link.Store
 	orchestrationStore orchestration.Store
-	grpcServer         *grpc.Server
+
+	flowManager *flow.Manager
+
+	grpcServer *grpc.Server
 
 	logger *zap.Logger
 }

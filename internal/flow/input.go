@@ -1,6 +1,9 @@
 package flow
 
-import "github.com/DuarteMRAlves/maestro/internal/link"
+import (
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/link"
+)
 
 // Input joins the input flows for a given stage and provides the next
 // State to be processed.
@@ -10,8 +13,8 @@ type Input interface {
 
 // InputCfg represents the several input flows for a stage
 type InputCfg struct {
-	typ         InputType
-	connections map[string]*link.Link
+	typ   InputType
+	links []*link.Link
 }
 
 // InputType defines the type of input that the stage.Stage associated with this
@@ -36,10 +39,41 @@ const (
 	InputCollect InputType = "Collect"
 )
 
-func NewInputCfg() *InputCfg {
+func newInputCfg() *InputCfg {
 	return &InputCfg{
-		typ:         InputInfer,
-		connections: map[string]*link.Link{},
+		typ:   InputInfer,
+		links: []*link.Link{},
+	}
+}
+
+func (i *InputCfg) register(l *link.Link) error {
+	// A previous link that consumes the entire message already exists
+	if len(i.links) == 1 && i.links[0].TargetField() == "" {
+		return errdefs.FailedPreconditionWithMsg(
+			"link that receives the full message already exists")
+	}
+	for _, prev := range i.links {
+		if prev.TargetField() == l.TargetField() {
+			return errdefs.InvalidArgumentWithMsg(
+				"link with an equal name already registered: %s",
+				l.Name())
+		}
+	}
+	i.links = append(i.links, l)
+	return nil
+}
+
+func (i *InputCfg) unregisterIfExists(search *link.Link) {
+	idx := -1
+	for j, l := range i.links {
+		if l.Name() == search.Name() {
+			idx = j
+			break
+		}
+	}
+	if idx != -1 {
+		i.links[idx] = i.links[len(i.links)-1]
+		i.links = i.links[:len(i.links)-1]
 	}
 }
 
