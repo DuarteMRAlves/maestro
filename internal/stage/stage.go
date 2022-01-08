@@ -22,8 +22,8 @@ type Stage struct {
 	worker worker.Worker
 
 	// input and output describe the connections to other stages
-	input  *flow.Input
-	output *flow.Output
+	input  *flow.InputCfg
+	output *flow.OutputCfg
 }
 
 func New(
@@ -38,8 +38,8 @@ func New(
 		asset:   asset,
 		rpc:     rpc,
 		phase:   apitypes.StagePending,
-		input:   flow.NewInput(),
-		output:  flow.NewOutput(),
+		input:   flow.NewInputCfg(),
+		output:  flow.NewOutputCfg(),
 	}
 }
 
