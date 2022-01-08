@@ -2,14 +2,20 @@ package flow
 
 import "github.com/DuarteMRAlves/maestro/internal/link"
 
-// Output represents the several output flows for a stage
-type Output struct {
+// Output receives the output flow.State for a given stage and sends it to the
+// next stages.
+type Output interface {
+	Out() chan<- *State
+}
+
+// OutputCfg represents the several output flows for a stage
+type OutputCfg struct {
 	typ         OutputType
 	connections map[string]*link.Link
 }
 
 // OutputType defines the type of output the stage.Stage associated with this
-// Output is expecting.
+// OutputCfg is expecting.
 type OutputType string
 
 const (
@@ -30,9 +36,13 @@ const (
 	OutputDuplicate OutputType = "Duplicate"
 )
 
-func NewOutput() *Output {
-	return &Output{
+func NewOutputCfg() *OutputCfg {
+	return &OutputCfg{
 		typ:         OutputInfer,
 		connections: map[string]*link.Link{},
 	}
+}
+
+func (o *OutputCfg) ToFlow() Output {
+	return nil
 }

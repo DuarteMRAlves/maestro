@@ -2,14 +2,20 @@ package flow
 
 import "github.com/DuarteMRAlves/maestro/internal/link"
 
-// Input represents the several input flows for a stage
-type Input struct {
+// Input joins the input flows for a given stage and provides the next
+// State to be processed.
+type Input interface {
+	In() <-chan *State
+}
+
+// InputCfg represents the several input flows for a stage
+type InputCfg struct {
 	typ         InputType
 	connections map[string]*link.Link
 }
 
 // InputType defines the type of input that the stage.Stage associated with this
-// Input is expecting.
+// InputCfg is expecting.
 type InputType string
 
 const (
@@ -30,9 +36,13 @@ const (
 	InputCollect InputType = "Collect"
 )
 
-func NewInput() *Input {
-	return &Input{
+func NewInputCfg() *InputCfg {
+	return &InputCfg{
 		typ:         InputInfer,
 		connections: map[string]*link.Link{},
 	}
+}
+
+func (i *InputCfg) ToFlow() Input {
+	return nil
 }
