@@ -1,32 +1,24 @@
 package flow
 
-// State defines a structure to manage the flow of a computation. This State is
-// created in a source stage with a unique id, that is transferred through the
-// orchestration, identifying the flow so that messages in parallel branches can
-// be synchronized.
-type State struct {
-	id  StateId
-	msg interface{}
+import (
+	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/queue"
+)
+
+// Flow is a connection between two stages where data is transferred.
+type Flow struct {
+	link  *link.Link
+	queue queue.Ring
 }
 
-// StateId is a unique id that identifies a computation flow.
-type StateId int
-
-func New(id StateId, msg interface{}) *State {
-	return &State{
-		id:  id,
-		msg: msg,
+func newFlow(l *link.Link) (*Flow, error) {
+	q, err := queue.NewRing(1)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (f *State) Id() StateId {
-	return f.id
-}
-
-func (f *State) Msg() interface{} {
-	return f.msg
-}
-
-func (f *State) Update(msg interface{}) {
-	f.msg = msg
+	f := &Flow{
+		link:  l,
+		queue: q,
+	}
+	return f, nil
 }
