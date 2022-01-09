@@ -2,19 +2,18 @@ package flow
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 )
 
 // Input joins the input flows for a given stage and provides the next
 // State to be processed.
 type Input interface {
-	In() <-chan *State
+	Next() *State
 }
 
 // InputCfg represents the several input flows for a stage
 type InputCfg struct {
 	typ   InputType
-	links []*link.Link
+	flows []*Flow
 }
 
 // InputType defines the type of input that the stage.Stage associated with this
@@ -42,41 +41,55 @@ const (
 func newInputCfg() *InputCfg {
 	return &InputCfg{
 		typ:   InputInfer,
-		links: []*link.Link{},
+		flows: []*Flow{},
 	}
 }
 
-func (i *InputCfg) register(l *link.Link) error {
+func (i *InputCfg) register(f *Flow) error {
+	l := f.link
 	// A previous link that consumes the entire message already exists
-	if len(i.links) == 1 && i.links[0].TargetField() == "" {
+	if len(i.flows) == 1 && i.flows[0].link.TargetField() == "" {
 		return errdefs.FailedPreconditionWithMsg(
 			"link that receives the full message already exists")
 	}
-	for _, prev := range i.links {
-		if prev.TargetField() == l.TargetField() {
+	for _, prev := range i.flows {
+		if prev.link.TargetField() == l.TargetField() {
 			return errdefs.InvalidArgumentWithMsg(
 				"link with an equal name already registered: %s",
 				l.Name())
 		}
 	}
-	i.links = append(i.links, l)
+	i.flows = append(i.flows, f)
 	return nil
 }
 
-func (i *InputCfg) unregisterIfExists(search *link.Link) {
+func (i *InputCfg) unregisterIfExists(search *Flow) {
 	idx := -1
-	for j, l := range i.links {
-		if l.Name() == search.Name() {
+	for j, f := range i.flows {
+		if f.link.Name() == search.link.Name() {
 			idx = j
 			break
 		}
 	}
 	if idx != -1 {
-		i.links[idx] = i.links[len(i.links)-1]
-		i.links = i.links[:len(i.links)-1]
+		i.flows[idx] = i.flows[len(i.flows)-1]
+		i.flows = i.flows[:len(i.flows)-1]
 	}
 }
 
-func (i *InputCfg) ToFlow() Input {
+func (i *InputCfg) ToInput() Input {
+	switch len(i.flows) {
+	case 1:
+		return &SingleInput{flow: i.flows[0]}
+	}
 	return nil
+}
+
+// SingleInput is a struct the implements the Input for a single input
+type SingleInput struct {
+	flow *Flow
+}
+
+func (i *SingleInput) Next() *State {
+	return i.flow.queue.Pop().(*State)
 }

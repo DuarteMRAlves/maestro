@@ -10,12 +10,14 @@ import (
 type Manager struct {
 	inputs  sync.Map
 	outputs sync.Map
+	flows   sync.Map
 }
 
 func NewManager() *Manager {
 	return &Manager{
 		inputs:  sync.Map{},
 		outputs: sync.Map{},
+		flows:   sync.Map{},
 	}
 }
 
@@ -63,6 +65,11 @@ func (m *Manager) Register(
 			link.Name())
 	}
 
+	flow, err := m.flowForLink(link)
+	if err != nil {
+		return err
+	}
+
 	sourceOutputCfg := m.outputCfgForStage(source)
 	if err = sourceOutputCfg.register(link); err != nil {
 		return err
@@ -74,12 +81,12 @@ func (m *Manager) Register(
 	}()
 
 	targetInputCfg := m.inputCfgForStage(target)
-	if err = targetInputCfg.register(link); err != nil {
+	if err = targetInputCfg.register(flow); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			targetInputCfg.unregisterIfExists(link)
+			targetInputCfg.unregisterIfExists(flow)
 		}
 	}()
 
@@ -102,4 +109,17 @@ func (m *Manager) outputCfgForStage(s *stage.Stage) *OutputCfg {
 		cfg, _ = m.outputs.LoadOrStore(name, newOutputCfg())
 	}
 	return cfg.(*OutputCfg)
+}
+
+func (m *Manager) flowForLink(l *link.Link) (*Flow, error) {
+	var err error
+	name := l.Name()
+	f, ok := m.flows.Load(name)
+	if !ok {
+		if f, err = newFlow(l); err != nil {
+			return nil, err
+		}
+		f, _ = m.flows.LoadOrStore(name, f)
+	}
+	return f.(*Flow), nil
 }
