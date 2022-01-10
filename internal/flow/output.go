@@ -2,19 +2,18 @@ package flow
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 )
 
 // Output receives the output flow.State for a given stage and sends it to the
 // next stages.
 type Output interface {
-	Out() chan<- *State
+	Yield(s *State)
 }
 
 // OutputCfg represents the several output flows for a stage
 type OutputCfg struct {
 	typ   OutputType
-	links []*link.Link
+	flows []*Flow
 }
 
 // OutputType defines the type of output the stage.Stage associated with this
@@ -42,37 +41,51 @@ const (
 func newOutputCfg() *OutputCfg {
 	return &OutputCfg{
 		typ:   OutputInfer,
-		links: []*link.Link{},
+		flows: []*Flow{},
 	}
 }
 
-func (o *OutputCfg) register(link *link.Link) error {
-	for _, l := range o.links {
-		if link.Name() == l.Name() {
+func (o *OutputCfg) register(f *Flow) error {
+	l := f.link
+	for _, prev := range o.flows {
+		if l.Name() == prev.link.Name() {
 			return errdefs.InvalidArgumentWithMsg(
 				"link with an equal name already registered: %s",
-				l.Name())
+				prev.link.Name())
 		}
 	}
 
-	o.links = append(o.links, link)
+	o.flows = append(o.flows, f)
 	return nil
 }
 
-func (o *OutputCfg) unregisterIfExists(search *link.Link) {
+func (o *OutputCfg) unregisterIfExists(search *Flow) {
 	idx := -1
-	for i, l := range o.links {
-		if l.Name() == search.Name() {
+	for i, f := range o.flows {
+		if f.link.Name() == search.link.Name() {
 			idx = i
 			break
 		}
 	}
 	if idx != -1 {
-		o.links[idx] = o.links[len(o.links)-1]
-		o.links = o.links[:len(o.links)-1]
+		o.flows[idx] = o.flows[len(o.flows)-1]
+		o.flows = o.flows[:len(o.flows)-1]
 	}
 }
 
 func (o *OutputCfg) ToFlow() Output {
+	switch len(o.flows) {
+	case 1:
+		return &SingleOutput{flow: o.flows[0]}
+	}
 	return nil
+}
+
+// SingleOutput is a struct that implements Output for a single output flow.
+type SingleOutput struct {
+	flow *Flow
+}
+
+func (o *SingleOutput) Yield(s *State) {
+	o.flow.queue.Push(s)
 }

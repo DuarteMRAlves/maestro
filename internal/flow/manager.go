@@ -71,12 +71,12 @@ func (m *Manager) Register(
 	}
 
 	sourceOutputCfg := m.outputCfgForStage(source)
-	if err = sourceOutputCfg.register(link); err != nil {
+	if err = sourceOutputCfg.register(flow); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			sourceOutputCfg.unregisterIfExists(link)
+			sourceOutputCfg.unregisterIfExists(flow)
 		}
 	}()
 
