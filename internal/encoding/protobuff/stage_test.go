@@ -12,6 +12,7 @@ import (
 func TestMarshalStage(t *testing.T) {
 	const (
 		stageName    apitypes.StageName = "Stage Name"
+		stagePhase                      = apitypes.StagePending
 		stageAsset                      = "Stage Asset"
 		stageService                    = "stageService"
 		stageRpc                        = "stageRpc"
@@ -22,6 +23,7 @@ func TestMarshalStage(t *testing.T) {
 	tests := []*apitypes.Stage{
 		{
 			Name:    stageName,
+			Phase:   stagePhase,
 			Asset:   stageAsset,
 			Service: stageService,
 			Rpc:     stageRpc,
@@ -31,6 +33,7 @@ func TestMarshalStage(t *testing.T) {
 		},
 		{
 			Name:    "",
+			Phase:   "",
 			Asset:   "",
 			Service: "",
 			Rpc:     "",
@@ -55,6 +58,7 @@ func TestMarshalStage(t *testing.T) {
 func TestUnmarshalStageCorrect(t *testing.T) {
 	const (
 		stageName          = "Stage Name"
+		stagePhase         = "Running"
 		stageAsset         = "Stage Asset"
 		stageService       = "stageService"
 		stageRpc           = "stageRpc"
@@ -65,6 +69,7 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 	tests := []*pb.Stage{
 		{
 			Name:    stageName,
+			Phase:   stagePhase,
 			Asset:   stageAsset,
 			Service: stageService,
 			Rpc:     stageRpc,
@@ -74,6 +79,7 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 		},
 		{
 			Name:    "",
+			Phase:   "",
 			Asset:   "",
 			Service: "",
 			Rpc:     "",
@@ -111,6 +117,7 @@ func TestUnmarshalStageNil(t *testing.T) {
 
 func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 	assert.Equal(t, string(expected.Name), actual.Name, "stage assetName")
+	assert.Equal(t, string(expected.Phase), actual.Phase, "stage phase")
 	assert.Equal(t, string(expected.Asset), actual.Asset, "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
@@ -121,6 +128,7 @@ func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *apitypes.Stage) {
 	assert.Equal(t, expected.Name, string(actual.Name), "stage assetName")
+	assert.Equal(t, expected.Phase, string(actual.Phase), "stage phase")
 	assert.Equal(t, expected.Asset, string(actual.Asset), "asset id")
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")

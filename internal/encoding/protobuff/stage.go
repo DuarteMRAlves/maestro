@@ -15,6 +15,7 @@ func MarshalStage(s *apitypes.Stage) (*pb.Stage, error) {
 	}
 	pbStage := &pb.Stage{
 		Name:    string(s.Name),
+		Phase:   string(s.Phase),
 		Asset:   string(s.Asset),
 		Service: s.Service,
 		Rpc:     s.Rpc,
@@ -33,6 +34,7 @@ func UnmarshalStage(p *pb.Stage) (*apitypes.Stage, error) {
 	}
 	return &apitypes.Stage{
 		Name:    apitypes.StageName(p.Name),
+		Phase:   apitypes.StagePhase(p.Phase),
 		Asset:   apitypes.AssetName(p.Asset),
 		Service: p.Service,
 		Rpc:     p.Rpc,
