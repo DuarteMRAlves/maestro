@@ -15,6 +15,7 @@ func TestStore_Create(t *testing.T) {
 		stageAsset   = "asset-name"
 		stageAddress = "Address"
 	)
+	var rpc = &mock.RPC{Name_: "Rpc"}
 	tests := []struct {
 		name   string
 		config *Stage
@@ -26,6 +27,7 @@ func TestStore_Create(t *testing.T) {
 				phase:   stagePhase,
 				asset:   stageAsset,
 				address: stageAddress,
+				rpc:     rpc,
 			},
 		},
 		{
@@ -35,6 +37,7 @@ func TestStore_Create(t *testing.T) {
 				phase:   "",
 				asset:   "",
 				address: "",
+				rpc:     nil,
 			},
 		},
 	}
@@ -57,7 +60,14 @@ func TestStore_Create(t *testing.T) {
 				s, ok := stored.(*Stage)
 				assert.Assert(t, ok, "stage type assertion failed")
 				assert.Equal(t, cfg.name, s.name, "correct name")
+				assert.Equal(t, cfg.phase, s.phase, "correct phase")
 				assert.Equal(t, cfg.asset, s.asset, "correct asset")
+				assert.Equal(t, cfg.address, s.address, "correct address")
+				if cfg.rpc == nil {
+					assert.Assert(t, s.rpc == nil, "correct nil rpc")
+				} else {
+					assert.Equal(t, cfg.rpc.Name(), s.rpc.Name(), "correct rpc")
+				}
 			})
 	}
 }
