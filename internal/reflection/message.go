@@ -4,6 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/dynamic"
 )
 
 // Message describes a grpc message
@@ -17,6 +18,10 @@ type Message interface {
 	// no field with the given name exists, or the field has the wrong type, nil
 	// and false is returned.
 	GetMessageField(name string) (Message, bool)
+	// NewEmpty returns an empty *dynamic.Message with the same fields as this
+	// Message. The returned message can be used to call rpc methods that will
+	// fill the fields.
+	NewEmpty() interface{}
 }
 
 type message struct {
@@ -89,4 +94,8 @@ func (m *message) GetMessageField(name string) (Message, bool) {
 		return nil, false
 	}
 	return newMessageInternal(field.GetMessageType()), true
+}
+
+func (m *message) NewEmpty() interface{} {
+	return dynamic.NewMessage(m.desc)
 }

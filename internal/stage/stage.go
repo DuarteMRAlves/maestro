@@ -4,7 +4,6 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/worker"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
@@ -17,8 +16,6 @@ type Stage struct {
 
 	// Descriptor for the rpc that this stage calls.
 	rpc reflection.RPC
-
-	worker worker.Worker
 }
 
 func New(
