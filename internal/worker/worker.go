@@ -1,90 +1,59 @@
 package worker
 
 import (
-	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"
-	"time"
 )
 
 type Worker interface {
 	Run()
 }
 
-// UnaryWorker manages the execution of a stage in a pipeline
-type UnaryWorker struct {
+type Cfg struct {
 	Address string
-	conn    grpc.ClientConnInterface
-	rpc     reflection.RPC
-	invoker invoke.UnaryClient
-
-	input  flow.Input
-	output flow.Output
-
-	done   chan<- bool
-	maxMsg int
+	Rpc     reflection.RPC
+	Input   flow.Input
+	Output  flow.Output
+	Done    chan<- bool
+	MaxMsg  int
 }
 
-func NewWorker(
-	address string,
-	rpc reflection.RPC,
-	input flow.Input,
-	output flow.Output,
-	done chan<- bool,
-	maxMsg int,
-) (Worker, error) {
+func (c *Cfg) Clone() *Cfg {
+	return &Cfg{
+		Address: c.Address,
+		Rpc:     c.Rpc,
+		Input:   c.Input,
+		Output:  c.Output,
+		Done:    c.Done,
+		MaxMsg:  c.MaxMsg,
+	}
+}
+
+func NewWorker(cfg *Cfg) (Worker, error) {
+	cfg = cfg.Clone()
 	switch {
-	case rpc.IsUnary():
-		conn, err := grpc.Dial(address, grpc.WithInsecure())
+	case cfg.Rpc.IsUnary():
+		conn, err := grpc.Dial(cfg.Address, grpc.WithInsecure())
 		if err != nil {
 			return nil, errdefs.InvalidArgumentWithMsg(
 				"unable to connect to address: %s",
-				address)
+				cfg.Address)
 		}
 		w := &UnaryWorker{
-			Address: address,
+			Address: cfg.Address,
 			conn:    conn,
-			rpc:     rpc,
-			invoker: invoke.NewUnary(rpc.FullyQualifiedName(), conn),
-			input:   input,
-			output:  output,
-			done:    done,
-			maxMsg:  maxMsg,
+			rpc:     cfg.Rpc,
+			invoker: invoke.NewUnary(cfg.Rpc.FullyQualifiedName(), conn),
+			input:   cfg.Input,
+			output:  cfg.Output,
+			done:    cfg.Done,
+			maxMsg:  cfg.MaxMsg,
 		}
 		return w, nil
 	default:
 		return nil, errdefs.InvalidArgumentWithMsg("unsupported rpc type")
 	}
-}
-
-func (w *UnaryWorker) Run() {
-	var (
-		in, out  *flow.State
-		req, rep interface{}
-	)
-
-	for msgCount := 0; msgCount < w.maxMsg; msgCount++ {
-		in = w.input.Next()
-
-		req = in.Msg()
-		rep = w.rpc.Output().NewEmpty()
-
-		err := w.invoke(req, rep)
-		if err != nil {
-			panic(err)
-		}
-
-		out = flow.New(in.Id(), rep)
-		w.output.Yield(out)
-	}
-	w.done <- true
-}
-
-func (w *UnaryWorker) invoke(req interface{}, rep interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	return w.invoker.Invoke(ctx, req, rep)
 }

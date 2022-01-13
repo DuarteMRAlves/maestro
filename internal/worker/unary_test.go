@@ -58,14 +58,16 @@ func TestUnaryWorker_Run(t *testing.T) {
 	output := mockflow.NewOutput()
 	done := make(chan bool)
 
-	w, err := NewWorker(
-		addr,
-		rpc,
-		input,
-		output,
-		done,
-		len(states),
-	)
+	cfg := &Cfg{
+		Address: addr,
+		Rpc:     rpc,
+		Input:   input,
+		Output:  output,
+		Done:    done,
+		MaxMsg:  len(states),
+	}
+
+	w, err := NewWorker(cfg)
 	assert.NilError(t, err, "create worker error")
 
 	go w.Run()
