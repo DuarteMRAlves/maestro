@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/flow"
+	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
@@ -53,7 +53,7 @@ func TestUnaryWorker_Run(t *testing.T) {
 			},
 		},
 	}
-	states := []*flow.State{flow.New(1, msgs[0]), flow.New(3, msgs[1])}
+	states := []*state.State{state.New(1, msgs[0]), state.New(3, msgs[1])}
 	input := mockflow.NewInput(states)
 	output := mockflow.NewOutput()
 	done := make(chan bool)

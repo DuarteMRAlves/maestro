@@ -1,17 +1,19 @@
 package flow
 
-import "github.com/DuarteMRAlves/maestro/internal/flow"
+import (
+	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+)
 
 type Input struct {
-	send []*flow.State
+	send []*state.State
 	idx  int
 }
 
-func NewInput(states []*flow.State) *Input {
+func NewInput(states []*state.State) *Input {
 	return &Input{send: states, idx: 0}
 }
 
-func (i *Input) Next() *flow.State {
+func (i *Input) Next() *state.State {
 	if len(i.send) == i.idx {
 		return nil
 	}
@@ -21,13 +23,13 @@ func (i *Input) Next() *flow.State {
 }
 
 type Output struct {
-	States []*flow.State
+	States []*state.State
 }
 
 func NewOutput() *Output {
-	return &Output{States: make([]*flow.State, 0)}
+	return &Output{States: make([]*state.State, 0)}
 }
 
-func (o *Output) Yield(s *flow.State) {
+func (o *Output) Yield(s *state.State) {
 	o.States = append(o.States, s)
 }

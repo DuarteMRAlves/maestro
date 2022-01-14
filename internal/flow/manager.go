@@ -1,7 +1,12 @@
 package flow
 
 import (
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
+	"github.com/DuarteMRAlves/maestro/internal/flow/input"
+	"github.com/DuarteMRAlves/maestro/internal/flow/output"
+	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"sync"
@@ -15,6 +20,8 @@ type Manager interface {
 }
 
 type manager struct {
+	mu      sync.RWMutex
+	workers map[apitypes.StageName]worker.Worker
 	inputs  sync.Map
 	outputs sync.Map
 	flows   sync.Map
@@ -26,6 +33,30 @@ func NewManager() Manager {
 		outputs: sync.Map{},
 		flows:   sync.Map{},
 	}
+}
+
+func (m *manager) RegisterStage(s *stage.Stage) error {
+	cfg := workerCfgForStage(s)
+
+	w, err := worker.NewWorker(cfg)
+	if err != nil {
+		return err
+	}
+
+	name := s.Name()
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	_, exists := m.workers[name]
+	if exists {
+		return errdefs.AlreadyExistsWithMsg(
+			"Worker for stage %s already exists",
+			name)
+	}
+	m.workers[name] = w
+
+	return err
 }
 
 func (m *manager) RegisterLink(
@@ -78,55 +109,66 @@ func (m *manager) RegisterLink(
 	}
 
 	sourceOutputCfg := m.outputCfgForStage(source)
-	if err = sourceOutputCfg.register(flow); err != nil {
+	if err = sourceOutputCfg.Register(flow); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			sourceOutputCfg.unregisterIfExists(flow)
+			sourceOutputCfg.UnregisterIfExists(flow)
 		}
 	}()
 
 	targetInputCfg := m.inputCfgForStage(target)
-	if err = targetInputCfg.register(flow); err != nil {
+	if err = targetInputCfg.Register(flow); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			targetInputCfg.unregisterIfExists(flow)
+			targetInputCfg.UnregisterIfExists(flow)
 		}
 	}()
 
 	return nil
 }
 
-func (m *manager) inputCfgForStage(s *stage.Stage) *InputCfg {
+func (m *manager) inputCfgForStage(s *stage.Stage) *input.Cfg {
 	name := s.Name()
 	cfg, ok := m.inputs.Load(name)
 	if !ok {
-		cfg, _ = m.inputs.LoadOrStore(name, newInputCfg())
+		cfg, _ = m.inputs.LoadOrStore(name, input.NewInputCfg())
 	}
-	return cfg.(*InputCfg)
+	return cfg.(*input.Cfg)
 }
 
-func (m *manager) outputCfgForStage(s *stage.Stage) *OutputCfg {
+func (m *manager) outputCfgForStage(s *stage.Stage) *output.Cfg {
 	name := s.Name()
 	cfg, ok := m.outputs.Load(name)
 	if !ok {
-		cfg, _ = m.outputs.LoadOrStore(name, newOutputCfg())
+		cfg, _ = m.outputs.LoadOrStore(name, output.NewOutputCfg())
 	}
-	return cfg.(*OutputCfg)
+	return cfg.(*output.Cfg)
 }
 
-func (m *manager) flowForLink(l *link.Link) (*Flow, error) {
+func workerCfgForStage(s *stage.Stage) *worker.Cfg {
+	return &worker.Cfg{
+		Address: s.Address(),
+		Rpc:     s.Rpc(),
+		Input:   nil,
+		Output:  nil,
+		Done:    nil,
+		MaxMsg:  0,
+	}
+}
+
+func (m *manager) flowForLink(l *link.Link) (*flow.Flow, error) {
 	var err error
 	name := l.Name()
 	f, ok := m.flows.Load(name)
 	if !ok {
-		if f, err = newFlow(l); err != nil {
+		if f, err = flow.NewFlow(l); err != nil {
 			return nil, err
 		}
 		f, _ = m.flows.LoadOrStore(name, f)
 	}
-	return f.(*Flow), nil
+	return f.(*flow.Flow), nil
 }
