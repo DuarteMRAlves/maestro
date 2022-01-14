@@ -48,7 +48,7 @@ func (b *Builder) Build() (*Server, error) {
 	}
 	s := &Server{}
 	initStores(s)
-	s.flowManager = flow.NewManager()
+	initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
@@ -73,6 +73,11 @@ func initStores(s *Server) {
 	s.stageStore = stage.NewStore()
 	s.linkStore = link.NewStore()
 	s.orchestrationStore = orchestration.NewStore()
+}
+
+func initManagers(s *Server) {
+	s.flowManager = flow.NewManager()
+	s.stageManager = stage.NewManager(s.stageStore, s.assetStore)
 }
 
 func activateGrpc(s *Server, b *Builder) {

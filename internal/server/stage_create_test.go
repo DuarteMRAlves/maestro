@@ -122,7 +122,7 @@ func TestServer_CreateStage_NilConfig(t *testing.T) {
 		t,
 		errdefs.IsInvalidArgument(err),
 		"error is not InvalidArgument")
-	expectedMsg := "'config' is nil"
+	expectedMsg := "'cfg' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 

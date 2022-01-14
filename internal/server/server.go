@@ -22,7 +22,8 @@ type Server struct {
 	linkStore          link.Store
 	orchestrationStore orchestration.Store
 
-	flowManager *flow.Manager
+	stageManager stage.Manager
+	flowManager  *flow.Manager
 
 	grpcServer *grpc.Server
 
