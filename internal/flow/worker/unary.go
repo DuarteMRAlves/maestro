@@ -2,7 +2,9 @@ package worker
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/flow"
+	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
+	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"
@@ -16,8 +18,8 @@ type UnaryWorker struct {
 	rpc     reflection.RPC
 	invoker invoke.UnaryClient
 
-	input  flow.Input
-	output flow.Output
+	input  flowinput.Input
+	output flowoutput.Output
 
 	done   chan<- bool
 	maxMsg int
@@ -25,7 +27,7 @@ type UnaryWorker struct {
 
 func (w *UnaryWorker) Run() {
 	var (
-		in, out  *flow.State
+		in, out  *state.State
 		req, rep interface{}
 	)
 
@@ -40,7 +42,7 @@ func (w *UnaryWorker) Run() {
 			panic(err)
 		}
 
-		out = flow.New(in.Id(), rep)
+		out = state.New(in.Id(), rep)
 		w.output.Yield(out)
 	}
 	w.done <- true

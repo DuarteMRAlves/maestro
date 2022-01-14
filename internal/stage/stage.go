@@ -37,6 +37,10 @@ func (s *Stage) Name() apitypes.StageName {
 	return s.name
 }
 
+func (s *Stage) Address() string {
+	return s.address
+}
+
 func (s *Stage) Rpc() reflection.RPC {
 	return s.rpc
 }

@@ -7,18 +7,18 @@ import (
 
 // Flow is a connection between two stages where data is transferred.
 type Flow struct {
-	link  *link.Link
-	queue queue.Ring
+	Link  *link.Link
+	Queue queue.Ring
 }
 
-func newFlow(l *link.Link) (*Flow, error) {
+func NewFlow(l *link.Link) (*Flow, error) {
 	q, err := queue.NewRing(1)
 	if err != nil {
 		return nil, err
 	}
 	f := &Flow{
-		link:  l,
-		queue: q,
+		Link:  l,
+		Queue: q,
 	}
 	return f, nil
 }

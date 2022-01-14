@@ -2,7 +2,8 @@ package worker
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow"
+	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"
@@ -15,8 +16,8 @@ type Worker interface {
 type Cfg struct {
 	Address string
 	Rpc     reflection.RPC
-	Input   flow.Input
-	Output  flow.Output
+	Input   flowinput.Input
+	Output  flowoutput.Output
 	Done    chan<- bool
 	MaxMsg  int
 }
