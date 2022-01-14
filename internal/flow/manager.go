@@ -7,21 +7,28 @@ import (
 	"sync"
 )
 
-type Manager struct {
+// Manager handles the flows that are orchestrated.
+type Manager interface {
+	// RegisterLink registers a link between two stages. The first
+	// stage is the source of the link and the second is the target.
+	RegisterLink(*stage.Stage, *stage.Stage, *link.Link) error
+}
+
+type manager struct {
 	inputs  sync.Map
 	outputs sync.Map
 	flows   sync.Map
 }
 
-func NewManager() *Manager {
-	return &Manager{
+func NewManager() Manager {
+	return &manager{
 		inputs:  sync.Map{},
 		outputs: sync.Map{},
 		flows:   sync.Map{},
 	}
 }
 
-func (m *Manager) Register(
+func (m *manager) RegisterLink(
 	source *stage.Stage,
 	target *stage.Stage,
 	link *link.Link,
@@ -93,7 +100,7 @@ func (m *Manager) Register(
 	return nil
 }
 
-func (m *Manager) inputCfgForStage(s *stage.Stage) *InputCfg {
+func (m *manager) inputCfgForStage(s *stage.Stage) *InputCfg {
 	name := s.Name()
 	cfg, ok := m.inputs.Load(name)
 	if !ok {
@@ -102,7 +109,7 @@ func (m *Manager) inputCfgForStage(s *stage.Stage) *InputCfg {
 	return cfg.(*InputCfg)
 }
 
-func (m *Manager) outputCfgForStage(s *stage.Stage) *OutputCfg {
+func (m *manager) outputCfgForStage(s *stage.Stage) *OutputCfg {
 	name := s.Name()
 	cfg, ok := m.outputs.Load(name)
 	if !ok {
@@ -111,7 +118,7 @@ func (m *Manager) outputCfgForStage(s *stage.Stage) *OutputCfg {
 	return cfg.(*OutputCfg)
 }
 
-func (m *Manager) flowForLink(l *link.Link) (*Flow, error) {
+func (m *manager) flowForLink(l *link.Link) (*Flow, error) {
 	var err error
 	name := l.Name()
 	f, ok := m.flows.Load(name)

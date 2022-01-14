@@ -31,7 +31,7 @@ func (s *Server) CreateLink(config *apitypes.Link) error {
 	if !ok {
 		return errdefs.InternalWithMsg("target not found")
 	}
-	if err := s.flowManager.Register(source, target, l); err != nil {
+	if err := s.flowManager.RegisterLink(source, target, l); err != nil {
 		return err
 	}
 	return s.linkStore.Create(l)
