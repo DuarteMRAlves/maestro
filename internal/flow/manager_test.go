@@ -17,7 +17,7 @@ func TestManager_Register_NoFields(t *testing.T) {
 	s2 := stage2(t)
 	l := link.New("link-name", s1.Name(), "", s2.Name(), "")
 	manager := NewManager()
-	err := manager.Register(s1, s2, l)
+	err := manager.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
 }
 
@@ -26,7 +26,7 @@ func TestManager_Register_WithFields(t *testing.T) {
 	s2 := stage2(t)
 	l := link.New("link-name", s1.Name(), "field4", s2.Name(), "fieldName4")
 	manager := NewManager()
-	err := manager.Register(s1, s2, l)
+	err := manager.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
 }
 

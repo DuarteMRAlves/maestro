@@ -23,7 +23,7 @@ type Server struct {
 	orchestrationStore orchestration.Store
 
 	stageManager stage.Manager
-	flowManager  *flow.Manager
+	flowManager  flow.Manager
 
 	grpcServer *grpc.Server
 
