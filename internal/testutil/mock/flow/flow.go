@@ -2,6 +2,7 @@ package flow
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	"io"
 )
 
 type Input struct {
@@ -13,13 +14,13 @@ func NewInput(states []*state.State) *Input {
 	return &Input{send: states, idx: 0}
 }
 
-func (i *Input) Next() *state.State {
+func (i *Input) Next() (*state.State, error) {
 	if len(i.send) == i.idx {
-		return nil
+		return nil, io.EOF
 	}
 	s := i.send[i.idx]
 	i.idx += 1
-	return s
+	return s, nil
 }
 
 type Output struct {

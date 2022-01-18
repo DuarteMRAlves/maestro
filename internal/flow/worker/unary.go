@@ -8,6 +8,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"
+	"io"
 	"time"
 )
 
@@ -29,15 +30,22 @@ func (w *UnaryWorker) Run() {
 	var (
 		in, out  *state.State
 		req, rep interface{}
+		err      error
 	)
 
 	for msgCount := 0; msgCount < w.maxMsg; msgCount++ {
-		in = w.input.Next()
+		in, err = w.input.Next()
+		if err != nil {
+			if err == io.EOF {
+				return
+			}
+			panic(err)
+		}
 
 		req = in.Msg()
 		rep = w.rpc.Output().NewEmpty()
 
-		err := w.invoke(req, rep)
+		err = w.invoke(req, rep)
 		if err != nil {
 			panic(err)
 		}
