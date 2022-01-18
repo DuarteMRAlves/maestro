@@ -1,4 +1,4 @@
-package mock
+package reflection
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/reflection"

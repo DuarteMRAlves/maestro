@@ -1,4 +1,4 @@
-package mock
+package pb
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"

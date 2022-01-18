@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -155,8 +155,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					OrchestrationManagementServer: &mock.OrchestrationManagementServer{
+				mockServer := mockpb.MaestroServer{
+					OrchestrationManagementServer: &mockpb.OrchestrationManagementServer{
 						GetOrchestrationFn: func(
 							query *pb.Orchestration,
 							stream pb.OrchestrationManagement_GetServer,

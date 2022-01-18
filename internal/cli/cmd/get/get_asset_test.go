@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -150,8 +150,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					AssetManagementServer: &mock.AssetManagementServer{
+				mockServer := mockpb.MaestroServer{
+					AssetManagementServer: &mockpb.AssetManagementServer{
 						GetAssetFn: func(
 							query *pb.Asset,
 							stream pb.AssetManagement_GetServer,

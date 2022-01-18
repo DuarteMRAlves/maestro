@@ -3,7 +3,7 @@ package stage
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -15,7 +15,7 @@ func TestStore_Create(t *testing.T) {
 		stageAsset   = "asset-name"
 		stageAddress = "Address"
 	)
-	var rpc = &mock.RPC{Name_: "Rpc"}
+	var rpc = &mockreflection.RPC{Name_: "Rpc"}
 	tests := []struct {
 		name   string
 		config *Stage
@@ -311,9 +311,9 @@ func stageForNum(num int) *Stage {
 		name:    testutil.StageNameForNum(num),
 		asset:   testutil.AssetNameForNum(num),
 		address: testutil.StageAddressForNum(num),
-		rpc: &mock.RPC{
+		rpc: &mockreflection.RPC{
 			Name_: testutil.StageRpcForNum(num),
-			Service_: &mock.Service{
+			Service_: &mockreflection.Service{
 				Name_: testutil.StageServiceForNum(num),
 			},
 		},

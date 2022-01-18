@@ -4,8 +4,8 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
 	mockflow "github.com/DuarteMRAlves/maestro/internal/testutil/mock/flow"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -20,7 +20,7 @@ func TestUnaryWorker_Run(t *testing.T) {
 	server := testutil.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
-	rpc := &mock.RPC{
+	rpc := &mockreflection.RPC{
 		Name_: "Unary",
 		FQN:   "pb.TestService/Unary",
 		In:    requestMessage(t),

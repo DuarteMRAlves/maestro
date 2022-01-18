@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -374,8 +374,8 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					LinkManagementServer: &mock.LinkManagementServer{
+				mockServer := mockpb.MaestroServer{
+					LinkManagementServer: &mockpb.LinkManagementServer{
 						GetLinkFn: func(
 							query *pb.Link,
 							stream pb.LinkManagement_GetServer,

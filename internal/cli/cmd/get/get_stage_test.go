@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -443,8 +443,8 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					StageManagementServer: &mock.StageManagementServer{
+				mockServer := mockpb.MaestroServer{
+					StageManagementServer: &mockpb.StageManagementServer{
 						GetStageFn: func(
 							query *pb.Stage,
 							stream pb.StageManagement_GetServer,

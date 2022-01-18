@@ -3,7 +3,7 @@ package stage
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -21,8 +21,8 @@ func TestStage_Clone(t *testing.T) {
 		newAddress                    = "NewAddress"
 	)
 	var (
-		oldRpc reflection.RPC = &mock.RPC{Name_: "OldRpc"}
-		newRpc reflection.RPC = &mock.RPC{Name_: "NewRpc"}
+		oldRpc reflection.RPC = &mockreflection.RPC{Name_: "OldRpc"}
+		newRpc reflection.RPC = &mockreflection.RPC{Name_: "NewRpc"}
 	)
 	s := &Stage{
 		name:    oldName,
