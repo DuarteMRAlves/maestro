@@ -19,7 +19,6 @@ type Cfg struct {
 	Input   flowinput.Input
 	Output  flowoutput.Output
 	Done    chan<- bool
-	MaxMsg  int
 }
 
 func (c *Cfg) Clone() *Cfg {
@@ -29,7 +28,6 @@ func (c *Cfg) Clone() *Cfg {
 		Input:   c.Input,
 		Output:  c.Output,
 		Done:    c.Done,
-		MaxMsg:  c.MaxMsg,
 	}
 }
 
@@ -51,7 +49,6 @@ func NewWorker(cfg *Cfg) (Worker, error) {
 			input:   cfg.Input,
 			output:  cfg.Output,
 			done:    cfg.Done,
-			maxMsg:  cfg.MaxMsg,
 		}
 		return w, nil
 	default:

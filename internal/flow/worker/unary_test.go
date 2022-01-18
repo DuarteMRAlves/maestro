@@ -64,7 +64,6 @@ func TestUnaryWorker_Run(t *testing.T) {
 		Input:   input,
 		Output:  output,
 		Done:    done,
-		MaxMsg:  len(states),
 	}
 
 	w, err := NewWorker(cfg)

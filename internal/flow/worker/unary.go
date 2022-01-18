@@ -22,8 +22,7 @@ type UnaryWorker struct {
 	input  flowinput.Input
 	output flowoutput.Output
 
-	done   chan<- bool
-	maxMsg int
+	done chan<- bool
 }
 
 func (w *UnaryWorker) Run() {
@@ -33,11 +32,11 @@ func (w *UnaryWorker) Run() {
 		err      error
 	)
 
-	for msgCount := 0; msgCount < w.maxMsg; msgCount++ {
+	for {
 		in, err = w.input.Next()
 		if err != nil {
 			if err == io.EOF {
-				return
+				break
 			}
 			panic(err)
 		}

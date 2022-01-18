@@ -156,7 +156,6 @@ func workerCfgForStage(s *stage.Stage) *worker.Cfg {
 		Input:   nil,
 		Output:  nil,
 		Done:    nil,
-		MaxMsg:  0,
 	}
 }
 
