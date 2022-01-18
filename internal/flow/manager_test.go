@@ -4,8 +4,8 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
-	pb "github.com/DuarteMRAlves/maestro/tests/pb"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
+	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
 	"reflect"
@@ -43,7 +43,7 @@ func stage1(t *testing.T) *stage.Stage {
 		"stage-1",
 		"asset-1",
 		"address-1",
-		&mock.RPC{
+		&mockreflection.RPC{
 			Name_: "rpc-1",
 			FQN:   "service-1/rpc-1",
 			In:    message1,
@@ -64,7 +64,7 @@ func stage2(t *testing.T) *stage.Stage {
 		"stage-2",
 		"asset-2",
 		"address-2",
-		&mock.RPC{
+		&mockreflection.RPC{
 			Name_: "rpc-2",
 			FQN:   "service-2/rpc-2",
 			In:    message2,
@@ -86,7 +86,7 @@ func incompatibleStage(t *testing.T) *stage.Stage {
 		"stage-incompatible-outer",
 		"asset-incompatible",
 		"address-incompatible",
-		&mock.RPC{
+		&mockreflection.RPC{
 			Name_: "rpc-incompatible",
 			FQN:   "service-2/rpc-incompatible",
 			In:    messageIncompatible,

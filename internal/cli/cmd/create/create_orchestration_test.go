@@ -7,7 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -118,8 +118,8 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					OrchestrationManagementServer: &mock.OrchestrationManagementServer{
+				mockServer := mockpb.MaestroServer{
+					OrchestrationManagementServer: &mockpb.OrchestrationManagementServer{
 						CreateOrchestrationFn: func(
 							ctx context.Context,
 							cfg *pb.Orchestration,

@@ -7,7 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	"github.com/DuarteMRAlves/maestro/internal/testutil/mock"
+	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -151,8 +151,8 @@ func TestCreateLinkWithServer(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mock.MaestroServer{
-					LinkManagementServer: &mock.LinkManagementServer{
+				mockServer := mockpb.MaestroServer{
+					LinkManagementServer: &mockpb.LinkManagementServer{
 						CreateLinkFn: func(
 							ctx context.Context,
 							cfg *pb.Link,
