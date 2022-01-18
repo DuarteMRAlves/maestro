@@ -9,7 +9,7 @@ import (
 // Input joins the input flows for a given stage and provides the next
 // State to be processed.
 type Input interface {
-	Next() *state.State
+	Next() (*state.State, error)
 }
 
 // Cfg represents the several input flows for a stage
@@ -92,6 +92,6 @@ type SingleInput struct {
 	flow *flow.Flow
 }
 
-func (i *SingleInput) Next() *state.State {
-	return i.flow.Queue.Pop().(*state.State)
+func (i *SingleInput) Next() (*state.State, error) {
+	return i.flow.Queue.Pop().(*state.State), nil
 }
