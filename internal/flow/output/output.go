@@ -14,35 +14,11 @@ type Output interface {
 
 // Cfg represents the several output connections for a stage
 type Cfg struct {
-	typ         Type
 	connections []*connection.Connection
 }
 
-// Type defines the type of output the stage.Stage associated with this
-// Cfg is expecting.
-type Type string
-
-const (
-	// OutputInfer means the output type is not specified and should be inferred
-	// from the received connections.
-	OutputInfer Type = "Infer"
-	// OutputSingle means the stage only sends its entire output to another
-	// stage.
-	OutputSingle Type = "Single"
-	// OutputSink means the stage outputs the empty message and its output
-	// should be discarded as it does not connect to any other stage.
-	OutputSink Type = "Sink"
-	// OutputSplit means the stage output should be split into multiple messages
-	// sent to different stages.
-	OutputSplit Type = "Split"
-	// OutputDuplicate means the stage output should be duplicated and sent as
-	// input to multiple stages.
-	OutputDuplicate Type = "Duplicate"
-)
-
 func NewOutputCfg() *Cfg {
 	return &Cfg{
-		typ:         OutputInfer,
 		connections: []*connection.Connection{},
 	}
 }
