@@ -2,20 +2,20 @@ package input
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
+	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 )
 
-// Input joins the input flows for a given stage and provides the next
+// Input joins the input connections for a given stage and provides the next
 // State to be processed.
 type Input interface {
 	Next() (*state.State, error)
 }
 
-// Cfg represents the several input flows for a stage
+// Cfg represents the several input connections for a stage
 type Cfg struct {
-	typ   Type
-	flows []*flow.Flow
+	typ         Type
+	connections []*connection.Connection
 }
 
 // Type defines the type of input that the stage.Stage associated with this
@@ -42,56 +42,55 @@ const (
 
 func NewInputCfg() *Cfg {
 	return &Cfg{
-		typ:   InputInfer,
-		flows: []*flow.Flow{},
+		typ:         InputInfer,
+		connections: []*connection.Connection{},
 	}
 }
 
-func (i *Cfg) Register(f *flow.Flow) error {
-	l := f.Link
+func (i *Cfg) Register(c *connection.Connection) error {
 	// A previous link that consumes the entire message already exists
-	if len(i.flows) == 1 && i.flows[0].Link.TargetField() == "" {
+	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
 			"link that receives the full message already exists")
 	}
-	for _, prev := range i.flows {
-		if prev.Link.TargetField() == l.TargetField() {
+	for _, prev := range i.connections {
+		if prev.HasSameTargetField(c) {
 			return errdefs.InvalidArgumentWithMsg(
-				"link with an equal name already registered: %s",
-				l.Name())
+				"link with the same target field already registered: %s",
+				prev.LinkName())
 		}
 	}
-	i.flows = append(i.flows, f)
+	i.connections = append(i.connections, c)
 	return nil
 }
 
-func (i *Cfg) UnregisterIfExists(search *flow.Flow) {
+func (i *Cfg) UnregisterIfExists(search *connection.Connection) {
 	idx := -1
-	for j, f := range i.flows {
-		if f.Link.Name() == search.Link.Name() {
+	for j, c := range i.connections {
+		if c.HasSameLinkName(search) {
 			idx = j
 			break
 		}
 	}
 	if idx != -1 {
-		i.flows[idx] = i.flows[len(i.flows)-1]
-		i.flows = i.flows[:len(i.flows)-1]
+		i.connections[idx] = i.connections[len(i.connections)-1]
+		i.connections = i.connections[:len(i.connections)-1]
 	}
 }
 
 func (i *Cfg) ToInput() Input {
-	switch len(i.flows) {
+	switch len(i.connections) {
 	case 1:
-		return &SingleInput{flow: i.flows[0]}
+		return &SingleInput{connection: i.connections[0]}
 	}
 	return nil
 }
 
-// SingleInput is a struct the implements the Input for a single input
+// SingleInput is a struct the implements the Input for a single input.
 type SingleInput struct {
-	flow *flow.Flow
+	connection *connection.Connection
 }
 
 func (i *SingleInput) Next() (*state.State, error) {
-	return i.flow.Queue.Pop().(*state.State), nil
+	return i.connection.Pop(), nil
 }

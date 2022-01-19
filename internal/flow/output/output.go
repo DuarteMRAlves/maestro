@@ -2,7 +2,7 @@ package output
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
+	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 )
 
@@ -12,10 +12,10 @@ type Output interface {
 	Yield(s *state.State)
 }
 
-// Cfg represents the several output flows for a stage
+// Cfg represents the several output connections for a stage
 type Cfg struct {
-	typ   Type
-	flows []*flow.Flow
+	typ         Type
+	connections []*connection.Connection
 }
 
 // Type defines the type of output the stage.Stage associated with this
@@ -42,52 +42,52 @@ const (
 
 func NewOutputCfg() *Cfg {
 	return &Cfg{
-		typ:   OutputInfer,
-		flows: []*flow.Flow{},
+		typ:         OutputInfer,
+		connections: []*connection.Connection{},
 	}
 }
 
-func (o *Cfg) Register(f *flow.Flow) error {
-	l := f.Link
-	for _, prev := range o.flows {
-		if l.Name() == prev.Link.Name() {
+func (o *Cfg) Register(c *connection.Connection) error {
+	for _, prev := range o.connections {
+		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
 				"Link with an equal name already registered: %s",
-				prev.Link.Name())
+				prev.LinkName())
 		}
 	}
 
-	o.flows = append(o.flows, f)
+	o.connections = append(o.connections, c)
 	return nil
 }
 
-func (o *Cfg) UnregisterIfExists(search *flow.Flow) {
+func (o *Cfg) UnregisterIfExists(search *connection.Connection) {
 	idx := -1
-	for i, f := range o.flows {
-		if f.Link.Name() == search.Link.Name() {
+	for i, c := range o.connections {
+		if c.HasSameLinkName(search) {
 			idx = i
 			break
 		}
 	}
 	if idx != -1 {
-		o.flows[idx] = o.flows[len(o.flows)-1]
-		o.flows = o.flows[:len(o.flows)-1]
+		o.connections[idx] = o.connections[len(o.connections)-1]
+		o.connections = o.connections[:len(o.connections)-1]
 	}
 }
 
 func (o *Cfg) ToFlow() Output {
-	switch len(o.flows) {
+	switch len(o.connections) {
 	case 1:
-		return &SingleOutput{flow: o.flows[0]}
+		return &SingleOutput{connection: o.connections[0]}
 	}
 	return nil
 }
 
-// SingleOutput is a struct that implements Output for a single output flow.
+// SingleOutput is a struct that implements Output for a single output
+// connection.
 type SingleOutput struct {
-	flow *flow.Flow
+	connection *connection.Connection
 }
 
 func (o *SingleOutput) Yield(s *state.State) {
-	o.flow.Queue.Push(s)
+	o.connection.Push(s)
 }
