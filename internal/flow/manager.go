@@ -3,7 +3,7 @@ package flow
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
+	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
 	"github.com/DuarteMRAlves/maestro/internal/flow/input"
 	"github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
@@ -20,19 +20,19 @@ type Manager interface {
 }
 
 type manager struct {
-	mu      sync.RWMutex
-	workers map[apitypes.StageName]worker.Worker
-	inputs  map[apitypes.StageName]*input.Cfg
-	outputs map[apitypes.StageName]*output.Cfg
-	flows   map[apitypes.LinkName]*flow.Flow
+	mu          sync.RWMutex
+	workers     map[apitypes.StageName]worker.Worker
+	inputs      map[apitypes.StageName]*input.Cfg
+	outputs     map[apitypes.StageName]*output.Cfg
+	connections map[apitypes.LinkName]*connection.Connection
 }
 
 func NewManager() Manager {
 	return &manager{
-		workers: map[apitypes.StageName]worker.Worker{},
-		inputs:  map[apitypes.StageName]*input.Cfg{},
-		outputs: map[apitypes.StageName]*output.Cfg{},
-		flows:   map[apitypes.LinkName]*flow.Flow{},
+		workers:     map[apitypes.StageName]worker.Worker{},
+		inputs:      map[apitypes.StageName]*input.Cfg{},
+		outputs:     map[apitypes.StageName]*output.Cfg{},
+		connections: map[apitypes.LinkName]*connection.Connection{},
 	}
 }
 
@@ -107,28 +107,28 @@ func (m *manager) RegisterLink(
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	linkFlow, err := m.flowForLink(link)
+	conn, err := m.connectionForLink(link)
 	if err != nil {
 		return err
 	}
 
 	sourceOutputCfg := m.outputCfgForStage(source)
-	if err = sourceOutputCfg.Register(linkFlow); err != nil {
+	if err = sourceOutputCfg.Register(conn); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			sourceOutputCfg.UnregisterIfExists(linkFlow)
+			sourceOutputCfg.UnregisterIfExists(conn)
 		}
 	}()
 
 	targetInputCfg := m.inputCfgForStage(target)
-	if err = targetInputCfg.Register(linkFlow); err != nil {
+	if err = targetInputCfg.Register(conn); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			targetInputCfg.UnregisterIfExists(linkFlow)
+			targetInputCfg.UnregisterIfExists(conn)
 		}
 	}()
 
@@ -165,19 +165,21 @@ func workerCfgForStage(s *stage.Stage) *worker.Cfg {
 	}
 }
 
-func (m *manager) flowForLink(l *link.Link) (*flow.Flow, error) {
+func (m *manager) connectionForLink(
+	l *link.Link,
+) (*connection.Connection, error) {
 	var (
-		f   *flow.Flow
+		c   *connection.Connection
 		ok  bool
 		err error
 	)
 	name := l.Name()
-	f, ok = m.flows[name]
+	c, ok = m.connections[name]
 	if !ok {
-		if f, err = flow.NewFlow(l); err != nil {
+		if c, err = connection.New(l); err != nil {
 			return nil, err
 		}
-		m.flows[name] = f
+		m.connections[name] = c
 	}
-	return f, nil
+	return c, nil
 }
