@@ -4,10 +4,12 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
+	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
 	"github.com/DuarteMRAlves/maestro/internal/flow/input"
 	"github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
 	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"sync"
 )
@@ -17,6 +19,8 @@ type Manager interface {
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
 	RegisterLink(*stage.Stage, *stage.Stage, *link.Link) error
+	// RegisterOrchestration registers an orchestration with multiple links.
+	RegisterOrchestration(*orchestration.Orchestration) error
 }
 
 type manager struct {
@@ -25,6 +29,7 @@ type manager struct {
 	inputs      map[apitypes.StageName]*input.Cfg
 	outputs     map[apitypes.StageName]*output.Cfg
 	connections map[apitypes.LinkName]*connection.Connection
+	flows       map[apitypes.OrchestrationName]*flow.Flow
 }
 
 func NewManager() Manager {
@@ -33,6 +38,7 @@ func NewManager() Manager {
 		inputs:      map[apitypes.StageName]*input.Cfg{},
 		outputs:     map[apitypes.StageName]*output.Cfg{},
 		connections: map[apitypes.LinkName]*connection.Connection{},
+		flows:       map[apitypes.OrchestrationName]*flow.Flow{},
 	}
 }
 
@@ -135,11 +141,28 @@ func (m *manager) RegisterLink(
 	return nil
 }
 
+func (m *manager) RegisterOrchestration(o *orchestration.Orchestration) error {
+	var exists bool
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, l := range o.Links() {
+		_, exists = m.connections[l]
+		if !exists {
+			return errdefs.NotFoundWithMsg("link not registered: %v", l)
+		}
+	}
+
+	m.flows[o.Name()] = flow.New(o)
+
+	return nil
+}
+
 func (m *manager) inputCfgForStage(s *stage.Stage) *input.Cfg {
 	name := s.Name()
 	cfg, ok := m.inputs[name]
 	if !ok {
-		cfg = input.NewInputCfg()
+		cfg = input.NewCfg()
 		m.inputs[name] = cfg
 	}
 	return cfg
@@ -149,7 +172,7 @@ func (m *manager) outputCfgForStage(s *stage.Stage) *output.Cfg {
 	name := s.Name()
 	cfg, ok := m.outputs[name]
 	if !ok {
-		cfg = output.NewOutputCfg()
+		cfg = output.NewCfg()
 		m.outputs[name] = cfg
 	}
 	return cfg

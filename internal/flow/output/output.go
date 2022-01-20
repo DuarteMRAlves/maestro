@@ -17,7 +17,7 @@ type Cfg struct {
 	connections []*connection.Connection
 }
 
-func NewOutputCfg() *Cfg {
+func NewCfg() *Cfg {
 	return &Cfg{
 		connections: []*connection.Connection{},
 	}
