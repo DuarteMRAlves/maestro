@@ -21,7 +21,7 @@ func TestOutputCfg_unregisterIfExists_exists(t *testing.T) {
 	conn3, err := connection.New(link.New(linkName3, "", "", "", ""))
 	assert.NilError(t, err, "create connection 3")
 
-	cfg := NewOutputCfg()
+	cfg := NewCfg()
 	cfg.connections = append(cfg.connections, conn1)
 	cfg.connections = append(cfg.connections, conn2)
 	cfg.connections = append(cfg.connections, conn3)
@@ -49,7 +49,7 @@ func TestOutputCfg_unregisterIfExists_doesNotExist(t *testing.T) {
 	conn4, err := connection.New(link.New(linkName4, "", "", "", ""))
 	assert.NilError(t, err, "create connection 4")
 
-	cfg := NewOutputCfg()
+	cfg := NewCfg()
 	cfg.connections = append(cfg.connections, conn1)
 	cfg.connections = append(cfg.connections, conn2)
 	cfg.connections = append(cfg.connections, conn4)
