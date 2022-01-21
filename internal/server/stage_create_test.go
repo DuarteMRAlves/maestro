@@ -115,7 +115,7 @@ func TestServer_CreateStage(t *testing.T) {
 func TestServer_CreateStage_NilConfig(t *testing.T) {
 	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 	assert.NilError(t, err, "build server")
-	populateForOrchestrations(t, s)
+	populateForStages(t, s)
 
 	err = s.CreateStage(nil)
 	assert.Assert(
@@ -159,7 +159,7 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 			func(t *testing.T) {
 				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
 				assert.NilError(t, err, "build server")
-				populateForOrchestrations(t, s)
+				populateForStages(t, s)
 
 				err = s.CreateStage(test.config)
 				assert.Assert(

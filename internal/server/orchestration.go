@@ -13,13 +13,17 @@ import (
 // The function returns an error if the orchestration name is not valid or if
 // one of the links does not exist.
 func (s *Server) CreateOrchestration(config *apitypes.Orchestration) error {
+	var err error
 	s.logger.Info(
 		"Create Orchestration.",
 		logOrchestration(config, "config")...)
-	if err := s.validateCreateOrchestrationConfig(config); err != nil {
+	if err = s.validateCreateOrchestrationConfig(config); err != nil {
 		return err
 	}
 	o := orchestration.New(config.Name, config.Links)
+	if err = s.flowManager.RegisterOrchestration(o); err != nil {
+		return err
+	}
 	return s.orchestrationStore.Create(o)
 }
 
