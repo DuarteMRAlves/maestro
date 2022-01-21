@@ -9,7 +9,11 @@ import (
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(cfg *apitypes.Stage) error {
 	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
-	return s.stageManager.Create(cfg)
+	st, err := s.stageManager.Create(cfg)
+	if err != nil {
+		return err
+	}
+	return s.flowManager.RegisterStage(st)
 }
 
 func (s *Server) GetStage(query *apitypes.Stage) []*apitypes.Stage {
