@@ -16,6 +16,8 @@ import (
 
 // Manager handles the flows that are orchestrated.
 type Manager interface {
+	// RegisterStage registers a stage to be later included in an orchestration.
+	RegisterStage(*stage.Stage) error
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
 	RegisterLink(*stage.Stage, *stage.Stage, *link.Link) error

@@ -15,7 +15,7 @@ import (
 )
 
 type Manager interface {
-	Create(cfg *apitypes.Stage) error
+	Create(cfg *apitypes.Stage) (*Stage, error)
 	Get(query *apitypes.Stage) []*apitypes.Stage
 }
 
@@ -24,21 +24,33 @@ type manager struct {
 	assets asset.Store
 }
 
-func NewManager(stages Store, assets asset.Store) Manager {
+func NewManager(
+	stages Store,
+	assets asset.Store,
+) Manager {
 	return &manager{stages: stages, assets: assets}
 }
 
-func (m *manager) Create(cfg *apitypes.Stage) error {
-	if err := m.validateCreateStageConfig(cfg); err != nil {
-		return err
+func (m *manager) Create(cfg *apitypes.Stage) (*Stage, error) {
+	var (
+		st  *Stage
+		rpc reflection.RPC
+		err error
+	)
+	if err = m.validateCreateStageConfig(cfg); err != nil {
+		return nil, err
 	}
 	address := m.inferStageAddress(cfg)
-	rpc, err := m.inferRpc(address, cfg)
+	rpc, err = m.inferRpc(address, cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	st := New(cfg.Name, address, cfg.Asset, rpc)
-	return m.stages.Create(st)
+	st = New(cfg.Name, address, cfg.Asset, rpc)
+	err = m.stages.Create(st)
+	if err != nil {
+		return nil, err
+	}
+	return st, nil
 }
 
 func (m *manager) Get(query *apitypes.Stage) []*apitypes.Stage {
