@@ -83,7 +83,7 @@ func incompatibleStage(t *testing.T) *stage.Stage {
 	assert.NilError(t, err, "test message incompatible")
 
 	return stage.New(
-		"stage-incompatible-outer",
+		"stage-3",
 		"asset-incompatible",
 		"address-incompatible",
 		&mockreflection.RPC{

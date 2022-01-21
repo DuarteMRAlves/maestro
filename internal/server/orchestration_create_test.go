@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -45,7 +45,6 @@ func TestServer_CreateOrchestration(t *testing.T) {
 				Name: name,
 				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
-					testutil.LinkNameForNum(2),
 					testutil.LinkNameForNum(1),
 				},
 			},
@@ -174,7 +173,6 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 		Links: []apitypes.LinkName{
 			testutil.LinkNameForNum(0),
 			testutil.LinkNameForNum(1),
-			testutil.LinkNameForNum(2),
 		},
 	}
 
@@ -187,20 +185,16 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 }
 
 func populateForOrchestrations(t *testing.T, s *Server) {
-	assets := []*asset.Asset{
-		assetForNum(0),
-		assetForNum(1),
-		assetForNum(2),
-		assetForNum(3),
-	}
 	stages := []*stage.Stage{
-		stageForNum(0),
-		stageForNum(1),
-		stageForNum(2),
-		stageForNum(3),
+		mockStage(t, 0, pb.TestMessage1{}, pb.TestMessage1{}),
+		mockStage(t, 1, pb.TestMessage2{}, pb.TestMessage2{}),
+		mockStage(t, 2, pb.TestMessageDiffNames{}, pb.TestMessageDiffNames{}),
+		mockStage(t, 3, pb.TestWrongInnerFieldType{}, pb.TestWrongInnerFieldType{}),
 	}
-	links := []*link.Link{linkForNum(0), linkForNum(1), linkForNum(2)}
-	populateAssets(t, s, assets)
+	links := []*link.Link{
+		mockLink(0, "", ""),
+		mockLink(1, "", ""),
+	}
 	populateStages(t, s, stages)
 	populateLinks(t, s, links)
 }

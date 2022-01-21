@@ -4,11 +4,9 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
-	"github.com/jhump/protoreflect/desc"
+	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -53,7 +51,7 @@ func TestServer_CreateLink(t *testing.T) {
 				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "field4",
-				TargetStage: "stage-incompatible-outer",
+				TargetStage: "stage-3",
 				TargetField: "field4",
 			},
 		},
@@ -201,13 +199,13 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 
 	config := &apitypes.Link{
 		Name:        name,
-		SourceStage: "stage-3",
+		SourceStage: "stage-4",
 		TargetStage: "stage-2",
 	}
 
 	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
-	expectedMsg := "source stage 'stage-3' not found"
+	expectedMsg := "source stage 'stage-4' not found"
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -220,12 +218,12 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	config := &apitypes.Link{
 		Name:        name,
 		SourceStage: "stage-1",
-		TargetStage: "stage-3",
+		TargetStage: "stage-4",
 	}
 
 	err = s.CreateLink(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
-	expectedMsg := "target stage 'stage-3' not found"
+	expectedMsg := "target stage 'stage-4' not found"
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -303,7 +301,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	config := &apitypes.Link{
 		Name:        name,
 		SourceStage: "stage-1",
-		TargetStage: "stage-incompatible-outer",
+		TargetStage: "stage-3",
 	}
 
 	err = s.CreateLink(config)
@@ -315,60 +313,22 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	assert.Error(t, err, expectedMsg)
 }
 
+// populateForLinks creates three stages. The first two are compatible, but the
+// third is not.
 func populateForLinks(t *testing.T, s *Server) {
-	testMsg1Desc, err := desc.LoadMessageDescriptor("pb.TestMessage1")
-	assert.NilError(t, err, "load desc test message 1")
+	stage1 := mockStage(t, 1, pb.TestMessage1{}, pb.TestMessage1{})
+	stage2 := mockStage(
+		t,
+		2,
+		pb.TestMessageDiffNames{},
+		pb.TestMessageDiffNames{})
+	stage3 := mockStage(
+		t,
+		3,
+		pb.TestWrongOuterFieldType{},
+		pb.TestWrongOuterFieldType{})
 
-	testMsg2Desc, err := desc.LoadMessageDescriptor("pb.TestMessageDiffNames")
-	assert.NilError(t, err, "load desc test message 2")
-
-	testIncompatibleDesc, err := desc.LoadMessageDescriptor(
-		"pb.TestWrongOuterFieldType")
-	assert.NilError(t, err, "load desc test message 2")
-
-	message1, err := reflection.NewMessage(testMsg1Desc)
-	assert.NilError(t, err, "test message 1")
-
-	message2, err := reflection.NewMessage(testMsg2Desc)
-	assert.NilError(t, err, "test message 2")
-
-	messageIncompatible, err := reflection.NewMessage(testIncompatibleDesc)
-	assert.NilError(t, err, "test message 2")
-
-	stage1 := stage.New(
-		"stage-1",
-		"asset-1",
-		"address-1",
-		&mockreflection.RPC{
-			Name_: "rpc-1",
-			FQN:   "service-1/rpc-1",
-			In:    message1,
-			Out:   message1,
-		})
-
-	stage2 := stage.New(
-		"stage-2",
-		"asset-2",
-		"address-2",
-		&mockreflection.RPC{
-			Name_: "rpc-2",
-			FQN:   "service-2/rpc-2",
-			In:    message2,
-			Out:   message2,
-		})
-
-	stageIncompatible := stage.New(
-		"stage-incompatible-outer",
-		"asset-incompatible",
-		"address-incompatible",
-		&mockreflection.RPC{
-			Name_: "rpc-incompatible",
-			FQN:   "service-2/rpc-incompatible",
-			In:    messageIncompatible,
-			Out:   messageIncompatible,
-		})
-
-	stages := []*stage.Stage{stage1, stage2, stageIncompatible}
+	stages := []*stage.Stage{stage1, stage2, stage3}
 
 	populateStages(t, s, stages)
 }

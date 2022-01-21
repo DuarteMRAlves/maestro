@@ -33,8 +33,16 @@ func (l *Link) Name() apitypes.LinkName {
 	return l.name
 }
 
+func (l *Link) SourceStage() apitypes.StageName {
+	return l.sourceStage
+}
+
 func (l *Link) SourceField() string {
 	return l.sourceField
+}
+
+func (l *Link) TargetStage() apitypes.StageName {
+	return l.targetStage
 }
 
 func (l *Link) TargetField() string {
