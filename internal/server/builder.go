@@ -1,12 +1,13 @@
 package server
 
 import (
-	pb "github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -45,12 +46,17 @@ func (b *Builder) Build() (*Server, error) {
 		return nil, err
 	}
 	s := &Server{}
+	s.logger = b.logger
+	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+	if err != nil {
+		return nil, errdefs.UnknownWithMsg("initialize db: %v", err)
+	}
+	s.db = db
 	initStores(s)
 	initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
-	s.logger = b.logger
 	return s, nil
 }
 
