@@ -8,19 +8,17 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/flow/input"
 	"github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"sync"
 )
 
 // Manager handles the flows that are orchestrated.
 type Manager interface {
 	// RegisterStage registers a stage to be later included in an orchestration.
-	RegisterStage(*stage.Stage) error
+	RegisterStage(*orchestration.Stage) error
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
-	RegisterLink(*stage.Stage, *stage.Stage, *link.Link) error
+	RegisterLink(*orchestration.Stage, *orchestration.Stage, *orchestration.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
 	RegisterOrchestration(*orchestration.Orchestration) error
 }
@@ -44,7 +42,7 @@ func NewManager() Manager {
 	}
 }
 
-func (m *manager) RegisterStage(s *stage.Stage) error {
+func (m *manager) RegisterStage(s *orchestration.Stage) error {
 	cfg := workerCfgForStage(s)
 
 	w, err := worker.NewWorker(cfg)
@@ -69,9 +67,9 @@ func (m *manager) RegisterStage(s *stage.Stage) error {
 }
 
 func (m *manager) RegisterLink(
-	source *stage.Stage,
-	target *stage.Stage,
-	link *link.Link,
+	source *orchestration.Stage,
+	target *orchestration.Stage,
+	link *orchestration.Link,
 ) error {
 	var (
 		ok  bool
@@ -149,7 +147,7 @@ func (m *manager) RegisterOrchestration(o *orchestration.Orchestration) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, l := range o.Links() {
-		_, exists = m.connections[l]
+		_, exists = m.connections[l.Name()]
 		if !exists {
 			return errdefs.NotFoundWithMsg("link not registered: %v", l)
 		}
@@ -160,7 +158,7 @@ func (m *manager) RegisterOrchestration(o *orchestration.Orchestration) error {
 	return nil
 }
 
-func (m *manager) inputCfgForStage(s *stage.Stage) *input.Cfg {
+func (m *manager) inputCfgForStage(s *orchestration.Stage) *input.Cfg {
 	name := s.Name()
 	cfg, ok := m.inputs[name]
 	if !ok {
@@ -170,7 +168,7 @@ func (m *manager) inputCfgForStage(s *stage.Stage) *input.Cfg {
 	return cfg
 }
 
-func (m *manager) outputCfgForStage(s *stage.Stage) *output.Cfg {
+func (m *manager) outputCfgForStage(s *orchestration.Stage) *output.Cfg {
 	name := s.Name()
 	cfg, ok := m.outputs[name]
 	if !ok {
@@ -180,7 +178,7 @@ func (m *manager) outputCfgForStage(s *stage.Stage) *output.Cfg {
 	return cfg
 }
 
-func workerCfgForStage(s *stage.Stage) *worker.Cfg {
+func workerCfgForStage(s *orchestration.Stage) *worker.Cfg {
 	return &worker.Cfg{
 		Address: s.Address(),
 		Rpc:     s.Rpc(),
@@ -191,7 +189,7 @@ func workerCfgForStage(s *stage.Stage) *worker.Cfg {
 }
 
 func (m *manager) connectionForLink(
-	l *link.Link,
+	l *orchestration.Link,
 ) (*connection.Connection, error) {
 	var (
 		c   *connection.Connection

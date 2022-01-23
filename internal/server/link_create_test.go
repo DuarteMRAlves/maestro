@@ -4,7 +4,7 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"gotest.tools/v3/assert"
@@ -328,7 +328,7 @@ func populateForLinks(t *testing.T, s *Server) {
 		pb.TestWrongOuterFieldType{},
 		pb.TestWrongOuterFieldType{})
 
-	stages := []*stage.Stage{stage1, stage2, stage3}
+	stages := []*orchestration.Stage{stage1, stage2, stage3}
 
 	populateStages(t, s, stages)
 }

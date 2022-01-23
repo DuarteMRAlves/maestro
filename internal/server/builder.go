@@ -6,9 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
-	"github.com/DuarteMRAlves/maestro/internal/link"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -70,14 +68,11 @@ func (b *Builder) complete() error {
 
 func initStores(s *Server) {
 	s.assetStore = asset.NewStore()
-	s.stageStore = stage.NewStore()
-	s.linkStore = link.NewStore()
-	s.orchestrationStore = orchestration.NewStore()
 }
 
 func initManagers(s *Server) {
+	s.orchestrationManager = orchestration.NewManager(s.assetStore)
 	s.flowManager = flow.NewManager()
-	s.stageManager = stage.NewManager(s.stageStore, s.assetStore)
 }
 
 func activateGrpc(s *Server, b *Builder) {

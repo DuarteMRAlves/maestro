@@ -1,4 +1,4 @@
-package link
+package orchestration
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type Link struct {
 	targetField string
 }
 
-func New(
+func NewLink(
 	name apitypes.LinkName,
 	sourceStage apitypes.StageName,
 	sourceField string,

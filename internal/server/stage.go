@@ -8,8 +8,7 @@ import (
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(cfg *apitypes.Stage) error {
-	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
-	st, err := s.stageManager.Create(cfg)
+	st, err := s.orchestrationManager.CreateStage(cfg)
 	if err != nil {
 		return err
 	}
@@ -18,7 +17,7 @@ func (s *Server) CreateStage(cfg *apitypes.Stage) error {
 
 func (s *Server) GetStage(query *apitypes.Stage) []*apitypes.Stage {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	return s.stageManager.Get(query)
+	return s.orchestrationManager.GetMatchingStage(query)
 }
 
 func logStage(s *apitypes.Stage, field string) []zap.Field {

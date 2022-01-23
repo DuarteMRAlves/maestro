@@ -1,4 +1,4 @@
-package stage
+package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"

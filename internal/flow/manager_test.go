@@ -1,9 +1,8 @@
 package flow
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
@@ -15,7 +14,7 @@ import (
 func TestManager_Register_NoFields(t *testing.T) {
 	s1 := stage1(t)
 	s2 := stage2(t)
-	l := link.New("link-name", s1.Name(), "", s2.Name(), "")
+	l := orchestration.NewLink("link-name", s1.Name(), "", s2.Name(), "")
 	manager := NewManager()
 	err := manager.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
@@ -24,13 +23,13 @@ func TestManager_Register_NoFields(t *testing.T) {
 func TestManager_Register_WithFields(t *testing.T) {
 	s1 := stage1(t)
 	s2 := stage2(t)
-	l := link.New("link-name", s1.Name(), "field4", s2.Name(), "fieldName4")
+	l := orchestration.NewLink("link-name", s1.Name(), "field4", s2.Name(), "fieldName4")
 	manager := NewManager()
 	err := manager.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
 }
 
-func stage1(t *testing.T) *stage.Stage {
+func stage1(t *testing.T) *orchestration.Stage {
 	testMsg1Type := reflect.TypeOf(pb.TestMessage1{})
 
 	testMsg1Desc, err := desc.LoadMessageDescriptorForType(testMsg1Type)
@@ -39,7 +38,7 @@ func stage1(t *testing.T) *stage.Stage {
 	message1, err := reflection.NewMessage(testMsg1Desc)
 	assert.NilError(t, err, "test message 1")
 
-	return stage.New(
+	return orchestration.NewStage(
 		"stage-1",
 		"asset-1",
 		"address-1",
@@ -48,10 +47,11 @@ func stage1(t *testing.T) *stage.Stage {
 			FQN:   "service-1/rpc-1",
 			In:    message1,
 			Out:   message1,
-		})
+		},
+		nil)
 }
 
-func stage2(t *testing.T) *stage.Stage {
+func stage2(t *testing.T) *orchestration.Stage {
 	testMsg2Type := reflect.TypeOf(pb.TestMessageDiffNames{})
 
 	testMsg2Desc, err := desc.LoadMessageDescriptorForType(testMsg2Type)
@@ -60,7 +60,7 @@ func stage2(t *testing.T) *stage.Stage {
 	message2, err := reflection.NewMessage(testMsg2Desc)
 	assert.NilError(t, err, "test message 2")
 
-	return stage.New(
+	return orchestration.NewStage(
 		"stage-2",
 		"asset-2",
 		"address-2",
@@ -69,10 +69,11 @@ func stage2(t *testing.T) *stage.Stage {
 			FQN:   "service-2/rpc-2",
 			In:    message2,
 			Out:   message2,
-		})
+		},
+		nil)
 }
 
-func incompatibleStage(t *testing.T) *stage.Stage {
+func incompatibleStage(t *testing.T) *orchestration.Stage {
 	testIncompatibleType := reflect.TypeOf(pb.TestWrongOuterFieldType{})
 
 	testIncompatibleDesc, err := desc.LoadMessageDescriptorForType(
@@ -82,7 +83,7 @@ func incompatibleStage(t *testing.T) *stage.Stage {
 	messageIncompatible, err := reflection.NewMessage(testIncompatibleDesc)
 	assert.NilError(t, err, "test message incompatible")
 
-	return stage.New(
+	return orchestration.NewStage(
 		"stage-3",
 		"asset-incompatible",
 		"address-incompatible",
@@ -91,5 +92,6 @@ func incompatibleStage(t *testing.T) *stage.Stage {
 			FQN:   "service-2/rpc-incompatible",
 			In:    messageIncompatible,
 			Out:   messageIncompatible,
-		})
+		},
+		nil)
 }

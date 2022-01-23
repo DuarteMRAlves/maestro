@@ -3,9 +3,8 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/jhump/protoreflect/desc"
@@ -28,7 +27,7 @@ func mockStage(
 	num int,
 	req interface{},
 	res interface{},
-) *stage.Stage {
+) *orchestration.Stage {
 	reqType := reflect.TypeOf(req)
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
@@ -45,7 +44,7 @@ func mockStage(
 	resMsg, err := reflection.NewMessage(resDesc)
 	assert.NilError(t, err, fmt.Sprintf("load res desc for stage: %d\n", num))
 
-	return stage.New(
+	return orchestration.NewStage(
 		testutil.StageNameForNum(num),
 		testutil.StageAddressForNum(num),
 		testutil.AssetNameForNum(num),
@@ -58,18 +57,24 @@ func mockStage(
 			In:    reqMsg,
 			Out:   resMsg,
 			Unary: true,
-		})
+		},
+		nil)
 }
 
 // mockLink deterministically creates a link with the given number.
 // The associated source stage name is the one used in stageForNum with the num
 // argument. The associated target stage name is the one used in the stageForNum
 // with the num+1 argument.
-func mockLink(num int, sourceField string, targetField string) *link.Link {
+func mockLink(num int, sourceField string, targetField string) *orchestration.Link {
 	name := testutil.LinkNameForNum(num)
 	sourceStage := testutil.LinkSourceStageForNum(num)
 	targetStage := testutil.LinkTargetStageForNum(num)
-	return link.New(name, sourceStage, sourceField, targetStage, targetField)
+	return orchestration.NewLink(
+		name,
+		sourceStage,
+		sourceField,
+		targetStage,
+		targetField)
 }
 
 // populateAssets creates the assets in the server, asserting any occurred
@@ -84,25 +89,21 @@ func populateAssets(t *testing.T, s *Server, assets []*asset.Asset) {
 
 // populateStages creates the stages in the server, asserting any occurred
 // errors.
-func populateStages(t *testing.T, s *Server, stages []*stage.Stage) {
-	// Bypass CreateStage verifications
-	store := s.stageStore
+func populateStages(t *testing.T, s *Server, stages []*orchestration.Stage) {
 	for _, st := range stages {
-		assert.NilError(t, store.Create(st), "populate with stages")
+		s.orchestrationManager.CreateStageInternal(st)
 		assert.NilError(t, s.flowManager.RegisterStage(st), "register stage")
 	}
 }
 
 // populateLinks creates the links in the server, asserting any occurred errors.
-func populateLinks(t *testing.T, s *Server, links []*link.Link) {
-	// Bypass CreateLink verifications
-	store := s.linkStore
+func populateLinks(t *testing.T, s *Server, links []*orchestration.Link) {
 	for _, l := range links {
-		source, ok := s.stageStore.GetByName(l.SourceStage())
+		source, ok := s.orchestrationManager.GetStageByName(l.SourceStage())
 		assert.Assert(t, ok, "source does not exist")
-		target, ok := s.stageStore.GetByName(l.TargetStage())
+		target, ok := s.orchestrationManager.GetStageByName(l.TargetStage())
 		assert.Assert(t, ok, "target does not exist")
-		assert.NilError(t, store.Create(l), "populate with links")
+		s.orchestrationManager.CreateLinkInternal(l)
 		err := s.flowManager.RegisterLink(source, target, l)
 		assert.NilError(t, err, "register link")
 	}

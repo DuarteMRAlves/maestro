@@ -1,4 +1,4 @@
-package stage
+package orchestration
 
 import (
 	"fmt"
@@ -16,20 +16,25 @@ type Stage struct {
 
 	// Descriptor for the rpc that this stage calls.
 	rpc reflection.RPC
+
+	// orchestration is the Orchestration where this stage is inserted.
+	orchestration *Orchestration
 }
 
-func New(
+func NewStage(
 	name apitypes.StageName,
 	address string,
 	asset apitypes.AssetName,
 	rpc reflection.RPC,
+	orchestration *Orchestration,
 ) *Stage {
 	return &Stage{
-		name:    name,
-		address: address,
-		asset:   asset,
-		rpc:     rpc,
-		phase:   apitypes.StagePending,
+		name:          name,
+		address:       address,
+		asset:         asset,
+		rpc:           rpc,
+		orchestration: orchestration,
+		phase:         apitypes.StagePending,
 	}
 }
 
@@ -58,6 +63,8 @@ func (s *Stage) Clone() *Stage {
 		rpc:     s.rpc,
 
 		phase: s.phase,
+
+		orchestration: s.orchestration,
 	}
 }
 

@@ -11,15 +11,18 @@ type Orchestration struct {
 	name apitypes.OrchestrationName
 	// phase defines the current phase of this Orchestration.
 	phase apitypes.OrchestrationPhase
-	// links specifies the names of the links contained in the orchestration.
-	links []apitypes.LinkName
+	// stages specifies the stages that will be executed by this Orchestration.
+	stages []*Stage
+	// links specifies the links contained in this Orchestration.
+	links []*Link
 }
 
-func New(name apitypes.OrchestrationName, links []apitypes.LinkName) *Orchestration {
+func New(name apitypes.OrchestrationName) *Orchestration {
 	return &Orchestration{
-		name:  name,
-		phase: apitypes.OrchestrationPending,
-		links: links,
+		name:   name,
+		phase:  apitypes.OrchestrationPending,
+		stages: []*Stage{},
+		links:  []*Link{},
 	}
 }
 
@@ -27,12 +30,12 @@ func (o *Orchestration) Name() apitypes.OrchestrationName {
 	return o.name
 }
 
-func (o *Orchestration) Links() []apitypes.LinkName {
+func (o *Orchestration) Links() []*Link {
 	return o.links
 }
 
 func (o *Orchestration) Clone() *Orchestration {
-	links := make([]apitypes.LinkName, 0, len(o.links))
+	links := make([]*Link, 0, len(o.links))
 	for _, l := range o.links {
 		links = append(links, l)
 	}
@@ -44,10 +47,18 @@ func (o *Orchestration) Clone() *Orchestration {
 	}
 }
 
+func (o *Orchestration) AddStage(s *Stage) {
+	o.stages = append(o.stages, s)
+}
+
+func (o *Orchestration) AddLink(l *Link) {
+	o.links = append(o.links, l)
+}
+
 func (o *Orchestration) ToApi() *apitypes.Orchestration {
 	links := make([]apitypes.LinkName, 0, len(o.links))
 	for _, l := range o.links {
-		links = append(links, l)
+		links = append(links, l.Name())
 	}
 
 	return &apitypes.Orchestration{
