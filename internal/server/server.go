@@ -5,6 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"net"
@@ -21,6 +22,10 @@ type Server struct {
 	flowManager          flow.Manager
 
 	grpcServer *grpc.Server
+
+	// db is a key-value store database to persist state across multiple
+	// executions of the server and to ensure consistency.
+	db *badger.DB
 
 	logger *zap.Logger
 }
