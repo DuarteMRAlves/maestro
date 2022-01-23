@@ -2,79 +2,44 @@ package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestStore_CreateCorrect(t *testing.T) {
-	const (
-		name  apitypes.OrchestrationName = "Orchestration Name"
-		phase                            = apitypes.OrchestrationRunning
-	)
+	const name apitypes.OrchestrationName = "Orchestration-Name"
 	tests := []struct {
 		name   string
-		config *Orchestration
+		config *apitypes.Orchestration
 	}{
 		{
-			name:   "test no links variable",
-			config: &Orchestration{name: name, phase: phase},
-		},
-		{
-			name:   "test nil links",
-			config: &Orchestration{name: name, phase: phase, links: nil},
-		},
-		{
-			name: "test empty links",
-			config: &Orchestration{
-				name:  name,
-				phase: phase,
-				links: []apitypes.LinkName{},
-			},
-		},
-		{
-			name: "test links with one element",
-			config: &Orchestration{
-				name:  name,
-				phase: phase,
-				links: []apitypes.LinkName{"link-1"},
-			},
-		},
-		{
-			name: "test links with multiple elements",
-			config: &Orchestration{
-				name:  name,
-				phase: phase,
-				links: []apitypes.LinkName{"link-1", "link-2", "link-3"},
-			},
+			name:   "test all fields",
+			config: &apitypes.Orchestration{Name: name},
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				st, ok := NewStore().(*store)
-				assert.Assert(t, ok, "type assertion failed for store")
+				st, ok := NewManager(asset.NewStore()).(*manager)
+				assert.Assert(t, ok, "type assertion failed for manager")
 
-				err := st.Create(test.config)
+				err := st.CreateOrchestration(test.config)
 				assert.NilError(t, err, "create error")
-				assert.Equal(t, 1, lenOrchestrations(st), "store size")
+				assert.Equal(t, 1, lenOrchestrations(st), "manager size")
 
 				stored, ok := st.orchestrations.Load(name)
 				assert.Assert(t, ok, "orchestration exists")
 
 				o, ok := stored.(*Orchestration)
 				assert.Assert(t, ok, "orchestration type assertion failed")
-				assert.Equal(t, test.config.name, o.name, "correct name")
-				assert.Equal(t, test.config.phase, o.phase, "correct phase")
-				if test.config.links == nil {
-					assert.DeepEqual(t, []apitypes.LinkName{}, o.links)
-				} else {
-					assert.DeepEqual(t, test.config.links, o.links)
-				}
+				assert.Equal(t, test.config.Name, o.name, "correct name")
+				assert.Equal(t, apitypes.OrchestrationPending, o.phase, "correct phase")
 			})
 	}
 }
 
-func lenOrchestrations(st *store) int {
+func lenOrchestrations(st *manager) int {
 	count := 0
 	st.orchestrations.Range(
 		func(key, value interface{}) bool {
@@ -188,14 +153,13 @@ func TestStore_Get_Correct(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				st := NewStore()
+				st := NewManager(asset.NewStore())
 
 				for _, o := range test.stored {
-					err := st.Create(o)
-					assert.Assert(t, err, "create asset error")
+					st.CreateOrchestrationInternal(o)
 				}
 
-				received := st.Get(test.query)
+				received := st.GetMatchingOrchestration(test.query)
 				assert.Equal(t, len(test.expected), len(received))
 
 				seen := make(map[apitypes.OrchestrationName]bool, 0)
@@ -204,11 +168,11 @@ func TestStore_Get_Correct(t *testing.T) {
 				}
 
 				for _, r := range received {
-					alreadySeen, exists := seen[r.name]
+					alreadySeen, exists := seen[r.Name]
 					assert.Assert(t, exists, "element should be expected")
 					// Elements can't be seen twice
 					assert.Assert(t, !alreadySeen, "element already seen")
-					seen[r.name] = true
+					seen[r.Name] = true
 				}
 
 				for _, e := range test.expected {
@@ -226,6 +190,5 @@ func orchestrationForName(
 	return &Orchestration{
 		name:  name,
 		phase: phase,
-		links: []apitypes.LinkName{"link-1", "link-2"},
 	}
 }

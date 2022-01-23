@@ -3,17 +3,17 @@ package connection
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
-	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/queue"
 )
 
 // Connection is a connection between two stages where data is transferred.
 type Connection struct {
-	link  *link.Link
+	link  *orchestration.Link
 	queue queue.Ring
 }
 
-func New(l *link.Link) (*Connection, error) {
+func New(l *orchestration.Link) (*Connection, error) {
 	q, err := queue.NewRing(1)
 	if err != nil {
 		return nil, err

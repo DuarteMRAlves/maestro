@@ -3,7 +3,7 @@ package input
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
-	"github.com/DuarteMRAlves/maestro/internal/link"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -14,11 +14,11 @@ func TestInputCfg_unregisterIfExists_exists(t *testing.T) {
 		linkName2 apitypes.LinkName = "link-name-2"
 		linkName3 apitypes.LinkName = "link-name-3"
 	)
-	conn1, err := connection.New(link.New(linkName1, "", "", "", ""))
+	conn1, err := connection.New(orchestration.NewLink(linkName1, "", "", "", ""))
 	assert.NilError(t, err, "create connection 1")
-	conn2, err := connection.New(link.New(linkName2, "", "", "", ""))
+	conn2, err := connection.New(orchestration.NewLink(linkName2, "", "", "", ""))
 	assert.NilError(t, err, "create connection 2")
-	conn3, err := connection.New(link.New(linkName3, "", "", "", ""))
+	conn3, err := connection.New(orchestration.NewLink(linkName3, "", "", "", ""))
 	assert.NilError(t, err, "create connection 3")
 
 	cfg := NewCfg()
@@ -40,13 +40,13 @@ func TestInputCfg_unregisterIfExists_doesNotExist(t *testing.T) {
 		linkName3 apitypes.LinkName = "link-name-3"
 		linkName4 apitypes.LinkName = "link-name-4"
 	)
-	conn1, err := connection.New(link.New(linkName1, "", "", "", ""))
+	conn1, err := connection.New(orchestration.NewLink(linkName1, "", "", "", ""))
 	assert.NilError(t, err, "create connection 1")
-	conn2, err := connection.New(link.New(linkName2, "", "", "", ""))
+	conn2, err := connection.New(orchestration.NewLink(linkName2, "", "", "", ""))
 	assert.NilError(t, err, "create connection 2")
-	conn3, err := connection.New(link.New(linkName3, "", "", "", ""))
+	conn3, err := connection.New(orchestration.NewLink(linkName3, "", "", "", ""))
 	assert.NilError(t, err, "create connection 3")
-	conn4, err := connection.New(link.New(linkName4, "", "", "", ""))
+	conn4, err := connection.New(orchestration.NewLink(linkName4, "", "", "", ""))
 	assert.NilError(t, err, "create connection 4")
 
 	cfg := NewCfg()
