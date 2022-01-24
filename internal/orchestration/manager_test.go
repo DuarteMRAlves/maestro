@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -21,7 +20,7 @@ func TestStore_CreateCorrect(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				st, ok := NewManager(asset.NewStore()).(*manager)
+				st, ok := NewManager().(*manager)
 				assert.Assert(t, ok, "type assertion failed for manager")
 
 				err := st.CreateOrchestration(test.config)
@@ -153,7 +152,7 @@ func TestStore_Get_Correct(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				st := NewManager(asset.NewStore())
+				st := NewManager()
 
 				for _, o := range test.stored {
 					st.CreateOrchestrationInternal(o)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/discovery"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
@@ -53,16 +52,13 @@ type manager struct {
 	orchestrations sync.Map
 	stages         sync.Map
 	links          sync.Map
-
-	assets asset.Store
 }
 
-func NewManager(assets asset.Store) Manager {
+func NewManager() Manager {
 	return &manager{
 		orchestrations: sync.Map{},
 		stages:         sync.Map{},
 		links:          sync.Map{},
-		assets:         assets,
 	}
 }
 

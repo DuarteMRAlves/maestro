@@ -77,15 +77,16 @@ func mockLink(num int, sourceField string, targetField string) *orchestration.Li
 		targetField)
 }
 
+// FIXME: Populate with db
 // populateAssets creates the assets in the server, asserting any occurred
 // errors.
-func populateAssets(t *testing.T, s *Server, assets []*asset.Asset) {
-	// Bypass CreateAsset verifications
-	store := s.assetStore
-	for _, a := range assets {
-		assert.NilError(t, store.Create(a), "populate with assets")
-	}
-}
+//func populateAssets(t *testing.T, s *Server, assets []*asset.Asset) {
+//	// Bypass CreateAsset verifications
+//	store := s.assetStore
+//	for _, a := range assets {
+//		assert.NilError(t, store.Create(a), "populate with assets")
+//	}
+//}
 
 // populateStages creates the stages in the server, asserting any occurred
 // errors.

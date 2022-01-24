@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
+	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -60,7 +61,15 @@ func TestServer_CreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				populateForLinks(t, s)
@@ -71,7 +80,15 @@ func TestServer_CreateLink(t *testing.T) {
 }
 
 func TestServer_CreateLink_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -118,7 +135,15 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				err = s.CreateLink(test.config)
@@ -136,7 +161,15 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 
 func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -156,7 +189,15 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 
 func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -176,7 +217,15 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 
 func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -193,7 +242,15 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 
 func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -211,7 +268,15 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 
 func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -230,7 +295,15 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -250,7 +323,15 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 
 func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -272,7 +353,15 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 
 func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 
@@ -294,7 +383,15 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 
 func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	const name = "link-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s)
 

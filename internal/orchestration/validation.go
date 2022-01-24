@@ -34,12 +34,13 @@ func (m *manager) validateCreateStageConfig(cfg *apitypes.Stage) error {
 	if cfg.Phase != "" {
 		return errdefs.InvalidArgumentWithMsg("phase should not be specified")
 	}
+	// TODO: Fixme check for asset within transaction.
 	// Asset is not required but if specified should exist.
-	if cfg.Asset != "" && !m.assets.Contains(cfg.Asset) {
-		return errdefs.NotFoundWithMsg(
-			"asset '%v' not found",
-			cfg.Asset)
-	}
+	//if cfg.Asset != "" && !m.assets.Contains(cfg.Asset) {
+	//	return errdefs.NotFoundWithMsg(
+	//		"asset '%v' not found",
+	//		cfg.Asset)
+	//}
 	if cfg.Address != "" && cfg.Host != "" {
 		return errdefs.InvalidArgumentWithMsg(
 			"Cannot simultaneously specify address and host for stage")

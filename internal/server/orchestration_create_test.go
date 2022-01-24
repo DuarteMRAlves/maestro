@@ -5,6 +5,7 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -27,7 +28,15 @@ func TestServer_CreateOrchestration(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				err = s.CreateOrchestration(test.config)
@@ -37,7 +46,15 @@ func TestServer_CreateOrchestration(t *testing.T) {
 }
 
 func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 
 	err = s.CreateOrchestration(nil)
@@ -92,7 +109,15 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				err = s.CreateOrchestration(test.config)
@@ -111,7 +136,15 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "orchestration-name"
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 
 	config := &apitypes.Orchestration{

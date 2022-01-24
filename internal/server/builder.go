@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
@@ -15,6 +14,10 @@ import (
 type Builder struct {
 	grpcActive bool
 	grpcOpts   []grpc.ServerOption
+
+	// db is a key-value store database to persist state across multiple
+	// executions of the server and to ensure consistency.
+	db *badger.DB
 
 	logger *zap.Logger
 }
@@ -35,24 +38,29 @@ func (b *Builder) WithGrpcOpts(opts ...grpc.ServerOption) *Builder {
 	return b
 }
 
+func (b *Builder) WithDb(db *badger.DB) *Builder {
+	b.db = db
+	return b
+}
+
 func (b *Builder) WithLogger(logger *zap.Logger) *Builder {
 	b.logger = logger
 	return b
 }
 
 func (b *Builder) Build() (*Server, error) {
-	err := b.complete()
+	var err error
+	err = b.complete()
+	if err != nil {
+		return nil, err
+	}
+	err = b.validate()
 	if err != nil {
 		return nil, err
 	}
 	s := &Server{}
 	s.logger = b.logger
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	if err != nil {
-		return nil, errdefs.UnknownWithMsg("initialize db: %v", err)
-	}
-	s.db = db
-	initStores(s)
+	s.db = b.db
 	initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
@@ -72,12 +80,17 @@ func (b *Builder) complete() error {
 	return nil
 }
 
-func initStores(s *Server) {
-	s.assetStore = asset.NewStore()
+// validate checks if all necessary preconditions to build the server are
+// fulfilled.
+func (b *Builder) validate() error {
+	if b.db == nil {
+		return errdefs.FailedPreconditionWithMsg("no database specified")
+	}
+	return nil
 }
 
 func initManagers(s *Server) {
-	s.orchestrationManager = orchestration.NewManager(s.assetStore)
+	s.orchestrationManager = orchestration.NewManager()
 	s.flowManager = flow.NewManager()
 }
 

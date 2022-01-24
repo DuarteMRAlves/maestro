@@ -9,7 +9,7 @@ import (
 // through this API that collects all functionality.
 type InternalAPI interface {
 	CreateAsset(config *apitypes.Asset) error
-	GetAsset(query *apitypes.Asset) []*apitypes.Asset
+	GetAsset(query *apitypes.Asset) ([]*apitypes.Asset, error)
 
 	CreateStage(config *apitypes.Stage) error
 	GetStage(query *apitypes.Stage) []*apitypes.Stage
