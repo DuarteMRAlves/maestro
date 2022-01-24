@@ -18,5 +18,7 @@ type InternalAPI interface {
 	GetLink(query *apitypes.Link) []*apitypes.Link
 
 	CreateOrchestration(config *apitypes.Orchestration) error
-	GetOrchestration(query *apitypes.Orchestration) []*apitypes.Orchestration
+	GetOrchestration(
+		query *apitypes.Orchestration,
+	) ([]*apitypes.Orchestration, error)
 }

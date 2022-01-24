@@ -5,17 +5,27 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/dgraph-io/badger/v3"
 )
 
 // validateCreateOrchestrationConfig verifies if all the conditions to create an
 // orchestration are met. It returns an error if one condition is not met and
 // nil otherwise.
-func validateCreateOrchestrationConfig(cfg *apitypes.Orchestration) error {
+func validateCreateOrchestrationConfig(
+	txn *badger.Txn,
+	cfg *apitypes.Orchestration,
+) error {
 	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
 		return err
 	}
 	if !naming.IsValidOrchestrationName(cfg.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", cfg.Name)
+	}
+	prev, _ := txn.Get(orchestrationKey(cfg.Name))
+	if prev != nil {
+		return errdefs.AlreadyExistsWithMsg(
+			"orchestration '%s' already exists",
+			cfg.Name)
 	}
 	return nil
 }

@@ -2,50 +2,40 @@ package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestStore_CreateCorrect(t *testing.T) {
+func TestStore_Create(t *testing.T) {
 	const name apitypes.OrchestrationName = "Orchestration-Name"
-	tests := []struct {
-		name   string
-		config *apitypes.Orchestration
-	}{
-		{
-			name:   "test all fields",
-			config: &apitypes.Orchestration{Name: name},
-		},
-	}
-	for _, test := range tests {
-		t.Run(
-			test.name, func(t *testing.T) {
-				st, ok := NewManager().(*manager)
-				assert.Assert(t, ok, "type assertion failed for manager")
+	var (
+		orchestration Orchestration
+		err           error
+	)
+	cfg := &apitypes.Orchestration{Name: name}
 
-				err := st.CreateOrchestration(test.config)
-				assert.NilError(t, err, "create error")
-				assert.Equal(t, 1, lenOrchestrations(st), "manager size")
+	m, ok := NewManager().(*manager)
+	assert.Assert(t, ok, "type assertion failed for manager")
 
-				stored, ok := st.orchestrations.Load(name)
-				assert.Assert(t, ok, "orchestration exists")
+	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	err = db.Update(func(txn *badger.Txn) error {
+		return m.CreateOrchestration(txn, cfg)
+	})
+	assert.NilError(t, err, "create error not nil")
 
-				o, ok := stored.(*Orchestration)
-				assert.Assert(t, ok, "orchestration type assertion failed")
-				assert.Equal(t, test.config.Name, o.name, "correct name")
-				assert.Equal(t, apitypes.OrchestrationPending, o.phase, "correct phase")
-			})
-	}
-}
-
-func lenOrchestrations(st *manager) int {
-	count := 0
-	st.orchestrations.Range(
-		func(key, value interface{}) bool {
-			count += 1
-			return true
-		})
-	return count
+	err = db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(orchestrationKey(name))
+		assert.NilError(t, err, "get error")
+		cp, err := item.ValueCopy(nil)
+		return loadOrchestration(&orchestration, cp)
+	})
+	assert.NilError(t, err, "load error")
+	assert.Equal(t, orchestration.Name(), cfg.Name, "name not correct")
+	phase := orchestration.phase
+	assert.Equal(t, phase, apitypes.OrchestrationPending, "phase not correct")
 }
 
 func TestStore_Get_Correct(t *testing.T) {
@@ -152,13 +142,25 @@ func TestStore_Get_Correct(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				st := NewManager()
+				var received []*apitypes.Orchestration
+
+				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+
+				m := NewManager()
 
 				for _, o := range test.stored {
-					st.CreateOrchestrationInternal(o)
+					err = db.Update(func(txn *badger.Txn) error {
+						return persistOrchestration(txn, o)
+					})
 				}
 
-				received := st.GetMatchingOrchestration(test.query)
+				err = db.View(func(txn *badger.Txn) error {
+					received, err = m.GetMatchingOrchestration(txn, test.query)
+					return err
+				})
+				assert.NilError(t, err, "get orchestration")
 				assert.Equal(t, len(test.expected), len(received))
 
 				seen := make(map[apitypes.OrchestrationName]bool, 0)
