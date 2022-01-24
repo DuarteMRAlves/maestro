@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
@@ -16,8 +15,6 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	assetStore asset.Store
-
 	orchestrationManager orchestration.Manager
 	flowManager          flow.Manager
 

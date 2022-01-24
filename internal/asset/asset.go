@@ -42,6 +42,6 @@ func (a *Asset) ToApi() *apitypes.Asset {
 	}
 }
 
-func (a *Asset) String() string {
+func (a Asset) String() string {
 	return fmt.Sprintf("Asset{name:%v,image:%v}", a.name, a.image)
 }

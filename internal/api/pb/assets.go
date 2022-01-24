@@ -49,7 +49,10 @@ func (s *assetManagementServer) Get(
 		return err
 	}
 
-	assets := s.api.GetAsset(query)
+	assets, err := s.api.GetAsset(query)
+	if err != nil {
+		return GrpcErrorFromError(err)
+	}
 	for _, a := range assets {
 		pbAsset, err := protobuff.MarshalAsset(a)
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -42,7 +43,15 @@ func TestServer_CreateAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 				err = s.CreateAsset(test.config)
 				assert.NilError(t, err, "create asset error")
@@ -51,7 +60,15 @@ func TestServer_CreateAsset(t *testing.T) {
 }
 
 func TestServer_CreateAsset_NilConfig(t *testing.T) {
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 
 	err = s.CreateAsset(nil)
@@ -59,7 +76,7 @@ func TestServer_CreateAsset_NilConfig(t *testing.T) {
 		t,
 		errdefs.IsInvalidArgument(err),
 		"error is not InvalidArgument")
-	expectedMsg := "'config' is nil"
+	expectedMsg := "'cfg' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -91,7 +108,15 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+				db, err := badger.Open(
+					badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+				s, err := NewBuilder().
+					WithGrpc().
+					WithDb(db).
+					WithLogger(testutil.NewLogger(t)).
+					Build()
 				assert.NilError(t, err, "build server")
 
 				err = s.CreateAsset(test.config)
@@ -111,7 +136,15 @@ func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "asset-name"
 
-	s, err := NewBuilder().WithGrpc().WithLogger(testutil.NewLogger(t)).Build()
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
 	assert.NilError(t, err, "build server")
 
 	config := &apitypes.Asset{
