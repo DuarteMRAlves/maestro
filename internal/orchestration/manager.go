@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/discovery"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/dgraph-io/badger/v3"
 	"google.golang.org/grpc"
 	"sync"
 	"time"
@@ -16,16 +17,15 @@ import (
 type Manager interface {
 	// CreateOrchestration creates an orchestration from the given config. The
 	// function returns an error if the orchestration name is not valid.
-	CreateOrchestration(*apitypes.Orchestration) error
+	CreateOrchestration(*badger.Txn, *apitypes.Orchestration) error
 	// GetMatchingOrchestration retrieves stored orchestrations that match the
 	// received query. The query is an orchestration with the fields that the
 	// returned orchestrations should have. If a field is empty, then all values
 	// for that field are accepted.
-	GetMatchingOrchestration(*apitypes.Orchestration) []*apitypes.Orchestration
-	// CreateOrchestrationInternal creates a new orchestration without any
-	// verification. This method should only be used for tests.
-	// FIXME: Remove method: https://github.com/DuarteMRAlves/maestro/issues/245
-	CreateOrchestrationInternal(orchestration *Orchestration)
+	GetMatchingOrchestration(
+		*badger.Txn,
+		*apitypes.Orchestration,
+	) ([]*apitypes.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
 	CreateStage(*apitypes.Stage) (*Stage, error)
@@ -49,59 +49,71 @@ type Manager interface {
 }
 
 type manager struct {
-	orchestrations sync.Map
-	stages         sync.Map
-	links          sync.Map
+	stages sync.Map
+	links  sync.Map
 }
 
 func NewManager() Manager {
 	return &manager{
-		orchestrations: sync.Map{},
-		stages:         sync.Map{},
-		links:          sync.Map{},
+		stages: sync.Map{},
+		links:  sync.Map{},
 	}
 }
 
-func (m *manager) CreateOrchestration(cfg *apitypes.Orchestration) error {
+func (m *manager) CreateOrchestration(
+	txn *badger.Txn,
+	cfg *apitypes.Orchestration,
+) error {
 	var err error
-	if err = validateCreateOrchestrationConfig(cfg); err != nil {
+	if err = validateCreateOrchestrationConfig(txn, cfg); err != nil {
 		return err
 	}
 
 	o := New(cfg.Name)
-	_, prev := m.orchestrations.LoadOrStore(o.Name(), o)
-	if prev {
-		return errdefs.AlreadyExistsWithMsg(
-			"orchestration '%v' already exists",
-			o.Name())
+	err = persistOrchestration(txn, o)
+	if err != nil {
+		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return nil
 }
 
 func (m *manager) GetMatchingOrchestration(
+	txn *badger.Txn,
 	query *apitypes.Orchestration,
-) []*apitypes.Orchestration {
+) ([]*apitypes.Orchestration, error) {
+	var (
+		o   Orchestration
+		cp  []byte
+		err error
+	)
 	if query == nil {
 		query = &apitypes.Orchestration{}
 	}
 	filter := buildOrchestrationQueryFilter(query)
 	res := make([]*apitypes.Orchestration, 0)
-	m.orchestrations.Range(
-		func(key, value interface{}) bool {
-			b, ok := value.(*Orchestration)
-			if !ok {
-				return false
-			}
-			if filter(b) {
-				res = append(res, b.ToApi())
-			}
-			return true
-		})
-	return res
-}
 
-func (m *manager) CreateOrchestrationInternal(o *Orchestration) {
-	m.orchestrations.Store(o.Name(), o)
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+	prefix := []byte("orchestration:")
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+		cp, err = item.ValueCopy(cp)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("read: %v", err)
+		}
+		err = loadOrchestration(&o, cp)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("decoding: %v", err)
+		}
+		fmt.Println("outside")
+		fmt.Println(o)
+		if filter(&o) {
+			fmt.Println("inside")
+			fmt.Println(o)
+			res = append(res, o.ToApi())
+		}
+	}
+	return res, nil
 }
 
 func (m *manager) CreateStage(cfg *apitypes.Stage) (*Stage, error) {

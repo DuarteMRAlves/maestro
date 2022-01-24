@@ -158,7 +158,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	err = s.CreateOrchestration(config)
 	assert.NilError(t, err, "first creation has an error")
 	err = s.CreateOrchestration(config)
-	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not NotFound")
+	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not AlreadyExists")
 	expectedMsg := fmt.Sprintf("orchestration '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
 }

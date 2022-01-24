@@ -53,7 +53,10 @@ func (s *orchestrationManagementServer) Get(
 		return err
 	}
 
-	orchestrations := s.api.GetOrchestration(query)
+	orchestrations, err := s.api.GetOrchestration(query)
+	if err != nil {
+		return GrpcErrorFromError(err)
+	}
 	for _, a := range orchestrations {
 		pbOrchestration, err := protobuff.MarshalOrchestration(a)
 		if err != nil {
