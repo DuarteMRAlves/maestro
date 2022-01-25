@@ -2,22 +2,41 @@ package server
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 )
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(cfg *apitypes.Stage) error {
-	st, err := s.orchestrationManager.CreateStage(cfg)
-	if err != nil {
-		return err
-	}
-	return s.flowManager.RegisterStage(st)
+	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
+	return s.db.Update(
+		func(txn *badger.Txn) error {
+			st, err := s.orchestrationManager.CreateStage(txn, cfg)
+			if err != nil {
+				return err
+			}
+			return s.flowManager.RegisterStage(st)
+		},
+	)
 }
 
-func (s *Server) GetStage(query *apitypes.Stage) []*apitypes.Stage {
+func (s *Server) GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error) {
+	var (
+		stages []*apitypes.Stage
+		err    error
+	)
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
-	return s.orchestrationManager.GetMatchingStage(query)
+	err = s.db.View(
+		func(txn *badger.Txn) error {
+			stages, err = s.orchestrationManager.GetMatchingStage(txn, query)
+			return err
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return stages, nil
 }
 
 func logStage(s *apitypes.Stage, field string) []zap.Field {

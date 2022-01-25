@@ -27,18 +27,17 @@ type Manager interface {
 	) ([]*apitypes.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
-	CreateStage(*apitypes.Stage) (*Stage, error)
-	// CreateStageInternal creates a new stage without any verification. This
-	// method should only be used for tests.
-	// FIXME: Remove method: https://github.com/DuarteMRAlves/maestro/issues/245
-	CreateStageInternal(*Stage)
-	ContainsStage(apitypes.StageName) bool
-	GetStageByName(apitypes.StageName) (*Stage, bool)
+	CreateStage(*badger.Txn, *apitypes.Stage) (*Stage, error)
+	// ContainsStage returns true if the stage exists and false otherwise.
+	ContainsStage(*badger.Txn, apitypes.StageName) bool
+	// GetStageByName retrieves a stored stage. It returns the stage and true
+	// if the stage exists and nil, false otherwise.
+	GetStageByName(*badger.Txn, apitypes.StageName) (*Stage, bool)
 	// GetMatchingStage retrieves stored stages that match the received query.
 	// The query is a stage with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
-	GetMatchingStage(*apitypes.Stage) []*apitypes.Stage
-	CreateLink(*apitypes.Link) (*Link, error)
+	GetMatchingStage(*badger.Txn, *apitypes.Stage) ([]*apitypes.Stage, error)
+	CreateLink(*badger.Txn, *apitypes.Link) (*Link, error)
 	// CreateLinkInternal creates a new link without any verification. This
 	// method should only be used for tests.
 	// FIXME: Remove method: https://github.com/DuarteMRAlves/maestro/issues/245
@@ -48,15 +47,13 @@ type Manager interface {
 }
 
 type manager struct {
-	stages sync.Map
-	links  sync.Map
+	links sync.Map
 
 	reflectionManager reflection.Manager
 }
 
 func NewManager(reflectionManager reflection.Manager) Manager {
 	return &manager{
-		stages:            sync.Map{},
 		links:             sync.Map{},
 		reflectionManager: reflectionManager,
 	}
@@ -118,9 +115,12 @@ func (m *manager) GetMatchingOrchestration(
 	return res, nil
 }
 
-func (m *manager) CreateStage(cfg *apitypes.Stage) (*Stage, error) {
+func (m *manager) CreateStage(
+	txn *badger.Txn,
+	cfg *apitypes.Stage,
+) (*Stage, error) {
 	var err error
-	if err = m.validateCreateStageConfig(cfg); err != nil {
+	if err = m.validateCreateStageConfig(txn, cfg); err != nil {
 		return nil, err
 	}
 	address := m.inferStageAddress(cfg)
@@ -134,55 +134,86 @@ func (m *manager) CreateStage(cfg *apitypes.Stage) (*Stage, error) {
 		rpc:     cfg.Rpc,
 	}
 	s := NewStage(cfg.Name, spec, cfg.Asset, nil)
-	_, prev := m.stages.LoadOrStore(s.name, s)
-	if prev {
-		return nil, errdefs.AlreadyExistsWithMsg(
-			"stage '%v' already exists",
-			s.name)
+	err = PersistStage(txn, s)
+	if err != nil {
+		return nil, errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return s, nil
 }
 
-func (m *manager) CreateStageInternal(s *Stage) {
-	m.stages.Store(s.name, s)
+func (m *manager) ContainsStage(txn *badger.Txn, name apitypes.StageName) bool {
+	item, _ := txn.Get(stageKey(name))
+	return item != nil
 }
 
-func (m *manager) ContainsStage(name apitypes.StageName) bool {
-	_, ok := m.stages.Load(name)
-	return ok
-}
-
-func (m *manager) GetStageByName(name apitypes.StageName) (*Stage, bool) {
-	loaded, ok := m.stages.Load(name)
-	if !ok {
+func (m *manager) GetStageByName(
+	txn *badger.Txn,
+	name apitypes.StageName,
+) (*Stage, bool) {
+	var (
+		data []byte
+		err  error
+	)
+	item, _ := txn.Get(stageKey(name))
+	if item == nil {
 		return nil, false
 	}
-	stage, ok := loaded.(*Stage)
-	return stage, ok
+	data, err = item.ValueCopy(nil)
+	if err != nil {
+		return nil, false
+	}
+	s := &Stage{}
+	s.rpcSpec = &RpcSpec{}
+	err = loadStage(s, data)
+	if err != nil {
+		return nil, false
+	}
+	return s, true
 }
 
-func (m *manager) GetMatchingStage(query *apitypes.Stage) []*apitypes.Stage {
+func (m *manager) GetMatchingStage(
+	txn *badger.Txn,
+	query *apitypes.Stage,
+) ([]*apitypes.Stage, error) {
+	var (
+		s    Stage
+		data []byte
+		err  error
+	)
+	s.rpcSpec = &RpcSpec{}
+
 	if query == nil {
 		query = &apitypes.Stage{}
 	}
 	filter := buildStageQueryFilter(query)
 	res := make([]*apitypes.Stage, 0)
-	m.stages.Range(
-		func(key, value interface{}) bool {
-			s, ok := value.(*Stage)
-			if !ok {
-				return false
-			}
-			if filter(s) {
-				res = append(res, s.ToApi())
-			}
-			return true
-		})
-	return res
+
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+	prefix := []byte("stage:")
+
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+		data, err = item.ValueCopy(data)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("read: %v", err)
+		}
+		err = loadStage(&s, data)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("decoding: %v", err)
+		}
+		if filter(&s) {
+			res = append(res, s.ToApi())
+		}
+	}
+	return res, nil
 }
 
-func (m *manager) CreateLink(cfg *apitypes.Link) (*Link, error) {
-	if err := m.validateCreateLinkConfig(cfg); err != nil {
+func (m *manager) CreateLink(
+	txn *badger.Txn,
+	cfg *apitypes.Link,
+) (*Link, error) {
+	if err := m.validateCreateLinkConfig(txn, cfg); err != nil {
 		return nil, err
 	}
 	l := NewLink(
@@ -196,7 +227,8 @@ func (m *manager) CreateLink(cfg *apitypes.Link) (*Link, error) {
 	if prev {
 		return nil, errdefs.AlreadyExistsWithMsg(
 			"link '%v' already exists",
-			l.name)
+			l.name,
+		)
 	}
 	return l, nil
 }
@@ -228,7 +260,8 @@ func (m *manager) GetMatchingLinks(query *apitypes.Link) []*apitypes.Link {
 				res = append(res, l.ToApi())
 			}
 			return true
-		})
+		},
+	)
 	return res
 }
 
@@ -259,7 +292,8 @@ func (m *manager) inferRpc(
 			"connect to %s for stage %s: %s",
 			address,
 			cfg.Name,
-			err)
+			err,
+		)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

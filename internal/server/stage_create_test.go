@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
@@ -104,7 +105,8 @@ func TestServer_CreateStage(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -113,17 +115,24 @@ func TestServer_CreateStage(t *testing.T) {
 					WithLogger(testutil.NewLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
-				// FIXME: Populate with db
-				// populateForStages(t, s)
+				err = db.Update(
+					func(txn *badger.Txn) error {
+						populateForStages(t, txn)
+						return nil
+					},
+				)
+				assert.NilError(t, err, "Populate error")
 				err = s.CreateStage(test.config)
 				assert.NilError(t, err, "create stage error")
-			})
+			},
+		)
 	}
 }
 
 func TestServer_CreateStage_NilConfig(t *testing.T) {
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -132,14 +141,20 @@ func TestServer_CreateStage_NilConfig(t *testing.T) {
 		WithLogger(testutil.NewLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
-	// FIXME: Populate with db
-	// populateForStages(t, s)
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			populateForStages(t, txn)
+			return nil
+		},
+	)
+	assert.NilError(t, err, "Populate error")
 
 	err = s.CreateStage(nil)
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
+		"error is not InvalidArgument",
+	)
 	expectedMsg := "'cfg' is nil"
 	assert.Error(t, err, expectedMsg)
 }
@@ -176,7 +191,8 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -185,48 +201,64 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 					WithLogger(testutil.NewLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
-				// FIXME: Populate with db
-				// populateForStages(t, s)
+				err = db.Update(
+					func(txn *badger.Txn) error {
+						populateForStages(t, txn)
+						return nil
+					},
+				)
+				assert.NilError(t, err, "Populate error")
 
 				err = s.CreateStage(test.config)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
-					"error is not InvalidArgument")
+					"error is not InvalidArgument",
+				)
 				expectedMsg := fmt.Sprintf(
 					"invalid name '%v'",
-					test.config.Name)
+					test.config.Name,
+				)
 				assert.Error(t, err, expectedMsg)
-			})
+			},
+		)
 	}
 }
 
-// FIXME: Populate assets with db and run
-//func TestServer_CreateStage_AssetNotFound(t *testing.T) {
-//	const name = "stage-name"
-//	db, err := badger.Open(
-//		badger.DefaultOptions("").WithInMemory(true))
-//	assert.NilError(t, err, "db creation")
-//	defer db.Close()
-//	s, err := NewBuilder().
-//		WithGrpc().
-//		WithDb(db).
-//		WithLogger(testutil.NewLogger(t)).
-//		Build()
-//	assert.NilError(t, err, "build server")
-//	// FIXME: Populate with db
-//	// populateForStages(t, s)
-//
-//	config := &types.Stage{
-//		Name:  name,
-//		Asset: testutil.AssetNameForNum(1),
-//	}
-//
-//	err = s.CreateStage(config)
-//	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
-//	expectedMsg := fmt.Sprintf("asset '%v' not found", testutil.AssetNameForNum(1))
-//	assert.Error(t, err, expectedMsg)
-//}
+func TestServer_CreateStage_AssetNotFound(t *testing.T) {
+	const name = "stage-name"
+	db, err := badger.Open(
+		badger.DefaultOptions("").WithInMemory(true),
+	)
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+	s, err := NewBuilder().
+		WithGrpc().
+		WithDb(db).
+		WithLogger(testutil.NewLogger(t)).
+		Build()
+	assert.NilError(t, err, "build server")
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			populateForStages(t, txn)
+			return nil
+		},
+	)
+	assert.NilError(t, err, "Populate error")
+
+	config := &types.Stage{
+		Name:  name,
+		Asset: testutil.AssetNameForNum(1),
+	}
+
+	err = s.CreateStage(config)
+	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
+	expectedMsg := fmt.Sprintf(
+		"asset '%v' not found",
+		testutil.AssetNameForNum(1),
+	)
+	assert.Error(t, err, expectedMsg)
+}
 
 func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
@@ -238,7 +270,8 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	defer bothServer.GracefulStop()
 
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -247,8 +280,13 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 		WithLogger(testutil.NewLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
-	// FIXME: Populate with db
-	// populateForStages(t, s)
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			populateForStages(t, txn)
+			return nil
+		},
+	)
+	assert.NilError(t, err, "Populate error")
 
 	config := &types.Stage{
 		Name:    name,
@@ -290,7 +328,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf(
 				"stage %s: find rpc: find service without name: expected 1 "+
 					"available service but found 0",
-				name),
+				name,
+			),
 		},
 		{
 			name:          "too many services",
@@ -305,7 +344,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf(
 				"stage %s: find rpc: find service without name: expected 1 "+
 					"available service but found 2",
-				name),
+				name,
+			),
 		},
 		{
 			name:          "no such service",
@@ -321,7 +361,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf(
 				"stage %s: find rpc: find service with name NoSuchService:"+
 					" not found",
-				name),
+				name,
+			),
 		},
 		{
 			name:         "too many rpcs",
@@ -335,7 +376,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf(
 				"stage %v: find rpc: find rpc without name: expected 1 "+
 					"available rpc but found 4",
-				name),
+				name,
+			),
 		},
 		{
 			name:          "no such rpc",
@@ -350,7 +392,8 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			verifyErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg: fmt.Sprintf(
 				"stage %v: find rpc: find rpc with name NoSuchRpc: not found",
-				name),
+				name,
+			),
 		},
 	}
 	for _, test := range tests {
@@ -365,11 +408,13 @@ func TestServer_CreateStage_Error(t *testing.T) {
 					t,
 					lis,
 					test.registerTest,
-					test.registerExtra)
+					test.registerExtra,
+				)
 				defer bothServer.GracefulStop()
 
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -378,8 +423,13 @@ func TestServer_CreateStage_Error(t *testing.T) {
 					WithLogger(testutil.NewLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
-				// FIXME: Populate with db
-				// populateForStages(t, s)
+				err = db.Update(
+					func(txn *badger.Txn) error {
+						populateForStages(t, txn)
+						return nil
+					},
+				)
+				assert.NilError(t, err, "Populate error")
 
 				test.config.Address = bothAddr
 
@@ -387,17 +437,19 @@ func TestServer_CreateStage_Error(t *testing.T) {
 				assert.Assert(
 					t,
 					test.verifyErrTypeFn(err),
-					"incorrect err type")
+					"incorrect err type",
+				)
 				assert.Error(t, err, test.expectedErrMsg)
-			})
+			},
+		)
 	}
-
 }
 
-// FIXME: Populate with db
-//func populateForStages(t *testing.T, s *Server) {
-//	assets := []*asset.Asset{
-//		assetForNum(0),
-//	}
-//	populateAssets(t, s, assets)
-//}
+func populateForStages(t *testing.T, txn *badger.Txn) {
+	assets := []*asset.Asset{
+		assetForNum(0),
+	}
+	for _, a := range assets {
+		assert.NilError(t, asset.Persist(txn, a))
+	}
+}

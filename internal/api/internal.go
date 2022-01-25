@@ -12,7 +12,7 @@ type InternalAPI interface {
 	GetAsset(query *apitypes.Asset) ([]*apitypes.Asset, error)
 
 	CreateStage(config *apitypes.Stage) error
-	GetStage(query *apitypes.Stage) []*apitypes.Stage
+	GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error)
 
 	CreateLink(config *apitypes.Link) error
 	GetLink(query *apitypes.Link) []*apitypes.Link
