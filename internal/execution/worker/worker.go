@@ -2,8 +2,8 @@ package worker
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
-	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
+	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"
@@ -39,7 +39,8 @@ func NewWorker(cfg *Cfg) (Worker, error) {
 		if err != nil {
 			return nil, errdefs.InvalidArgumentWithMsg(
 				"unable to connect to address: %s",
-				cfg.Address)
+				cfg.Address,
+			)
 		}
 		w := &UnaryWorker{
 			Address: cfg.Address,

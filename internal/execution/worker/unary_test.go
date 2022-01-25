@@ -1,9 +1,9 @@
 package worker
 
 import (
-	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
-	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"

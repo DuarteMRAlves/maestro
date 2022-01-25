@@ -1,7 +1,7 @@
 package input
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"io"
 )
 

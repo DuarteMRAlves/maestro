@@ -1,4 +1,4 @@
-package flow
+package execution
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"

@@ -2,8 +2,8 @@ package output
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 )
 
 // Output receives the output flow.State for a given stage and sends it to the
@@ -28,7 +28,8 @@ func (o *Cfg) Register(c *connection.Connection) error {
 		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
 				"Link with an equal name already registered: %s",
-				prev.LinkName())
+				prev.LinkName(),
+			)
 		}
 	}
 

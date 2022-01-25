@@ -2,7 +2,7 @@ package connection
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/queue"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 )
