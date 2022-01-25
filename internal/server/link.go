@@ -9,24 +9,24 @@ import (
 
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateLink(config *apitypes.Link) error {
-	s.logger.Info("Create Link.", logLink(config, "config")...)
+func (s *Server) CreateLink(cfg *apitypes.Link) error {
+	s.logger.Info("Create Link.", logLink(cfg, "cfg")...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			l, err := s.orchestrationManager.CreateLink(txn, config)
+			l, err := s.orchestrationManager.CreateLink(txn, cfg)
 			if err != nil {
 				return err
 			}
 			source, ok := s.orchestrationManager.GetStageByName(
 				txn,
-				config.SourceStage,
+				cfg.SourceStage,
 			)
 			if !ok {
 				return errdefs.InternalWithMsg("source not found")
 			}
 			target, ok := s.orchestrationManager.GetStageByName(
 				txn,
-				config.TargetStage,
+				cfg.TargetStage,
 			)
 			if !ok {
 				return errdefs.InternalWithMsg("target not found")
@@ -37,9 +37,22 @@ func (s *Server) CreateLink(config *apitypes.Link) error {
 
 }
 
-func (s *Server) GetLink(query *apitypes.Link) []*apitypes.Link {
+func (s *Server) GetLink(query *apitypes.Link) ([]*apitypes.Link, error) {
+	var (
+		links []*apitypes.Link
+		err   error
+	)
 	s.logger.Info("Get Link.", logLink(query, "query")...)
-	return s.orchestrationManager.GetMatchingLinks(query)
+	err = s.db.View(
+		func(txn *badger.Txn) error {
+			links, err = s.orchestrationManager.GetMatchingLinks(txn, query)
+			return err
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return links, nil
 }
 
 func logLink(l *apitypes.Link, field string) []zap.Field {
