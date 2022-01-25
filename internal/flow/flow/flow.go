@@ -1,12 +1,12 @@
 package flow
 
-import "github.com/DuarteMRAlves/maestro/internal/orchestration"
+import "github.com/DuarteMRAlves/maestro/internal/storage"
 
 // Flow executes an orchestration.
 type Flow struct {
-	orchestration *orchestration.Orchestration
+	orchestration *storage.Orchestration
 }
 
-func New(o *orchestration.Orchestration) *Flow {
+func New(o *storage.Orchestration) *Flow {
 	return &Flow{orchestration: o}
 }

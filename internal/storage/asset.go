@@ -1,4 +1,4 @@
-package asset
+package storage
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type Asset struct {
 	image string
 }
 
-func New(name apitypes.AssetName, image string) *Asset {
+func NewAsset(name apitypes.AssetName, image string) *Asset {
 	return &Asset{
 		name:  name,
 		image: image,

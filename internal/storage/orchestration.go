@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ type Orchestration struct {
 	links []*Link
 }
 
-func New(name apitypes.OrchestrationName) *Orchestration {
+func NewOrchestration(name apitypes.OrchestrationName) *Orchestration {
 	return &Orchestration{
 		name:   name,
 		phase:  apitypes.OrchestrationPending,
@@ -73,5 +73,6 @@ func (o *Orchestration) String() string {
 		"Orchestration{name:%v,phase:%v,links:%v}",
 		o.name,
 		o.phase,
-		o.links)
+		o.links,
+	)
 }

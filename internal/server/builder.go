@@ -5,8 +5,8 @@ import (
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -102,7 +102,7 @@ func (b *Builder) validate() error {
 
 func (b *Builder) initManagers(s *Server) {
 	s.reflectionManager = b.reflectionManager
-	s.orchestrationManager = orchestration.NewManager(s.reflectionManager)
+	s.storageManager = storage.NewManager(s.reflectionManager)
 	s.flowManager = flow.NewManager(s.reflectionManager)
 }
 
@@ -119,6 +119,7 @@ func activateGrpc(s *Server, b *Builder) {
 	pb.RegisterLinkManagementServer(grpcServer, linkManagementServer)
 	pb.RegisterOrchestrationManagementServer(
 		grpcServer,
-		orchestrationManagementServer)
+		orchestrationManagementServer,
+	)
 	s.grpcServer = grpcServer
 }

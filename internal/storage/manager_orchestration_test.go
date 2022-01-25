@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
@@ -43,7 +43,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	assert.Equal(t, phase, apitypes.OrchestrationPending, "phase not correct")
 }
 
-func TestStore_Get_Correct(t *testing.T) {
+func TestManager_GetMatchingOrchestrations(t *testing.T) {
 	tests := []struct {
 		name   string
 		query  *apitypes.Orchestration

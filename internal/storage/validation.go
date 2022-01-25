@@ -1,8 +1,7 @@
-package orchestration
+package storage
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
@@ -58,7 +57,7 @@ func (m *manager) validateCreateStageConfig(
 		return errdefs.InvalidArgumentWithMsg("phase should not be specified")
 	}
 	// Asset is not required but if specified should exist.
-	if cfg.Asset != "" && !asset.Contains(txn, cfg.Asset) {
+	if cfg.Asset != "" && !m.ContainsAsset(txn, cfg.Asset) {
 		return errdefs.NotFoundWithMsg(
 			"asset '%v' not found",
 			cfg.Asset,
@@ -131,6 +130,21 @@ func (m *manager) validateCreateLinkConfig(
 	if !target.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
+			cfg.Name,
+		)
+	}
+	return nil
+}
+
+// validateCreateAssetConfig verifies if all conditions to create an asset are
+// met. It returns an error if a condition is not met and nil otherwise.
+func validateCreateAssetConfig(cfg *apitypes.Asset) error {
+	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
+		return errdefs.InvalidArgumentWithError(err)
+	}
+	if !naming.IsValidAssetName(cfg.Name) {
+		return errdefs.InvalidArgumentWithMsg(
+			"invalid name '%v'",
 			cfg.Name,
 		)
 	}

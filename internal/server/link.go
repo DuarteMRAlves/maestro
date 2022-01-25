@@ -13,18 +13,18 @@ func (s *Server) CreateLink(cfg *apitypes.Link) error {
 	s.logger.Info("Create Link.", logLink(cfg, "cfg")...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			l, err := s.orchestrationManager.CreateLink(txn, cfg)
+			l, err := s.storageManager.CreateLink(txn, cfg)
 			if err != nil {
 				return err
 			}
-			source, ok := s.orchestrationManager.GetStageByName(
+			source, ok := s.storageManager.GetStageByName(
 				txn,
 				cfg.SourceStage,
 			)
 			if !ok {
 				return errdefs.InternalWithMsg("source not found")
 			}
-			target, ok := s.orchestrationManager.GetStageByName(
+			target, ok := s.storageManager.GetStageByName(
 				txn,
 				cfg.TargetStage,
 			)
@@ -45,7 +45,7 @@ func (s *Server) GetLink(query *apitypes.Link) ([]*apitypes.Link, error) {
 	s.logger.Info("Get Link.", logLink(query, "query")...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			links, err = s.orchestrationManager.GetMatchingLinks(txn, query)
+			links, err = s.storageManager.GetMatchingLinks(txn, query)
 			return err
 		},
 	)
