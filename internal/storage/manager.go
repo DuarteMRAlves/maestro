@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
@@ -17,7 +18,7 @@ type Manager interface {
 	// function returns an error if the orchestration name is not valid.
 	CreateOrchestration(*badger.Txn, *apitypes.Orchestration) error
 	// GetMatchingOrchestration retrieves stored orchestrations that match the
-	// received query. The query is an orchestration with the fields that the
+	// received req. The req is an orchestration with the fields that the
 	// returned orchestrations should have. If a field is empty, then all values
 	// for that field are accepted.
 	GetMatchingOrchestration(
@@ -32,8 +33,8 @@ type Manager interface {
 	// GetStageByName retrieves a stored stage. It returns the stage and true
 	// if the stage exists and nil, false otherwise.
 	GetStageByName(*badger.Txn, apitypes.StageName) (*Stage, bool)
-	// GetMatchingStage retrieves stored stages that match the received query.
-	// The query is a stage with the fields that the returned stage should have.
+	// GetMatchingStage retrieves stored stages that match the received req.
+	// The req is a stage with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
 	GetMatchingStage(*badger.Txn, *apitypes.Stage) ([]*apitypes.Stage, error)
 	// CreateLink creates a new link with the specified config. It returns an
@@ -42,20 +43,23 @@ type Manager interface {
 	// ContainsLink returns true if a link with the given name exists and false
 	// otherwise.
 	ContainsLink(*badger.Txn, apitypes.LinkName) bool
-	// GetMatchingLinks retrieves stored links that match the received query.
-	// The query is a link with the fields that the returned stage should have.
+	// GetMatchingLinks retrieves stored links that match the received req.
+	// The req is a link with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
 	GetMatchingLinks(*badger.Txn, *apitypes.Link) ([]*apitypes.Link, error)
 	// CreateAsset creates a new asset with the specified config. It returns an
 	// error if the asset is not created and nil otherwise.
-	CreateAsset(*badger.Txn, *apitypes.Asset) error
+	CreateAsset(*badger.Txn, *api.CreateAssetRequest) error
 	// ContainsAsset returns true if an asset with the given name exists and
 	// false otherwise.
 	ContainsAsset(*badger.Txn, apitypes.AssetName) bool
-	// GetMatchingAssets retrieves stored assets that match the received query.
-	// The query is an asset with the fields that the returned stage should
+	// GetMatchingAssets retrieves stored assets that match the received req.
+	// The req is an asset with the fields that the returned stage should
 	// have. If a field is empty, then all values for that field are accepted.
-	GetMatchingAssets(*badger.Txn, *apitypes.Asset) ([]*apitypes.Asset, error)
+	GetMatchingAssets(
+		*badger.Txn,
+		*api.GetAssetRequest,
+	) ([]*apitypes.Asset, error)
 }
 
 type manager struct {
@@ -328,19 +332,22 @@ func (m *manager) inferRpc(
 	return nil
 }
 
-func (m *manager) CreateAsset(txn *badger.Txn, cfg *apitypes.Asset) error {
+func (m *manager) CreateAsset(
+	txn *badger.Txn,
+	req *api.CreateAssetRequest,
+) error {
 	var err error
-	if err = validateCreateAssetConfig(cfg); err != nil {
+	if err = validateCreateAssetRequest(req); err != nil {
 		return errdefs.InvalidArgumentWithError(err)
 	}
 
-	if m.ContainsAsset(txn, cfg.Name) {
+	if m.ContainsAsset(txn, req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",
-			cfg.Name,
+			req.Name,
 		)
 	}
-	asset := NewAsset(cfg.Name, cfg.Image)
+	asset := NewAsset(req.Name, req.Image)
 	if err = PersistAsset(txn, asset); err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
@@ -354,7 +361,7 @@ func (m *manager) ContainsAsset(txn *badger.Txn, name apitypes.AssetName) bool {
 
 func (m *manager) GetMatchingAssets(
 	txn *badger.Txn,
-	query *apitypes.Asset,
+	req *api.GetAssetRequest,
 ) ([]*apitypes.Asset, error) {
 	var (
 		asset Asset
@@ -362,10 +369,10 @@ func (m *manager) GetMatchingAssets(
 		err   error
 	)
 
-	if query == nil {
-		query = &apitypes.Asset{}
+	if req == nil {
+		req = &api.GetAssetRequest{}
 	}
-	filter := buildQueryFilter(query)
+	filter := buildAssetQueryFilter(req)
 	res := make([]*apitypes.Asset, 0)
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 

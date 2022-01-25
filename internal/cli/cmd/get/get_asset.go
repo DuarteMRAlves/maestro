@@ -85,7 +85,7 @@ func (o *AssetOpts) validate() error {
 
 // run executes the get asset command
 func (o *AssetOpts) run() error {
-	query := &pb.Asset{
+	req := &pb.GetAssetRequest{
 		Name:  o.name,
 		Image: o.image,
 	}
@@ -101,7 +101,7 @@ func (o *AssetOpts) run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	assets, err := c.GetAsset(ctx, query)
+	assets, err := c.GetAsset(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,8 @@ func (o *AssetOpts) displayAssets(assets []*pb.Asset) error {
 		assets,
 		func(i, j int) bool {
 			return assets[i].Name < assets[j].Name
-		})
+		},
+	)
 	numAssets := len(assets)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numAssets+1)

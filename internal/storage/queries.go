@@ -1,6 +1,9 @@
 package storage
 
-import apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+import (
+	"github.com/DuarteMRAlves/maestro/internal/api"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+)
 
 func buildOrchestrationQueryFilter(
 	query *apitypes.Orchestration,
@@ -165,21 +168,21 @@ func buildLinkQueryFilter(query *apitypes.Link) func(l *Link) bool {
 	}
 }
 
-func buildQueryFilter(query *apitypes.Asset) func(a *Asset) bool {
+func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *Asset) bool {
 	filters := make([]func(a *Asset) bool, 0)
-	if query.Name != "" {
+	if req.Name != "" {
 		filters = append(
 			filters,
 			func(a *Asset) bool {
-				return a.Name() == query.Name
+				return a.Name() == req.Name
 			},
 		)
 	}
-	if query.Image != "" {
+	if req.Image != "" {
 		filters = append(
 			filters,
 			func(a *Asset) bool {
-				return a.Image() == query.Image
+				return a.Image() == req.Image
 			},
 		)
 	}

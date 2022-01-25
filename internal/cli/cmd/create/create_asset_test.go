@@ -25,7 +25,7 @@ func TestCreateAssetWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
-		validateCfg func(cfg *pb.Asset) bool
+		validateCfg func(req *pb.CreateAssetRequest) bool
 		response    *emptypb.Empty
 		err         error
 		expectedOut string
@@ -33,8 +33,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 		{
 			name: "create an asset with an image",
 			args: []string{"asset-name", "--image", "image-name"},
-			validateCfg: func(cfg *pb.Asset) bool {
-				return cfg.Name == "asset-name" && cfg.Image == "image-name"
+			validateCfg: func(req *pb.CreateAssetRequest) bool {
+				return req.Name == "asset-name" && req.Image == "image-name"
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -43,8 +43,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 		{
 			name: "create an asset without an image",
 			args: []string{"asset-name"},
-			validateCfg: func(cfg *pb.Asset) bool {
-				return cfg.Name == "asset-name" && cfg.Image == ""
+			validateCfg: func(req *pb.CreateAssetRequest) bool {
+				return req.Name == "asset-name" && req.Image == ""
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -53,8 +53,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 		{
 			name: "create an asset invalid name",
 			args: []string{"invalid--name"},
-			validateCfg: func(cfg *pb.Asset) bool {
-				return cfg.Name == "invalid--name" && cfg.Image == ""
+			validateCfg: func(req *pb.CreateAssetRequest) bool {
+				return req.Name == "invalid--name" && req.Image == ""
 			},
 			response: nil,
 			err: status.Error(
@@ -78,12 +78,12 @@ func TestCreateAssetWithServer(t *testing.T) {
 					AssetManagementServer: &ipb.MockAssetManagementServer{
 						CreateAssetFn: func(
 							ctx context.Context,
-							cfg *pb.Asset,
+							req *pb.CreateAssetRequest,
 						) (*emptypb.Empty, error) {
-							if !test.validateCfg(cfg) {
+							if !test.validateCfg(req) {
 								return nil, fmt.Errorf(
-									"validation failed with cfg %v",
-									cfg,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							return test.response, test.err

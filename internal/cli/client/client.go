@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"google.golang.org/grpc"
@@ -11,12 +12,12 @@ import (
 // Client offers an interface to connect to the maestro server
 type Client interface {
 	CreateResource(ctx context.Context, r *resources.Resource) error
-	CreateAsset(ctx context.Context, a *apitypes.Asset) error
+	CreateAsset(context.Context, *api.CreateAssetRequest) error
 	CreateStage(ctx context.Context, s *apitypes.Stage) error
 	CreateLink(ctx context.Context, l *apitypes.Link) error
 	CreateOrchestration(ctx context.Context, o *apitypes.Orchestration) error
 
-	GetAsset(ctx context.Context, query *pb.Asset) ([]*pb.Asset, error)
+	GetAsset(context.Context, *pb.GetAssetRequest) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)
 	GetLink(ctx context.Context, query *pb.Link) ([]*pb.Link, error)
 	GetOrchestration(ctx context.Context, query *pb.Orchestration) (

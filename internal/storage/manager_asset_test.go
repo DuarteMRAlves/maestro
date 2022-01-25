@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
@@ -20,7 +21,7 @@ func TestManager_CreateAsset(t *testing.T) {
 		asset Asset
 		err   error
 	)
-	cfg := &apitypes.Asset{Name: assetName, Image: assetImage}
+	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
 	m := NewManager(reflection.NewManager())
 
@@ -48,47 +49,33 @@ func TestManager_CreateAsset(t *testing.T) {
 
 func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 	const assetName = "Asset-Name"
-	tests := []struct {
-		name   string
-		cfg    *apitypes.Asset
-		errMsg string
-	}{
-		{
-			name:   "nil cfg",
-			cfg:    nil,
-			errMsg: "'cfg' is nil",
+
+	var (
+		req    *api.CreateAssetRequest = nil
+		errMsg                         = "'req' is nil"
+	)
+
+	m := NewManager(reflection.NewManager())
+
+	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+	assert.NilError(t, err, "db creation")
+	defer db.Close()
+
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			return m.CreateAsset(txn, req)
 		},
-	}
-
-	for _, test := range tests {
-		cfg, errMsg := test.cfg, test.errMsg
-
-		t.Run(
-			test.name, func(t *testing.T) {
-				m := NewManager(reflection.NewManager())
-
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
-				defer db.Close()
-
-				err = db.Update(
-					func(txn *badger.Txn) error {
-						return m.CreateAsset(txn, cfg)
-					},
-				)
-				assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
-				assert.ErrorContains(t, err, errMsg)
-				err = db.View(
-					func(txn *badger.Txn) error {
-						item, err := txn.Get(assetKey(assetName))
-						assert.Assert(t, item == nil, "nil item")
-						return err
-					},
-				)
-				assert.Assert(t, err == badger.ErrKeyNotFound)
-			},
-		)
-	}
+	)
+	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
+	assert.ErrorContains(t, err, errMsg)
+	err = db.View(
+		func(txn *badger.Txn) error {
+			item, err := txn.Get(assetKey(assetName))
+			assert.Assert(t, item == nil, "nil item")
+			return err
+		},
+	)
+	assert.Assert(t, err == badger.ErrKeyNotFound)
 }
 
 func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
@@ -100,7 +87,7 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 		asset Asset
 		err   error
 	)
-	cfg := &apitypes.Asset{Name: assetName, Image: assetImage}
+	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
 	m := NewManager(reflection.NewManager())
 
@@ -158,34 +145,34 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 
 func TestManager_GetMatchingAssets(t *testing.T) {
 	tests := []struct {
-		name  string
-		query *apitypes.Asset
+		name string
+		req  *api.GetAssetRequest
 		// numbers to store
 		stored []int
 		// names of the expected assets
 		expected []apitypes.AssetName
 	}{
 		{
-			name:     "zero elements store, nil query",
-			query:    nil,
+			name:     "zero elements store, nil req",
+			req:      nil,
 			stored:   []int{},
 			expected: []apitypes.AssetName{},
 		},
 		{
-			name:     "zero elements store, some query",
-			query:    &apitypes.Asset{Name: "some-name"},
+			name:     "zero elements store, some req",
+			req:      &api.GetAssetRequest{Name: "some-name"},
 			stored:   []int{},
 			expected: []apitypes.AssetName{},
 		},
 		{
-			name:     "one element stored, nil query",
-			query:    nil,
+			name:     "one element stored, nil req",
+			req:      nil,
 			stored:   []int{0},
 			expected: []apitypes.AssetName{testutil.AssetNameForNum(0)},
 		},
 		{
-			name:   "multiple elements stored, nil query",
-			query:  nil,
+			name:   "multiple elements stored, nil req",
+			req:    nil,
 			stored: []int{0, 1, 2},
 			expected: []apitypes.AssetName{
 				testutil.AssetNameForNum(0),
@@ -194,25 +181,25 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			},
 		},
 		{
-			name:     "multiple elements stored, matching name query",
-			query:    &apitypes.Asset{Name: testutil.AssetNameForNum(2)},
+			name:     "multiple elements stored, matching name req",
+			req:      &api.GetAssetRequest{Name: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
-			name:     "multiple elements stored, non-matching name query",
-			query:    &apitypes.Asset{Name: "unknown-name"},
+			name:     "multiple elements stored, non-matching name req",
+			req:      &api.GetAssetRequest{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
 			expected: []apitypes.AssetName{},
 		},
 		{
-			name:     "multiple elements stored, matching image query",
-			query:    &apitypes.Asset{Image: testutil.AssetImageForNum(2)},
+			name:     "multiple elements stored, matching image req",
+			req:      &api.GetAssetRequest{Image: testutil.AssetImageForNum(2)},
 			stored:   []int{0, 1, 2},
 			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
-			query:    &apitypes.Asset{Image: "unknown-image"},
+			req:      &api.GetAssetRequest{Image: "unknown-image"},
 			stored:   []int{0, 1, 2},
 			expected: []apitypes.AssetName{},
 		},
@@ -240,7 +227,7 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						received, err = m.GetMatchingAssets(txn, test.query)
+						received, err = m.GetMatchingAssets(txn, test.req)
 						return err
 					},
 				)
@@ -269,8 +256,8 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 	}
 }
 
-func assetForNum(num int) *apitypes.Asset {
-	return &apitypes.Asset{
+func assetForNum(num int) *api.CreateAssetRequest {
+	return &api.CreateAssetRequest{
 		Name:  testutil.AssetNameForNum(num),
 		Image: testutil.AssetImageForNum(num),
 	}

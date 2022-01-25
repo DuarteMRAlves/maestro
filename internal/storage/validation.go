@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
@@ -136,16 +137,16 @@ func (m *manager) validateCreateLinkConfig(
 	return nil
 }
 
-// validateCreateAssetConfig verifies if all conditions to create an asset are
+// validateCreateAssetRequest verifies if all conditions to create an asset are
 // met. It returns an error if a condition is not met and nil otherwise.
-func validateCreateAssetConfig(cfg *apitypes.Asset) error {
-	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
+func validateCreateAssetRequest(req *api.CreateAssetRequest) error {
+	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
-	if !naming.IsValidAssetName(cfg.Name) {
+	if !naming.IsValidAssetName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
-			cfg.Name,
+			req.Name,
 		)
 	}
 	return nil

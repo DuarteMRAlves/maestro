@@ -20,15 +20,15 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          []string
-		validateQuery func(query *pb.Asset) bool
+		validateQuery func(*pb.GetAssetRequest) bool
 		responses     []*pb.Asset
 		output        [][]string
 	}{
 		{
 			name: "empty assets",
 			args: []string{},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" && query.Image == ""
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == "" && req.Image == ""
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{
@@ -38,8 +38,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "one asset",
 			args: []string{},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" && query.Image == ""
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == "" && req.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
@@ -55,8 +55,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple assets",
 			args: []string{},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" && query.Image == ""
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == "" && req.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
@@ -82,9 +82,9 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{testutil.AssetNameForNumStr(1)},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == testutil.AssetNameForNumStr(1) &&
-					query.Image == ""
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == testutil.AssetNameForNumStr(1) &&
+					req.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
@@ -100,9 +100,9 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by image",
 			args: []string{"--image", testutil.AssetImageForNum(2)},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" &&
-					query.Image == testutil.AssetImageForNum(2)
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == "" &&
+					req.Image == testutil.AssetImageForNum(2)
 			},
 			responses: []*pb.Asset{
 				{
@@ -118,9 +118,9 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{testutil.AssetNameForNumStr(3)},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == testutil.AssetNameForNumStr(3) &&
-					query.Image == ""
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == testutil.AssetNameForNumStr(3) &&
+					req.Image == ""
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{
@@ -130,9 +130,9 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such image",
 			args: []string{"--image", testutil.AssetImageForNum(4)},
-			validateQuery: func(query *pb.Asset) bool {
-				return query.Name == "" &&
-					query.Image == testutil.AssetImageForNum(4)
+			validateQuery: func(req *pb.GetAssetRequest) bool {
+				return req.Name == "" &&
+					req.Image == testutil.AssetImageForNum(4)
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{
@@ -153,13 +153,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				mockServer := ipb.MockMaestroServer{
 					AssetManagementServer: &ipb.MockAssetManagementServer{
 						GetAssetFn: func(
-							query *pb.Asset,
+							req *pb.GetAssetRequest,
 							stream pb.AssetManagement_GetServer,
 						) error {
-							if !test.validateQuery(query) {
+							if !test.validateQuery(req) {
 								return fmt.Errorf(
-									"validation failed with query %v",
-									query,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							for _, a := range test.responses {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -20,17 +19,17 @@ func NewAssetManagementServer(api api.InternalAPI) pb.AssetManagementServer {
 
 func (s *assetManagementServer) Create(
 	ctx context.Context,
-	pbAsset *pb.Asset,
+	pbReq *pb.CreateAssetRequest,
 ) (*emptypb.Empty, error) {
 
-	var a *apitypes.Asset
+	var (
+		req api.CreateAssetRequest
+	)
 	var err error
 	var grpcErr error = nil
 
-	if a, err = protobuff.UnmarshalAsset(pbAsset); err != nil {
-		return &emptypb.Empty{}, err
-	}
-	err = s.api.CreateAsset(a)
+	protobuff.UnmarshalCreateAssetRequest(&req, pbReq)
+	err = s.api.CreateAsset(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -38,18 +37,18 @@ func (s *assetManagementServer) Create(
 }
 
 func (s *assetManagementServer) Get(
-	pbQuery *pb.Asset,
+	pbQuery *pb.GetAssetRequest,
 	stream pb.AssetManagement_GetServer,
 ) error {
 
-	var query *apitypes.Asset
-	var err error
+	var (
+		query api.GetAssetRequest
+		err   error
+	)
 
-	if query, err = protobuff.UnmarshalAsset(pbQuery); err != nil {
-		return err
-	}
+	protobuff.UnmarshalGetAssetRequest(&query, pbQuery)
 
-	assets, err := s.api.GetAsset(query)
+	assets, err := s.api.GetAsset(&query)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}

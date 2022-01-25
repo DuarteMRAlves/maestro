@@ -9,13 +9,13 @@ import (
 
 func (c *client) GetAsset(
 	ctx context.Context,
-	query *pb.Asset,
+	req *pb.GetAssetRequest,
 ) ([]*pb.Asset, error) {
 	stub := pb.NewAssetManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, query)
+	stream, err := stub.Get(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
