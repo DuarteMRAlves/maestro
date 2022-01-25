@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -79,7 +80,7 @@ func (o *AssetOpts) validate() error {
 }
 
 func (o *AssetOpts) run() error {
-	asset := &apitypes.Asset{
+	req := &api.CreateAssetRequest{
 		Name:  apitypes.AssetName(o.name),
 		Image: o.image,
 	}
@@ -94,8 +95,9 @@ func (o *AssetOpts) run() error {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Second)
+		time.Second,
+	)
 	defer cancel()
 
-	return c.CreateAsset(ctx, asset)
+	return c.CreateAsset(ctx, req)
 }

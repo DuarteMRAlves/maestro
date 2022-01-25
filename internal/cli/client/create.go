@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -16,11 +17,14 @@ func (c *client) CreateResource(
 ) error {
 	switch {
 	case resource.IsAssetKind():
-		a, ok := resource.Spec.(*apitypes.Asset)
+		req, ok := resource.Spec.(*api.CreateAssetRequest)
 		if !ok {
-			return errdefs.InternalWithMsg("asset spec cast failed: %v", a)
+			return errdefs.InternalWithMsg(
+				"create asset request spec cast failed: %v",
+				req,
+			)
 		}
-		if err := c.CreateAsset(ctx, a); err != nil {
+		if err := c.CreateAsset(ctx, req); err != nil {
 			return err
 		}
 		return nil
@@ -47,7 +51,8 @@ func (c *client) CreateResource(
 		if !ok {
 			return errdefs.InternalWithMsg(
 				"orchestration spec cast failed> %v",
-				o)
+				o,
+			)
 		}
 		if err := c.CreateOrchestration(ctx, o); err != nil {
 			return err
@@ -58,10 +63,13 @@ func (c *client) CreateResource(
 	}
 }
 
-func (c *client) CreateAsset(ctx context.Context, asset *apitypes.Asset) error {
-	a := &pb.Asset{
-		Name:  string(asset.Name),
-		Image: asset.Image,
+func (c *client) CreateAsset(
+	ctx context.Context,
+	req *api.CreateAssetRequest,
+) error {
+	a := &pb.CreateAssetRequest{
+		Name:  string(req.Name),
+		Image: req.Image,
 	}
 
 	stub := pb.NewAssetManagementClient(c.conn)

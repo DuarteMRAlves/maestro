@@ -179,38 +179,35 @@ func (s *MockLinkManagementServer) Get(
 // that will be called.
 type MockAssetManagementServer struct {
 	pb.UnimplementedAssetManagementServer
-	CreateAssetFn func(ctx context.Context, config *pb.Asset) (
-		*emptypb.Empty,
-		error,
-	)
-	GetAssetFn func(
-		query *pb.Asset,
-		stream pb.AssetManagement_GetServer,
-	) error
+	CreateAssetFn func(
+		context.Context,
+		*pb.CreateAssetRequest,
+	) (*emptypb.Empty, error)
+	GetAssetFn func(*pb.GetAssetRequest, pb.AssetManagement_GetServer) error
 }
 
 func (s *MockAssetManagementServer) Create(
 	ctx context.Context,
-	config *pb.Asset,
+	req *pb.CreateAssetRequest,
 ) (*emptypb.Empty, error) {
 	if s.CreateAssetFn != nil {
-		return s.CreateAssetFn(ctx, config)
+		return s.CreateAssetFn(ctx, req)
 	}
 	return &emptypb.Empty{}, fmt.Errorf(
-		"method CreateAsset not configured but called with config %v",
-		config,
+		"method CreateAsset not configured but called with request %v",
+		req,
 	)
 }
 
 func (s *MockAssetManagementServer) Get(
-	query *pb.Asset,
+	req *pb.GetAssetRequest,
 	stream pb.AssetManagement_GetServer,
 ) error {
 	if s.GetAssetFn != nil {
-		return s.GetAssetFn(query, stream)
+		return s.GetAssetFn(req, stream)
 	}
 	return fmt.Errorf(
-		"method GetAsset not configured but called with query %v",
-		query,
+		"method GetAsset not configured but called with request %v",
+		req,
 	)
 }

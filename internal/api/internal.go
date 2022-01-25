@@ -8,8 +8,8 @@ import (
 // for the maestro server. All calls on external APIs should be redirected
 // through this API that collects all functionality.
 type InternalAPI interface {
-	CreateAsset(config *apitypes.Asset) error
-	GetAsset(query *apitypes.Asset) ([]*apitypes.Asset, error)
+	CreateAsset(config *CreateAssetRequest) error
+	GetAsset(query *GetAssetRequest) ([]*apitypes.Asset, error)
 
 	CreateStage(config *apitypes.Stage) error
 	GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error)

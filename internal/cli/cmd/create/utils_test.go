@@ -5,7 +5,10 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 )
 
-func equalAsset(expected *pb.Asset, actual *pb.Asset) bool {
+func equalCreateAssetRequest(
+	expected *pb.CreateAssetRequest,
+	actual *pb.CreateAssetRequest,
+) bool {
 	return expected.Name == actual.Name && expected.Image == actual.Image
 }
 

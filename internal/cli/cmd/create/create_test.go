@@ -25,10 +25,10 @@ func TestCreateWithServer(t *testing.T) {
 	tests := []struct {
 		name                  string
 		args                  []string
-		validateAsset         func(cfg *pb.Asset) bool
-		validateStage         func(cfg *pb.Stage) bool
-		validateLink          func(cfg *pb.Link) bool
-		validateOrchestration func(cfg *pb.Orchestration) bool
+		validateAsset         func(*pb.CreateAssetRequest) bool
+		validateStage         func(req *pb.Stage) bool
+		validateLink          func(req *pb.Link) bool
+		validateOrchestration func(req *pb.Orchestration) bool
 		expectedOut           string
 	}{
 		{
@@ -37,16 +37,16 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/resources.yml",
 			},
-			validateAsset: func(cfg *pb.Asset) bool {
-				return equalAsset(
-					&pb.Asset{Name: "asset-1", Image: "image-1"},
-					cfg,
-				) || equalAsset(
-					&pb.Asset{Name: "asset-2", Image: "image-2"},
-					cfg,
+			validateAsset: func(req *pb.CreateAssetRequest) bool {
+				return equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-1", Image: "image-1"},
+					req,
+				) || equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-2", Image: "image-2"},
+					req,
 				)
 			},
-			validateStage: func(cfg *pb.Stage) bool {
+			validateStage: func(req *pb.Stage) bool {
 				return equalStage(
 					&pb.Stage{
 						Name:    "stage-1",
@@ -57,7 +57,7 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "",
 						Port:    0,
 					},
-					cfg,
+					req,
 				) || equalStage(
 					&pb.Stage{
 						Name:    "stage-2",
@@ -68,7 +68,7 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "",
 						Port:    0,
 					},
-					cfg,
+					req,
 				) || equalStage(
 					&pb.Stage{
 						Name:    "stage-3",
@@ -79,10 +79,10 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "host-3",
 						Port:    33333,
 					},
-					cfg,
+					req,
 				)
 			},
-			validateLink: func(cfg *pb.Link) bool {
+			validateLink: func(req *pb.Link) bool {
 				return equalLink(
 					&pb.Link{
 						Name:        "link-stage-2-stage-1",
@@ -91,7 +91,7 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "stage-1",
 						TargetField: "",
 					},
-					cfg,
+					req,
 				) || equalLink(
 					&pb.Link{
 						Name:        "link-stage-1-stage-2",
@@ -100,10 +100,10 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "stage-2",
 						TargetField: "Field2",
 					},
-					cfg,
+					req,
 				)
 			},
-			validateOrchestration: func(cfg *pb.Orchestration) bool {
+			validateOrchestration: func(req *pb.Orchestration) bool {
 				return equalOrchestration(
 					&pb.Orchestration{
 						Name: "orchestration-1",
@@ -112,7 +112,7 @@ func TestCreateWithServer(t *testing.T) {
 							"link-stage-2-stage-1",
 						},
 					},
-					cfg,
+					req,
 				) || equalOrchestration(
 					&pb.Orchestration{
 						Name: "orchestration-2",
@@ -121,7 +121,7 @@ func TestCreateWithServer(t *testing.T) {
 							"link-stage-1-stage-2",
 						},
 					},
-					cfg,
+					req,
 				)
 			},
 			expectedOut: "",
@@ -138,19 +138,19 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/assets.yml",
 			},
-			validateAsset: func(cfg *pb.Asset) bool {
-				return equalAsset(
-					&pb.Asset{Name: "asset-4", Image: "image-4"},
-					cfg,
-				) || equalAsset(
-					&pb.Asset{Name: "asset-5", Image: "image-5"},
-					cfg,
-				) || equalAsset(
-					&pb.Asset{Name: "asset-6", Image: "image-6"},
-					cfg,
+			validateAsset: func(req *pb.CreateAssetRequest) bool {
+				return equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-4", Image: "image-4"},
+					req,
+				) || equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-5", Image: "image-5"},
+					req,
+				) || equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-6", Image: "image-6"},
+					req,
 				)
 			},
-			validateStage: func(cfg *pb.Stage) bool {
+			validateStage: func(req *pb.Stage) bool {
 				return equalStage(
 					&pb.Stage{
 						Name:    "stage-4",
@@ -161,7 +161,7 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "",
 						Port:    0,
 					},
-					cfg,
+					req,
 				) || equalStage(
 					&pb.Stage{
 						Name:    "stage-5",
@@ -172,7 +172,7 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "",
 						Port:    0,
 					},
-					cfg,
+					req,
 				) || equalStage(
 					&pb.Stage{
 						Name:    "stage-6",
@@ -183,7 +183,7 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "",
 						Port:    0,
 					},
-					cfg,
+					req,
 				) || equalStage(
 					&pb.Stage{
 						Name:    "stage-7",
@@ -194,10 +194,10 @@ func TestCreateWithServer(t *testing.T) {
 						Host:    "stage-host",
 						Port:    7777,
 					},
-					cfg,
+					req,
 				)
 			},
-			validateLink: func(cfg *pb.Link) bool {
+			validateLink: func(req *pb.Link) bool {
 				return equalLink(
 					&pb.Link{
 						Name:        "link-stage-4-stage-5",
@@ -206,7 +206,7 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "stage-5",
 						TargetField: "",
 					},
-					cfg,
+					req,
 				) || equalLink(
 					&pb.Link{
 						Name:        "link-stage-5-stage-6",
@@ -215,7 +215,7 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "stage-6",
 						TargetField: "Field1",
 					},
-					cfg,
+					req,
 				) || equalLink(
 					&pb.Link{
 						Name:        "link-stage-4-stage-6",
@@ -224,10 +224,10 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "stage-6",
 						TargetField: "Field2",
 					},
-					cfg,
+					req,
 				)
 			},
-			validateOrchestration: func(cfg *pb.Orchestration) bool {
+			validateOrchestration: func(req *pb.Orchestration) bool {
 				return equalOrchestration(
 					&pb.Orchestration{
 						Name: "orchestration-3",
@@ -236,7 +236,7 @@ func TestCreateWithServer(t *testing.T) {
 							"link-stage-5-stage-6",
 						},
 					},
-					cfg,
+					req,
 				) || equalOrchestration(
 					&pb.Orchestration{
 						Name: "orchestration-4",
@@ -246,7 +246,7 @@ func TestCreateWithServer(t *testing.T) {
 							"link-stage-4-stage-6",
 						},
 					},
-					cfg,
+					req,
 				)
 			},
 			expectedOut: "",
@@ -257,7 +257,7 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/asset_not_found.yml",
 			},
-			validateStage: func(cfg *pb.Stage) bool {
+			validateStage: func(req *pb.Stage) bool {
 				return equalStage(
 					&pb.Stage{
 						Name:    "stage-unknown-asset",
@@ -265,7 +265,7 @@ func TestCreateWithServer(t *testing.T) {
 						Service: "Service1",
 						Rpc:     "Rpc1",
 					},
-					cfg,
+					req,
 				)
 			},
 			expectedOut: "not found: asset 'unknown-asset' not found",
@@ -276,7 +276,7 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/stage_not_found.yml",
 			},
-			validateLink: func(cfg *pb.Link) bool {
+			validateLink: func(req *pb.Link) bool {
 				return equalLink(
 					&pb.Link{
 						Name:        "link-unknown-stage",
@@ -285,7 +285,7 @@ func TestCreateWithServer(t *testing.T) {
 						TargetStage: "unknown-stage",
 						TargetField: "",
 					},
-					cfg,
+					req,
 				)
 			},
 			expectedOut: "not found: target stage 'unknown-stage' not found",
@@ -296,13 +296,13 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/link_not_found.yml",
 			},
-			validateOrchestration: func(cfg *pb.Orchestration) bool {
+			validateOrchestration: func(req *pb.Orchestration) bool {
 				return equalOrchestration(
 					&pb.Orchestration{
 						Name:  "orchestration-unknown-link",
 						Links: []string{"link-1", "unknown-link"},
 					},
-					cfg,
+					req,
 				)
 			},
 			expectedOut: "not found: link 'unknown-link' not found",
@@ -313,20 +313,20 @@ func TestCreateWithServer(t *testing.T) {
 			test.name, func(t *testing.T) {
 				var (
 					createAssetFn func(
-						ctx context.Context,
-						cfg *pb.Asset,
+						context.Context,
+						*pb.CreateAssetRequest,
 					) (*emptypb.Empty, error)
 					createStageFn func(
 						ctx context.Context,
-						cfg *pb.Stage,
+						req *pb.Stage,
 					) (*emptypb.Empty, error)
 					createLinkFn func(
 						ctx context.Context,
-						cfg *pb.Link,
+						req *pb.Link,
 					) (*emptypb.Empty, error)
 					createOrchestrationFn func(
 						ctx context.Context,
-						cfg *pb.Orchestration,
+						req *pb.Orchestration,
 					) (*emptypb.Empty, error)
 				)
 
@@ -338,12 +338,12 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateAsset != nil {
 					createAssetFn = func(
 						ctx context.Context,
-						cfg *pb.Asset,
+						req *pb.CreateAssetRequest,
 					) (*emptypb.Empty, error) {
-						if !test.validateAsset(cfg) {
+						if !test.validateAsset(req) {
 							return nil, fmt.Errorf(
-								"asset validation failed with cfg %v",
-								cfg,
+								"asset validation failed with req %v",
+								req,
 							)
 						}
 						return &emptypb.Empty{}, nil
@@ -353,15 +353,15 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateStage != nil {
 					createStageFn = func(
 						ctx context.Context,
-						cfg *pb.Stage,
+						req *pb.Stage,
 					) (*emptypb.Empty, error) {
-						if !test.validateStage(cfg) {
+						if !test.validateStage(req) {
 							return nil, fmt.Errorf(
-								"stage validation failed with cfg %v",
-								cfg,
+								"stage validation failed with req %v",
+								req,
 							)
 						}
-						if cfg.Name == "stage-unknown-asset" {
+						if req.Name == "stage-unknown-asset" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(
@@ -376,15 +376,15 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateLink != nil {
 					createLinkFn = func(
 						ctx context.Context,
-						cfg *pb.Link,
+						req *pb.Link,
 					) (*emptypb.Empty, error) {
-						if !test.validateLink(cfg) {
+						if !test.validateLink(req) {
 							return nil, fmt.Errorf(
-								"link validation failed with cfg %v",
-								cfg,
+								"link validation failed with req %v",
+								req,
 							)
 						}
-						if cfg.Name == "link-unknown-stage" {
+						if req.Name == "link-unknown-stage" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(
@@ -399,15 +399,15 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateOrchestration != nil {
 					createOrchestrationFn = func(
 						ctx context.Context,
-						cfg *pb.Orchestration,
+						req *pb.Orchestration,
 					) (*emptypb.Empty, error) {
-						if !test.validateOrchestration(cfg) {
+						if !test.validateOrchestration(req) {
 							return nil, fmt.Errorf(
-								"orchestration validation failed with cfg %v",
-								cfg,
+								"orchestration validation failed with req %v",
+								req,
 							)
 						}
-						if cfg.Name == "orchestration-unknown-link" {
+						if req.Name == "orchestration-unknown-link" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(

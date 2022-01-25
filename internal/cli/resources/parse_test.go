@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
@@ -56,12 +57,13 @@ spec:
 	linkSourceStage,
 	linkSourceField,
 	linkTargetStage,
-	linkTargetField)
+	linkTargetField,
+)
 
 var expected = []*Resource{
 	{
 		Kind: assetKind,
-		Spec: &apitypes.Asset{Name: assetName, Image: assetImage},
+		Spec: &api.CreateAssetRequest{Name: assetName, Image: assetImage},
 	},
 	{
 		Kind: stageKind,
@@ -202,6 +204,7 @@ spec:
 				assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 				assert.ErrorContains(t, err, test.expectedMsg)
 				assert.Assert(t, resources == nil, "resources not nil")
-			})
+			},
+		)
 	}
 }

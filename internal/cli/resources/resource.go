@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -72,7 +73,7 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	switch r.Kind {
 	case assetKind:
-		r.Spec = new(apitypes.Asset)
+		r.Spec = new(api.CreateAssetRequest)
 	case stageKind:
 		r.Spec = new(apitypes.Stage)
 	case linkKind:
