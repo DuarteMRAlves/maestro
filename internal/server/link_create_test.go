@@ -108,7 +108,7 @@ func TestServer_CreateLink_NilConfig(t *testing.T) {
 		errdefs.IsInvalidArgument(err),
 		"error is not InvalidArgument",
 	)
-	expectedMsg := "'config' is nil"
+	expectedMsg := "'cfg' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 

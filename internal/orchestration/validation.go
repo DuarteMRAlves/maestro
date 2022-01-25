@@ -81,56 +81,57 @@ func (m *manager) validateCreateStageConfig(
 // It returns an error if a condition is not met and nil otherwise.
 func (m *manager) validateCreateLinkConfig(
 	txn *badger.Txn,
-	config *apitypes.Link,
+	cfg *apitypes.Link,
 ) error {
-	if ok, err := validate.ArgNotNil(config, "config"); !ok {
+	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
 		return err
 	}
-	if !naming.IsValidLinkName(config.Name) {
-		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
+	if !naming.IsValidLinkName(cfg.Name) {
+		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", cfg.Name)
 	}
-	if m.ContainsLink(config.Name) {
+	prev, _ := txn.Get(linkKey(cfg.Name))
+	if prev != nil {
 		return errdefs.AlreadyExistsWithMsg(
 			"link '%v' already exists",
-			config.Name,
+			cfg.Name,
 		)
 	}
-	if config.SourceStage == "" {
+	if cfg.SourceStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty source stage name")
 	}
-	if config.TargetStage == "" {
+	if cfg.TargetStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty target stage name")
 	}
-	if config.SourceStage == config.TargetStage {
+	if cfg.SourceStage == cfg.TargetStage {
 		return errdefs.InvalidArgumentWithMsg(
 			"source and target stages are equal",
 		)
 	}
-	source, ok := m.GetStageByName(txn, config.SourceStage)
+	source, ok := m.GetStageByName(txn, cfg.SourceStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"source stage '%v' not found",
-			config.SourceStage,
+			cfg.SourceStage,
 		)
 	}
-	target, ok := m.GetStageByName(txn, config.TargetStage)
+	target, ok := m.GetStageByName(txn, cfg.TargetStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"target stage '%v' not found",
-			config.TargetStage,
+			cfg.TargetStage,
 		)
 	}
 
 	if !source.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
-			config.Name,
+			cfg.Name,
 		)
 	}
 	if !target.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
-			config.Name,
+			cfg.Name,
 		)
 	}
 	return nil

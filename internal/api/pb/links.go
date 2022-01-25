@@ -51,7 +51,10 @@ func (s *linkManagementServer) Get(
 		return GrpcErrorFromError(err)
 	}
 
-	links := s.api.GetLink(query)
+	links, err := s.api.GetLink(query)
+	if err != nil {
+		return GrpcErrorFromError(err)
+	}
 	for _, l := range links {
 		pbLink, err := protobuff.MarshalLink(l)
 		if err != nil {

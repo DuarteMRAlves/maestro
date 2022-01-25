@@ -37,13 +37,16 @@ type Manager interface {
 	// The query is a stage with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
 	GetMatchingStage(*badger.Txn, *apitypes.Stage) ([]*apitypes.Stage, error)
+	// CreateLink creates a new link with the specified config. It returns an
+	// error if the link is not created and nil otherwise.
 	CreateLink(*badger.Txn, *apitypes.Link) (*Link, error)
-	// CreateLinkInternal creates a new link without any verification. This
-	// method should only be used for tests.
-	// FIXME: Remove method: https://github.com/DuarteMRAlves/maestro/issues/245
-	CreateLinkInternal(*Link)
-	ContainsLink(name apitypes.LinkName) bool
-	GetMatchingLinks(query *apitypes.Link) []*apitypes.Link
+	// ContainsLink returns true if a link with the given name exists and false
+	// otherwise.
+	ContainsLink(*badger.Txn, apitypes.LinkName) bool
+	// GetMatchingLinks retrieves stored links that match the received query.
+	// The query is a link with the fields that the returned stage should have.
+	// If a field is empty, then all values for that field are accepted.
+	GetMatchingLinks(*badger.Txn, *apitypes.Link) ([]*apitypes.Link, error)
 }
 
 type manager struct {
@@ -213,7 +216,8 @@ func (m *manager) CreateLink(
 	txn *badger.Txn,
 	cfg *apitypes.Link,
 ) (*Link, error) {
-	if err := m.validateCreateLinkConfig(txn, cfg); err != nil {
+	var err error
+	if err = m.validateCreateLinkConfig(txn, cfg); err != nil {
 		return nil, err
 	}
 	l := NewLink(
@@ -223,46 +227,54 @@ func (m *manager) CreateLink(
 		cfg.TargetStage,
 		cfg.TargetField,
 	)
-	_, prev := m.links.LoadOrStore(l.name, l)
-	if prev {
-		return nil, errdefs.AlreadyExistsWithMsg(
-			"link '%v' already exists",
-			l.name,
-		)
+	if err = PersistLink(txn, l); err != nil {
+		return nil, errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return l, nil
 }
 
-func (m *manager) CreateLinkInternal(l *Link) {
-	m.links.Store(l.Name(), l)
-}
-
 // ContainsLink returns true if a link with the given name exists and false
 // otherwise.
-func (m *manager) ContainsLink(name apitypes.LinkName) bool {
-	_, ok := m.links.Load(name)
-	return ok
+func (m *manager) ContainsLink(txn *badger.Txn, name apitypes.LinkName) bool {
+	item, _ := txn.Get(linkKey(name))
+	return item != nil
 }
 
-func (m *manager) GetMatchingLinks(query *apitypes.Link) []*apitypes.Link {
+func (m *manager) GetMatchingLinks(
+	txn *badger.Txn,
+	query *apitypes.Link,
+) ([]*apitypes.Link, error) {
+	var (
+		l    Link
+		data []byte
+		err  error
+	)
+
 	if query == nil {
 		query = &apitypes.Link{}
 	}
 	filter := buildLinkQueryFilter(query)
 	res := make([]*apitypes.Link, 0)
-	m.links.Range(
-		func(key, value interface{}) bool {
-			l, ok := value.(*Link)
-			if !ok {
-				return false
-			}
-			if filter(l) {
-				res = append(res, l.ToApi())
-			}
-			return true
-		},
-	)
-	return res
+
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+	prefix := []byte("link:")
+
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+		data, err = item.ValueCopy(data)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("read: %v", err)
+		}
+		err = loadLink(&l, data)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("decoding: %v", err)
+		}
+		if filter(&l) {
+			res = append(res, l.ToApi())
+		}
+	}
+	return res, nil
 }
 
 func (m *manager) inferStageAddress(cfg *apitypes.Stage) string {
