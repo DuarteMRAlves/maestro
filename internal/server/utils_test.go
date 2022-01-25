@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
 	"reflect"
@@ -52,67 +53,36 @@ func mockStage(
 			FQN: fmt.Sprintf(
 				"%s/%s",
 				testutil.StageServiceForNum(num),
-				testutil.StageRpcForNum(num)),
+				testutil.StageRpcForNum(num),
+			),
 			In:    reqMsg,
 			Out:   resMsg,
 			Unary: true,
-		})
+		},
+	)
 
 	return orchestration.NewStage(
 		testutil.StageNameForNum(num),
 		orchestration.NewRpcSpec(
 			testutil.StageAddressForNum(num),
 			testutil.StageServiceForNum(num),
-			testutil.StageRpcForNum(num)),
+			testutil.StageRpcForNum(num),
+		),
 		testutil.AssetNameForNum(num),
-		nil)
+		nil,
+	)
 }
-
-// mockLink deterministically creates a link with the given number.
-// The associated source stage name is the one used in stageForNum with the num
-// argument. The associated target stage name is the one used in the stageForNum
-// with the num+1 argument.
-func mockLink(num int, sourceField string, targetField string) *orchestration.Link {
-	name := testutil.LinkNameForNum(num)
-	sourceStage := testutil.LinkSourceStageForNum(num)
-	targetStage := testutil.LinkTargetStageForNum(num)
-	return orchestration.NewLink(
-		name,
-		sourceStage,
-		sourceField,
-		targetStage,
-		targetField)
-}
-
-// FIXME: Populate with db
-// populateAssets creates the assets in the server, asserting any occurred
-// errors.
-//func populateAssets(t *testing.T, s *Server, assets []*asset.Asset) {
-//	// Bypass CreateAsset verifications
-//	store := s.assetStore
-//	for _, a := range assets {
-//		assert.NilError(t, store.Create(a), "populate with assets")
-//	}
-//}
 
 // populateStages creates the stages in the server, asserting any occurred
 // errors.
-func populateStages(t *testing.T, s *Server, stages []*orchestration.Stage) {
+func populateStages(
+	t *testing.T,
+	s *Server,
+	txn *badger.Txn,
+	stages []*orchestration.Stage,
+) {
 	for _, st := range stages {
-		s.orchestrationManager.CreateStageInternal(st)
+		orchestration.PersistStage(txn, st)
 		assert.NilError(t, s.flowManager.RegisterStage(st), "register stage")
-	}
-}
-
-// populateLinks creates the links in the server, asserting any occurred errors.
-func populateLinks(t *testing.T, s *Server, links []*orchestration.Link) {
-	for _, l := range links {
-		source, ok := s.orchestrationManager.GetStageByName(l.SourceStage())
-		assert.Assert(t, ok, "source does not exist")
-		target, ok := s.orchestrationManager.GetStageByName(l.TargetStage())
-		assert.Assert(t, ok, "target does not exist")
-		s.orchestrationManager.CreateLinkInternal(l)
-		err := s.flowManager.RegisterLink(source, target, l)
-		assert.NilError(t, err, "register link")
 	}
 }

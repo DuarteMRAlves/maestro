@@ -19,10 +19,11 @@ func Create(txn *badger.Txn, cfg *apitypes.Asset) error {
 	if Contains(txn, cfg.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",
-			cfg.Name)
+			cfg.Name,
+		)
 	}
 	asset := New(cfg.Name, cfg.Image)
-	if err = persist(txn, asset); err != nil {
+	if err = Persist(txn, asset); err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return nil
@@ -74,14 +75,16 @@ func buildQueryFilter(query *apitypes.Asset) func(a *Asset) bool {
 			filters,
 			func(a *Asset) bool {
 				return a.Name() == query.Name
-			})
+			},
+		)
 	}
 	if query.Image != "" {
 		filters = append(
 			filters,
 			func(a *Asset) bool {
 				return a.Image() == query.Image
-			})
+			},
+		)
 	}
 	if len(filters) > 0 {
 		return func(a *Asset) bool {
@@ -107,12 +110,13 @@ func validateCreateAssetConfig(cfg *apitypes.Asset) error {
 	if !naming.IsValidAssetName(cfg.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
-			cfg.Name)
+			cfg.Name,
+		)
 	}
 	return nil
 }
 
-func persist(txn *badger.Txn, a *Asset) error {
+func Persist(txn *badger.Txn, a *Asset) error {
 	var (
 		buf bytes.Buffer
 		err error

@@ -65,7 +65,8 @@ func TestServer_CreateLink(t *testing.T) {
 			func(t *testing.T) {
 				rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -80,14 +81,16 @@ func TestServer_CreateLink(t *testing.T) {
 				fmt.Println("On create link")
 				err = s.CreateLink(test.config)
 				assert.NilError(t, err, "create link error")
-			})
+			},
+		)
 	}
 }
 
 func TestServer_CreateLink_NilConfig(t *testing.T) {
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -103,7 +106,8 @@ func TestServer_CreateLink_NilConfig(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
+		"error is not InvalidArgument",
+	)
 	expectedMsg := "'config' is nil"
 	assert.Error(t, err, expectedMsg)
 }
@@ -143,7 +147,8 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -157,12 +162,15 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
-					"error is not InvalidArgument")
+					"error is not InvalidArgument",
+				)
 				expectedMsg := fmt.Sprintf(
 					"invalid name '%v'",
-					test.config.Name)
+					test.config.Name,
+				)
 				assert.Error(t, err, expectedMsg)
-			})
+			},
+		)
 	}
 }
 
@@ -170,7 +178,8 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -192,7 +201,8 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
+		"error is not InvalidArgument",
+	)
 	assert.Error(t, err, "empty source stage name")
 }
 
@@ -200,7 +210,8 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -222,7 +233,8 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
+		"error is not InvalidArgument",
+	)
 	assert.Error(t, err, "empty target stage name")
 }
 
@@ -230,7 +242,8 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -257,7 +270,8 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -285,7 +299,8 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -314,7 +329,8 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -344,7 +360,8 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -368,7 +385,8 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	expectedMsg := fmt.Sprintf(
 		"field with name unknown-field not found for message "+
 			"pb.TestMessage1 for source stage in link %v",
-		name)
+		name,
+	)
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -376,7 +394,8 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -400,7 +419,8 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	expectedMsg := fmt.Sprintf(
 		"field with name unknown-field not found for message "+
 			"pb.TestMessageDiffNames for target stage in link %v",
-		name)
+		name,
+	)
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -408,7 +428,8 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	const name = "link-name"
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -427,11 +448,16 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	}
 
 	err = s.CreateLink(config)
-	assert.Assert(t, errdefs.IsInvalidArgument(err), "error is not IsInvalidArgument")
+	assert.Assert(
+		t,
+		errdefs.IsInvalidArgument(err),
+		"error is not IsInvalidArgument",
+	)
 	expectedMsg := fmt.Sprintf(
 		"incompatible message types between source output pb.TestMessage1 "+
 			"and target input pb.TestWrongOuterFieldType in link %v",
-		name)
+		name,
+	)
 	assert.Error(t, err, expectedMsg)
 }
 
@@ -449,15 +475,22 @@ func populateForLinks(
 		2,
 		pb.TestMessageDiffNames{},
 		pb.TestMessageDiffNames{},
-		rpcManager)
+		rpcManager,
+	)
 	stage3 := mockStage(
 		t,
 		3,
 		pb.TestWrongOuterFieldType{},
 		pb.TestWrongOuterFieldType{},
-		rpcManager)
+		rpcManager,
+	)
 
 	stages := []*orchestration.Stage{stage1, stage2, stage3}
-
-	populateStages(t, s, stages)
+	err := s.db.Update(
+		func(txn *badger.Txn) error {
+			populateStages(t, s, txn, stages)
+			return nil
+		},
+	)
+	assert.NilError(t, err, "Populate stages for links")
 }

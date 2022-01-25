@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
@@ -25,46 +26,63 @@ func validateCreateOrchestrationConfig(
 	if prev != nil {
 		return errdefs.AlreadyExistsWithMsg(
 			"orchestration '%s' already exists",
-			cfg.Name)
+			cfg.Name,
+		)
 	}
 	return nil
 }
 
 // validateCreateStageConfig verifies if all conditions to create a stage are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (m *manager) validateCreateStageConfig(cfg *apitypes.Stage) error {
+func (m *manager) validateCreateStageConfig(
+	txn *badger.Txn,
+	cfg *apitypes.Stage,
+) error {
 	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
 		return err
 	}
 	if !naming.IsValidStageName(cfg.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
-			cfg.Name)
+			cfg.Name,
+		)
+	}
+	prev, _ := txn.Get(stageKey(cfg.Name))
+	if prev != nil {
+		return errdefs.AlreadyExistsWithMsg(
+			"stage '%v' already exists",
+			cfg.Name,
+		)
 	}
 	if cfg.Phase != "" {
 		return errdefs.InvalidArgumentWithMsg("phase should not be specified")
 	}
-	// TODO: Fixme check for asset within transaction.
 	// Asset is not required but if specified should exist.
-	//if cfg.Asset != "" && !m.assets.Contains(cfg.Asset) {
-	//	return errdefs.NotFoundWithMsg(
-	//		"asset '%v' not found",
-	//		cfg.Asset)
-	//}
+	if cfg.Asset != "" && !asset.Contains(txn, cfg.Asset) {
+		return errdefs.NotFoundWithMsg(
+			"asset '%v' not found",
+			cfg.Asset,
+		)
+	}
 	if cfg.Address != "" && cfg.Host != "" {
 		return errdefs.InvalidArgumentWithMsg(
-			"Cannot simultaneously specify address and host for stage")
+			"Cannot simultaneously specify address and host for stage",
+		)
 	}
 	if cfg.Address != "" && cfg.Port != 0 {
 		return errdefs.InvalidArgumentWithMsg(
-			"Cannot simultaneously specify address and port for stage")
+			"Cannot simultaneously specify address and port for stage",
+		)
 	}
 	return nil
 }
 
 // validateCreateLinkConfig verifies if all conditions to create a link are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (m *manager) validateCreateLinkConfig(config *apitypes.Link) error {
+func (m *manager) validateCreateLinkConfig(
+	txn *badger.Txn,
+	config *apitypes.Link,
+) error {
 	if ok, err := validate.ArgNotNil(config, "config"); !ok {
 		return err
 	}
@@ -72,7 +90,10 @@ func (m *manager) validateCreateLinkConfig(config *apitypes.Link) error {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", config.Name)
 	}
 	if m.ContainsLink(config.Name) {
-		return errdefs.AlreadyExistsWithMsg("link '%v' already exists", config.Name)
+		return errdefs.AlreadyExistsWithMsg(
+			"link '%v' already exists",
+			config.Name,
+		)
 	}
 	if config.SourceStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty source stage name")
@@ -82,30 +103,35 @@ func (m *manager) validateCreateLinkConfig(config *apitypes.Link) error {
 	}
 	if config.SourceStage == config.TargetStage {
 		return errdefs.InvalidArgumentWithMsg(
-			"source and target stages are equal")
+			"source and target stages are equal",
+		)
 	}
-	source, ok := m.GetStageByName(config.SourceStage)
+	source, ok := m.GetStageByName(txn, config.SourceStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"source stage '%v' not found",
-			config.SourceStage)
+			config.SourceStage,
+		)
 	}
-	target, ok := m.GetStageByName(config.TargetStage)
+	target, ok := m.GetStageByName(txn, config.TargetStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"target stage '%v' not found",
-			config.TargetStage)
+			config.TargetStage,
+		)
 	}
 
 	if !source.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
-			config.Name)
+			config.Name,
+		)
 	}
 	if !target.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
-			config.Name)
+			config.Name,
+		)
 	}
 	return nil
 }

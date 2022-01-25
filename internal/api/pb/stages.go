@@ -51,7 +51,10 @@ func (s *stageManagementServer) Get(
 		return GrpcErrorFromError(err)
 	}
 
-	stages := s.api.GetStage(query)
+	stages, err := s.api.GetStage(query)
+	if err != nil {
+		return GrpcErrorFromError(err)
+	}
 	for _, s := range stages {
 		pbStage, err := protobuff.MarshalStage(s)
 		if err != nil {

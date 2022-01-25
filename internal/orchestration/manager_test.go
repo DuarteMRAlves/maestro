@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestStore_Create(t *testing.T) {
+func TestManager_CreateOrchestration(t *testing.T) {
 	const name apitypes.OrchestrationName = "Orchestration-Name"
 	var (
 		orchestration Orchestration
@@ -22,17 +22,21 @@ func TestStore_Create(t *testing.T) {
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
-	err = db.Update(func(txn *badger.Txn) error {
-		return m.CreateOrchestration(txn, cfg)
-	})
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			return m.CreateOrchestration(txn, cfg)
+		},
+	)
 	assert.NilError(t, err, "create error not nil")
 
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(orchestrationKey(name))
-		assert.NilError(t, err, "get error")
-		cp, err := item.ValueCopy(nil)
-		return loadOrchestration(&orchestration, cp)
-	})
+	err = db.View(
+		func(txn *badger.Txn) error {
+			item, err := txn.Get(orchestrationKey(name))
+			assert.NilError(t, err, "get error")
+			cp, err := item.ValueCopy(nil)
+			return loadOrchestration(&orchestration, cp)
+		},
+	)
 	assert.NilError(t, err, "load error")
 	assert.Equal(t, orchestration.Name(), cfg.Name, "name not correct")
 	phase := orchestration.phase
@@ -71,7 +75,10 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "one element stored, matching name query",
 			query: &apitypes.Orchestration{Name: "some-name"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name", apitypes.OrchestrationRunning),
+				orchestrationForName(
+					"some-name",
+					apitypes.OrchestrationRunning,
+				),
 			},
 			expected: []apitypes.OrchestrationName{"some-name"},
 		},
@@ -79,7 +86,10 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "one element stored, non-matching name query",
 			query: &apitypes.Orchestration{Name: "unknown-name"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name", apitypes.OrchestrationPending),
+				orchestrationForName(
+					"some-name",
+					apitypes.OrchestrationPending,
+				),
 			},
 			expected: []apitypes.OrchestrationName{},
 		},
@@ -87,9 +97,18 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "multiple elements stored, nil query",
 			query: nil,
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-2", apitypes.OrchestrationSucceeded),
-				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
+				orchestrationForName(
+					"some-name-1",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-2",
+					apitypes.OrchestrationSucceeded,
+				),
+				orchestrationForName(
+					"some-name-3",
+					apitypes.OrchestrationFailed,
+				),
 			},
 			expected: []apitypes.OrchestrationName{
 				"some-name-1",
@@ -101,9 +120,18 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "multiple elements stored, matching name query",
 			query: &apitypes.Orchestration{Name: "some-name-2"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1", apitypes.OrchestrationRunning),
-				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
+				orchestrationForName(
+					"some-name-1",
+					apitypes.OrchestrationRunning,
+				),
+				orchestrationForName(
+					"some-name-2",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-3",
+					apitypes.OrchestrationFailed,
+				),
 			},
 			expected: []apitypes.OrchestrationName{"some-name-2"},
 		},
@@ -111,9 +139,18 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "multiple elements stored, non-matching name query",
 			query: &apitypes.Orchestration{Name: "unknown-name"},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-3", apitypes.OrchestrationRunning),
+				orchestrationForName(
+					"some-name-1",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-2",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-3",
+					apitypes.OrchestrationRunning,
+				),
 			},
 			expected: []apitypes.OrchestrationName{},
 		},
@@ -121,9 +158,18 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "multiple elements stored, matching phase query",
 			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationFailed},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1", apitypes.OrchestrationRunning),
-				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-3", apitypes.OrchestrationFailed),
+				orchestrationForName(
+					"some-name-1",
+					apitypes.OrchestrationRunning,
+				),
+				orchestrationForName(
+					"some-name-2",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-3",
+					apitypes.OrchestrationFailed,
+				),
 			},
 			expected: []apitypes.OrchestrationName{"some-name-3"},
 		},
@@ -131,9 +177,18 @@ func TestStore_Get_Correct(t *testing.T) {
 			name:  "multiple elements stored, non-matching phase query",
 			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationSucceeded},
 			stored: []*Orchestration{
-				orchestrationForName("some-name-1", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-2", apitypes.OrchestrationPending),
-				orchestrationForName("some-name-3", apitypes.OrchestrationRunning),
+				orchestrationForName(
+					"some-name-1",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-2",
+					apitypes.OrchestrationPending,
+				),
+				orchestrationForName(
+					"some-name-3",
+					apitypes.OrchestrationRunning,
+				),
 			},
 			expected: []apitypes.OrchestrationName{},
 		},
@@ -152,15 +207,22 @@ func TestStore_Get_Correct(t *testing.T) {
 				m := NewManager(reflection.NewManager())
 
 				for _, o := range test.stored {
-					err = db.Update(func(txn *badger.Txn) error {
-						return persistOrchestration(txn, o)
-					})
+					err = db.Update(
+						func(txn *badger.Txn) error {
+							return persistOrchestration(txn, o)
+						},
+					)
 				}
 
-				err = db.View(func(txn *badger.Txn) error {
-					received, err = m.GetMatchingOrchestration(txn, test.query)
-					return err
-				})
+				err = db.View(
+					func(txn *badger.Txn) error {
+						received, err = m.GetMatchingOrchestration(
+							txn,
+							test.query,
+						)
+						return err
+					},
+				)
 				assert.NilError(t, err, "get orchestration")
 				assert.Equal(t, len(test.expected), len(received))
 
@@ -181,7 +243,8 @@ func TestStore_Get_Correct(t *testing.T) {
 					// All elements should be seen
 					assert.Assert(t, seen[e], "element not seen")
 				}
-			})
+			},
+		)
 	}
 }
 
