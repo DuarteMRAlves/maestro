@@ -18,7 +18,7 @@ func TestManager_CreateAsset(t *testing.T) {
 		assetImage = "Asset-Image"
 	)
 	var (
-		asset Asset
+		asset apitypes.Asset
 		err   error
 	)
 	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
@@ -43,8 +43,8 @@ func TestManager_CreateAsset(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
-	assert.Equal(t, asset.Image(), cfg.Image, "image not correct")
+	assert.Equal(t, asset.Name, cfg.Name, "name not correct")
+	assert.Equal(t, asset.Image, cfg.Image, "image not correct")
 }
 
 func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
@@ -84,10 +84,10 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 		assetImage = "Asset-Image"
 	)
 	var (
-		asset Asset
+		asset apitypes.Asset
 		err   error
 	)
-	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
+	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
 	m := NewManager(reflection.NewManager())
 
@@ -98,7 +98,7 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	// First create
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, cfg)
+			return m.CreateAsset(txn, req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -111,21 +111,21 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
-	assert.Equal(t, asset.Image(), cfg.Image, "image not correct")
+	assert.Equal(t, asset.Name, req.Name, "name not correct")
+	assert.Equal(t, asset.Image, req.Image, "image not correct")
 
 	// Create with new image
-	cfg.Image = fmt.Sprintf("%v-new", assetImage)
+	req.Image = fmt.Sprintf("%v-new", assetImage)
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, cfg)
+			return m.CreateAsset(txn, req)
 		},
 	)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
 	assert.ErrorContains(
 		t,
 		err,
-		fmt.Sprintf("asset '%v' already exists", cfg.Name),
+		fmt.Sprintf("asset '%v' already exists", req.Name),
 	)
 
 	// Store should keep old asset
@@ -138,9 +138,9 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
+	assert.Equal(t, asset.Name, req.Name, "name not correct")
 	// Still should be old image as asset is not replaced
-	assert.Equal(t, asset.Image(), assetImage, "image not correct")
+	assert.Equal(t, asset.Image, assetImage, "image not correct")
 }
 
 func TestManager_GetMatchingAssets(t *testing.T) {

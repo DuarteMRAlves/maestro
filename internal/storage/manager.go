@@ -347,7 +347,7 @@ func (m *manager) CreateAsset(
 			req.Name,
 		)
 	}
-	asset := NewAsset(req.Name, req.Image)
+	asset := &apitypes.Asset{Name: req.Name, Image: req.Image}
 	if err = PersistAsset(txn, asset); err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
@@ -364,7 +364,7 @@ func (m *manager) GetMatchingAssets(
 	req *api.GetAssetRequest,
 ) ([]*apitypes.Asset, error) {
 	var (
-		asset Asset
+		asset apitypes.Asset
 		cp    []byte
 		err   error
 	)
@@ -390,7 +390,11 @@ func (m *manager) GetMatchingAssets(
 			return nil, errdefs.InternalWithMsg("decoding: %v", err)
 		}
 		if filter(&asset) {
-			res = append(res, asset.ToApi())
+			assetCp := &apitypes.Asset{
+				Name:  asset.Name,
+				Image: asset.Image,
+			}
+			res = append(res, assetCp)
 		}
 	}
 	return res, nil

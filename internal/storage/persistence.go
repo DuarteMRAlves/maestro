@@ -121,24 +121,24 @@ func assetKey(name apitypes.AssetName) []byte {
 	return []byte(fmt.Sprintf("asset:%s", name))
 }
 
-func PersistAsset(txn *badger.Txn, a *Asset) error {
+func PersistAsset(txn *badger.Txn, a *apitypes.Asset) error {
 	var (
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(&buf, a.name, a.image)
+	_, err = fmt.Fprintln(&buf, a.Name, a.Image)
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
-	err = txn.Set(assetKey(a.name), buf.Bytes())
+	err = txn.Set(assetKey(a.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
 }
 
-func loadAsset(a *Asset, data []byte) error {
+func loadAsset(a *apitypes.Asset, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(buf, &a.name, &a.image)
+	_, err := fmt.Fscanln(buf, &a.Name, &a.Image)
 	return err
 }
