@@ -1,14 +1,14 @@
-package flow
+package execution
 
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
-	"github.com/DuarteMRAlves/maestro/internal/flow/flow"
-	"github.com/DuarteMRAlves/maestro/internal/flow/input"
-	"github.com/DuarteMRAlves/maestro/internal/flow/output"
-	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
+	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
+	"github.com/DuarteMRAlves/maestro/internal/execution/flow"
+	"github.com/DuarteMRAlves/maestro/internal/execution/input"
+	"github.com/DuarteMRAlves/maestro/internal/execution/output"
+	"github.com/DuarteMRAlves/maestro/internal/execution/worker"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"sync"

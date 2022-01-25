@@ -2,8 +2,8 @@ package input
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 )
 
 // Input joins the input connections for a given stage and provides the next
@@ -27,13 +27,15 @@ func (i *Cfg) Register(c *connection.Connection) error {
 	// A previous link that consumes the entire message already exists
 	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
-			"link that receives the full message already exists")
+			"link that receives the full message already exists",
+		)
 	}
 	for _, prev := range i.connections {
 		if prev.HasSameTargetField(c) {
 			return errdefs.InvalidArgumentWithMsg(
 				"link with the same target field already registered: %s",
-				prev.LinkName())
+				prev.LinkName(),
+			)
 		}
 	}
 	i.connections = append(i.connections, c)

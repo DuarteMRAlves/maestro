@@ -2,9 +2,9 @@ package worker
 
 import (
 	"context"
-	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
-	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
-	"github.com/DuarteMRAlves/maestro/internal/flow/state"
+	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
+	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"google.golang.org/grpc"

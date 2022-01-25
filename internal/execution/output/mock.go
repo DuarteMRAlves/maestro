@@ -1,6 +1,6 @@
 package output
 
-import "github.com/DuarteMRAlves/maestro/internal/flow/state"
+import "github.com/DuarteMRAlves/maestro/internal/execution/state"
 
 type MockOutput struct {
 	States []*state.State
