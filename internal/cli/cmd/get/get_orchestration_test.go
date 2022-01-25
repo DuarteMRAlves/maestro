@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -155,8 +155,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					OrchestrationManagementServer: &mockpb.OrchestrationManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						GetOrchestrationFn: func(
 							query *pb.Orchestration,
 							stream pb.OrchestrationManagement_GetServer,
@@ -164,7 +164,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 							if !test.validateQuery(query) {
 								return fmt.Errorf(
 									"validation failed with query %v",
-									query)
+									query,
+								)
 							}
 							for _, o := range test.responses {
 								if err := stream.Send(o); err != nil {
@@ -198,7 +199,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 

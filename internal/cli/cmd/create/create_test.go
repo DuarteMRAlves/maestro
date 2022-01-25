@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -343,7 +343,8 @@ func TestCreateWithServer(t *testing.T) {
 						if !test.validateAsset(cfg) {
 							return nil, fmt.Errorf(
 								"asset validation failed with cfg %v",
-								cfg)
+								cfg,
+							)
 						}
 						return &emptypb.Empty{}, nil
 					}
@@ -357,13 +358,16 @@ func TestCreateWithServer(t *testing.T) {
 						if !test.validateStage(cfg) {
 							return nil, fmt.Errorf(
 								"stage validation failed with cfg %v",
-								cfg)
+								cfg,
+							)
 						}
 						if cfg.Name == "stage-unknown-asset" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(
-									"asset 'unknown-asset' not found").Error())
+									"asset 'unknown-asset' not found",
+								).Error(),
+							)
 						}
 						return &emptypb.Empty{}, nil
 					}
@@ -377,13 +381,16 @@ func TestCreateWithServer(t *testing.T) {
 						if !test.validateLink(cfg) {
 							return nil, fmt.Errorf(
 								"link validation failed with cfg %v",
-								cfg)
+								cfg,
+							)
 						}
 						if cfg.Name == "link-unknown-stage" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(
-									"target stage 'unknown-stage' not found").Error())
+									"target stage 'unknown-stage' not found",
+								).Error(),
+							)
 						}
 						return &emptypb.Empty{}, nil
 					}
@@ -397,29 +404,32 @@ func TestCreateWithServer(t *testing.T) {
 						if !test.validateOrchestration(cfg) {
 							return nil, fmt.Errorf(
 								"orchestration validation failed with cfg %v",
-								cfg)
+								cfg,
+							)
 						}
 						if cfg.Name == "orchestration-unknown-link" {
 							return nil, status.Error(
 								codes.NotFound,
 								errdefs.NotFoundWithMsg(
-									"link 'unknown-link' not found").Error())
+									"link 'unknown-link' not found",
+								).Error(),
+							)
 						}
 						return &emptypb.Empty{}, nil
 					}
 				}
 
-				mockServer := mockpb.MaestroServer{
-					AssetManagementServer: &mockpb.AssetManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					AssetManagementServer: &ipb.MockAssetManagementServer{
 						CreateAssetFn: createAssetFn,
 					},
-					StageManagementServer: &mockpb.StageManagementServer{
+					StageManagementServer: &ipb.MockStageManagementServer{
 						CreateStageFn: createStageFn,
 					},
-					LinkManagementServer: &mockpb.LinkManagementServer{
+					LinkManagementServer: &ipb.MockLinkManagementServer{
 						CreateLinkFn: createLinkFn,
 					},
-					OrchestrationManagementServer: &mockpb.OrchestrationManagementServer{
+					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						CreateOrchestrationFn: createOrchestrationFn,
 					},
 				}
@@ -439,7 +449,8 @@ func TestCreateWithServer(t *testing.T) {
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
 				assert.Equal(t, test.expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 
@@ -494,9 +505,11 @@ func TestCreateWithoutServer(t *testing.T) {
 				// https://github.com/DuarteMRAlves/maestro/issues/29.
 				matched, err := regexp.MatchString(
 					test.expectedOut,
-					string(out))
+					string(out),
+				)
 				assert.NilError(t, err, "matched output")
 				assert.Assert(t, matched, "output not matched")
-			})
+			},
+		)
 	}
 }

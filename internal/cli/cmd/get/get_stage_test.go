@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -443,8 +443,8 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					StageManagementServer: &mockpb.StageManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					StageManagementServer: &ipb.MockStageManagementServer{
 						GetStageFn: func(
 							query *pb.Stage,
 							stream pb.StageManagement_GetServer,
@@ -452,7 +452,8 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 							if !test.validateQuery(query) {
 								return fmt.Errorf(
 									"validation failed with query %v",
-									query)
+									query,
+								)
 							}
 							for _, s := range test.responses {
 								if err := stream.Send(s); err != nil {
@@ -486,7 +487,8 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 

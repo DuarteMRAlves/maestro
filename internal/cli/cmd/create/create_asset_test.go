@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -60,7 +60,9 @@ func TestCreateAssetWithServer(t *testing.T) {
 			err: status.Error(
 				codes.InvalidArgument,
 				errdefs.InvalidArgumentWithMsg(
-					"invalid name 'invalid--name'").Error()),
+					"invalid name 'invalid--name'",
+				).Error(),
+			),
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 	}
@@ -72,8 +74,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					AssetManagementServer: &mockpb.AssetManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					AssetManagementServer: &ipb.MockAssetManagementServer{
 						CreateAssetFn: func(
 							ctx context.Context,
 							cfg *pb.Asset,
@@ -81,7 +83,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 							if !test.validateCfg(cfg) {
 								return nil, fmt.Errorf(
 									"validation failed with cfg %v",
-									cfg)
+									cfg,
+								)
 							}
 							return test.response, test.err
 						},
@@ -103,7 +106,8 @@ func TestCreateAssetWithServer(t *testing.T) {
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
 				assert.Equal(t, test.expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 
@@ -137,9 +141,11 @@ func TestCreateAssetWithoutServer(t *testing.T) {
 				// https://github.com/DuarteMRAlves/maestro/issues/29.
 				matched, err := regexp.MatchString(
 					test.expectedOut,
-					string(out))
+					string(out),
+				)
 				assert.NilError(t, err, "matched output")
 				assert.Assert(t, matched, "output not matched")
-			})
+			},
+		)
 	}
 }
