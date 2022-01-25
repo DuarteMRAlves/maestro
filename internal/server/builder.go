@@ -6,12 +6,15 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 type Builder struct {
+	reflectionManager reflection.Manager
+
 	grpcActive bool
 	grpcOpts   []grpc.ServerOption
 
@@ -48,6 +51,11 @@ func (b *Builder) WithLogger(logger *zap.Logger) *Builder {
 	return b
 }
 
+func (b *Builder) WithReflectionManager(m reflection.Manager) *Builder {
+	b.reflectionManager = m
+	return b
+}
+
 func (b *Builder) Build() (*Server, error) {
 	var err error
 	err = b.complete()
@@ -61,7 +69,7 @@ func (b *Builder) Build() (*Server, error) {
 	s := &Server{}
 	s.logger = b.logger
 	s.db = b.db
-	initManagers(s)
+	b.initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
@@ -77,6 +85,9 @@ func (b *Builder) complete() error {
 			return errdefs.UnknownWithMsg("build: setup logger: %v", err)
 		}
 	}
+	if b.reflectionManager == nil {
+		b.reflectionManager = reflection.NewManager()
+	}
 	return nil
 }
 
@@ -89,9 +100,10 @@ func (b *Builder) validate() error {
 	return nil
 }
 
-func initManagers(s *Server) {
-	s.orchestrationManager = orchestration.NewManager()
-	s.flowManager = flow.NewManager()
+func (b *Builder) initManagers(s *Server) {
+	s.reflectionManager = b.reflectionManager
+	s.orchestrationManager = orchestration.NewManager(s.reflectionManager)
+	s.flowManager = flow.NewManager(s.reflectionManager)
 }
 
 func activateGrpc(s *Server, b *Builder) {

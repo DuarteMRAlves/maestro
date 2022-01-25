@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/DuarteMRAlves/maestro/internal/flow"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ const grpcNotConfigured = "grpc server not configured"
 type Server struct {
 	orchestrationManager orchestration.Manager
 	flowManager          flow.Manager
+	reflectionManager    reflection.Manager
 
 	grpcServer *grpc.Server
 

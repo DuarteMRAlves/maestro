@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/flow/connection"
@@ -9,6 +10,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"sync"
 )
 
@@ -30,21 +32,27 @@ type manager struct {
 	outputs     map[apitypes.StageName]*output.Cfg
 	connections map[apitypes.LinkName]*connection.Connection
 	flows       map[apitypes.OrchestrationName]*flow.Flow
+
+	reflectionManager reflection.Manager
 }
 
-func NewManager() Manager {
+func NewManager(reflectionManager reflection.Manager) Manager {
 	return &manager{
-		workers:     map[apitypes.StageName]worker.Worker{},
-		inputs:      map[apitypes.StageName]*input.Cfg{},
-		outputs:     map[apitypes.StageName]*output.Cfg{},
-		connections: map[apitypes.LinkName]*connection.Connection{},
-		flows:       map[apitypes.OrchestrationName]*flow.Flow{},
+		workers:           map[apitypes.StageName]worker.Worker{},
+		inputs:            map[apitypes.StageName]*input.Cfg{},
+		outputs:           map[apitypes.StageName]*output.Cfg{},
+		connections:       map[apitypes.LinkName]*connection.Connection{},
+		flows:             map[apitypes.OrchestrationName]*flow.Flow{},
+		reflectionManager: reflectionManager,
 	}
 }
 
 func (m *manager) RegisterStage(s *orchestration.Stage) error {
-	cfg := workerCfgForStage(s)
-
+	rpc, ok := m.reflectionManager.GetRpc(s.Name())
+	if !ok {
+		return errdefs.NotFoundWithMsg("Rpc not found for stage %s", s.Name())
+	}
+	cfg := workerCfgForStage(s, rpc)
 	w, err := worker.NewWorker(cfg)
 	if err != nil {
 		return err
@@ -76,8 +84,17 @@ func (m *manager) RegisterLink(
 		err error
 	)
 
-	sourceOutput := source.Rpc().Output()
-	targetInput := target.Rpc().Input()
+	sourceRpc, ok := m.reflectionManager.GetRpc(source.Name())
+	if !ok {
+		return errdefs.NotFoundWithMsg("Rpc not found for source %s", source.Name())
+	}
+	targetRpc, ok := m.reflectionManager.GetRpc(target.Name())
+	if !ok {
+		return errdefs.NotFoundWithMsg("Rpc not found for target %s", target.Name())
+	}
+	fmt.Println("On get input/output")
+	sourceOutput := sourceRpc.Output()
+	targetInput := targetRpc.Input()
 
 	if link.SourceField() != "" {
 		sourceOutput, ok = sourceOutput.GetMessageField(link.SourceField())
@@ -86,7 +103,7 @@ func (m *manager) RegisterLink(
 				"field with name %s not found for message %s for source stage "+
 					"in link %s",
 				link.SourceField(),
-				source.Rpc().Output().FullyQualifiedName(),
+				sourceRpc.Output().FullyQualifiedName(),
 				link.Name())
 		}
 	}
@@ -97,7 +114,7 @@ func (m *manager) RegisterLink(
 				"field with name %s not found for message %s for target stage "+
 					"in link %v",
 				link.TargetField(),
-				target.Rpc().Input().FullyQualifiedName(),
+				targetRpc.Input().FullyQualifiedName(),
 				link.Name())
 		}
 	}
@@ -178,10 +195,10 @@ func (m *manager) outputCfgForStage(s *orchestration.Stage) *output.Cfg {
 	return cfg
 }
 
-func workerCfgForStage(s *orchestration.Stage) *worker.Cfg {
+func workerCfgForStage(s *orchestration.Stage, rpc reflection.RPC) *worker.Cfg {
 	return &worker.Cfg{
 		Address: s.Address(),
-		Rpc:     s.Rpc(),
+		Rpc:     rpc,
 		Input:   nil,
 		Output:  nil,
 		Done:    nil,
