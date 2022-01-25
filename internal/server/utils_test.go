@@ -27,6 +27,7 @@ func mockStage(
 	num int,
 	req interface{},
 	res interface{},
+	rpcManager *mockreflection.Manager,
 ) *orchestration.Stage {
 	reqType := reflect.TypeOf(req)
 
@@ -44,10 +45,8 @@ func mockStage(
 	resMsg, err := reflection.NewMessage(resDesc)
 	assert.NilError(t, err, fmt.Sprintf("load res desc for stage: %d\n", num))
 
-	return orchestration.NewStage(
+	rpcManager.Rpcs.Store(
 		testutil.StageNameForNum(num),
-		testutil.StageAddressForNum(num),
-		testutil.AssetNameForNum(num),
 		&mockreflection.RPC{
 			Name_: testutil.StageRpcForNum(num),
 			FQN: fmt.Sprintf(
@@ -57,7 +56,15 @@ func mockStage(
 			In:    reqMsg,
 			Out:   resMsg,
 			Unary: true,
-		},
+		})
+
+	return orchestration.NewStage(
+		testutil.StageNameForNum(num),
+		orchestration.NewRpcSpec(
+			testutil.StageAddressForNum(num),
+			testutil.StageServiceForNum(num),
+			testutil.StageRpcForNum(num)),
+		testutil.AssetNameForNum(num),
 		nil)
 }
 

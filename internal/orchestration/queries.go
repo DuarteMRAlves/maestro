@@ -64,21 +64,21 @@ func buildStageQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.rpc.Service().Name() == query.Service
+				return s.rpcSpec.service == query.Service
 			})
 	}
 	if query.Rpc != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.rpc.Name() == query.Rpc
+				return s.rpcSpec.rpc == query.Rpc
 			})
 	}
 	if query.Address != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.address == query.Address
+				return s.rpcSpec.address == query.Address
 			})
 	}
 	switch len(filters) {

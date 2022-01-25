@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -15,7 +16,7 @@ func TestStore_Create(t *testing.T) {
 	)
 	cfg := &apitypes.Orchestration{Name: name}
 
-	m, ok := NewManager().(*manager)
+	m, ok := NewManager(reflection.NewManager()).(*manager)
 	assert.Assert(t, ok, "type assertion failed for manager")
 
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
@@ -148,7 +149,7 @@ func TestStore_Get_Correct(t *testing.T) {
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 
-				m := NewManager()
+				m := NewManager(reflection.NewManager())
 
 				for _, o := range test.stored {
 					err = db.Update(func(txn *badger.Txn) error {

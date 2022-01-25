@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/discovery"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/dgraph-io/badger/v3"
@@ -51,12 +50,15 @@ type Manager interface {
 type manager struct {
 	stages sync.Map
 	links  sync.Map
+
+	reflectionManager reflection.Manager
 }
 
-func NewManager() Manager {
+func NewManager(reflectionManager reflection.Manager) Manager {
 	return &manager{
-		stages: sync.Map{},
-		links:  sync.Map{},
+		stages:            sync.Map{},
+		links:             sync.Map{},
+		reflectionManager: reflectionManager,
 	}
 }
 
@@ -117,19 +119,21 @@ func (m *manager) GetMatchingOrchestration(
 }
 
 func (m *manager) CreateStage(cfg *apitypes.Stage) (*Stage, error) {
-	var (
-		rpc reflection.RPC
-		err error
-	)
+	var err error
 	if err = m.validateCreateStageConfig(cfg); err != nil {
 		return nil, err
 	}
 	address := m.inferStageAddress(cfg)
-	rpc, err = m.inferRpc(address, cfg)
+	err = m.inferRpc(address, cfg)
 	if err != nil {
 		return nil, err
 	}
-	s := NewStage(cfg.Name, address, cfg.Asset, rpc, nil)
+	spec := &RpcSpec{
+		address: address,
+		service: cfg.Service,
+		rpc:     cfg.Rpc,
+	}
+	s := NewStage(cfg.Name, spec, cfg.Asset, nil)
 	_, prev := m.stages.LoadOrStore(s.name, s)
 	if prev {
 		return nil, errdefs.AlreadyExistsWithMsg(
@@ -247,11 +251,11 @@ func (m *manager) inferStageAddress(cfg *apitypes.Stage) string {
 func (m *manager) inferRpc(
 	address string,
 	cfg *apitypes.Stage,
-) (reflection.RPC, error) {
+) error {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	defer conn.Close()
 	if err != nil {
-		return nil, errdefs.InternalWithMsg(
+		return errdefs.InternalWithMsg(
 			"connect to %s for stage %s: %s",
 			address,
 			cfg.Name,
@@ -260,13 +264,14 @@ func (m *manager) inferRpc(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	rpcDiscoveryCfg := &discovery.Config{
+	rpcDiscoveryCfg := &reflection.FindQuery{
+		Conn:    conn,
 		Service: cfg.Service,
 		Rpc:     cfg.Rpc,
 	}
-	rpc, err := discovery.FindRpc(ctx, conn, rpcDiscoveryCfg)
+	err = m.reflectionManager.FindRpc(ctx, cfg.Name, rpcDiscoveryCfg)
 	if err != nil {
-		return nil, errdefs.PrependMsg(err, "stage %v", cfg.Name)
+		return errdefs.PrependMsg(err, "stage %v", cfg.Name)
 	}
-	return rpc, nil
+	return nil
 }

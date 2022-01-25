@@ -3,7 +3,6 @@ package orchestration
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
@@ -11,11 +10,8 @@ import (
 type Stage struct {
 	name    apitypes.StageName
 	phase   apitypes.StagePhase
+	rpcSpec *RpcSpec
 	asset   apitypes.AssetName
-	address string
-
-	// Descriptor for the rpc that this stage calls.
-	rpc reflection.RPC
 
 	// orchestration is the Orchestration where this stage is inserted.
 	orchestration *Orchestration
@@ -23,16 +19,14 @@ type Stage struct {
 
 func NewStage(
 	name apitypes.StageName,
-	address string,
+	rpcSpec *RpcSpec,
 	asset apitypes.AssetName,
-	rpc reflection.RPC,
 	orchestration *Orchestration,
 ) *Stage {
 	return &Stage{
 		name:          name,
-		address:       address,
+		rpcSpec:       rpcSpec,
 		asset:         asset,
-		rpc:           rpc,
 		orchestration: orchestration,
 		phase:         apitypes.StagePending,
 	}
@@ -43,11 +37,7 @@ func (s *Stage) Name() apitypes.StageName {
 }
 
 func (s *Stage) Address() string {
-	return s.address
-}
-
-func (s *Stage) Rpc() reflection.RPC {
-	return s.rpc
+	return s.rpcSpec.address
 }
 
 func (s *Stage) IsPending() bool {
@@ -59,8 +49,7 @@ func (s *Stage) Clone() *Stage {
 	return &Stage{
 		name:    s.name,
 		asset:   s.asset,
-		address: s.address,
-		rpc:     s.rpc,
+		rpcSpec: s.rpcSpec.Clone(),
 
 		phase: s.phase,
 
@@ -73,9 +62,9 @@ func (s *Stage) ToApi() *apitypes.Stage {
 		Name:    s.name,
 		Phase:   s.phase,
 		Asset:   s.asset,
-		Service: s.rpc.Service().Name(),
-		Rpc:     s.rpc.Name(),
-		Address: s.address,
+		Service: s.rpcSpec.service,
+		Rpc:     s.rpcSpec.rpc,
+		Address: s.rpcSpec.address,
 	}
 }
 
@@ -86,6 +75,28 @@ func (s *Stage) String() string {
 		s.name,
 		s.phase,
 		s.asset,
-		s.rpc.FullyQualifiedName(),
-		s.address)
+		fmt.Sprintf("%s/%s", s.rpcSpec.service, s.rpcSpec.rpc),
+		s.rpcSpec.address)
+}
+
+type RpcSpec struct {
+	address string
+	service string
+	rpc     string
+}
+
+func NewRpcSpec(address string, service string, rpc string) *RpcSpec {
+	return &RpcSpec{
+		address: address,
+		service: service,
+		rpc:     rpc,
+	}
+}
+
+func (r *RpcSpec) Clone() *RpcSpec {
+	return &RpcSpec{
+		address: r.address,
+		service: r.service,
+		rpc:     r.rpc,
+	}
 }
