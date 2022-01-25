@@ -168,26 +168,26 @@ func buildLinkQueryFilter(query *apitypes.Link) func(l *Link) bool {
 	}
 }
 
-func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *Asset) bool {
-	filters := make([]func(a *Asset) bool, 0)
+func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *apitypes.Asset) bool {
+	filters := make([]func(a *apitypes.Asset) bool, 0)
 	if req.Name != "" {
 		filters = append(
 			filters,
-			func(a *Asset) bool {
-				return a.Name() == req.Name
+			func(a *apitypes.Asset) bool {
+				return a.Name == req.Name
 			},
 		)
 	}
 	if req.Image != "" {
 		filters = append(
 			filters,
-			func(a *Asset) bool {
-				return a.Image() == req.Image
+			func(a *apitypes.Asset) bool {
+				return a.Image == req.Image
 			},
 		)
 	}
 	if len(filters) > 0 {
-		return func(a *Asset) bool {
+		return func(a *apitypes.Asset) bool {
 			for _, f := range filters {
 				if !f(a) {
 					return false
@@ -196,7 +196,7 @@ func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *Asset) bool {
 			return true
 		}
 	}
-	return func(a *Asset) bool {
+	return func(a *apitypes.Asset) bool {
 		return true
 	}
 }

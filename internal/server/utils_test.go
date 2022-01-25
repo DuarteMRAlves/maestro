@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
@@ -13,10 +14,13 @@ import (
 )
 
 // assetForNum deterministically creates an asset with the given number.
-func assetForNum(num int) *storage.Asset {
+func assetForNum(num int) *apitypes.Asset {
 	name := testutil.AssetNameForNum(num)
 	img := testutil.AssetImageForNum(num)
-	return storage.NewAsset(name, img)
+	return &apitypes.Asset{
+		Name:  name,
+		Image: img,
+	}
 }
 
 // mockStage deterministically creates a stage with the given number.
