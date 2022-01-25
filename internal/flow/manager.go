@@ -9,20 +9,20 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/flow/input"
 	"github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/worker"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"sync"
 )
 
 // Manager handles the flows that are orchestrated.
 type Manager interface {
 	// RegisterStage registers a stage to be later included in an orchestration.
-	RegisterStage(*orchestration.Stage) error
+	RegisterStage(*storage.Stage) error
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
-	RegisterLink(*orchestration.Stage, *orchestration.Stage, *orchestration.Link) error
+	RegisterLink(*storage.Stage, *storage.Stage, *storage.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
-	RegisterOrchestration(*orchestration.Orchestration) error
+	RegisterOrchestration(*storage.Orchestration) error
 }
 
 type manager struct {
@@ -47,7 +47,7 @@ func NewManager(reflectionManager reflection.Manager) Manager {
 	}
 }
 
-func (m *manager) RegisterStage(s *orchestration.Stage) error {
+func (m *manager) RegisterStage(s *storage.Stage) error {
 	rpc, ok := m.reflectionManager.GetRpc(s.Name())
 	if !ok {
 		return errdefs.NotFoundWithMsg("Rpc not found for stage %s", s.Name())
@@ -67,7 +67,8 @@ func (m *manager) RegisterStage(s *orchestration.Stage) error {
 	if exists {
 		return errdefs.AlreadyExistsWithMsg(
 			"Worker for stage %s already exists",
-			name)
+			name,
+		)
 	}
 	m.workers[name] = w
 
@@ -75,9 +76,9 @@ func (m *manager) RegisterStage(s *orchestration.Stage) error {
 }
 
 func (m *manager) RegisterLink(
-	source *orchestration.Stage,
-	target *orchestration.Stage,
-	link *orchestration.Link,
+	source *storage.Stage,
+	target *storage.Stage,
+	link *storage.Link,
 ) error {
 	var (
 		ok  bool
@@ -86,11 +87,17 @@ func (m *manager) RegisterLink(
 
 	sourceRpc, ok := m.reflectionManager.GetRpc(source.Name())
 	if !ok {
-		return errdefs.NotFoundWithMsg("Rpc not found for source %s", source.Name())
+		return errdefs.NotFoundWithMsg(
+			"Rpc not found for source %s",
+			source.Name(),
+		)
 	}
 	targetRpc, ok := m.reflectionManager.GetRpc(target.Name())
 	if !ok {
-		return errdefs.NotFoundWithMsg("Rpc not found for target %s", target.Name())
+		return errdefs.NotFoundWithMsg(
+			"Rpc not found for target %s",
+			target.Name(),
+		)
 	}
 	fmt.Println("On get input/output")
 	sourceOutput := sourceRpc.Output()
@@ -104,7 +111,8 @@ func (m *manager) RegisterLink(
 					"in link %s",
 				link.SourceField(),
 				sourceRpc.Output().FullyQualifiedName(),
-				link.Name())
+				link.Name(),
+			)
 		}
 	}
 	if link.TargetField() != "" {
@@ -115,7 +123,8 @@ func (m *manager) RegisterLink(
 					"in link %v",
 				link.TargetField(),
 				targetRpc.Input().FullyQualifiedName(),
-				link.Name())
+				link.Name(),
+			)
 		}
 	}
 	if !sourceOutput.Compatible(targetInput) {
@@ -124,7 +133,8 @@ func (m *manager) RegisterLink(
 				" input %s in link %s",
 			sourceOutput.FullyQualifiedName(),
 			targetInput.FullyQualifiedName(),
-			link.Name())
+			link.Name(),
+		)
 	}
 
 	m.mu.Lock()
@@ -158,7 +168,7 @@ func (m *manager) RegisterLink(
 	return nil
 }
 
-func (m *manager) RegisterOrchestration(o *orchestration.Orchestration) error {
+func (m *manager) RegisterOrchestration(o *storage.Orchestration) error {
 	var exists bool
 
 	m.mu.Lock()
@@ -175,7 +185,7 @@ func (m *manager) RegisterOrchestration(o *orchestration.Orchestration) error {
 	return nil
 }
 
-func (m *manager) inputCfgForStage(s *orchestration.Stage) *input.Cfg {
+func (m *manager) inputCfgForStage(s *storage.Stage) *input.Cfg {
 	name := s.Name()
 	cfg, ok := m.inputs[name]
 	if !ok {
@@ -185,7 +195,7 @@ func (m *manager) inputCfgForStage(s *orchestration.Stage) *input.Cfg {
 	return cfg
 }
 
-func (m *manager) outputCfgForStage(s *orchestration.Stage) *output.Cfg {
+func (m *manager) outputCfgForStage(s *storage.Stage) *output.Cfg {
 	name := s.Name()
 	cfg, ok := m.outputs[name]
 	if !ok {
@@ -195,7 +205,7 @@ func (m *manager) outputCfgForStage(s *orchestration.Stage) *output.Cfg {
 	return cfg
 }
 
-func workerCfgForStage(s *orchestration.Stage, rpc reflection.RPC) *worker.Cfg {
+func workerCfgForStage(s *storage.Stage, rpc reflection.RPC) *worker.Cfg {
 	return &worker.Cfg{
 		Address: s.Address(),
 		Rpc:     rpc,
@@ -206,7 +216,7 @@ func workerCfgForStage(s *orchestration.Stage, rpc reflection.RPC) *worker.Cfg {
 }
 
 func (m *manager) connectionForLink(
-	l *orchestration.Link,
+	l *storage.Link,
 ) (*connection.Connection, error) {
 	var (
 		c   *connection.Connection

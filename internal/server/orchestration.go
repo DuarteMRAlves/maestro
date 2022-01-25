@@ -9,10 +9,13 @@ import (
 func (s *Server) CreateOrchestration(config *apitypes.Orchestration) error {
 	s.logger.Info(
 		"Create Orchestration.",
-		logOrchestration(config, "config")...)
-	return s.db.Update(func(txn *badger.Txn) error {
-		return s.orchestrationManager.CreateOrchestration(txn, config)
-	})
+		logOrchestration(config, "config")...,
+	)
+	return s.db.Update(
+		func(txn *badger.Txn) error {
+			return s.storageManager.CreateOrchestration(txn, config)
+		},
+	)
 }
 
 func (s *Server) GetOrchestration(
@@ -23,12 +26,15 @@ func (s *Server) GetOrchestration(
 		err            error
 	)
 	s.logger.Info("Get Orchestration.", logOrchestration(query, "query")...)
-	err = s.db.View(func(txn *badger.Txn) error {
-		orchestrations, err = s.orchestrationManager.GetMatchingOrchestration(
-			txn,
-			query)
-		return err
-	})
+	err = s.db.View(
+		func(txn *badger.Txn) error {
+			orchestrations, err = s.storageManager.GetMatchingOrchestration(
+				txn,
+				query,
+			)
+			return err
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

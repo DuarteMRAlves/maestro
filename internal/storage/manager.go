@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/dgraph-io/badger/v3"
 	"google.golang.org/grpc"
-	"sync"
 	"time"
 )
 
@@ -47,17 +46,24 @@ type Manager interface {
 	// The query is a link with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
 	GetMatchingLinks(*badger.Txn, *apitypes.Link) ([]*apitypes.Link, error)
+	// CreateAsset creates a new asset with the specified config. It returns an
+	// error if the asset is not created and nil otherwise.
+	CreateAsset(*badger.Txn, *apitypes.Asset) error
+	// ContainsAsset returns true if an asset with the given name exists and
+	// false otherwise.
+	ContainsAsset(*badger.Txn, apitypes.AssetName) bool
+	// GetMatchingAssets retrieves stored assets that match the received query.
+	// The query is an asset with the fields that the returned stage should
+	// have. If a field is empty, then all values for that field are accepted.
+	GetMatchingAssets(*badger.Txn, *apitypes.Asset) ([]*apitypes.Asset, error)
 }
 
 type manager struct {
-	links sync.Map
-
 	reflectionManager reflection.Manager
 }
 
 func NewManager(reflectionManager reflection.Manager) Manager {
 	return &manager{
-		links:             sync.Map{},
 		reflectionManager: reflectionManager,
 	}
 }
@@ -71,7 +77,7 @@ func (m *manager) CreateOrchestration(
 		return err
 	}
 
-	o := New(cfg.Name)
+	o := NewOrchestration(cfg.Name)
 	err = persistOrchestration(txn, o)
 	if err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
@@ -320,4 +326,65 @@ func (m *manager) inferRpc(
 		return errdefs.PrependMsg(err, "stage %v", cfg.Name)
 	}
 	return nil
+}
+
+func (m *manager) CreateAsset(txn *badger.Txn, cfg *apitypes.Asset) error {
+	var err error
+	if err = validateCreateAssetConfig(cfg); err != nil {
+		return errdefs.InvalidArgumentWithError(err)
+	}
+
+	if m.ContainsAsset(txn, cfg.Name) {
+		return errdefs.AlreadyExistsWithMsg(
+			"asset '%v' already exists",
+			cfg.Name,
+		)
+	}
+	asset := NewAsset(cfg.Name, cfg.Image)
+	if err = PersistAsset(txn, asset); err != nil {
+		return errdefs.InternalWithMsg("persist error: %v", err)
+	}
+	return nil
+}
+
+func (m *manager) ContainsAsset(txn *badger.Txn, name apitypes.AssetName) bool {
+	item, _ := txn.Get(assetKey(name))
+	return item != nil
+}
+
+func (m *manager) GetMatchingAssets(
+	txn *badger.Txn,
+	query *apitypes.Asset,
+) ([]*apitypes.Asset, error) {
+	var (
+		asset Asset
+		cp    []byte
+		err   error
+	)
+
+	if query == nil {
+		query = &apitypes.Asset{}
+	}
+	filter := buildQueryFilter(query)
+	res := make([]*apitypes.Asset, 0)
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+
+	defer it.Close()
+	prefix := []byte("asset:")
+
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+		cp, err = item.ValueCopy(cp)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("read: %v", err)
+		}
+		err = loadAsset(&asset, cp)
+		if err != nil {
+			return nil, errdefs.InternalWithMsg("decoding: %v", err)
+		}
+		if filter(&asset) {
+			res = append(res, asset.ToApi())
+		}
+	}
+	return res, nil
 }

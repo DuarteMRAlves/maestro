@@ -1,4 +1,4 @@
-package asset
+package storage
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
@@ -11,7 +11,7 @@ func TestAsset_Clone(t *testing.T) {
 		assetName  apitypes.AssetName = "Asset-Name"
 		assetImage                    = "Asset-Image"
 	)
-	src := New(assetName, assetImage)
+	src := NewAsset(assetName, assetImage)
 	dst := src.Clone()
 	assert.Equal(t, assetName, src.Name(), "source name")
 	assert.Equal(t, assetImage, src.Image(), "source image")

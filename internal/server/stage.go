@@ -12,7 +12,7 @@ func (s *Server) CreateStage(cfg *apitypes.Stage) error {
 	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			st, err := s.orchestrationManager.CreateStage(txn, cfg)
+			st, err := s.storageManager.CreateStage(txn, cfg)
 			if err != nil {
 				return err
 			}
@@ -29,7 +29,7 @@ func (s *Server) GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error) {
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			stages, err = s.orchestrationManager.GetMatchingStage(txn, query)
+			stages, err = s.storageManager.GetMatchingStage(txn, query)
 			return err
 		},
 	)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
@@ -485,7 +485,7 @@ func populateForLinks(
 		rpcManager,
 	)
 
-	stages := []*orchestration.Stage{stage1, stage2, stage3}
+	stages := []*storage.Stage{stage1, stage2, stage3}
 	err := s.db.Update(
 		func(txn *badger.Txn) error {
 			populateStages(t, s, txn, stages)

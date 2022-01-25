@@ -2,9 +2,8 @@ package server
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/dgraph-io/badger/v3"
@@ -15,10 +14,10 @@ import (
 )
 
 // assetForNum deterministically creates an asset with the given number.
-func assetForNum(num int) *asset.Asset {
+func assetForNum(num int) *storage.Asset {
 	name := testutil.AssetNameForNum(num)
 	img := testutil.AssetImageForNum(num)
-	return asset.New(name, img)
+	return storage.NewAsset(name, img)
 }
 
 // mockStage deterministically creates a stage with the given number.
@@ -29,7 +28,7 @@ func mockStage(
 	req interface{},
 	res interface{},
 	rpcManager *mockreflection.Manager,
-) *orchestration.Stage {
+) *storage.Stage {
 	reqType := reflect.TypeOf(req)
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
@@ -61,9 +60,9 @@ func mockStage(
 		},
 	)
 
-	return orchestration.NewStage(
+	return storage.NewStage(
 		testutil.StageNameForNum(num),
-		orchestration.NewRpcSpec(
+		storage.NewRpcSpec(
 			testutil.StageAddressForNum(num),
 			testutil.StageServiceForNum(num),
 			testutil.StageRpcForNum(num),
@@ -79,10 +78,10 @@ func populateStages(
 	t *testing.T,
 	s *Server,
 	txn *badger.Txn,
-	stages []*orchestration.Stage,
+	stages []*storage.Stage,
 ) {
 	for _, st := range stages {
-		orchestration.PersistStage(txn, st)
+		storage.PersistStage(txn, st)
 		assert.NilError(t, s.flowManager.RegisterStage(st), "register stage")
 	}
 }

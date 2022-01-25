@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	"bytes"
@@ -113,5 +113,32 @@ func loadLink(l *Link, data []byte) error {
 		&l.targetStage,
 		&l.targetField,
 	)
+	return err
+}
+
+// assetKey returns the image key for an asset with the given name
+func assetKey(name apitypes.AssetName) []byte {
+	return []byte(fmt.Sprintf("asset:%s", name))
+}
+
+func PersistAsset(txn *badger.Txn, a *Asset) error {
+	var (
+		buf bytes.Buffer
+		err error
+	)
+	_, err = fmt.Fprintln(&buf, a.name, a.image)
+	if err != nil {
+		return errdefs.InternalWithMsg("encoding error: %v", err)
+	}
+	err = txn.Set(assetKey(a.name), buf.Bytes())
+	if err != nil {
+		return errdefs.InternalWithMsg("storage error: %v", err)
+	}
+	return nil
+}
+
+func loadAsset(a *Asset, data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(buf, &a.name, &a.image)
 	return err
 }

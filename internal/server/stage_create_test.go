@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/asset"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -446,10 +446,10 @@ func TestServer_CreateStage_Error(t *testing.T) {
 }
 
 func populateForStages(t *testing.T, txn *badger.Txn) {
-	assets := []*asset.Asset{
+	assets := []*storage.Asset{
 		assetForNum(0),
 	}
 	for _, a := range assets {
-		assert.NilError(t, asset.Persist(txn, a))
+		assert.NilError(t, storage.PersistAsset(txn, a))
 	}
 }

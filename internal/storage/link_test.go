@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"

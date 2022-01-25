@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	"fmt"
@@ -76,7 +76,8 @@ func (s *Stage) String() string {
 		s.phase,
 		s.asset,
 		fmt.Sprintf("%s/%s", s.rpcSpec.service, s.rpcSpec.rpc),
-		s.rpcSpec.address)
+		s.rpcSpec.address,
+	)
 }
 
 type RpcSpec struct {

@@ -2,8 +2,8 @@ package flow
 
 import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
@@ -17,7 +17,7 @@ func TestManager_Register_NoFields(t *testing.T) {
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
-	l := orchestration.NewLink("link-name", s1.Name(), "", s2.Name(), "")
+	l := storage.NewLink("link-name", s1.Name(), "", s2.Name(), "")
 	m := NewManager(rpcManager)
 	err := m.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
@@ -27,13 +27,19 @@ func TestManager_Register_WithFields(t *testing.T) {
 	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
-	l := orchestration.NewLink("link-name", s1.Name(), "field4", s2.Name(), "fieldName4")
+	l := storage.NewLink(
+		"link-name",
+		s1.Name(),
+		"field4",
+		s2.Name(),
+		"fieldName4",
+	)
 	m := NewManager(rpcManager)
 	err := m.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
 }
 
-func stage1(t *testing.T, rpcManager *mockreflection.Manager) *orchestration.Stage {
+func stage1(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
 	testMsg1Type := reflect.TypeOf(pb.TestMessage1{})
 
 	testMsg1Desc, err := desc.LoadMessageDescriptorForType(testMsg1Type)
@@ -49,16 +55,18 @@ func stage1(t *testing.T, rpcManager *mockreflection.Manager) *orchestration.Sta
 			FQN:   "service-1/rpc-1",
 			In:    message1,
 			Out:   message1,
-		})
+		},
+	)
 
-	return orchestration.NewStage(
+	return storage.NewStage(
 		"stage-1",
-		orchestration.NewRpcSpec("address-1", "service-1", "rpc-1"),
+		storage.NewRpcSpec("address-1", "service-1", "rpc-1"),
 		"asset-1",
-		nil)
+		nil,
+	)
 }
 
-func stage2(t *testing.T, rpcManager *mockreflection.Manager) *orchestration.Stage {
+func stage2(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
 	testMsg2Type := reflect.TypeOf(pb.TestMessageDiffNames{})
 
 	testMsg2Desc, err := desc.LoadMessageDescriptorForType(testMsg2Type)
@@ -74,11 +82,13 @@ func stage2(t *testing.T, rpcManager *mockreflection.Manager) *orchestration.Sta
 			FQN:   "service-2/rpc-2",
 			In:    message2,
 			Out:   message2,
-		})
+		},
+	)
 
-	return orchestration.NewStage(
+	return storage.NewStage(
 		"stage-2",
-		orchestration.NewRpcSpec("address-2", "service-2", "rpc-2"),
+		storage.NewRpcSpec("address-2", "service-2", "rpc-2"),
 		"asset-2",
-		nil)
+		nil,
+	)
 }

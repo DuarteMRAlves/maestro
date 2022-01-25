@@ -1,4 +1,4 @@
-package orchestration
+package storage
 
 import (
 	"fmt"
@@ -76,5 +76,6 @@ func (l *Link) String() string {
 		l.sourceStage,
 		l.sourceField,
 		l.targetStage,
-		l.targetField)
+		l.targetField,
+	)
 }

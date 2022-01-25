@@ -1,16 +1,17 @@
-package asset
+package storage
 
 import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestStore_Create(t *testing.T) {
+func TestManager_CreateAsset(t *testing.T) {
 	const (
 		assetName  = "Asset-Name"
 		assetImage = "Asset-Image"
@@ -21,25 +22,31 @@ func TestStore_Create(t *testing.T) {
 	)
 	cfg := &apitypes.Asset{Name: assetName, Image: assetImage}
 
+	m := NewManager(reflection.NewManager())
+
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
-	err = db.Update(func(txn *badger.Txn) error {
-		return Create(txn, cfg)
-	})
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			return m.CreateAsset(txn, cfg)
+		},
+	)
 	assert.NilError(t, err, "create error not nil")
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(assetKey(assetName))
-		assert.NilError(t, err, "get error")
-		cp, err := item.ValueCopy(nil)
-		return load(&asset, cp)
-	})
+	err = db.View(
+		func(txn *badger.Txn) error {
+			item, err := txn.Get(assetKey(assetName))
+			assert.NilError(t, err, "get error")
+			cp, err := item.ValueCopy(nil)
+			return loadAsset(&asset, cp)
+		},
+	)
 	assert.NilError(t, err, "load error")
 	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
 	assert.Equal(t, asset.Image(), cfg.Image, "image not correct")
 }
 
-func TestStore_CreateInvalidArguments(t *testing.T) {
+func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 	const assetName = "Asset-Name"
 	tests := []struct {
 		name   string
@@ -58,26 +65,33 @@ func TestStore_CreateInvalidArguments(t *testing.T) {
 
 		t.Run(
 			test.name, func(t *testing.T) {
+				m := NewManager(reflection.NewManager())
+
 				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 
-				err = db.Update(func(txn *badger.Txn) error {
-					return Create(txn, cfg)
-				})
+				err = db.Update(
+					func(txn *badger.Txn) error {
+						return m.CreateAsset(txn, cfg)
+					},
+				)
 				assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
 				assert.ErrorContains(t, err, errMsg)
-				err = db.View(func(txn *badger.Txn) error {
-					item, err := txn.Get(assetKey(assetName))
-					assert.Assert(t, item == nil, "nil item")
-					return err
-				})
+				err = db.View(
+					func(txn *badger.Txn) error {
+						item, err := txn.Get(assetKey(assetName))
+						assert.Assert(t, item == nil, "nil item")
+						return err
+					},
+				)
 				assert.Assert(t, err == badger.ErrKeyNotFound)
-			})
+			},
+		)
 	}
 }
 
-func TestStore_CreateAlreadyExists(t *testing.T) {
+func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	const (
 		assetName  = "Asset-Name"
 		assetImage = "Asset-Image"
@@ -88,50 +102,61 @@ func TestStore_CreateAlreadyExists(t *testing.T) {
 	)
 	cfg := &apitypes.Asset{Name: assetName, Image: assetImage}
 
+	m := NewManager(reflection.NewManager())
+
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 
 	// First create
-	err = db.Update(func(txn *badger.Txn) error {
-		return Create(txn, cfg)
-	})
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			return m.CreateAsset(txn, cfg)
+		},
+	)
 	assert.NilError(t, err, "create error not nil")
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(assetKey(assetName))
-		assert.NilError(t, err, "get error")
-		cp, err := item.ValueCopy(nil)
-		return load(&asset, cp)
-	})
+	err = db.View(
+		func(txn *badger.Txn) error {
+			item, err := txn.Get(assetKey(assetName))
+			assert.NilError(t, err, "get error")
+			cp, err := item.ValueCopy(nil)
+			return loadAsset(&asset, cp)
+		},
+	)
 	assert.NilError(t, err, "load error")
 	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
 	assert.Equal(t, asset.Image(), cfg.Image, "image not correct")
 
 	// Create with new image
 	cfg.Image = fmt.Sprintf("%v-new", assetImage)
-	err = db.Update(func(txn *badger.Txn) error {
-		return Create(txn, cfg)
-	})
+	err = db.Update(
+		func(txn *badger.Txn) error {
+			return m.CreateAsset(txn, cfg)
+		},
+	)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
 	assert.ErrorContains(
 		t,
 		err,
-		fmt.Sprintf("asset '%v' already exists", cfg.Name))
+		fmt.Sprintf("asset '%v' already exists", cfg.Name),
+	)
 
 	// Store should keep old asset
-	err = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(assetKey(assetName))
-		assert.NilError(t, err, "get error")
-		cp, err := item.ValueCopy(nil)
-		return load(&asset, cp)
-	})
+	err = db.View(
+		func(txn *badger.Txn) error {
+			item, err := txn.Get(assetKey(assetName))
+			assert.NilError(t, err, "get error")
+			cp, err := item.ValueCopy(nil)
+			return loadAsset(&asset, cp)
+		},
+	)
 	assert.NilError(t, err, "load error")
 	assert.Equal(t, asset.Name(), cfg.Name, "name not correct")
 	// Still should be old image as asset is not replaced
 	assert.Equal(t, asset.Image(), assetImage, "image not correct")
 }
 
-func TestStore_Get(t *testing.T) {
+func TestManager_GetMatchingAssets(t *testing.T) {
 	tests := []struct {
 		name  string
 		query *apitypes.Asset
@@ -197,21 +222,28 @@ func TestStore_Get(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var received []*apitypes.Asset
+
+				m := NewManager(reflection.NewManager())
+
 				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 
 				for _, n := range test.stored {
-					err = db.Update(func(txn *badger.Txn) error {
-						return Create(txn, assetForNum(n))
-					})
+					err = db.Update(
+						func(txn *badger.Txn) error {
+							return m.CreateAsset(txn, assetForNum(n))
+						},
+					)
 					assert.NilError(t, err, "create asset error")
 				}
 
-				err = db.View(func(txn *badger.Txn) error {
-					received, err = Get(txn, test.query)
-					return err
-				})
+				err = db.View(
+					func(txn *badger.Txn) error {
+						received, err = m.GetMatchingAssets(txn, test.query)
+						return err
+					},
+				)
 				assert.NilError(t, err, "get assets")
 				assert.Equal(t, len(test.expected), len(received))
 
@@ -232,7 +264,8 @@ func TestStore_Get(t *testing.T) {
 					// All elements should be seen
 					assert.Assert(t, seen[e], "element not seen")
 				}
-			})
+			},
+		)
 	}
 }
 
