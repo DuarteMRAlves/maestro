@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -150,8 +150,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					AssetManagementServer: &mockpb.AssetManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					AssetManagementServer: &ipb.MockAssetManagementServer{
 						GetAssetFn: func(
 							query *pb.Asset,
 							stream pb.AssetManagement_GetServer,
@@ -159,7 +159,8 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 							if !test.validateQuery(query) {
 								return fmt.Errorf(
 									"validation failed with query %v",
-									query)
+									query,
+								)
 							}
 							for _, a := range test.responses {
 								if err := stream.Send(a); err != nil {
@@ -193,6 +194,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }

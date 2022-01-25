@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -94,7 +94,9 @@ func TestCreateLinkWithServer(t *testing.T) {
 			err: status.Error(
 				codes.InvalidArgument,
 				errdefs.InvalidArgumentWithMsg(
-					"invalid name 'invalid--name'").Error()),
+					"invalid name 'invalid--name'",
+				).Error(),
+			),
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
@@ -117,7 +119,9 @@ func TestCreateLinkWithServer(t *testing.T) {
 			err: status.Error(
 				codes.NotFound,
 				errdefs.NotFoundWithMsg(
-					"source stage 'does-not-exist' not found").Error()),
+					"source stage 'does-not-exist' not found",
+				).Error(),
+			),
 			expectedOut: "not found: source stage 'does-not-exist' not found",
 		},
 		{
@@ -139,7 +143,9 @@ func TestCreateLinkWithServer(t *testing.T) {
 			err: status.Error(
 				codes.NotFound,
 				errdefs.NotFoundWithMsg(
-					"target stage 'does-not-exist' not found").Error()),
+					"target stage 'does-not-exist' not found",
+				).Error(),
+			),
 			expectedOut: "not found: target stage 'does-not-exist' not found",
 		},
 	}
@@ -151,8 +157,8 @@ func TestCreateLinkWithServer(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					LinkManagementServer: &mockpb.LinkManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					LinkManagementServer: &ipb.MockLinkManagementServer{
 						CreateLinkFn: func(
 							ctx context.Context,
 							cfg *pb.Link,
@@ -160,7 +166,8 @@ func TestCreateLinkWithServer(t *testing.T) {
 							if !test.validateCfg(cfg) {
 								return nil, fmt.Errorf(
 									"validation failed with cfg %v",
-									cfg)
+									cfg,
+								)
 							}
 							return test.response, test.err
 						},
@@ -183,7 +190,8 @@ func TestCreateLinkWithServer(t *testing.T) {
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
 				assert.Equal(t, test.expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 
@@ -227,9 +235,11 @@ func TestCreateLinkWithoutServer(t *testing.T) {
 				// https://github.com/DuarteMRAlves/maestro/issues/29.
 				matched, err := regexp.MatchString(
 					test.expectedOut,
-					string(out))
+					string(out),
+				)
 				assert.NilError(t, err, "matched output")
 				assert.Assert(t, matched, "output not matched")
-			})
+			},
+		)
 	}
 }

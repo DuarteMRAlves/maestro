@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -149,7 +149,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "filter by source stage",
-			args: []string{"--source-stage", testutil.LinkSourceStageForNumStr(2)},
+			args: []string{
+				"--source-stage",
+				testutil.LinkSourceStageForNumStr(2),
+			},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == testutil.LinkSourceStageForNumStr(2) &&
@@ -205,7 +208,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "filter by target stage",
-			args: []string{"--target-stage", testutil.LinkTargetStageForNumStr(1)},
+			args: []string{
+				"--target-stage",
+				testutil.LinkTargetStageForNumStr(1),
+			},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
@@ -282,7 +288,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such source stage",
-			args: []string{"--source-stage", testutil.LinkSourceStageForNumStr(3)},
+			args: []string{
+				"--source-stage",
+				testutil.LinkSourceStageForNumStr(3),
+			},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == testutil.LinkSourceStageForNumStr(3) &&
@@ -324,7 +333,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such target stage",
-			args: []string{"--target-stage", testutil.LinkTargetStageForNumStr(5)},
+			args: []string{
+				"--target-stage",
+				testutil.LinkTargetStageForNumStr(5),
+			},
 			validateQuery: func(query *pb.Link) bool {
 				return query.Name == "" &&
 					query.SourceStage == "" &&
@@ -374,8 +386,8 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					LinkManagementServer: &mockpb.LinkManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					LinkManagementServer: &ipb.MockLinkManagementServer{
 						GetLinkFn: func(
 							query *pb.Link,
 							stream pb.LinkManagement_GetServer,
@@ -383,7 +395,8 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 							if !test.validateQuery(query) {
 								return fmt.Errorf(
 									"validation failed with query %v",
-									query)
+									query,
+								)
 							}
 							for _, l := range test.responses {
 								if err := stream.Send(l); err != nil {
@@ -417,7 +430,8 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				expectedOut += "\n"
 				assert.NilError(t, err, "render error")
 				assert.Equal(t, expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 

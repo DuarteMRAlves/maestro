@@ -4,9 +4,9 @@ import (
 	"fmt"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -63,7 +63,7 @@ func TestServer_CreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+				rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 				db, err := badger.Open(
 					badger.DefaultOptions("").WithInMemory(true),
 				)
@@ -87,7 +87,7 @@ func TestServer_CreateLink(t *testing.T) {
 }
 
 func TestServer_CreateLink_NilConfig(t *testing.T) {
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -176,7 +176,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 
 func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -208,7 +208,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 
 func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -240,7 +240,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 
 func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -268,7 +268,7 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 
 func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -297,7 +297,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 
 func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -327,7 +327,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -358,7 +358,7 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 
 func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -392,7 +392,7 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 
 func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -426,7 +426,7 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 
 func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	const name = "link-name"
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &mockreflection.MockManager{Rpcs: sync.Map{}}
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -466,7 +466,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 func populateForLinks(
 	t *testing.T,
 	s *Server,
-	rpcManager *mockreflection.Manager,
+	rpcManager *mockreflection.MockManager,
 ) {
 	stage1 := mockStage(t, 1, pb.TestMessage1{}, pb.TestMessage1{}, rpcManager)
 

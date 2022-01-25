@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
@@ -27,7 +26,7 @@ func mockStage(
 	num int,
 	req interface{},
 	res interface{},
-	rpcManager *mockreflection.Manager,
+	rpcManager *reflection.MockManager,
 ) *storage.Stage {
 	reqType := reflect.TypeOf(req)
 
@@ -47,7 +46,7 @@ func mockStage(
 
 	rpcManager.Rpcs.Store(
 		testutil.StageNameForNum(num),
-		&mockreflection.RPC{
+		&reflection.MockRPC{
 			Name_: testutil.StageRpcForNum(num),
 			FQN: fmt.Sprintf(
 				"%s/%s",

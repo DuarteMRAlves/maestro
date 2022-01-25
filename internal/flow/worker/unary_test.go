@@ -1,11 +1,11 @@
 package worker
 
 import (
+	flowinput "github.com/DuarteMRAlves/maestro/internal/flow/input"
+	flowoutput "github.com/DuarteMRAlves/maestro/internal/flow/output"
 	"github.com/DuarteMRAlves/maestro/internal/flow/state"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockflow "github.com/DuarteMRAlves/maestro/internal/testutil/mock/flow"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -20,7 +20,7 @@ func TestUnaryWorker_Run(t *testing.T) {
 	server := testutil.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
-	rpc := &mockreflection.RPC{
+	rpc := &reflection.MockRPC{
 		Name_: "Unary",
 		FQN:   "pb.TestService/Unary",
 		In:    requestMessage(t),
@@ -54,8 +54,8 @@ func TestUnaryWorker_Run(t *testing.T) {
 		},
 	}
 	states := []*state.State{state.New(1, msgs[0]), state.New(3, msgs[1])}
-	input := mockflow.NewInput(states)
-	output := mockflow.NewOutput()
+	input := flowinput.NewMockInput(states)
+	output := flowoutput.NewMockOutput()
 	done := make(chan bool)
 
 	cfg := &Cfg{
@@ -73,7 +73,12 @@ func TestUnaryWorker_Run(t *testing.T) {
 
 	<-done
 
-	assert.Equal(t, len(states), len(output.States), "correct number of replies")
+	assert.Equal(
+		t,
+		len(states),
+		len(output.States),
+		"correct number of replies",
+	)
 	for i, in := range states {
 		out := output.States[i]
 		assert.Equal(t, in.Id(), out.Id(), "correct received id")

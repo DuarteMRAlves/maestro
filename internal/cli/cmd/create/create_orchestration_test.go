@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
-	mockpb "github.com/DuarteMRAlves/maestro/internal/testutil/mock/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -87,7 +87,9 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 			err: status.Error(
 				codes.InvalidArgument,
 				errdefs.InvalidArgumentWithMsg(
-					"invalid name 'invalid--name'").Error()),
+					"invalid name 'invalid--name'",
+				).Error(),
+			),
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
 		},
 		{
@@ -106,7 +108,9 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 			err: status.Error(
 				codes.NotFound,
 				errdefs.NotFoundWithMsg(
-					"link 'does-not-exist' not found").Error()),
+					"link 'does-not-exist' not found",
+				).Error(),
+			),
 			expectedOut: "not found: link 'does-not-exist' not found",
 		},
 	}
@@ -118,8 +122,8 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
 
-				mockServer := mockpb.MaestroServer{
-					OrchestrationManagementServer: &mockpb.OrchestrationManagementServer{
+				mockServer := ipb.MockMaestroServer{
+					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						CreateOrchestrationFn: func(
 							ctx context.Context,
 							cfg *pb.Orchestration,
@@ -127,7 +131,8 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 							if !test.validateCfg(cfg) {
 								return nil, fmt.Errorf(
 									"validation failed with cfg %v",
-									cfg)
+									cfg,
+								)
 							}
 							return test.response, test.err
 						},
@@ -150,7 +155,8 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
 				assert.Equal(t, test.expectedOut, string(out), "output differs")
-			})
+			},
+		)
 	}
 }
 
@@ -191,9 +197,11 @@ func TestCreateOrchestrationWithoutServer(t *testing.T) {
 				fmt.Println(string(out))
 				matched, err := regexp.MatchString(
 					test.expectedOut,
-					string(out))
+					string(out),
+				)
 				assert.NilError(t, err, "matched output")
 				assert.Assert(t, matched, "output not matched")
-			})
+			},
+		)
 	}
 }

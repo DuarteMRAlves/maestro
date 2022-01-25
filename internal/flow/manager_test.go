@@ -4,7 +4,6 @@ import (
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/testutil/mock/reflection"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestManager_Register_NoFields(t *testing.T) {
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &reflection.MockManager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
 	l := storage.NewLink("link-name", s1.Name(), "", s2.Name(), "")
@@ -24,7 +23,7 @@ func TestManager_Register_NoFields(t *testing.T) {
 }
 
 func TestManager_Register_WithFields(t *testing.T) {
-	rpcManager := &mockreflection.Manager{Rpcs: sync.Map{}}
+	rpcManager := &reflection.MockManager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
 	l := storage.NewLink(
@@ -39,7 +38,7 @@ func TestManager_Register_WithFields(t *testing.T) {
 	assert.NilError(t, err, "register error")
 }
 
-func stage1(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
+func stage1(t *testing.T, rpcManager *reflection.MockManager) *storage.Stage {
 	testMsg1Type := reflect.TypeOf(pb.TestMessage1{})
 
 	testMsg1Desc, err := desc.LoadMessageDescriptorForType(testMsg1Type)
@@ -50,7 +49,7 @@ func stage1(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
 
 	rpcManager.Rpcs.Store(
 		apitypes.StageName("stage-1"),
-		&mockreflection.RPC{
+		&reflection.MockRPC{
 			Name_: "rpc-1",
 			FQN:   "service-1/rpc-1",
 			In:    message1,
@@ -66,7 +65,7 @@ func stage1(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
 	)
 }
 
-func stage2(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
+func stage2(t *testing.T, rpcManager *reflection.MockManager) *storage.Stage {
 	testMsg2Type := reflect.TypeOf(pb.TestMessageDiffNames{})
 
 	testMsg2Desc, err := desc.LoadMessageDescriptorForType(testMsg2Type)
@@ -77,7 +76,7 @@ func stage2(t *testing.T, rpcManager *mockreflection.Manager) *storage.Stage {
 
 	rpcManager.Rpcs.Store(
 		apitypes.StageName("stage-2"),
-		&mockreflection.RPC{
+		&reflection.MockRPC{
 			Name_: "rpc-2",
 			FQN:   "service-2/rpc-2",
 			In:    message2,
