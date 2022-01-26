@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/dgraph-io/badger/v3"
 )
@@ -13,28 +12,9 @@ func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
 	logs.LogCreateLinkRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			l, err := s.storageManager.CreateLink(txn, req)
-			if err != nil {
-				return err
-			}
-			source, ok := s.storageManager.GetStageByName(
-				txn,
-				req.SourceStage,
-			)
-			if !ok {
-				return errdefs.InternalWithMsg("source not found")
-			}
-			target, ok := s.storageManager.GetStageByName(
-				txn,
-				req.TargetStage,
-			)
-			if !ok {
-				return errdefs.InternalWithMsg("target not found")
-			}
-			return s.flowManager.RegisterLink(source, target, l)
+			return s.storageManager.CreateLink(txn, req)
 		},
 	)
-
 }
 
 func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
