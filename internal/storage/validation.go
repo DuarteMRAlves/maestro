@@ -35,40 +35,37 @@ func validateCreateOrchestrationConfig(
 // It returns an error if a condition is not met and nil otherwise.
 func (m *manager) validateCreateStageConfig(
 	txn *badger.Txn,
-	cfg *api.Stage,
+	req *api.CreateStageRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
+	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidStageName(cfg.Name) {
+	if !naming.IsValidStageName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
-			cfg.Name,
+			req.Name,
 		)
 	}
-	prev, _ := txn.Get(stageKey(cfg.Name))
+	prev, _ := txn.Get(stageKey(req.Name))
 	if prev != nil {
 		return errdefs.AlreadyExistsWithMsg(
 			"stage '%v' already exists",
-			cfg.Name,
+			req.Name,
 		)
-	}
-	if cfg.Phase != "" {
-		return errdefs.InvalidArgumentWithMsg("phase should not be specified")
 	}
 	// Asset is not required but if specified should exist.
-	if cfg.Asset != "" && !m.ContainsAsset(txn, cfg.Asset) {
+	if req.Asset != "" && !m.ContainsAsset(txn, req.Asset) {
 		return errdefs.NotFoundWithMsg(
 			"asset '%v' not found",
-			cfg.Asset,
+			req.Asset,
 		)
 	}
-	if cfg.Address != "" && cfg.Host != "" {
+	if req.Address != "" && req.Host != "" {
 		return errdefs.InvalidArgumentWithMsg(
 			"Cannot simultaneously specify address and host for stage",
 		)
 	}
-	if cfg.Address != "" && cfg.Port != 0 {
+	if req.Address != "" && req.Port != 0 {
 		return errdefs.InvalidArgumentWithMsg(
 			"Cannot simultaneously specify address and port for stage",
 		)

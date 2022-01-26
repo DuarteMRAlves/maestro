@@ -93,39 +93,36 @@ func (s *MockOrchestrationManagementServer) Get(
 // that will be called.
 type MockStageManagementServer struct {
 	pb.UnimplementedStageManagementServer
-	CreateStageFn func(ctx context.Context, config *pb.Stage) (
+	CreateStageFn func(context.Context, *pb.CreateStageRequest) (
 		*emptypb.Empty,
 		error,
 	)
-	GetStageFn func(
-		query *pb.Stage,
-		stream pb.StageManagement_GetServer,
-	) error
+	GetStageFn func(*pb.GetStageRequest, pb.StageManagement_GetServer) error
 }
 
 func (s *MockStageManagementServer) Create(
 	ctx context.Context,
-	config *pb.Stage,
+	req *pb.CreateStageRequest,
 ) (*emptypb.Empty, error) {
 	if s.CreateStageFn != nil {
-		return s.CreateStageFn(ctx, config)
+		return s.CreateStageFn(ctx, req)
 	}
 	return &emptypb.Empty{}, fmt.Errorf(
-		"method CreateStage not configured but called with config %v",
-		config,
+		"method CreateStage not configured but called with req %v",
+		req,
 	)
 }
 
 func (s *MockStageManagementServer) Get(
-	query *pb.Stage,
+	req *pb.GetStageRequest,
 	stream pb.StageManagement_GetServer,
 ) error {
 	if s.GetStageFn != nil {
-		return s.GetStageFn(query, stream)
+		return s.GetStageFn(req, stream)
 	}
 	return fmt.Errorf(
-		"method GetStage not configured but called with query %v",
-		query,
+		"method GetStage not configured but called with req %v",
+		req,
 	)
 }
 

@@ -106,7 +106,7 @@ func (o *StageOpts) validate() error {
 
 // run executes the get link command
 func (o *StageOpts) run() error {
-	query := &pb.Stage{
+	req := &pb.GetStageRequest{
 		Name:    o.name,
 		Phase:   o.phase,
 		Asset:   o.asset,
@@ -126,7 +126,7 @@ func (o *StageOpts) run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	stages, err := c.GetStage(ctx, query)
+	stages, err := c.GetStage(ctx, req)
 	if err != nil {
 		return err
 	}

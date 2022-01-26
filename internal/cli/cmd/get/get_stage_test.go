@@ -19,22 +19,22 @@ import (
 // verifying its output by comparing with an expected table.
 func TestGetStage_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name          string
-		args          []string
-		validateQuery func(query *pb.Stage) bool
-		responses     []*pb.Stage
-		output        [][]string
+		name        string
+		args        []string
+		validateReq func(*pb.GetStageRequest) bool
+		responses   []*pb.Stage
+		output      [][]string
 	}{
 		{
 			name: "empty stages",
 			args: []string{},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -51,13 +51,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "one stage",
 			args: []string{},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{pbStageForNum(0, api.StageRunning)},
 			output: [][]string{
@@ -82,13 +82,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple stages",
 			args: []string{},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(0, api.StagePending),
@@ -133,13 +133,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{testutil.StageNameForNumStr(2)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == testutil.StageNameForNumStr(2) &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == testutil.StageNameForNumStr(2) &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(2, api.StageSucceeded),
@@ -166,13 +166,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by phase",
 			args: []string{"--phase", string(api.StageRunning)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == string(api.StageRunning) &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == string(api.StageRunning) &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(1, api.StageRunning),
@@ -199,13 +199,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by asset",
 			args: []string{"--asset", testutil.AssetNameForNumStr(2)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == testutil.AssetNameForNumStr(2) &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == testutil.AssetNameForNumStr(2) &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(2, api.StagePending),
@@ -232,13 +232,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by service",
 			args: []string{"--service", testutil.StageServiceForNum(0)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == testutil.StageServiceForNum(0) &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == testutil.StageServiceForNum(0) &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(0, api.StageRunning),
@@ -265,13 +265,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by rpc",
 			args: []string{"--rpc", testutil.StageRpcForNum(1)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == testutil.StageRpcForNum(1) &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == testutil.StageRpcForNum(1) &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{
 				pbStageForNum(1, api.StagePending),
@@ -298,13 +298,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{testutil.StageNameForNumStr(3)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == testutil.StageNameForNumStr(3) &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == testutil.StageNameForNumStr(3) &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -321,13 +321,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such phase",
 			args: []string{"--phase", string(api.StagePending)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == string(api.StagePending) &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == string(api.StagePending) &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -344,13 +344,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such asset",
 			args: []string{"--asset", testutil.AssetNameForNumStr(3)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == testutil.AssetNameForNumStr(3) &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == testutil.AssetNameForNumStr(3) &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -367,13 +367,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such service",
 			args: []string{"--service", testutil.StageServiceForNum(4)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == testutil.StageServiceForNum(4) &&
-					query.Rpc == "" &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == testutil.StageServiceForNum(4) &&
+					req.Rpc == "" &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -390,13 +390,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such rpc",
 			args: []string{"--rpc", testutil.StageRpcForNum(5)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == testutil.StageRpcForNum(5) &&
-					query.Address == ""
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == testutil.StageRpcForNum(5) &&
+					req.Address == ""
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -413,13 +413,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such address",
 			args: []string{"--address", testutil.StageAddressForNum(6)},
-			validateQuery: func(query *pb.Stage) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					query.Asset == "" &&
-					query.Service == "" &&
-					query.Rpc == "" &&
-					query.Address == testutil.StageAddressForNum(6)
+			validateReq: func(req *pb.GetStageRequest) bool {
+				return req.Name == "" &&
+					req.Phase == "" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == testutil.StageAddressForNum(6)
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -446,13 +446,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				mockServer := ipb.MockMaestroServer{
 					StageManagementServer: &ipb.MockStageManagementServer{
 						GetStageFn: func(
-							query *pb.Stage,
+							req *pb.GetStageRequest,
 							stream pb.StageManagement_GetServer,
 						) error {
-							if !test.validateQuery(query) {
+							if !test.validateReq(req) {
 								return fmt.Errorf(
-									"validation failed with query %v",
-									query,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							for _, s := range test.responses {

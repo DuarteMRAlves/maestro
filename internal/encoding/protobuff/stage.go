@@ -20,8 +20,6 @@ func MarshalStage(s *api.Stage) (*pb.Stage, error) {
 		Service: s.Service,
 		Rpc:     s.Rpc,
 		Address: s.Address,
-		Host:    s.Host,
-		Port:    s.Port,
 	}
 	return pbStage, nil
 }
@@ -39,7 +37,5 @@ func UnmarshalStage(p *pb.Stage) (*api.Stage, error) {
 		Service: p.Service,
 		Rpc:     p.Rpc,
 		Address: p.Address,
-		Host:    p.Host,
-		Port:    p.Port,
 	}, nil
 }

@@ -4,18 +4,15 @@ package api
 // for the maestro server. All calls on external APIs should be redirected
 // through this API that collects all functionality.
 type InternalAPI interface {
-	CreateAsset(config *CreateAssetRequest) error
-	GetAsset(query *GetAssetRequest) ([]*Asset, error)
+	CreateAsset(*CreateAssetRequest) error
+	GetAsset(*GetAssetRequest) ([]*Asset, error)
 
-	CreateStage(config *Stage) error
-	GetStage(query *Stage) ([]*Stage, error)
+	CreateStage(*CreateStageRequest) error
+	GetStage(*GetStageRequest) ([]*Stage, error)
 
 	CreateLink(config *Link) error
 	GetLink(query *Link) ([]*Link, error)
 
 	CreateOrchestration(*CreateOrchestrationRequest) error
-	GetOrchestration(*GetOrchestrationRequest) (
-		[]*Orchestration,
-		error,
-	)
+	GetOrchestration(*GetOrchestrationRequest) ([]*Orchestration, error)
 }

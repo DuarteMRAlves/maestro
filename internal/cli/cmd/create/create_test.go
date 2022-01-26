@@ -26,7 +26,7 @@ func TestCreateWithServer(t *testing.T) {
 		name                  string
 		args                  []string
 		validateAsset         func(*pb.CreateAssetRequest) bool
-		validateStage         func(req *pb.Stage) bool
+		validateStage         func(*pb.CreateStageRequest) bool
 		validateLink          func(req *pb.Link) bool
 		validateOrchestration func(req *pb.CreateOrchestrationRequest) bool
 		expectedOut           string
@@ -46,9 +46,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateStage: func(req *pb.Stage) bool {
-				return equalStage(
-					&pb.Stage{
+			validateStage: func(req *pb.CreateStageRequest) bool {
+				return equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-1",
 						Asset:   "asset-1",
 						Service: "Service1",
@@ -58,8 +58,8 @@ func TestCreateWithServer(t *testing.T) {
 						Port:    0,
 					},
 					req,
-				) || equalStage(
-					&pb.Stage{
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-2",
 						Asset:   "asset-2",
 						Service: "Service2",
@@ -69,8 +69,8 @@ func TestCreateWithServer(t *testing.T) {
 						Port:    0,
 					},
 					req,
-				) || equalStage(
-					&pb.Stage{
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-3",
 						Asset:   "asset-3",
 						Service: "Service3",
@@ -150,9 +150,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateStage: func(req *pb.Stage) bool {
-				return equalStage(
-					&pb.Stage{
+			validateStage: func(req *pb.CreateStageRequest) bool {
+				return equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-4",
 						Asset:   "asset-4",
 						Service: "",
@@ -162,8 +162,8 @@ func TestCreateWithServer(t *testing.T) {
 						Port:    0,
 					},
 					req,
-				) || equalStage(
-					&pb.Stage{
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-5",
 						Asset:   "",
 						Service: "",
@@ -173,8 +173,8 @@ func TestCreateWithServer(t *testing.T) {
 						Port:    0,
 					},
 					req,
-				) || equalStage(
-					&pb.Stage{
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-6",
 						Asset:   "asset-6",
 						Service: "Service6",
@@ -184,8 +184,8 @@ func TestCreateWithServer(t *testing.T) {
 						Port:    0,
 					},
 					req,
-				) || equalStage(
-					&pb.Stage{
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-7",
 						Asset:   "asset-7",
 						Service: "Service7",
@@ -257,9 +257,9 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/asset_not_found.yml",
 			},
-			validateStage: func(req *pb.Stage) bool {
-				return equalStage(
-					&pb.Stage{
+			validateStage: func(req *pb.CreateStageRequest) bool {
+				return equalCreateStageRequest(
+					&pb.CreateStageRequest{
 						Name:    "stage-unknown-asset",
 						Asset:   "unknown-asset",
 						Service: "Service1",
@@ -317,8 +317,8 @@ func TestCreateWithServer(t *testing.T) {
 						*pb.CreateAssetRequest,
 					) (*emptypb.Empty, error)
 					createStageFn func(
-						ctx context.Context,
-						req *pb.Stage,
+						context.Context,
+						*pb.CreateStageRequest,
 					) (*emptypb.Empty, error)
 					createLinkFn func(
 						ctx context.Context,
@@ -353,7 +353,7 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateStage != nil {
 					createStageFn = func(
 						ctx context.Context,
-						req *pb.Stage,
+						req *pb.CreateStageRequest,
 					) (*emptypb.Empty, error) {
 						if !test.validateStage(req) {
 							return nil, fmt.Errorf(

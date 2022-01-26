@@ -17,8 +17,6 @@ func TestMarshalStage(t *testing.T) {
 		stageService               = "stageService"
 		stageRpc                   = "stageRpc"
 		stageAddress               = "stageAddress"
-		stageHost                  = "stageHost"
-		stagePort    int32         = 12345
 	)
 	tests := []*api.Stage{
 		{
@@ -28,8 +26,6 @@ func TestMarshalStage(t *testing.T) {
 			Service: stageService,
 			Rpc:     stageRpc,
 			Address: stageAddress,
-			Host:    stageHost,
-			Port:    stagePort,
 		},
 		{
 			Name:    "",
@@ -38,8 +34,6 @@ func TestMarshalStage(t *testing.T) {
 			Service: "",
 			Rpc:     "",
 			Address: "",
-			Host:    "",
-			Port:    0,
 		},
 	}
 
@@ -58,14 +52,12 @@ func TestMarshalStage(t *testing.T) {
 
 func TestUnmarshalStageCorrect(t *testing.T) {
 	const (
-		stageName          = "Stage Name"
-		stagePhase         = "Running"
-		stageAsset         = "Stage Asset"
-		stageService       = "stageService"
-		stageRpc           = "stageRpc"
-		stageAddress       = "stageAddress"
-		stageHost          = "stageHost"
-		stagePort    int32 = 12345
+		stageName    = "Stage Name"
+		stagePhase   = "Running"
+		stageAsset   = "Stage Asset"
+		stageService = "stageService"
+		stageRpc     = "stageRpc"
+		stageAddress = "stageAddress"
 	)
 	tests := []*pb.Stage{
 		{
@@ -75,8 +67,6 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Service: stageService,
 			Rpc:     stageRpc,
 			Address: stageAddress,
-			Host:    stageHost,
-			Port:    stagePort,
 		},
 		{
 			Name:    "",
@@ -85,8 +75,6 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 			Service: "",
 			Rpc:     "",
 			Address: "",
-			Host:    "",
-			Port:    0,
 		},
 	}
 	for _, s := range tests {
@@ -124,8 +112,6 @@ func assertStage(t *testing.T, expected *api.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
-	assert.Equal(t, expected.Host, actual.Host, "stage host")
-	assert.Equal(t, expected.Port, actual.Port, "stage port")
 }
 
 func assertPbStage(t *testing.T, expected *pb.Stage, actual *api.Stage) {
@@ -135,6 +121,4 @@ func assertPbStage(t *testing.T, expected *pb.Stage, actual *api.Stage) {
 	assert.Equal(t, expected.Service, actual.Service, "stage service")
 	assert.Equal(t, expected.Rpc, actual.Rpc, "stage rpc")
 	assert.Equal(t, expected.Address, actual.Address, "stage address")
-	assert.Equal(t, expected.Host, actual.Host, "stage host")
-	assert.Equal(t, expected.Port, actual.Port, "stage port")
 }

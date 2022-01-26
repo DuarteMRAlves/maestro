@@ -42,12 +42,12 @@ func TestServer_CreateStage(t *testing.T) {
 	defer bothServer.GracefulStop()
 
 	tests := []struct {
-		name   string
-		config *api.Stage
+		name string
+		req  *api.CreateStageRequest
 	}{
 		{
 			name: "nil asset, service and rpc",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name: name,
 				// ExtraServer only has one server and rpc
 				Address: extraAddr,
@@ -55,7 +55,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "no service and specified rpc",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   testutil.AssetNameForNum(0),
 				Service: "",
@@ -66,7 +66,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "with service and no rpc",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.ExtraService",
@@ -77,7 +77,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "with service and rpc",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.TestService",
@@ -88,7 +88,7 @@ func TestServer_CreateStage(t *testing.T) {
 		},
 		{
 			name: "from host and port",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   testutil.AssetNameForNum(0),
 				Service: "pb.TestService",
@@ -122,7 +122,7 @@ func TestServer_CreateStage(t *testing.T) {
 					},
 				)
 				assert.NilError(t, err, "Populate error")
-				err = s.CreateStage(test.config)
+				err = s.CreateStage(test.req)
 				assert.NilError(t, err, "create stage error")
 			},
 		)
@@ -155,32 +155,32 @@ func TestServer_CreateStage_NilConfig(t *testing.T) {
 		errdefs.IsInvalidArgument(err),
 		"error is not InvalidArgument",
 	)
-	expectedMsg := "'cfg' is nil"
+	expectedMsg := "'req' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateStage_InvalidName(t *testing.T) {
 	tests := []struct {
-		name   string
-		config *api.Stage
+		name string
+		req  *api.CreateStageRequest
 	}{
 		{
 			name: "empty name",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  "",
 				Asset: testutil.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid characters in name",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  "some@name",
 				Asset: testutil.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid character sequence",
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  "other-/name",
 				Asset: testutil.AssetNameForNum(0),
 			},
@@ -209,7 +209,7 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 				)
 				assert.NilError(t, err, "Populate error")
 
-				err = s.CreateStage(test.config)
+				err = s.CreateStage(test.req)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -217,7 +217,7 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 				)
 				expectedMsg := fmt.Sprintf(
 					"invalid name '%v'",
-					test.config.Name,
+					test.req.Name,
 				)
 				assert.Error(t, err, expectedMsg)
 			},
@@ -246,7 +246,7 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 	)
 	assert.NilError(t, err, "Populate error")
 
-	config := &api.Stage{
+	config := &api.CreateStageRequest{
 		Name:  name,
 		Asset: testutil.AssetNameForNum(1),
 	}
@@ -288,7 +288,7 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	)
 	assert.NilError(t, err, "Populate error")
 
-	config := &api.Stage{
+	config := &api.CreateStageRequest{
 		Name:    name,
 		Asset:   testutil.AssetNameForNum(0),
 		Service: "pb.TestService",
@@ -311,7 +311,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 		name            string
 		registerTest    bool
 		registerExtra   bool
-		config          *api.Stage
+		req             *api.CreateStageRequest
 		verifyErrTypeFn func(err error) bool
 		expectedErrMsg  string
 	}{
@@ -319,7 +319,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no services",
 			registerTest:  false,
 			registerExtra: false,
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  name,
 				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -335,7 +335,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "too many services",
 			registerTest:  true,
 			registerExtra: true,
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  name,
 				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -351,7 +351,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no such service",
 			registerTest:  true,
 			registerExtra: true,
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   testutil.AssetNameForNum(0),
 				Service: "NoSuchService",
@@ -367,7 +367,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 		{
 			name:         "too many rpcs",
 			registerTest: true,
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  name,
 				Asset: testutil.AssetNameForNum(0),
 				// Address injected during the test to point to the server
@@ -383,7 +383,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			name:          "no such rpc",
 			registerTest:  true,
 			registerExtra: false,
-			config: &api.Stage{
+			req: &api.CreateStageRequest{
 				Name:  name,
 				Asset: testutil.AssetNameForNum(0),
 				Rpc:   "NoSuchRpc",
@@ -431,9 +431,9 @@ func TestServer_CreateStage_Error(t *testing.T) {
 				)
 				assert.NilError(t, err, "Populate error")
 
-				test.config.Address = bothAddr
+				test.req.Address = bothAddr
 
-				err = s.CreateStage(test.config)
+				err = s.CreateStage(test.req)
 				assert.Assert(
 					t,
 					test.verifyErrTypeFn(err),
