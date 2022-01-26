@@ -3,12 +3,12 @@ package protobuff
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
 // MarshalLink returns a protobuf message for the given link.
 func MarshalLink(l *api.Link) (*pb.Link, error) {
-	if ok, err := validate.ArgNotNil(l, "l"); !ok {
+	if ok, err := util.ArgNotNil(l, "l"); !ok {
 		return nil, err
 	}
 	pbLink := &pb.Link{
@@ -23,7 +23,7 @@ func MarshalLink(l *api.Link) (*pb.Link, error) {
 
 // UnmarshalLink returns the link represented by the given protobuf message.
 func UnmarshalLink(p *pb.Link) (*api.Link, error) {
-	if ok, err := validate.ArgNotNil(p, "p"); !ok {
+	if ok, err := util.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
 	return &api.Link{

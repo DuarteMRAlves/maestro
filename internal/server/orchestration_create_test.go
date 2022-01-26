@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -81,9 +81,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			req: &api.CreateOrchestrationRequest{
 				Name: "",
 				Links: []api.LinkName{
-					testutil.LinkNameForNum(0),
-					testutil.LinkNameForNum(1),
-					testutil.LinkNameForNum(2),
+					util.LinkNameForNum(0),
+					util.LinkNameForNum(1),
+					util.LinkNameForNum(2),
 				},
 			},
 		},
@@ -92,9 +92,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			req: &api.CreateOrchestrationRequest{
 				Name: "?orchestration-name",
 				Links: []api.LinkName{
-					testutil.LinkNameForNum(0),
-					testutil.LinkNameForNum(1),
-					testutil.LinkNameForNum(2),
+					util.LinkNameForNum(0),
+					util.LinkNameForNum(1),
+					util.LinkNameForNum(2),
 				},
 			},
 		},
@@ -103,9 +103,9 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			req: &api.CreateOrchestrationRequest{
 				Name: "invalid//name",
 				Links: []api.LinkName{
-					testutil.LinkNameForNum(0),
-					testutil.LinkNameForNum(1),
-					testutil.LinkNameForNum(2),
+					util.LinkNameForNum(0),
+					util.LinkNameForNum(1),
+					util.LinkNameForNum(2),
 				},
 			},
 		},
@@ -160,8 +160,8 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	req := &api.CreateOrchestrationRequest{
 		Name: name,
 		Links: []api.LinkName{
-			testutil.LinkNameForNum(0),
-			testutil.LinkNameForNum(1),
+			util.LinkNameForNum(0),
+			util.LinkNameForNum(1),
 		},
 	}
 

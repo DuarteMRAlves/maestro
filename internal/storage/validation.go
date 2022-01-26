@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -14,7 +14,7 @@ func validateCreateOrchestrationConfig(
 	txn *badger.Txn,
 	req *api.CreateOrchestrationRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(req, "req"); !ok {
+	if ok, err := util.ArgNotNil(req, "req"); !ok {
 		return err
 	}
 	if !IsValidOrchestrationName(req.Name) {
@@ -36,7 +36,7 @@ func (m *manager) validateCreateStageConfig(
 	txn *badger.Txn,
 	req *api.CreateStageRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(req, "req"); !ok {
+	if ok, err := util.ArgNotNil(req, "req"); !ok {
 		return err
 	}
 	if !IsValidStageName(req.Name) {
@@ -78,7 +78,7 @@ func (m *manager) validateCreateLinkConfig(
 	txn *badger.Txn,
 	req *api.CreateLinkRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(req, "req"); !ok {
+	if ok, err := util.ArgNotNil(req, "req"); !ok {
 		return err
 	}
 	if !IsValidLinkName(req.Name) {
@@ -138,7 +138,7 @@ func (m *manager) validateCreateAssetRequest(
 	txn *badger.Txn,
 	req *api.CreateAssetRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(req, "req"); !ok {
+	if ok, err := util.ArgNotNil(req, "req"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
 	if !IsValidAssetName(req.Name) {

@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"net"
@@ -20,26 +20,26 @@ func TestServer_CreateStage(t *testing.T) {
 	)
 	const name = "stage-name"
 
-	lis = testutil.ListenAvailablePort(t)
+	lis = util.NewTestListener(t)
 	tcpAddr, ok := lis.Addr().(*net.TCPAddr)
 	assert.Assert(t, ok, "address type cast")
 	testAddr := tcpAddr.String()
 	testHost := tcpAddr.IP.String()
 	testPort := tcpAddr.Port
 	registerTest, registerExtra = true, false
-	testServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	testServer := util.StartTestServer(t, lis, registerTest, registerExtra)
 	defer testServer.GracefulStop()
 
-	lis = testutil.ListenAvailablePort(t)
+	lis = util.NewTestListener(t)
 	extraAddr := lis.Addr().String()
 	registerTest, registerExtra = false, true
-	extraServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	extraServer := util.StartTestServer(t, lis, registerTest, registerExtra)
 	defer extraServer.GracefulStop()
 
-	lis = testutil.ListenAvailablePort(t)
+	lis = util.NewTestListener(t)
 	bothAddr := lis.Addr().String()
 	registerTest, registerExtra = true, true
-	bothServer := testutil.StartTestServer(t, lis, registerTest, registerExtra)
+	bothServer := util.StartTestServer(t, lis, registerTest, registerExtra)
 	defer bothServer.GracefulStop()
 
 	tests := []struct {
@@ -58,7 +58,7 @@ func TestServer_CreateStage(t *testing.T) {
 			name: "no service and specified rpc",
 			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   testutil.AssetNameForNum(0),
+				Asset:   util.AssetNameForNum(0),
 				Service: "",
 				Rpc:     "Unary",
 				// testServer only has one service but four rpcs
@@ -69,7 +69,7 @@ func TestServer_CreateStage(t *testing.T) {
 			name: "with service and no rpc",
 			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   testutil.AssetNameForNum(0),
+				Asset:   util.AssetNameForNum(0),
 				Service: "pb.ExtraService",
 				Rpc:     "",
 				// both has two services and one rpc for ExtraService
@@ -80,7 +80,7 @@ func TestServer_CreateStage(t *testing.T) {
 			name: "with service and rpc",
 			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   testutil.AssetNameForNum(0),
+				Asset:   util.AssetNameForNum(0),
 				Service: "pb.TestService",
 				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
@@ -91,7 +91,7 @@ func TestServer_CreateStage(t *testing.T) {
 			name: "from host and port",
 			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   testutil.AssetNameForNum(0),
+				Asset:   util.AssetNameForNum(0),
 				Service: "pb.TestService",
 				Rpc:     "Unary",
 				// both has two services and four rpcs for TestService
@@ -169,21 +169,21 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 			name: "empty name",
 			req: &api.CreateStageRequest{
 				Name:  "",
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid characters in name",
 			req: &api.CreateStageRequest{
 				Name:  "some@name",
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 			},
 		},
 		{
 			name: "invalid character sequence",
 			req: &api.CreateStageRequest{
 				Name:  "other-/name",
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 			},
 		},
 	}
@@ -249,14 +249,14 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 
 	config := &api.CreateStageRequest{
 		Name:  name,
-		Asset: testutil.AssetNameForNum(1),
+		Asset: util.AssetNameForNum(1),
 	}
 
 	err = s.CreateStage(config)
 	assert.Assert(t, errdefs.IsNotFound(err), "error is not NotFound")
 	expectedMsg := fmt.Sprintf(
 		"asset '%v' not found",
-		testutil.AssetNameForNum(1),
+		util.AssetNameForNum(1),
 	)
 	assert.Error(t, err, expectedMsg)
 }
@@ -265,9 +265,9 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "stage-name"
 
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	bothAddr := lis.Addr().String()
-	bothServer := testutil.StartTestServer(t, lis, true, true)
+	bothServer := util.StartTestServer(t, lis, true, true)
 	defer bothServer.GracefulStop()
 
 	db, err := badger.Open(
@@ -291,7 +291,7 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 
 	config := &api.CreateStageRequest{
 		Name:    name,
-		Asset:   testutil.AssetNameForNum(0),
+		Asset:   util.AssetNameForNum(0),
 		Service: "pb.TestService",
 		Rpc:     "Unary",
 		// both has two services and four rpcs for TestService
@@ -322,7 +322,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerExtra: false,
 			req: &api.CreateStageRequest{
 				Name:  name,
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
@@ -338,7 +338,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerExtra: true,
 			req: &api.CreateStageRequest{
 				Name:  name,
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
@@ -354,7 +354,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerExtra: true,
 			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   testutil.AssetNameForNum(0),
+				Asset:   util.AssetNameForNum(0),
 				Service: "NoSuchService",
 				// Address injected during the test to point to the server
 			},
@@ -370,7 +370,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerTest: true,
 			req: &api.CreateStageRequest{
 				Name:  name,
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 				// Address injected during the test to point to the server
 			},
 			verifyErrTypeFn: errdefs.IsInvalidArgument,
@@ -386,7 +386,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			registerExtra: false,
 			req: &api.CreateStageRequest{
 				Name:  name,
-				Asset: testutil.AssetNameForNum(0),
+				Asset: util.AssetNameForNum(0),
 				Rpc:   "NoSuchRpc",
 				// Address injected during the test to point to the server
 			},
@@ -403,9 +403,9 @@ func TestServer_CreateStage_Error(t *testing.T) {
 			func(t *testing.T) {
 				var err error
 
-				lis := testutil.ListenAvailablePort(t)
+				lis := util.NewTestListener(t)
 				bothAddr := lis.Addr().String()
-				bothServer := testutil.StartTestServer(
+				bothServer := util.StartTestServer(
 					t,
 					lis,
 					test.registerTest,

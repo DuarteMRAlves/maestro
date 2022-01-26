@@ -1,7 +1,7 @@
 package reflection
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -20,7 +20,7 @@ type rpc struct {
 }
 
 func newRPC(desc *desc.MethodDescriptor) (RPC, error) {
-	if ok, err := validate.ArgNotNil(desc, "desc"); !ok {
+	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
 		return nil, err
 	}
 	r := &rpc{desc: desc}

@@ -1,7 +1,7 @@
 package reflection
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -29,7 +29,7 @@ type message struct {
 }
 
 func NewMessage(desc *desc.MessageDescriptor) (Message, error) {
-	if ok, err := validate.ArgNotNil(desc, "desc"); !ok {
+	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
 		return nil, err
 	}
 	s := newMessageInternal(desc)

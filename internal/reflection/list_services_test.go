@@ -3,7 +3,7 @@ package reflection
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,7 +11,7 @@ import (
 )
 
 func TestClient_ListServices(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -45,12 +45,13 @@ func TestClient_ListServices(t *testing.T) {
 			1,
 			count,
 			"service %v did not appear only once",
-			service)
+			service,
+		)
 	}
 }
 
 func TestClient_ListServicesNoReflection(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
