@@ -1,4 +1,4 @@
-package reflection
+package rpc
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 // Manager stores the RPC objects for a given stage.
 type Manager interface {
-	// FindRpc searches for a given RPC using reflection. It then caches the rpc
+	// FindRpc searches for a given RPC using rpc. It then caches the rpc
 	// to be later used. The RPC is associated with the received stage name.
 	FindRpc(context.Context, api.StageName, *FindQuery) error
 	// GetRpc retrieves an already loaded RPC associated with the given stage.
@@ -43,7 +43,7 @@ func (m *manager) FindRpc(
 	stage api.StageName,
 	cfg *FindQuery,
 ) error {
-	reflectionClient := NewClient(ctx, cfg.Conn)
+	reflectionClient := NewReflectionClient(ctx, cfg.Conn)
 	availableServices, err := reflectionClient.ListServices()
 	if err != nil {
 		return errdefs.PrependMsg(err, "find rpc")

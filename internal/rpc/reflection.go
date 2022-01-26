@@ -1,4 +1,4 @@
-package reflection
+package rpc
 
 import (
 	"context"
@@ -13,26 +13,29 @@ import (
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
-// Client exposes an API for grpc reflection operations
-type Client interface {
+// ReflectionClient exposes an API for grpc reflection operations
+type ReflectionClient interface {
 	ListServices() ([]string, error)
 	ResolveService(name string) (Service, error)
 }
 
-type client struct {
+type reflectionClient struct {
 	client *grpcreflect.Client
 }
 
-// NewClient returns a new Client with the given context and connection
-func NewClient(ctx context.Context, conn grpc.ClientConnInterface) Client {
+// NewReflectionClient returns a new ReflectionClient with the given context and connection
+func NewReflectionClient(
+	ctx context.Context,
+	conn grpc.ClientConnInterface,
+) ReflectionClient {
 	stub := gr.NewServerReflectionClient(conn)
 	c := grpcreflect.NewClient(ctx, stub)
-	return &client{client: c}
+	return &reflectionClient{client: c}
 }
 
 // ListServices lists the services available in the server. It does not show the
 // reflection service that is activated.
-func (c *client) ListServices() ([]string, error) {
+func (c *reflectionClient) ListServices() ([]string, error) {
 	all, err := c.client.ListServices()
 	if err != nil {
 		return nil, handleGrpcError(err, "list services: ")
@@ -48,7 +51,7 @@ func (c *client) ListServices() ([]string, error) {
 }
 
 // ResolveService returns a descriptor for the service with the given name.
-func (c *client) ResolveService(name string) (Service, error) {
+func (c *reflectionClient) ResolveService(name string) (Service, error) {
 	desc, err := c.resolveServiceDesc(name)
 	if err != nil {
 		return nil, err
@@ -56,7 +59,7 @@ func (c *client) ResolveService(name string) (Service, error) {
 	return newService(desc)
 }
 
-func (c *client) resolveServiceDesc(name string) (
+func (c *reflectionClient) resolveServiceDesc(name string) (
 	*desc.ServiceDescriptor,
 	error,
 ) {
@@ -68,7 +71,8 @@ func (c *client) resolveServiceDesc(name string) (
 		case isElementNotFoundErr(err):
 			return nil, errdefs.NotFoundWithMsg(
 				"resolve service: %v",
-				err.Error())
+				err.Error(),
+			)
 		case isProtocolError(err):
 			return nil, errdefs.UnknownWithError(err)
 		default:
@@ -94,6 +98,6 @@ func handleGrpcError(err error, prependMsg string) error {
 		// case reflection, it is a failed precondition.
 		return errdefs.FailedPreconditionWithMsg("%v%v", prependMsg, st.Err())
 	default:
-		return errdefs.UnknownWithError(st.Err())
+		return errdefs.UnknownWithMsg("%s%s", prependMsg, st.Err())
 	}
 }

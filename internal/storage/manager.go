@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"google.golang.org/grpc"
 	"time"
@@ -59,10 +59,10 @@ type Manager interface {
 }
 
 type manager struct {
-	reflectionManager reflection.Manager
+	reflectionManager rpc.Manager
 }
 
-func NewManager(reflectionManager reflection.Manager) Manager {
+func NewManager(reflectionManager rpc.Manager) Manager {
 	return &manager{
 		reflectionManager: reflectionManager,
 	}
@@ -183,7 +183,7 @@ func (m *manager) inferRpc(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	rpcDiscoveryCfg := &reflection.FindQuery{
+	rpcDiscoveryCfg := &rpc.FindQuery{
 		Conn:    conn,
 		Service: req.Service,
 		Rpc:     req.Rpc,

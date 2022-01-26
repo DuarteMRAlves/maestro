@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/execution"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
@@ -18,7 +18,7 @@ const grpcNotConfigured = "grpc server not configured"
 type Server struct {
 	storageManager    storage.Manager
 	flowManager       execution.Manager
-	reflectionManager reflection.Manager
+	reflectionManager rpc.Manager
 
 	grpcServer *grpc.Server
 

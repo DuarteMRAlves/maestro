@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
@@ -30,14 +30,14 @@ func mockStage(
 	num int,
 	req interface{},
 	res interface{},
-	rpcManager *reflection.MockManager,
+	rpcManager *rpc.MockManager,
 ) *api.Stage {
 	reqType := reflect.TypeOf(req)
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
 	assert.NilError(t, err, fmt.Sprintf("load req desc for stage: %d\n", num))
 
-	reqMsg, err := reflection.NewMessage(reqDesc)
+	reqMsg, err := rpc.NewMessage(reqDesc)
 	assert.NilError(t, err, fmt.Sprintf("load req msg for stage: %d\n", num))
 
 	resType := reflect.TypeOf(res)
@@ -45,12 +45,12 @@ func mockStage(
 	resDesc, err := desc.LoadMessageDescriptorForType(resType)
 	assert.NilError(t, err, fmt.Sprintf("load res desc for stage: %d\n", num))
 
-	resMsg, err := reflection.NewMessage(resDesc)
+	resMsg, err := rpc.NewMessage(resDesc)
 	assert.NilError(t, err, fmt.Sprintf("load res desc for stage: %d\n", num))
 
 	rpcManager.Rpcs.Store(
 		util.StageNameForNum(num),
-		&reflection.MockRPC{
+		&rpc.MockRPC{
 			Name_: util.StageRpcForNum(num),
 			FQN: fmt.Sprintf(
 				"%s/%s",

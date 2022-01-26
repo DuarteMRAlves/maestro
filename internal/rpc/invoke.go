@@ -1,11 +1,8 @@
-package invoke
+package rpc
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // UnaryClient exposes an API to invoke unary grpc methods. It requires a
@@ -36,23 +33,5 @@ func (u *unaryClient) Invoke(
 	reply interface{},
 ) error {
 	err := u.conn.Invoke(ctx, u.method, args, reply)
-	return handleGrpcError(err)
-}
-
-func handleGrpcError(err error) error {
-	if err == nil {
-		return nil
-	}
-	st, _ := status.FromError(err)
-	switch st.Code() {
-	case codes.Unavailable, codes.Unimplemented:
-		// Unavailable is for the case where maestro is not running. When a
-		// stage is not running, it is a failed precondition.
-		// Unimplemented is when the maestro server does not implement a given
-		// method. When a stage does not have an implemented method, it is a
-		// failed precondition.
-		return errdefs.FailedPreconditionWithMsg("unary invoke: %v", st.Err())
-	default:
-		return errdefs.UnknownWithMsg("unary invoke: %v", st.Err())
-	}
+	return handleGrpcError(err, "unary invoke: ")
 }

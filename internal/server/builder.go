@@ -5,7 +5,7 @@ import (
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/execution"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -13,7 +13,7 @@ import (
 )
 
 type Builder struct {
-	reflectionManager reflection.Manager
+	reflectionManager rpc.Manager
 
 	grpcActive bool
 	grpcOpts   []grpc.ServerOption
@@ -51,7 +51,7 @@ func (b *Builder) WithLogger(logger *zap.Logger) *Builder {
 	return b
 }
 
-func (b *Builder) WithReflectionManager(m reflection.Manager) *Builder {
+func (b *Builder) WithReflectionManager(m rpc.Manager) *Builder {
 	b.reflectionManager = m
 	return b
 }
@@ -86,7 +86,7 @@ func (b *Builder) complete() error {
 		}
 	}
 	if b.reflectionManager == nil {
-		b.reflectionManager = reflection.NewManager()
+		b.reflectionManager = rpc.NewManager()
 	}
 	return nil
 }

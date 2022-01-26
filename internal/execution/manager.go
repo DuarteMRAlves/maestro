@@ -9,7 +9,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/execution/input"
 	"github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/execution/worker"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"sync"
 )
 
@@ -32,10 +32,10 @@ type manager struct {
 	connections map[api.LinkName]*connection.Connection
 	flows       map[api.OrchestrationName]*flow.Flow
 
-	reflectionManager reflection.Manager
+	reflectionManager rpc.Manager
 }
 
-func NewManager(reflectionManager reflection.Manager) Manager {
+func NewManager(reflectionManager rpc.Manager) Manager {
 	return &manager{
 		workers:           map[api.StageName]worker.Worker{},
 		inputs:            map[api.StageName]*input.Cfg{},
@@ -204,7 +204,7 @@ func (m *manager) outputCfgForStage(s *api.Stage) *output.Cfg {
 	return cfg
 }
 
-func workerCfgForStage(s *api.Stage, rpc reflection.RPC) *worker.Cfg {
+func workerCfgForStage(s *api.Stage, rpc rpc.RPC) *worker.Cfg {
 	return &worker.Cfg{
 		Address: s.Address,
 		Rpc:     rpc,

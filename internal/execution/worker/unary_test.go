@@ -4,7 +4,7 @@ import (
 	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
 	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/execution/state"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
@@ -20,7 +20,7 @@ func TestUnaryWorker_Run(t *testing.T) {
 	server := util.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
-	rpc := &reflection.MockRPC{
+	rpc := &rpc.MockRPC{
 		Name_: "Unary",
 		FQN:   "pb.TestService/Unary",
 		In:    requestMessage(t),
@@ -96,25 +96,25 @@ func TestUnaryWorker_Run(t *testing.T) {
 	}
 }
 
-func requestMessage(t *testing.T) reflection.Message {
+func requestMessage(t *testing.T) rpc.Message {
 	reqType := reflect.TypeOf(pb.Request{})
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
 	assert.NilError(t, err, "load desc Request")
 
-	msg, err := reflection.NewMessage(reqDesc)
+	msg, err := rpc.NewMessage(reqDesc)
 	assert.NilError(t, err, "message Request")
 
 	return msg
 }
 
-func replyMessage(t *testing.T) reflection.Message {
+func replyMessage(t *testing.T) rpc.Message {
 	repType := reflect.TypeOf(pb.Reply{})
 
 	repDesc, err := desc.LoadMessageDescriptorForType(repType)
 	assert.NilError(t, err, "load desc Reply")
 
-	msg, err := reflection.NewMessage(repDesc)
+	msg, err := rpc.NewMessage(repDesc)
 	assert.NilError(t, err, "message Reply")
 
 	return msg

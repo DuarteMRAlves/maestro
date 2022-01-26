@@ -1,4 +1,4 @@
-package reflection
+package rpc
 
 import (
 	"github.com/jhump/protoreflect/grpcreflect"

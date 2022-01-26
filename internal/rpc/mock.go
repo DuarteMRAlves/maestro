@@ -1,4 +1,4 @@
-package reflection
+package rpc
 
 import (
 	"context"
@@ -26,7 +26,7 @@ func (m *MockManager) GetRpc(stage api.StageName) (RPC, bool) {
 	return rpc.(RPC), true
 }
 
-// MockService is a mock that implements the reflection.MockService interface to allow
+// MockService is a mock that implements the rpc.MockService interface to allow
 // for easy testing.
 type MockService struct {
 	Name_ string
@@ -46,7 +46,7 @@ func (s *MockService) RPCs() []RPC {
 	return s.RPCs_
 }
 
-// MockRPC is a mock struct that implements the reflection.MockRPC interface to
+// MockRPC is a mock struct that implements the rpc.MockRPC interface to
 // allow for easy testing.
 type MockRPC struct {
 	Name_    string
