@@ -3,7 +3,6 @@ package resources
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -67,7 +66,7 @@ var expected = []*Resource{
 	},
 	{
 		Kind: stageKind,
-		Spec: &apitypes.Stage{
+		Spec: &api.Stage{
 			Name:    stageName,
 			Asset:   stageAsset,
 			Service: stageService,
@@ -76,7 +75,7 @@ var expected = []*Resource{
 	},
 	{
 		Kind: linkKind,
-		Spec: &apitypes.Link{
+		Spec: &api.Link{
 			Name:        linkName,
 			SourceStage: linkSourceStage,
 			SourceField: linkSourceField,

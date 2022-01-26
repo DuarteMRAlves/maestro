@@ -1,25 +1,21 @@
 package api
 
-import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
-)
-
 // InternalAPI is an interface that collects all the available commands
 // for the maestro server. All calls on external APIs should be redirected
 // through this API that collects all functionality.
 type InternalAPI interface {
 	CreateAsset(config *CreateAssetRequest) error
-	GetAsset(query *GetAssetRequest) ([]*apitypes.Asset, error)
+	GetAsset(query *GetAssetRequest) ([]*Asset, error)
 
-	CreateStage(config *apitypes.Stage) error
-	GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error)
+	CreateStage(config *Stage) error
+	GetStage(query *Stage) ([]*Stage, error)
 
-	CreateLink(config *apitypes.Link) error
-	GetLink(query *apitypes.Link) ([]*apitypes.Link, error)
+	CreateLink(config *Link) error
+	GetLink(query *Link) ([]*Link, error)
 
 	CreateOrchestration(*CreateOrchestrationRequest) error
 	GetOrchestration(*GetOrchestrationRequest) (
-		[]*apitypes.Orchestration,
+		[]*Orchestration,
 		error,
 	)
 }

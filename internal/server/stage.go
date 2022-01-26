@@ -1,14 +1,14 @@
 package server
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 )
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateStage(cfg *apitypes.Stage) error {
+func (s *Server) CreateStage(cfg *api.Stage) error {
 	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
@@ -21,9 +21,9 @@ func (s *Server) CreateStage(cfg *apitypes.Stage) error {
 	)
 }
 
-func (s *Server) GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error) {
+func (s *Server) GetStage(query *api.Stage) ([]*api.Stage, error) {
 	var (
-		stages []*apitypes.Stage
+		stages []*api.Stage
 		err    error
 	)
 	s.logger.Info("Get Stage.", logStage(query, "query")...)
@@ -39,7 +39,7 @@ func (s *Server) GetStage(query *apitypes.Stage) ([]*apitypes.Stage, error) {
 	return stages, nil
 }
 
-func logStage(s *apitypes.Stage, field string) []zap.Field {
+func logStage(s *api.Stage, field string) []zap.Field {
 	if s == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}

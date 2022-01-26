@@ -3,7 +3,6 @@ package resources
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
@@ -75,9 +74,9 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case assetKind:
 		r.Spec = new(api.CreateAssetRequest)
 	case stageKind:
-		r.Spec = new(apitypes.Stage)
+		r.Spec = new(api.Stage)
 	case linkKind:
-		r.Spec = new(apitypes.Link)
+		r.Spec = new(api.Link)
 	case orchestrationKind:
 		r.Spec = new(api.CreateOrchestrationRequest)
 	default:

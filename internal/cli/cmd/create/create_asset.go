@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -81,7 +80,7 @@ func (o *AssetOpts) validate() error {
 
 func (o *AssetOpts) run() error {
 	req := &api.CreateAssetRequest{
-		Name:  apitypes.AssetName(o.name),
+		Name:  api.AssetName(o.name),
 		Image: o.image,
 	}
 

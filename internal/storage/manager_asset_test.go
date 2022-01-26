@@ -3,7 +3,6 @@ package storage
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
@@ -18,7 +17,7 @@ func TestManager_CreateAsset(t *testing.T) {
 		assetImage = "Asset-Image"
 	)
 	var (
-		asset apitypes.Asset
+		asset api.Asset
 		err   error
 	)
 	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
@@ -84,7 +83,7 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 		assetImage = "Asset-Image"
 	)
 	var (
-		asset apitypes.Asset
+		asset api.Asset
 		err   error
 	)
 	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
@@ -150,31 +149,31 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 		// numbers to store
 		stored []int
 		// names of the expected assets
-		expected []apitypes.AssetName
+		expected []api.AssetName
 	}{
 		{
 			name:     "zero elements store, nil req",
 			req:      nil,
 			stored:   []int{},
-			expected: []apitypes.AssetName{},
+			expected: []api.AssetName{},
 		},
 		{
 			name:     "zero elements store, some req",
 			req:      &api.GetAssetRequest{Name: "some-name"},
 			stored:   []int{},
-			expected: []apitypes.AssetName{},
+			expected: []api.AssetName{},
 		},
 		{
 			name:     "one element stored, nil req",
 			req:      nil,
 			stored:   []int{0},
-			expected: []apitypes.AssetName{testutil.AssetNameForNum(0)},
+			expected: []api.AssetName{testutil.AssetNameForNum(0)},
 		},
 		{
 			name:   "multiple elements stored, nil req",
 			req:    nil,
 			stored: []int{0, 1, 2},
-			expected: []apitypes.AssetName{
+			expected: []api.AssetName{
 				testutil.AssetNameForNum(0),
 				testutil.AssetNameForNum(1),
 				testutil.AssetNameForNum(2),
@@ -184,31 +183,31 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			name:     "multiple elements stored, matching name req",
 			req:      &api.GetAssetRequest{Name: testutil.AssetNameForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
+			expected: []api.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
 			name:     "multiple elements stored, non-matching name req",
 			req:      &api.GetAssetRequest{Name: "unknown-name"},
 			stored:   []int{0, 1, 2},
-			expected: []apitypes.AssetName{},
+			expected: []api.AssetName{},
 		},
 		{
 			name:     "multiple elements stored, matching image req",
 			req:      &api.GetAssetRequest{Image: testutil.AssetImageForNum(2)},
 			stored:   []int{0, 1, 2},
-			expected: []apitypes.AssetName{testutil.AssetNameForNum(2)},
+			expected: []api.AssetName{testutil.AssetNameForNum(2)},
 		},
 		{
 			req:      &api.GetAssetRequest{Image: "unknown-image"},
 			stored:   []int{0, 1, 2},
-			expected: []apitypes.AssetName{},
+			expected: []api.AssetName{},
 		},
 	}
 	for _, test := range tests {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var received []*apitypes.Asset
+				var received []*api.Asset
 
 				m := NewManager(reflection.NewManager())
 
@@ -234,7 +233,7 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 				assert.NilError(t, err, "get assets")
 				assert.Equal(t, len(test.expected), len(received))
 
-				seen := make(map[apitypes.AssetName]bool, 0)
+				seen := make(map[api.AssetName]bool, 0)
 				for _, e := range test.expected {
 					seen[e] = false
 				}

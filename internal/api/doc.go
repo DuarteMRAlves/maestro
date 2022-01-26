@@ -1,4 +1,4 @@
-// Package types defines generic types that are used in the maestro API. These
+// Package api defines generic types that are used in the maestro API. These
 // types are independent of the technology used to send the messages and will
 // be received and returned by the InternalAPI for the maestro server.
 //
@@ -8,4 +8,8 @@
 // * non-empty - the field should have at least on element.
 // * unique - the field should have a unique value for each object.
 // * conflicts: <field> - the field should not be defined if <field> is specified.
-package types
+//
+// This package also defines several messages, used to communicate with the
+// maestro server. The messages follow the same annotation reference as the
+// types.
+package api

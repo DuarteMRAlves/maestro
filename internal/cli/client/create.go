@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -29,7 +28,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsStageKind():
-		s, ok := resource.Spec.(*apitypes.Stage)
+		s, ok := resource.Spec.(*api.Stage)
 		if !ok {
 			return errdefs.InternalWithMsg("stage spec cast failed: %v", s)
 		}
@@ -38,7 +37,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsLinkKind():
-		l, ok := resource.Spec.(*apitypes.Link)
+		l, ok := resource.Spec.(*api.Link)
 		if !ok {
 			return errdefs.InternalWithMsg("link spec cast failed: %v", l)
 		}
@@ -79,7 +78,7 @@ func (c *client) CreateAsset(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
+func (c *client) CreateStage(ctx context.Context, stage *api.Stage) error {
 	s := &pb.Stage{
 		Name:    string(stage.Name),
 		Asset:   string(stage.Asset),
@@ -97,7 +96,7 @@ func (c *client) CreateStage(ctx context.Context, stage *apitypes.Stage) error {
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateLink(ctx context.Context, link *apitypes.Link) error {
+func (c *client) CreateLink(ctx context.Context, link *api.Link) error {
 	l := &pb.Link{
 		Name:        string(link.Name),
 		SourceStage: string(link.SourceStage),

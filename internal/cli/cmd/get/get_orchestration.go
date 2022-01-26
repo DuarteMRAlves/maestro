@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -86,13 +86,13 @@ func (o *OrchestrationOpts) complete(
 // be executed
 func (o *OrchestrationOpts) validate() error {
 	if o.phase != "" {
-		phase := apitypes.OrchestrationPhase(o.phase)
+		phase := api.OrchestrationPhase(o.phase)
 		switch phase {
 		case
-			apitypes.OrchestrationPending,
-			apitypes.OrchestrationRunning,
-			apitypes.OrchestrationSucceeded,
-			apitypes.OrchestrationFailed:
+			api.OrchestrationPending,
+			api.OrchestrationRunning,
+			api.OrchestrationSucceeded,
+			api.OrchestrationFailed:
 			// Do nothing
 		default:
 			return errdefs.InvalidArgumentWithMsg("unknown phase: %v", phase)

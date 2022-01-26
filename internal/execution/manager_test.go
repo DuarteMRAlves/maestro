@@ -1,7 +1,7 @@
 package execution
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
@@ -48,7 +48,7 @@ func stage1(t *testing.T, rpcManager *reflection.MockManager) *storage.Stage {
 	assert.NilError(t, err, "test message 1")
 
 	rpcManager.Rpcs.Store(
-		apitypes.StageName("stage-1"),
+		api.StageName("stage-1"),
 		&reflection.MockRPC{
 			Name_: "rpc-1",
 			FQN:   "service-1/rpc-1",
@@ -75,7 +75,7 @@ func stage2(t *testing.T, rpcManager *reflection.MockManager) *storage.Stage {
 	assert.NilError(t, err, "test message 2")
 
 	rpcManager.Rpcs.Store(
-		apitypes.StageName("stage-2"),
+		api.StageName("stage-2"),
 		&reflection.MockRPC{
 			Name_: "rpc-2",
 			FQN:   "service-2/rpc-2",

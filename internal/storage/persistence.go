@@ -3,16 +3,16 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
 )
 
-func orchestrationKey(name apitypes.OrchestrationName) []byte {
+func orchestrationKey(name api.OrchestrationName) []byte {
 	return []byte(fmt.Sprintf("orchestration:%s", name))
 }
 
-func persistOrchestration(txn *badger.Txn, o *apitypes.Orchestration) error {
+func persistOrchestration(txn *badger.Txn, o *api.Orchestration) error {
 	var (
 		buf bytes.Buffer
 		err error
@@ -28,13 +28,13 @@ func persistOrchestration(txn *badger.Txn, o *apitypes.Orchestration) error {
 	return nil
 }
 
-func loadOrchestration(o *apitypes.Orchestration, data []byte) error {
+func loadOrchestration(o *api.Orchestration, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	_, err := fmt.Fscanln(buf, &o.Name, &o.Phase)
 	return err
 }
 
-func stageKey(name apitypes.StageName) []byte {
+func stageKey(name api.StageName) []byte {
 	return []byte(fmt.Sprintf("stage:%s", name))
 }
 
@@ -76,7 +76,7 @@ func loadStage(s *Stage, data []byte) error {
 	return err
 }
 
-func linkKey(name apitypes.LinkName) []byte {
+func linkKey(name api.LinkName) []byte {
 	return []byte(fmt.Sprintf("link:%s", name))
 }
 
@@ -117,11 +117,11 @@ func loadLink(l *Link, data []byte) error {
 }
 
 // assetKey returns the image key for an asset with the given name
-func assetKey(name apitypes.AssetName) []byte {
+func assetKey(name api.AssetName) []byte {
 	return []byte(fmt.Sprintf("asset:%s", name))
 }
 
-func PersistAsset(txn *badger.Txn, a *apitypes.Asset) error {
+func PersistAsset(txn *badger.Txn, a *api.Asset) error {
 	var (
 		buf bytes.Buffer
 		err error
@@ -137,7 +137,7 @@ func PersistAsset(txn *badger.Txn, a *apitypes.Asset) error {
 	return nil
 }
 
-func loadAsset(a *apitypes.Asset, data []byte) error {
+func loadAsset(a *api.Asset, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	_, err := fmt.Fscanln(buf, &a.Name, &a.Image)
 	return err

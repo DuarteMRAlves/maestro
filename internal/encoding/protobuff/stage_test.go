@@ -3,7 +3,7 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,16 +11,16 @@ import (
 
 func TestMarshalStage(t *testing.T) {
 	const (
-		stageName    apitypes.StageName = "Stage Name"
-		stagePhase                      = apitypes.StagePending
-		stageAsset                      = "Stage Asset"
-		stageService                    = "stageService"
-		stageRpc                        = "stageRpc"
-		stageAddress                    = "stageAddress"
-		stageHost                       = "stageHost"
-		stagePort    int32              = 12345
+		stageName    api.StageName = "Stage Name"
+		stagePhase                 = api.StagePending
+		stageAsset                 = "Stage Asset"
+		stageService               = "stageService"
+		stageRpc                   = "stageRpc"
+		stageAddress               = "stageAddress"
+		stageHost                  = "stageHost"
+		stagePort    int32         = 12345
 	)
-	tests := []*apitypes.Stage{
+	tests := []*api.Stage{
 		{
 			Name:    stageName,
 			Phase:   stagePhase,
@@ -51,7 +51,8 @@ func TestMarshalStage(t *testing.T) {
 				res, err := MarshalStage(s)
 				assert.NilError(t, err, "marshal error")
 				assertStage(t, s, res)
-			})
+			},
+		)
 	}
 }
 
@@ -97,7 +98,8 @@ func TestUnmarshalStageCorrect(t *testing.T) {
 				res, err := UnmarshalStage(s)
 				assert.Equal(t, nil, err, "unmarshal error")
 				assertPbStage(t, s, res)
-			})
+			},
+		)
 	}
 }
 
@@ -115,7 +117,7 @@ func TestUnmarshalStageNil(t *testing.T) {
 	assert.Assert(t, res == nil, "nil return value")
 }
 
-func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
+func assertStage(t *testing.T, expected *api.Stage, actual *pb.Stage) {
 	assert.Equal(t, string(expected.Name), actual.Name, "stage assetName")
 	assert.Equal(t, string(expected.Phase), actual.Phase, "stage phase")
 	assert.Equal(t, string(expected.Asset), actual.Asset, "asset id")
@@ -126,7 +128,7 @@ func assertStage(t *testing.T, expected *apitypes.Stage, actual *pb.Stage) {
 	assert.Equal(t, expected.Port, actual.Port, "stage port")
 }
 
-func assertPbStage(t *testing.T, expected *pb.Stage, actual *apitypes.Stage) {
+func assertPbStage(t *testing.T, expected *pb.Stage, actual *api.Stage) {
 	assert.Equal(t, expected.Name, string(actual.Name), "stage assetName")
 	assert.Equal(t, expected.Phase, string(actual.Phase), "stage phase")
 	assert.Equal(t, expected.Asset, string(actual.Asset), "asset id")

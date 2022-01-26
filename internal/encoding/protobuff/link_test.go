@@ -3,7 +3,7 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,13 +11,13 @@ import (
 
 func TestMarshalLink(t *testing.T) {
 	const (
-		name        apitypes.LinkName  = "name"
-		sourceStage apitypes.StageName = "sourceStage"
-		sourceField                    = "sourceField"
-		targetStage apitypes.StageName = "targetStage"
-		targetField                    = "targetField"
+		name        api.LinkName  = "name"
+		sourceStage api.StageName = "sourceStage"
+		sourceField               = "sourceField"
+		targetStage api.StageName = "targetStage"
+		targetField               = "targetField"
 	)
-	tests := []*apitypes.Link{
+	tests := []*api.Link{
 		{
 			Name:        name,
 			SourceStage: sourceStage,
@@ -42,7 +42,8 @@ func TestMarshalLink(t *testing.T) {
 				res, err := MarshalLink(l)
 				assert.NilError(t, err, "marshal error")
 				assertLink(t, l, res)
-			})
+			},
+		)
 	}
 }
 
@@ -79,7 +80,8 @@ func TestUnmarshalLinkCorrect(t *testing.T) {
 				res, err := UnmarshalLink(l)
 				assert.NilError(t, err, "unmarshal error")
 				assertPbLink(t, l, res)
-			})
+			},
+		)
 	}
 }
 
@@ -97,34 +99,58 @@ func TestUnmarshalLinkNil(t *testing.T) {
 	assert.Assert(t, res == nil, "nil return value")
 }
 
-func assertLink(t *testing.T, expected *apitypes.Link, actual *pb.Link) {
+func assertLink(t *testing.T, expected *api.Link, actual *pb.Link) {
 	assert.Equal(t, string(expected.Name), actual.Name, "name")
-	assert.Equal(t, string(expected.SourceStage), actual.SourceStage, "source id")
+	assert.Equal(
+		t,
+		string(expected.SourceStage),
+		actual.SourceStage,
+		"source id",
+	)
 	assert.Equal(
 		t,
 		expected.SourceField,
 		actual.SourceField,
-		"source field")
-	assert.Equal(t, string(expected.TargetStage), actual.TargetStage, "target id")
+		"source field",
+	)
+	assert.Equal(
+		t,
+		string(expected.TargetStage),
+		actual.TargetStage,
+		"target id",
+	)
 	assert.Equal(
 		t,
 		expected.TargetField,
 		actual.TargetField,
-		"target field")
+		"target field",
+	)
 }
 
-func assertPbLink(t *testing.T, expected *pb.Link, actual *apitypes.Link) {
+func assertPbLink(t *testing.T, expected *pb.Link, actual *api.Link) {
 	assert.Equal(t, expected.Name, string(actual.Name), "name")
-	assert.Equal(t, expected.SourceStage, string(actual.SourceStage), "source id")
+	assert.Equal(
+		t,
+		expected.SourceStage,
+		string(actual.SourceStage),
+		"source id",
+	)
 	assert.Equal(
 		t,
 		expected.SourceField,
 		actual.SourceField,
-		"source field")
-	assert.Equal(t, expected.TargetStage, string(actual.TargetStage), "target id")
+		"source field",
+	)
+	assert.Equal(
+		t,
+		expected.TargetStage,
+		string(actual.TargetStage),
+		"target id",
+	)
 	assert.Equal(
 		t,
 		expected.TargetField,
 		actual.TargetField,
-		"target field")
+		"target field",
+	)
 }

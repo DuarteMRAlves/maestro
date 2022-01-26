@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
@@ -44,13 +44,13 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
-				newPbOrchestration(0, apitypes.OrchestrationSucceeded),
+				newPbOrchestration(0, api.OrchestrationSucceeded),
 			},
 			output: [][]string{
 				{NameText, PhaseText},
 				{
 					testutil.OrchestrationNameForNum(0),
-					string(apitypes.OrchestrationSucceeded),
+					string(api.OrchestrationSucceeded),
 				},
 			},
 		},
@@ -62,23 +62,23 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
-				newPbOrchestration(1, apitypes.OrchestrationRunning),
-				newPbOrchestration(0, apitypes.OrchestrationFailed),
-				newPbOrchestration(2, apitypes.OrchestrationPending),
+				newPbOrchestration(1, api.OrchestrationRunning),
+				newPbOrchestration(0, api.OrchestrationFailed),
+				newPbOrchestration(2, api.OrchestrationPending),
 			},
 			output: [][]string{
 				{NameText, PhaseText},
 				{
 					testutil.OrchestrationNameForNum(0),
-					string(apitypes.OrchestrationFailed),
+					string(api.OrchestrationFailed),
 				},
 				{
 					testutil.OrchestrationNameForNum(1),
-					string(apitypes.OrchestrationRunning),
+					string(api.OrchestrationRunning),
 				},
 				{
 					testutil.OrchestrationNameForNum(2),
-					string(apitypes.OrchestrationPending),
+					string(api.OrchestrationPending),
 				},
 			},
 		},
@@ -90,13 +90,13 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
-				newPbOrchestration(2, apitypes.OrchestrationSucceeded),
+				newPbOrchestration(2, api.OrchestrationSucceeded),
 			},
 			output: [][]string{
 				{NameText, PhaseText},
 				{
 					testutil.OrchestrationNameForNum(2),
-					string(apitypes.OrchestrationSucceeded),
+					string(api.OrchestrationSucceeded),
 				},
 			},
 		},
@@ -112,28 +112,28 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "filter by phase",
-			args: []string{"--phase", string(apitypes.OrchestrationPending)},
+			args: []string{"--phase", string(api.OrchestrationPending)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
 				return req.Name == "" &&
-					req.Phase == string(apitypes.OrchestrationPending)
+					req.Phase == string(api.OrchestrationPending)
 			},
 			responses: []*pb.Orchestration{
-				newPbOrchestration(1, apitypes.OrchestrationPending),
+				newPbOrchestration(1, api.OrchestrationPending),
 			},
 			output: [][]string{
 				{NameText, PhaseText},
 				{
 					testutil.OrchestrationNameForNum(1),
-					string(apitypes.OrchestrationPending),
+					string(api.OrchestrationPending),
 				},
 			},
 		},
 		{
 			name: "no such phase",
-			args: []string{"--phase", string(apitypes.OrchestrationRunning)},
+			args: []string{"--phase", string(api.OrchestrationRunning)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
 				return req.Name == "" &&
-					req.Phase == string(apitypes.OrchestrationRunning)
+					req.Phase == string(api.OrchestrationRunning)
 			},
 			responses: []*pb.Orchestration{},
 			output:    [][]string{{NameText, PhaseText}},
@@ -199,7 +199,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 
 func newPbOrchestration(
 	num int,
-	phase apitypes.OrchestrationPhase,
+	phase api.OrchestrationPhase,
 ) *pb.Orchestration {
 	return &pb.Orchestration{
 		Name:  testutil.OrchestrationNameForNum(num),

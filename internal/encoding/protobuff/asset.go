@@ -2,12 +2,12 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 // MarshalAsset returns a new protobuf representations of the received asset.
-func MarshalAsset(a *apitypes.Asset) (*pb.Asset, error) {
+func MarshalAsset(a *api.Asset) (*pb.Asset, error) {
 	if ok, err := validate.ArgNotNil(a, "a"); !ok {
 		return nil, err
 	}
@@ -15,12 +15,12 @@ func MarshalAsset(a *apitypes.Asset) (*pb.Asset, error) {
 }
 
 // UnmarshalAsset returns a new asset from its protobuf representation.
-func UnmarshalAsset(p *pb.Asset) (*apitypes.Asset, error) {
+func UnmarshalAsset(p *pb.Asset) (*api.Asset, error) {
 	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
-	return &apitypes.Asset{
-		Name:  apitypes.AssetName(p.Name),
+	return &api.Asset{
+		Name:  api.AssetName(p.Name),
 		Image: p.Image,
 	}, nil
 }

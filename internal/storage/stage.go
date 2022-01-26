@@ -2,37 +2,37 @@ package storage
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 )
 
 // Stage represents a node of the pipeline where a specific rpc method is
 // executed.
 type Stage struct {
-	name    apitypes.StageName
-	phase   apitypes.StagePhase
+	name    api.StageName
+	phase   api.StagePhase
 	rpcSpec *RpcSpec
-	asset   apitypes.AssetName
+	asset   api.AssetName
 
 	// orchestration is the Orchestration where this stage is inserted.
-	orchestration *apitypes.Orchestration
+	orchestration *api.Orchestration
 }
 
 func NewStage(
-	name apitypes.StageName,
+	name api.StageName,
 	rpcSpec *RpcSpec,
-	asset apitypes.AssetName,
-	orchestration *apitypes.Orchestration,
+	asset api.AssetName,
+	orchestration *api.Orchestration,
 ) *Stage {
 	return &Stage{
 		name:          name,
 		rpcSpec:       rpcSpec,
 		asset:         asset,
 		orchestration: orchestration,
-		phase:         apitypes.StagePending,
+		phase:         api.StagePending,
 	}
 }
 
-func (s *Stage) Name() apitypes.StageName {
+func (s *Stage) Name() api.StageName {
 	return s.name
 }
 
@@ -41,7 +41,7 @@ func (s *Stage) Address() string {
 }
 
 func (s *Stage) IsPending() bool {
-	return s.phase == apitypes.StagePending
+	return s.phase == api.StagePending
 }
 
 // Clone creates a copy of the given stage, with the same attributes.
@@ -57,8 +57,8 @@ func (s *Stage) Clone() *Stage {
 	}
 }
 
-func (s *Stage) ToApi() *apitypes.Stage {
-	return &apitypes.Stage{
+func (s *Stage) ToApi() *api.Stage {
+	return &api.Stage{
 		Name:    s.name,
 		Phase:   s.phase,
 		Asset:   s.asset,

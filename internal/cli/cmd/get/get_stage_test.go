@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
@@ -59,7 +59,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Rpc == "" &&
 					query.Address == ""
 			},
-			responses: []*pb.Stage{pbStageForNum(0, apitypes.StageRunning)},
+			responses: []*pb.Stage{pbStageForNum(0, api.StageRunning)},
 			output: [][]string{
 				{
 					NameText,
@@ -71,7 +71,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(0),
-					string(apitypes.StageRunning),
+					string(api.StageRunning),
 					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
@@ -91,9 +91,9 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(0, apitypes.StagePending),
-				pbStageForNum(2, apitypes.StageRunning),
-				pbStageForNum(1, apitypes.StageFailed),
+				pbStageForNum(0, api.StagePending),
+				pbStageForNum(2, api.StageRunning),
+				pbStageForNum(1, api.StageFailed),
 			},
 			output: [][]string{
 				{
@@ -106,7 +106,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(0),
-					string(apitypes.StagePending),
+					string(api.StagePending),
 					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
@@ -114,7 +114,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(1),
-					string(apitypes.StageFailed),
+					string(api.StageFailed),
 					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
@@ -122,7 +122,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(2),
-					string(apitypes.StageRunning),
+					string(api.StageRunning),
 					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
@@ -142,7 +142,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(2, apitypes.StageSucceeded),
+				pbStageForNum(2, api.StageSucceeded),
 			},
 			output: [][]string{
 				{
@@ -155,7 +155,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(2),
-					string(apitypes.StageSucceeded),
+					string(api.StageSucceeded),
 					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
@@ -165,17 +165,17 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "filter by phase",
-			args: []string{"--phase", string(apitypes.StageRunning)},
+			args: []string{"--phase", string(api.StageRunning)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
-					query.Phase == string(apitypes.StageRunning) &&
+					query.Phase == string(api.StageRunning) &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(1, apitypes.StageRunning),
+				pbStageForNum(1, api.StageRunning),
 			},
 			output: [][]string{
 				{
@@ -188,7 +188,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(1),
-					string(apitypes.StageRunning),
+					string(api.StageRunning),
 					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
@@ -208,7 +208,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(2, apitypes.StagePending),
+				pbStageForNum(2, api.StagePending),
 			},
 			output: [][]string{
 				{
@@ -221,7 +221,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(2),
-					string(apitypes.StagePending),
+					string(api.StagePending),
 					testutil.AssetNameForNumStr(2),
 					testutil.StageServiceForNum(2),
 					testutil.StageRpcForNum(2),
@@ -241,7 +241,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(0, apitypes.StageRunning),
+				pbStageForNum(0, api.StageRunning),
 			},
 			output: [][]string{
 				{
@@ -254,7 +254,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(0),
-					string(apitypes.StageRunning),
+					string(api.StageRunning),
 					testutil.AssetNameForNumStr(0),
 					testutil.StageServiceForNum(0),
 					testutil.StageRpcForNum(0),
@@ -274,7 +274,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					query.Address == ""
 			},
 			responses: []*pb.Stage{
-				pbStageForNum(1, apitypes.StagePending),
+				pbStageForNum(1, api.StagePending),
 			},
 			output: [][]string{
 				{
@@ -287,7 +287,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				},
 				{
 					testutil.StageNameForNumStr(1),
-					string(apitypes.StagePending),
+					string(api.StagePending),
 					testutil.AssetNameForNumStr(1),
 					testutil.StageServiceForNum(1),
 					testutil.StageRpcForNum(1),
@@ -320,10 +320,10 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such phase",
-			args: []string{"--phase", string(apitypes.StagePending)},
+			args: []string{"--phase", string(api.StagePending)},
 			validateQuery: func(query *pb.Stage) bool {
 				return query.Name == "" &&
-					query.Phase == string(apitypes.StagePending) &&
+					query.Phase == string(api.StagePending) &&
 					query.Asset == "" &&
 					query.Service == "" &&
 					query.Rpc == "" &&
@@ -492,7 +492,7 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 	}
 }
 
-func pbStageForNum(num int, phase apitypes.StagePhase) *pb.Stage {
+func pbStageForNum(num int, phase api.StagePhase) *pb.Stage {
 	return &pb.Stage{
 		Name:    testutil.StageNameForNumStr(num),
 		Phase:   string(phase),

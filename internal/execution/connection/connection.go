@@ -1,7 +1,7 @@
 package connection
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/queue"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
@@ -25,7 +25,7 @@ func New(l *storage.Link) (*Connection, error) {
 	return f, nil
 }
 
-func (c *Connection) LinkName() apitypes.LinkName {
+func (c *Connection) LinkName() api.LinkName {
 	return c.link.Name()
 }
 

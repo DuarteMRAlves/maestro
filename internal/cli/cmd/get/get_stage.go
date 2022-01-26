@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -89,13 +89,13 @@ func (o *StageOpts) complete(cmd *cobra.Command, args []string) error {
 // be executed
 func (o *StageOpts) validate() error {
 	if o.phase != "" {
-		phase := apitypes.StagePhase(o.phase)
+		phase := api.StagePhase(o.phase)
 		switch phase {
 		case
-			apitypes.StagePending,
-			apitypes.StageRunning,
-			apitypes.StageFailed,
-			apitypes.StageSucceeded:
+			api.StagePending,
+			api.StageRunning,
+			api.StageFailed,
+			api.StageSucceeded:
 			// Do nothing
 		default:
 			return errdefs.InvalidArgumentWithMsg("unknown phase: %v", phase)
@@ -138,7 +138,8 @@ func (o *StageOpts) displayStages(stages []*pb.Stage) error {
 		stages,
 		func(i, j int) bool {
 			return stages[i].Name < stages[j].Name
-		})
+		},
+	)
 	numStages := len(stages)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numStages+1)

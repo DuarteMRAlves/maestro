@@ -2,7 +2,7 @@ package execution
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
 	"github.com/DuarteMRAlves/maestro/internal/execution/flow"
@@ -22,27 +22,27 @@ type Manager interface {
 	// stage is the source of the link and the second is the target.
 	RegisterLink(*storage.Stage, *storage.Stage, *storage.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
-	RegisterOrchestration(*apitypes.Orchestration) error
+	RegisterOrchestration(*api.Orchestration) error
 }
 
 type manager struct {
 	mu          sync.RWMutex
-	workers     map[apitypes.StageName]worker.Worker
-	inputs      map[apitypes.StageName]*input.Cfg
-	outputs     map[apitypes.StageName]*output.Cfg
-	connections map[apitypes.LinkName]*connection.Connection
-	flows       map[apitypes.OrchestrationName]*flow.Flow
+	workers     map[api.StageName]worker.Worker
+	inputs      map[api.StageName]*input.Cfg
+	outputs     map[api.StageName]*output.Cfg
+	connections map[api.LinkName]*connection.Connection
+	flows       map[api.OrchestrationName]*flow.Flow
 
 	reflectionManager reflection.Manager
 }
 
 func NewManager(reflectionManager reflection.Manager) Manager {
 	return &manager{
-		workers:           map[apitypes.StageName]worker.Worker{},
-		inputs:            map[apitypes.StageName]*input.Cfg{},
-		outputs:           map[apitypes.StageName]*output.Cfg{},
-		connections:       map[apitypes.LinkName]*connection.Connection{},
-		flows:             map[apitypes.OrchestrationName]*flow.Flow{},
+		workers:           map[api.StageName]worker.Worker{},
+		inputs:            map[api.StageName]*input.Cfg{},
+		outputs:           map[api.StageName]*output.Cfg{},
+		connections:       map[api.LinkName]*connection.Connection{},
+		flows:             map[api.OrchestrationName]*flow.Flow{},
 		reflectionManager: reflectionManager,
 	}
 }
@@ -168,7 +168,7 @@ func (m *manager) RegisterLink(
 	return nil
 }
 
-func (m *manager) RegisterOrchestration(o *apitypes.Orchestration) error {
+func (m *manager) RegisterOrchestration(o *api.Orchestration) error {
 	var exists bool
 
 	m.mu.Lock()

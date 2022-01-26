@@ -1,25 +1,25 @@
 package naming
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"regexp"
 )
 
 var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
-func IsValidAssetName(name apitypes.AssetName) bool {
+func IsValidAssetName(name api.AssetName) bool {
 	return IsValidName(string(name))
 }
 
-func IsValidStageName(name apitypes.StageName) bool {
+func IsValidStageName(name api.StageName) bool {
 	return IsValidName(string(name))
 }
 
-func IsValidLinkName(name apitypes.LinkName) bool {
+func IsValidLinkName(name api.LinkName) bool {
 	return IsValidName(string(name))
 }
 
-func IsValidOrchestrationName(name apitypes.OrchestrationName) bool {
+func IsValidOrchestrationName(name api.OrchestrationName) bool {
 	return IsValidName(string(name))
 }
 

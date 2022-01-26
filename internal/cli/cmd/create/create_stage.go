@@ -2,7 +2,7 @@ package create
 
 import (
 	"context"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -66,24 +66,28 @@ func (o *StageOpts) addFlags(cmd *cobra.Command) {
 		&o.asset,
 		"asset",
 		"",
-		"name of the asset the stage executes (required)")
+		"name of the asset the stage executes (required)",
+	)
 	cmd.Flags().StringVar(
 		&o.service,
 		"service",
 		"",
 		"name of the grpc service to call (if not specified the asset must "+
-			"only have one service)")
+			"only have one service)",
+	)
 	cmd.Flags().StringVar(
 		&o.rpc,
 		"rpc",
 		"",
 		"name of the grpc method to call (if not specified the service must "+
-			"only have one method to run)")
+			"only have one method to run)",
+	)
 	cmd.Flags().StringVar(
 		&o.address,
 		"address",
 		"",
-		"the address where the stage service is running")
+		"the address where the stage service is running",
+	)
 	cmd.Flags().StringVar(&o.host, "host", "", "host where service is running")
 	cmd.Flags().Int32Var(&o.port, "port", 0, "port where service is running")
 }
@@ -105,19 +109,21 @@ func (o *StageOpts) validate() error {
 	}
 	if o.address != "" && o.host != "" {
 		return errdefs.InvalidArgumentWithMsg(
-			"address and host options are incompatible")
+			"address and host options are incompatible",
+		)
 	}
 	if o.address != "" && o.port != 0 {
 		return errdefs.InvalidArgumentWithMsg(
-			"address and port options are incompatible")
+			"address and port options are incompatible",
+		)
 	}
 	return nil
 }
 
 func (o *StageOpts) run() error {
-	stage := &apitypes.Stage{
-		Name:    apitypes.StageName(o.name),
-		Asset:   apitypes.AssetName(o.asset),
+	stage := &api.Stage{
+		Name:    api.StageName(o.name),
+		Asset:   api.AssetName(o.asset),
 		Service: o.service,
 		Rpc:     o.rpc,
 		Address: o.address,
@@ -135,7 +141,8 @@ func (o *StageOpts) run() error {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Second)
+		time.Second,
+	)
 	defer cancel()
 
 	return c.CreateStage(ctx, stage)
