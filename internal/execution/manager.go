@@ -22,7 +22,7 @@ type Manager interface {
 	// stage is the source of the link and the second is the target.
 	RegisterLink(*storage.Stage, *storage.Stage, *storage.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
-	RegisterOrchestration(*storage.Orchestration) error
+	RegisterOrchestration(*apitypes.Orchestration) error
 }
 
 type manager struct {
@@ -168,19 +168,19 @@ func (m *manager) RegisterLink(
 	return nil
 }
 
-func (m *manager) RegisterOrchestration(o *storage.Orchestration) error {
+func (m *manager) RegisterOrchestration(o *apitypes.Orchestration) error {
 	var exists bool
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	for _, l := range o.Links() {
-		_, exists = m.connections[l.Name()]
+	for _, l := range o.Links {
+		_, exists = m.connections[l]
 		if !exists {
 			return errdefs.NotFoundWithMsg("link not registered: %v", l)
 		}
 	}
 
-	m.flows[o.Name()] = flow.New(o)
+	m.flows[o.Name] = flow.New(o)
 
 	return nil
 }

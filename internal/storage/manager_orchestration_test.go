@@ -12,7 +12,7 @@ import (
 func TestManager_CreateOrchestration(t *testing.T) {
 	const name apitypes.OrchestrationName = "Orchestration-Name"
 	var (
-		orchestration Orchestration
+		orchestration apitypes.Orchestration
 		err           error
 	)
 	req := &api.CreateOrchestrationRequest{Name: name}
@@ -39,8 +39,8 @@ func TestManager_CreateOrchestration(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, orchestration.Name(), req.Name, "name not correct")
-	phase := orchestration.phase
+	assert.Equal(t, orchestration.Name, req.Name, "name not correct")
+	phase := orchestration.Phase
 	assert.Equal(t, phase, apitypes.OrchestrationPending, "phase not correct")
 }
 
@@ -48,26 +48,26 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 	tests := []struct {
 		name   string
 		req    *api.GetOrchestrationRequest
-		stored []*Orchestration
+		stored []*apitypes.Orchestration
 		// names of the expected orchestrations
 		expected []apitypes.OrchestrationName
 	}{
 		{
 			name:     "zero elements stored, nil req",
 			req:      nil,
-			stored:   []*Orchestration{},
+			stored:   []*apitypes.Orchestration{},
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:     "zero elements stored, some req",
 			req:      &api.GetOrchestrationRequest{Name: "some-name"},
-			stored:   []*Orchestration{},
+			stored:   []*apitypes.Orchestration{},
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name: "one element stored, nil req",
 			req:  nil,
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName("some-name", apitypes.OrchestrationFailed),
 			},
 			expected: []apitypes.OrchestrationName{"some-name"},
@@ -75,7 +75,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		{
 			name: "one element stored, matching name req",
 			req:  &api.GetOrchestrationRequest{Name: "some-name"},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name",
 					apitypes.OrchestrationRunning,
@@ -86,7 +86,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		{
 			name: "one element stored, non-matching name req",
 			req:  &api.GetOrchestrationRequest{Name: "unknown-name"},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name",
 					apitypes.OrchestrationPending,
@@ -97,7 +97,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		{
 			name: "multiple elements stored, nil req",
 			req:  nil,
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name-1",
 					apitypes.OrchestrationPending,
@@ -120,7 +120,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		{
 			name: "multiple elements stored, matching name req",
 			req:  &api.GetOrchestrationRequest{Name: "some-name-2"},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name-1",
 					apitypes.OrchestrationRunning,
@@ -139,7 +139,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		{
 			name: "multiple elements stored, non-matching name req",
 			req:  &api.GetOrchestrationRequest{Name: "unknown-name"},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name-1",
 					apitypes.OrchestrationPending,
@@ -160,7 +160,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			req: &api.GetOrchestrationRequest{
 				Phase: apitypes.OrchestrationFailed,
 			},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name-1",
 					apitypes.OrchestrationRunning,
@@ -181,7 +181,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			req: &api.GetOrchestrationRequest{
 				Phase: apitypes.OrchestrationSucceeded,
 			},
-			stored: []*Orchestration{
+			stored: []*apitypes.Orchestration{
 				orchestrationForName(
 					"some-name-1",
 					apitypes.OrchestrationPending,
@@ -256,9 +256,9 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 func orchestrationForName(
 	name apitypes.OrchestrationName,
 	phase apitypes.OrchestrationPhase,
-) *Orchestration {
-	return &Orchestration{
-		name:  name,
-		phase: phase,
+) *apitypes.Orchestration {
+	return &apitypes.Orchestration{
+		Name:  name,
+		Phase: phase,
 	}
 }

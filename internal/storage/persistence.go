@@ -12,25 +12,25 @@ func orchestrationKey(name apitypes.OrchestrationName) []byte {
 	return []byte(fmt.Sprintf("orchestration:%s", name))
 }
 
-func persistOrchestration(txn *badger.Txn, o *Orchestration) error {
+func persistOrchestration(txn *badger.Txn, o *apitypes.Orchestration) error {
 	var (
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(&buf, o.name, o.phase)
+	_, err = fmt.Fprintln(&buf, o.Name, o.Phase)
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
-	err = txn.Set(orchestrationKey(o.name), buf.Bytes())
+	err = txn.Set(orchestrationKey(o.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
 }
 
-func loadOrchestration(o *Orchestration, data []byte) error {
+func loadOrchestration(o *apitypes.Orchestration, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(buf, &o.name, &o.phase)
+	_, err := fmt.Fscanln(buf, &o.Name, &o.Phase)
 	return err
 }
 
