@@ -1,4 +1,4 @@
-package naming
+package storage
 
 import (
 	"fmt"
@@ -30,8 +30,9 @@ func TestIsValidName(t *testing.T) {
 		t.Run(
 			testName,
 			func(t *testing.T) {
-				result := IsValidName(name)
+				result := isValidName(name)
 				assert.Equal(t, expected, result, "is valid name")
-			})
+			},
+		)
 	}
 }

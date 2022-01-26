@@ -1,4 +1,4 @@
-package naming
+package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
@@ -8,21 +8,21 @@ import (
 var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 func IsValidAssetName(name api.AssetName) bool {
-	return IsValidName(string(name))
+	return isValidName(string(name))
 }
 
 func IsValidStageName(name api.StageName) bool {
-	return IsValidName(string(name))
+	return isValidName(string(name))
 }
 
 func IsValidLinkName(name api.LinkName) bool {
-	return IsValidName(string(name))
+	return isValidName(string(name))
 }
 
 func IsValidOrchestrationName(name api.OrchestrationName) bool {
-	return IsValidName(string(name))
+	return isValidName(string(name))
 }
 
-func IsValidName(name string) bool {
+func isValidName(name string) bool {
 	return nameRegExp.MatchString(name)
 }
