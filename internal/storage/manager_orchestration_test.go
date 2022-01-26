@@ -31,10 +31,8 @@ func TestManager_CreateOrchestration(t *testing.T) {
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			item, err := txn.Get(orchestrationKey(name))
-			assert.NilError(t, err, "get error")
-			cp, err := item.ValueCopy(nil)
-			return loadOrchestration(&orchestration, cp)
+			helper := TxnHelper{txn: txn}
+			return helper.LoadOrchestration(&orchestration, name)
 		},
 	)
 	assert.NilError(t, err, "load error")
@@ -213,7 +211,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 				for _, o := range test.stored {
 					err = db.Update(
 						func(txn *badger.Txn) error {
-							return persistOrchestration(txn, o)
+							helper := TxnHelper{txn: txn}
+							return helper.SaveOrchestration(o)
 						},
 					)
 				}

@@ -83,9 +83,10 @@ func (m *manager) CreateOrchestration(
 		Stages: []api.StageName{},
 		Links:  []api.LinkName{},
 	}
-	err = persistOrchestration(txn, o)
+	helper := NewTxnHelper(txn)
+	err = helper.SaveOrchestration(o)
 	if err != nil {
-		return errdefs.InternalWithMsg("persist error: %v", err)
+		return errdefs.InternalWithMsg("save error: %v", err)
 	}
 	return nil
 }
@@ -94,35 +95,28 @@ func (m *manager) GetMatchingOrchestration(
 	txn *badger.Txn,
 	req *api.GetOrchestrationRequest,
 ) ([]*api.Orchestration, error) {
-	var (
-		o   api.Orchestration
-		cp  []byte
-		err error
-	)
+	var err error
+
 	if req == nil {
 		req = &api.GetOrchestrationRequest{}
 	}
 	filter := buildOrchestrationQueryFilter(req)
 	res := make([]*api.Orchestration, 0)
 
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
-	defer it.Close()
-	prefix := []byte("orchestration:")
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		cp, err = item.ValueCopy(cp)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("read: %v", err)
-		}
-		err = loadOrchestration(&o, cp)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("decoding: %v", err)
-		}
-		if filter(&o) {
-			orchestrationCp := &api.Orchestration{}
-			copyOrchestration(orchestrationCp, &o)
-			res = append(res, orchestrationCp)
-		}
+	helper := NewTxnHelper(txn)
+	err = helper.IterOrchestrations(
+		func(o *api.Orchestration) error {
+			if filter(o) {
+				orchestrationCp := &api.Orchestration{}
+				copyOrchestration(orchestrationCp, o)
+				res = append(res, orchestrationCp)
+			}
+			return nil
+		},
+		DefaultIterOpts(),
+	)
+	if err != nil {
+		return nil, err
 	}
 	return res, nil
 }
@@ -148,157 +142,12 @@ func (m *manager) CreateStage(
 		Address: address,
 		Asset:   req.Asset,
 	}
-	err = PersistStage(txn, s)
+	helper := NewTxnHelper(txn)
+	err = helper.SaveStage(s)
 	if err != nil {
 		return nil, errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return s, nil
-}
-
-func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {
-	item, _ := txn.Get(stageKey(name))
-	return item != nil
-}
-
-func (m *manager) GetStageByName(
-	txn *badger.Txn,
-	name api.StageName,
-) (*api.Stage, bool) {
-	var (
-		data []byte
-		err  error
-	)
-	item, _ := txn.Get(stageKey(name))
-	if item == nil {
-		return nil, false
-	}
-	data, err = item.ValueCopy(nil)
-	if err != nil {
-		return nil, false
-	}
-	s := &api.Stage{}
-	err = loadStage(s, data)
-	if err != nil {
-		return nil, false
-	}
-	return s, true
-}
-
-func (m *manager) GetMatchingStage(
-	txn *badger.Txn,
-	req *api.GetStageRequest,
-) ([]*api.Stage, error) {
-	var (
-		s    api.Stage
-		data []byte
-		err  error
-	)
-
-	if req == nil {
-		req = &api.GetStageRequest{}
-	}
-	filter := buildStageQueryFilter(req)
-	res := make([]*api.Stage, 0)
-
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
-	defer it.Close()
-	prefix := []byte("stage:")
-
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		data, err = item.ValueCopy(data)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("read: %v", err)
-		}
-		err = loadStage(&s, data)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("decoding: %v", err)
-		}
-		if filter(&s) {
-			stageCp := &api.Stage{
-				Name:    s.Name,
-				Phase:   s.Phase,
-				Service: s.Service,
-				Rpc:     s.Rpc,
-				Address: s.Address,
-				Asset:   s.Asset,
-			}
-			res = append(res, stageCp)
-		}
-	}
-	return res, nil
-}
-
-func (m *manager) CreateLink(
-	txn *badger.Txn,
-	req *api.CreateLinkRequest,
-) (*api.Link, error) {
-	var err error
-	if err = m.validateCreateLinkConfig(txn, req); err != nil {
-		return nil, err
-	}
-	l := &api.Link{
-		Name:        req.Name,
-		SourceStage: req.SourceStage,
-		SourceField: req.SourceField,
-		TargetStage: req.TargetStage,
-		TargetField: req.TargetField,
-	}
-	if err = PersistLink(txn, l); err != nil {
-		return nil, errdefs.InternalWithMsg("persist error: %v", err)
-	}
-	return l, nil
-}
-
-// ContainsLink returns true if a link with the given name exists and false
-// otherwise.
-func (m *manager) ContainsLink(txn *badger.Txn, name api.LinkName) bool {
-	item, _ := txn.Get(linkKey(name))
-	return item != nil
-}
-
-func (m *manager) GetMatchingLinks(
-	txn *badger.Txn,
-	req *api.GetLinkRequest,
-) ([]*api.Link, error) {
-	var (
-		l    api.Link
-		data []byte
-		err  error
-	)
-
-	if req == nil {
-		req = &api.GetLinkRequest{}
-	}
-	filter := buildLinkQueryFilter(req)
-	res := make([]*api.Link, 0)
-
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
-	defer it.Close()
-	prefix := []byte("link:")
-
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		data, err = item.ValueCopy(data)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("read: %v", err)
-		}
-		err = loadLink(&l, data)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("decoding: %v", err)
-		}
-		if filter(&l) {
-			linkCp := &api.Link{
-				Name:        l.Name,
-				SourceStage: l.SourceStage,
-				SourceField: l.SourceField,
-				TargetStage: l.TargetStage,
-				TargetField: l.TargetField,
-			}
-			res = append(res, linkCp)
-		}
-	}
-	return res, nil
 }
 
 func (m *manager) inferStageAddress(req *api.CreateStageRequest) string {
@@ -346,23 +195,135 @@ func (m *manager) inferRpc(
 	return nil
 }
 
+func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {
+	item, _ := txn.Get(stageKey(name))
+	return item != nil
+}
+
+func (m *manager) GetStageByName(
+	txn *badger.Txn,
+	name api.StageName,
+) (*api.Stage, bool) {
+	var (
+		data []byte
+		err  error
+	)
+	item, _ := txn.Get(stageKey(name))
+	if item == nil {
+		return nil, false
+	}
+	data, err = item.ValueCopy(nil)
+	if err != nil {
+		return nil, false
+	}
+	s := &api.Stage{}
+	err = loadStage(s, data)
+	if err != nil {
+		return nil, false
+	}
+	return s, true
+}
+
+func (m *manager) GetMatchingStage(
+	txn *badger.Txn,
+	req *api.GetStageRequest,
+) ([]*api.Stage, error) {
+	var err error
+
+	if req == nil {
+		req = &api.GetStageRequest{}
+	}
+	filter := buildStageQueryFilter(req)
+	res := make([]*api.Stage, 0)
+
+	helper := NewTxnHelper(txn)
+	err = helper.IterStages(
+		func(s *api.Stage) error {
+			if filter(s) {
+				stageCp := &api.Stage{}
+				copyStage(stageCp, s)
+				res = append(res, stageCp)
+			}
+			return nil
+		},
+		DefaultIterOpts(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (m *manager) CreateLink(
+	txn *badger.Txn,
+	req *api.CreateLinkRequest,
+) (*api.Link, error) {
+	var err error
+	if err = m.validateCreateLinkConfig(txn, req); err != nil {
+		return nil, err
+	}
+	l := &api.Link{
+		Name:        req.Name,
+		SourceStage: req.SourceStage,
+		SourceField: req.SourceField,
+		TargetStage: req.TargetStage,
+		TargetField: req.TargetField,
+	}
+	helper := NewTxnHelper(txn)
+	if err = helper.SaveLink(l); err != nil {
+		return nil, errdefs.InternalWithMsg("persist error: %v", err)
+	}
+	return l, nil
+}
+
+// ContainsLink returns true if a link with the given name exists and false
+// otherwise.
+func (m *manager) ContainsLink(txn *badger.Txn, name api.LinkName) bool {
+	item, _ := txn.Get(linkKey(name))
+	return item != nil
+}
+
+func (m *manager) GetMatchingLinks(
+	txn *badger.Txn,
+	req *api.GetLinkRequest,
+) ([]*api.Link, error) {
+	var err error
+
+	if req == nil {
+		req = &api.GetLinkRequest{}
+	}
+	filter := buildLinkQueryFilter(req)
+	res := make([]*api.Link, 0)
+
+	helper := NewTxnHelper(txn)
+	err = helper.IterLinks(
+		func(l *api.Link) error {
+			if filter(l) {
+				linkCp := &api.Link{}
+				copyLink(linkCp, l)
+				res = append(res, linkCp)
+			}
+			return nil
+		},
+		DefaultIterOpts(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func (m *manager) CreateAsset(
 	txn *badger.Txn,
 	req *api.CreateAssetRequest,
 ) error {
 	var err error
-	if err = validateCreateAssetRequest(req); err != nil {
-		return errdefs.InvalidArgumentWithError(err)
-	}
-
-	if m.ContainsAsset(txn, req.Name) {
-		return errdefs.AlreadyExistsWithMsg(
-			"asset '%v' already exists",
-			req.Name,
-		)
+	if err = m.validateCreateAssetRequest(txn, req); err != nil {
+		return err
 	}
 	asset := &api.Asset{Name: req.Name, Image: req.Image}
-	if err = PersistAsset(txn, asset); err != nil {
+	helper := NewTxnHelper(txn)
+	if err = helper.SaveAsset(asset); err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return nil
@@ -377,39 +338,28 @@ func (m *manager) GetMatchingAssets(
 	txn *badger.Txn,
 	req *api.GetAssetRequest,
 ) ([]*api.Asset, error) {
-	var (
-		asset api.Asset
-		cp    []byte
-		err   error
-	)
+	var err error
 
 	if req == nil {
 		req = &api.GetAssetRequest{}
 	}
 	filter := buildAssetQueryFilter(req)
 	res := make([]*api.Asset, 0)
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
 
-	defer it.Close()
-	prefix := []byte("asset:")
-
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		cp, err = item.ValueCopy(cp)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("read: %v", err)
-		}
-		err = loadAsset(&asset, cp)
-		if err != nil {
-			return nil, errdefs.InternalWithMsg("decoding: %v", err)
-		}
-		if filter(&asset) {
-			assetCp := &api.Asset{
-				Name:  asset.Name,
-				Image: asset.Image,
+	helper := NewTxnHelper(txn)
+	err = helper.IterAssets(
+		func(a *api.Asset) error {
+			if filter(a) {
+				assetCp := &api.Asset{}
+				copyAsset(assetCp, a)
+				res = append(res, assetCp)
 			}
-			res = append(res, assetCp)
-		}
+			return nil
+		},
+		DefaultIterOpts(),
+	)
+	if err != nil {
+		return nil, err
 	}
 	return res, nil
 }
