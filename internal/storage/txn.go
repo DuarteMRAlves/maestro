@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
+	"strings"
 )
 
 const (
@@ -49,7 +50,26 @@ func (h *TxnHelper) SaveOrchestration(o *api.Orchestration) error {
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(&buf, o.Name, o.Phase)
+	buf.WriteString(string(o.Name))
+	// ; is not a valid name char, so we can use it
+	buf.WriteByte(';')
+	buf.WriteString(string(o.Phase))
+	buf.WriteByte(';')
+	for i, s := range o.Stages {
+		buf.WriteString(string(s))
+		if i+1 != len(o.Stages) {
+			// , is not a valid name char, so we can use it
+			buf.WriteByte(',')
+		}
+	}
+	buf.WriteByte(';')
+	for i, l := range o.Links {
+		buf.WriteString(string(l))
+		if i+1 != len(o.Links) {
+			buf.WriteByte(',')
+		}
+	}
+
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
@@ -94,8 +114,37 @@ func (h *TxnHelper) IterOrchestrations(
 
 func loadOrchestration(o *api.Orchestration, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(buf, &o.Name, &o.Phase)
-	return err
+	splits := strings.Split(buf.String(), ";")
+	if len(splits) != 4 {
+		return errdefs.InternalWithMsg(
+			"invalid format: expected 4 semi-colon separated values",
+		)
+	}
+	o.Name = api.OrchestrationName(splits[0])
+	o.Phase = api.OrchestrationPhase(splits[1])
+
+	// Stages are empty
+	if len(splits[2]) == 0 {
+		o.Stages = []api.StageName{}
+	} else {
+		stages := strings.Split(splits[2], ",")
+		o.Stages = make([]api.StageName, 0, len(stages))
+		for _, s := range stages {
+			o.Stages = append(o.Stages, api.StageName(s))
+		}
+	}
+
+	// Links are empty
+	if len(splits[3]) == 0 {
+		o.Links = []api.LinkName{}
+	} else {
+		links := strings.Split(splits[3], ",")
+		o.Links = make([]api.LinkName, 0, len(links))
+		for _, l := range links {
+			o.Links = append(o.Links, api.LinkName(l))
+		}
+	}
+	return nil
 }
 
 func (h *TxnHelper) SaveStage(s *api.Stage) error {
