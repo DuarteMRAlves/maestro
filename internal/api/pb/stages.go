@@ -19,17 +19,15 @@ func NewStageManagementServer(api api.InternalAPI) pb.StageManagementServer {
 
 func (s *stageManagementServer) Create(
 	_ context.Context,
-	pbStage *pb.Stage,
+	pbReq *pb.CreateStageRequest,
 ) (*emptypb.Empty, error) {
 
-	var stage *api.Stage
+	var req api.CreateStageRequest
 	var err error
 	var grpcErr error = nil
 
-	if stage, err = protobuff.UnmarshalStage(pbStage); err != nil {
-		return &emptypb.Empty{}, GrpcErrorFromError(err)
-	}
-	err = s.api.CreateStage(stage)
+	protobuff.UnmarshalCreateStageRequest(&req, pbReq)
+	err = s.api.CreateStage(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -37,20 +35,17 @@ func (s *stageManagementServer) Create(
 }
 
 func (s *stageManagementServer) Get(
-	pbQuery *pb.Stage,
+	pbReq *pb.GetStageRequest,
 	stream pb.StageManagement_GetServer,
 ) error {
 
 	var (
-		query *api.Stage
-		err   error
+		req api.GetStageRequest
+		err error
 	)
 
-	if query, err = protobuff.UnmarshalStage(pbQuery); err != nil {
-		return GrpcErrorFromError(err)
-	}
-
-	stages, err := s.api.GetStage(query)
+	protobuff.UnmarshalGetStageRequest(&req, pbReq)
+	stages, err := s.api.GetStage(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}

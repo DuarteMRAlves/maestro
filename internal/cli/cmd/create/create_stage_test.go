@@ -25,7 +25,7 @@ func TestCreateStageWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
-		validateCfg func(cfg *pb.Stage) bool
+		validateReq func(*pb.CreateStageRequest) bool
 		response    *emptypb.Empty
 		err         error
 		expectedOut string
@@ -43,14 +43,14 @@ func TestCreateStageWithServer(t *testing.T) {
 				"--address",
 				"some-address",
 			},
-			validateCfg: func(cfg *pb.Stage) bool {
-				return cfg.Name == "stage-name" &&
-					cfg.Asset == "asset-name" &&
-					cfg.Service == "ServiceName" &&
-					cfg.Rpc == "RpcName" &&
-					cfg.Address == "some-address" &&
-					cfg.Host == "" &&
-					cfg.Port == 0
+			validateReq: func(req *pb.CreateStageRequest) bool {
+				return req.Name == "stage-name" &&
+					req.Asset == "asset-name" &&
+					req.Service == "ServiceName" &&
+					req.Rpc == "RpcName" &&
+					req.Address == "some-address" &&
+					req.Host == "" &&
+					req.Port == 0
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -71,14 +71,14 @@ func TestCreateStageWithServer(t *testing.T) {
 				"--port",
 				"12345",
 			},
-			validateCfg: func(cfg *pb.Stage) bool {
-				return cfg.Name == "stage-name" &&
-					cfg.Asset == "asset-name" &&
-					cfg.Service == "ServiceName" &&
-					cfg.Rpc == "RpcName" &&
-					cfg.Address == "" &&
-					cfg.Host == "some-host" &&
-					cfg.Port == 12345
+			validateReq: func(req *pb.CreateStageRequest) bool {
+				return req.Name == "stage-name" &&
+					req.Asset == "asset-name" &&
+					req.Service == "ServiceName" &&
+					req.Rpc == "RpcName" &&
+					req.Address == "" &&
+					req.Host == "some-host" &&
+					req.Port == 12345
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -87,14 +87,14 @@ func TestCreateStageWithServer(t *testing.T) {
 		{
 			name: "create a stage with required arguments",
 			args: []string{"stage-name"},
-			validateCfg: func(cfg *pb.Stage) bool {
-				return cfg.Name == "stage-name" &&
-					cfg.Asset == "" &&
-					cfg.Service == "" &&
-					cfg.Rpc == "" &&
-					cfg.Address == "" &&
-					cfg.Host == "" &&
-					cfg.Port == 0
+			validateReq: func(req *pb.CreateStageRequest) bool {
+				return req.Name == "stage-name" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == "" &&
+					req.Host == "" &&
+					req.Port == 0
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -103,14 +103,14 @@ func TestCreateStageWithServer(t *testing.T) {
 		{
 			name: "create a stage with invalid name",
 			args: []string{"invalid--name"},
-			validateCfg: func(cfg *pb.Stage) bool {
-				return cfg.Name == "invalid--name" &&
-					cfg.Asset == "" &&
-					cfg.Service == "" &&
-					cfg.Rpc == "" &&
-					cfg.Address == "" &&
-					cfg.Host == "" &&
-					cfg.Port == 0
+			validateReq: func(req *pb.CreateStageRequest) bool {
+				return req.Name == "invalid--name" &&
+					req.Asset == "" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == "" &&
+					req.Host == "" &&
+					req.Port == 0
 			},
 			response: nil,
 			err: status.Error(
@@ -124,14 +124,14 @@ func TestCreateStageWithServer(t *testing.T) {
 		{
 			name: "create a stage no such asset",
 			args: []string{"stage-name", "--asset", "does-not-exist"},
-			validateCfg: func(cfg *pb.Stage) bool {
-				return cfg.Name == "stage-name" &&
-					cfg.Asset == "does-not-exist" &&
-					cfg.Service == "" &&
-					cfg.Rpc == "" &&
-					cfg.Address == "" &&
-					cfg.Host == "" &&
-					cfg.Port == 0
+			validateReq: func(req *pb.CreateStageRequest) bool {
+				return req.Name == "stage-name" &&
+					req.Asset == "does-not-exist" &&
+					req.Service == "" &&
+					req.Rpc == "" &&
+					req.Address == "" &&
+					req.Host == "" &&
+					req.Port == 0
 			},
 			response: nil,
 			err: status.Error(
@@ -155,12 +155,12 @@ func TestCreateStageWithServer(t *testing.T) {
 					StageManagementServer: &ipb.MockStageManagementServer{
 						CreateStageFn: func(
 							ctx context.Context,
-							cfg *pb.Stage,
+							req *pb.CreateStageRequest,
 						) (*emptypb.Empty, error) {
-							if !test.validateCfg(cfg) {
+							if !test.validateReq(req) {
 								return nil, fmt.Errorf(
-									"validation failed with cfg %v",
-									cfg,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							return test.response, test.err

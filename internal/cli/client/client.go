@@ -12,12 +12,12 @@ import (
 type Client interface {
 	CreateResource(ctx context.Context, r *resources.Resource) error
 	CreateAsset(context.Context, *api.CreateAssetRequest) error
-	CreateStage(ctx context.Context, s *api.Stage) error
+	CreateStage(context.Context, *api.CreateStageRequest) error
 	CreateLink(ctx context.Context, l *api.Link) error
 	CreateOrchestration(context.Context, *api.CreateOrchestrationRequest) error
 
 	GetAsset(context.Context, *pb.GetAssetRequest) ([]*pb.Asset, error)
-	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)
+	GetStage(context.Context, *pb.GetStageRequest) ([]*pb.Stage, error)
 	GetLink(ctx context.Context, query *pb.Link) ([]*pb.Link, error)
 	GetOrchestration(context.Context, *pb.GetOrchestrationRequest) (
 		[]*pb.Orchestration,

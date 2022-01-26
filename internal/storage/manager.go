@@ -26,7 +26,7 @@ type Manager interface {
 	) ([]*api.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
-	CreateStage(*badger.Txn, *api.Stage) (*Stage, error)
+	CreateStage(*badger.Txn, *api.CreateStageRequest) (*Stage, error)
 	// ContainsStage returns true if the stage exists and false otherwise.
 	ContainsStage(*badger.Txn, api.StageName) bool
 	// GetStageByName retrieves a stored stage. It returns the stage and true
@@ -35,7 +35,7 @@ type Manager interface {
 	// GetMatchingStage retrieves stored stages that match the received req.
 	// The req is a stage with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
-	GetMatchingStage(*badger.Txn, *api.Stage) ([]*api.Stage, error)
+	GetMatchingStage(*badger.Txn, *api.GetStageRequest) ([]*api.Stage, error)
 	// CreateLink creates a new link with the specified config. It returns an
 	// error if the link is not created and nil otherwise.
 	CreateLink(*badger.Txn, *api.Link) (*Link, error)
@@ -55,10 +55,7 @@ type Manager interface {
 	// GetMatchingAssets retrieves stored assets that match the received req.
 	// The req is an asset with the fields that the returned stage should
 	// have. If a field is empty, then all values for that field are accepted.
-	GetMatchingAssets(
-		*badger.Txn,
-		*api.GetAssetRequest,
-	) ([]*api.Asset, error)
+	GetMatchingAssets(*badger.Txn, *api.GetAssetRequest) ([]*api.Asset, error)
 }
 
 type manager struct {
@@ -132,23 +129,23 @@ func (m *manager) GetMatchingOrchestration(
 
 func (m *manager) CreateStage(
 	txn *badger.Txn,
-	cfg *api.Stage,
+	req *api.CreateStageRequest,
 ) (*Stage, error) {
 	var err error
-	if err = m.validateCreateStageConfig(txn, cfg); err != nil {
+	if err = m.validateCreateStageConfig(txn, req); err != nil {
 		return nil, err
 	}
-	address := m.inferStageAddress(cfg)
-	err = m.inferRpc(address, cfg)
+	address := m.inferStageAddress(req)
+	err = m.inferRpc(address, req)
 	if err != nil {
 		return nil, err
 	}
 	spec := &RpcSpec{
 		address: address,
-		service: cfg.Service,
-		rpc:     cfg.Rpc,
+		service: req.Service,
+		rpc:     req.Rpc,
 	}
-	s := NewStage(cfg.Name, spec, cfg.Asset, nil)
+	s := NewStage(req.Name, spec, req.Asset, nil)
 	err = PersistStage(txn, s)
 	if err != nil {
 		return nil, errdefs.InternalWithMsg("persist error: %v", err)
@@ -188,7 +185,7 @@ func (m *manager) GetStageByName(
 
 func (m *manager) GetMatchingStage(
 	txn *badger.Txn,
-	query *api.Stage,
+	req *api.GetStageRequest,
 ) ([]*api.Stage, error) {
 	var (
 		s    Stage
@@ -197,10 +194,10 @@ func (m *manager) GetMatchingStage(
 	)
 	s.rpcSpec = &RpcSpec{}
 
-	if query == nil {
-		query = &api.Stage{}
+	if req == nil {
+		req = &api.GetStageRequest{}
 	}
-	filter := buildStageQueryFilter(query)
+	filter := buildStageQueryFilter(req)
 	res := make([]*api.Stage, 0)
 
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -289,11 +286,11 @@ func (m *manager) GetMatchingLinks(
 	return res, nil
 }
 
-func (m *manager) inferStageAddress(cfg *api.Stage) string {
-	address := cfg.Address
-	// If address is empty, fill it from cfg host and port.
+func (m *manager) inferStageAddress(req *api.CreateStageRequest) string {
+	address := req.Address
+	// If address is empty, fill it from req host and port.
 	if address == "" {
-		host, port := cfg.Host, cfg.Port
+		host, port := req.Host, req.Port
 		if host == "" {
 			host = "localhost"
 		}
@@ -307,7 +304,7 @@ func (m *manager) inferStageAddress(cfg *api.Stage) string {
 
 func (m *manager) inferRpc(
 	address string,
-	cfg *api.Stage,
+	req *api.CreateStageRequest,
 ) error {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	defer conn.Close()
@@ -315,7 +312,7 @@ func (m *manager) inferRpc(
 		return errdefs.InternalWithMsg(
 			"connect to %s for stage %s: %s",
 			address,
-			cfg.Name,
+			req.Name,
 			err,
 		)
 	}
@@ -324,12 +321,12 @@ func (m *manager) inferRpc(
 
 	rpcDiscoveryCfg := &reflection.FindQuery{
 		Conn:    conn,
-		Service: cfg.Service,
-		Rpc:     cfg.Rpc,
+		Service: req.Service,
+		Rpc:     req.Rpc,
 	}
-	err = m.reflectionManager.FindRpc(ctx, cfg.Name, rpcDiscoveryCfg)
+	err = m.reflectionManager.FindRpc(ctx, req.Name, rpcDiscoveryCfg)
 	if err != nil {
-		return errdefs.PrependMsg(err, "stage %v", cfg.Name)
+		return errdefs.PrependMsg(err, "stage %v", req.Name)
 	}
 	return nil
 }

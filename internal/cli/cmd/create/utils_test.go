@@ -12,7 +12,10 @@ func equalCreateAssetRequest(
 	return expected.Name == actual.Name && expected.Image == actual.Image
 }
 
-func equalStage(expected *pb.Stage, actual *pb.Stage) bool {
+func equalCreateStageRequest(
+	expected *pb.CreateStageRequest,
+	actual *pb.CreateStageRequest,
+) bool {
 	return expected.Name == actual.Name &&
 		expected.Asset == actual.Asset &&
 		expected.Service == actual.Service &&

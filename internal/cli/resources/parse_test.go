@@ -66,7 +66,7 @@ var expected = []*Resource{
 	},
 	{
 		Kind: stageKind,
-		Spec: &api.Stage{
+		Spec: &api.CreateStageRequest{
 			Name:    stageName,
 			Asset:   stageAsset,
 			Service: stageService,

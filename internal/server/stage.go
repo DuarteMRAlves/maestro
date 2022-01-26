@@ -8,11 +8,25 @@ import (
 
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateStage(cfg *api.Stage) error {
-	s.logger.Info("Create Stage.", logStage(cfg, "cfg")...)
+func (s *Server) CreateStage(req *api.CreateStageRequest) error {
+	var logFields []zap.Field
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "nil")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("name", string(req.Name)),
+			zap.String("asset", string(req.Asset)),
+			zap.String("service", req.Service),
+			zap.String("rpc", req.Rpc),
+			zap.String("address", req.Address),
+			zap.String("host", req.Host),
+			zap.Int32("port", req.Port),
+		}
+	}
+	s.logger.Info("Create Stage.", logFields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			st, err := s.storageManager.CreateStage(txn, cfg)
+			st, err := s.storageManager.CreateStage(txn, req)
 			if err != nil {
 				return err
 			}
@@ -21,15 +35,28 @@ func (s *Server) CreateStage(cfg *api.Stage) error {
 	)
 }
 
-func (s *Server) GetStage(query *api.Stage) ([]*api.Stage, error) {
+func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 	var (
-		stages []*api.Stage
-		err    error
+		stages    []*api.Stage
+		err       error
+		logFields []zap.Field
 	)
-	s.logger.Info("Get Stage.", logStage(query, "query")...)
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "nil")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("name", string(req.Name)),
+			zap.String("phase", string(req.Phase)),
+			zap.String("asset", string(req.Asset)),
+			zap.String("service", req.Service),
+			zap.String("rpc", req.Rpc),
+			zap.String("address", req.Address),
+		}
+	}
+	s.logger.Info("Get Stage.", logFields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			stages, err = s.storageManager.GetMatchingStage(txn, query)
+			stages, err = s.storageManager.GetMatchingStage(txn, req)
 			return err
 		},
 	)
@@ -37,19 +64,4 @@ func (s *Server) GetStage(query *api.Stage) ([]*api.Stage, error) {
 		return nil, err
 	}
 	return stages, nil
-}
-
-func logStage(s *api.Stage, field string) []zap.Field {
-	if s == nil {
-		return []zap.Field{zap.String(field, "null")}
-	}
-	return []zap.Field{
-		zap.String("name", string(s.Name)),
-		zap.String("asset", string(s.Asset)),
-		zap.String("service", s.Service),
-		zap.String("rpc", s.Rpc),
-		zap.String("address", s.Address),
-		zap.String("host", s.Host),
-		zap.Int32("port", s.Port),
-	}
 }

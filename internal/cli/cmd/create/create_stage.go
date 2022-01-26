@@ -121,7 +121,7 @@ func (o *StageOpts) validate() error {
 }
 
 func (o *StageOpts) run() error {
-	stage := &api.Stage{
+	req := &api.CreateStageRequest{
 		Name:    api.StageName(o.name),
 		Asset:   api.AssetName(o.asset),
 		Service: o.service,
@@ -145,5 +145,5 @@ func (o *StageOpts) run() error {
 	)
 	defer cancel()
 
-	return c.CreateStage(ctx, stage)
+	return c.CreateStage(ctx, req)
 }

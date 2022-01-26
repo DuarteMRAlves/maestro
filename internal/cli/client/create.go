@@ -28,7 +28,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsStageKind():
-		s, ok := resource.Spec.(*api.Stage)
+		s, ok := resource.Spec.(*api.CreateStageRequest)
 		if !ok {
 			return errdefs.InternalWithMsg("stage spec cast failed: %v", s)
 		}
@@ -78,20 +78,23 @@ func (c *client) CreateAsset(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateStage(ctx context.Context, stage *api.Stage) error {
-	s := &pb.Stage{
-		Name:    string(stage.Name),
-		Asset:   string(stage.Asset),
-		Service: stage.Service,
-		Rpc:     stage.Rpc,
-		Address: stage.Address,
-		Host:    stage.Host,
-		Port:    stage.Port,
+func (c *client) CreateStage(
+	ctx context.Context,
+	req *api.CreateStageRequest,
+) error {
+	pbReq := &pb.CreateStageRequest{
+		Name:    string(req.Name),
+		Asset:   string(req.Asset),
+		Service: req.Service,
+		Rpc:     req.Rpc,
+		Address: req.Address,
+		Host:    req.Host,
+		Port:    req.Port,
 	}
 
 	stub := pb.NewStageManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, s)
+	_, err := stub.Create(ctx, pbReq)
 
 	return ErrorFromGrpcError(err)
 }

@@ -24,6 +24,31 @@ func UnmarshalGetOrchestrationRequest(
 	req.Phase = api.OrchestrationPhase(pbReq.Phase)
 }
 
+func UnmarshalCreateStageRequest(
+	req *api.CreateStageRequest,
+	pbReq *pb.CreateStageRequest,
+) {
+	req.Name = api.StageName(pbReq.Name)
+	req.Service = pbReq.Service
+	req.Rpc = pbReq.Rpc
+	req.Address = pbReq.Address
+	req.Host = pbReq.Host
+	req.Port = pbReq.Port
+	req.Asset = api.AssetName(pbReq.Asset)
+}
+
+func UnmarshalGetStageRequest(
+	req *api.GetStageRequest,
+	pbReq *pb.GetStageRequest,
+) {
+	req.Name = api.StageName(pbReq.Name)
+	req.Phase = api.StagePhase(pbReq.Phase)
+	req.Service = pbReq.Service
+	req.Rpc = pbReq.Rpc
+	req.Address = pbReq.Address
+	req.Asset = api.AssetName(pbReq.Asset)
+}
+
 func UnmarshalCreateAssetRequest(
 	req *api.CreateAssetRequest,
 	pbReq *pb.CreateAssetRequest,

@@ -41,53 +41,53 @@ func buildOrchestrationQueryFilter(
 	}
 }
 
-func buildStageQueryFilter(query *api.Stage) func(s *Stage) bool {
+func buildStageQueryFilter(req *api.GetStageRequest) func(s *Stage) bool {
 	filters := make([]func(s *Stage) bool, 0)
-	if query.Name != "" {
+	if req.Name != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.name == query.Name
+				return s.name == req.Name
 			},
 		)
 	}
-	if query.Phase != "" {
+	if req.Phase != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.phase == query.Phase
+				return s.phase == req.Phase
 			},
 		)
 	}
-	if query.Asset != "" {
+	if req.Asset != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.asset == query.Asset
+				return s.asset == req.Asset
 			},
 		)
 	}
-	if query.Service != "" {
+	if req.Service != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.rpcSpec.service == query.Service
+				return s.rpcSpec.service == req.Service
 			},
 		)
 	}
-	if query.Rpc != "" {
+	if req.Rpc != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.rpcSpec.rpc == query.Rpc
+				return s.rpcSpec.rpc == req.Rpc
 			},
 		)
 	}
-	if query.Address != "" {
+	if req.Address != "" {
 		filters = append(
 			filters,
 			func(s *Stage) bool {
-				return s.rpcSpec.address == query.Address
+				return s.rpcSpec.address == req.Address
 			},
 		)
 	}

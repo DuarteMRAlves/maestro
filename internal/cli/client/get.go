@@ -35,14 +35,14 @@ func (c *client) GetAsset(
 
 func (c *client) GetStage(
 	ctx context.Context,
-	query *pb.Stage,
+	req *pb.GetStageRequest,
 ) ([]*pb.Stage, error) {
 
 	stub := pb.NewStageManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, query)
+	stream, err := stub.Get(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
