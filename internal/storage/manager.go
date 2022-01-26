@@ -1,14 +1,11 @@
 package storage
 
 import (
-	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
-	"google.golang.org/grpc"
-	"time"
 )
 
 // Manager manages the storage of created orchestrations.
@@ -26,7 +23,7 @@ type Manager interface {
 	) ([]*api.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
-	CreateStage(*badger.Txn, *api.CreateStageRequest) (*api.Stage, error)
+	CreateStage(*badger.Txn, *api.CreateStageRequest) error
 	// ContainsStage returns true if the stage exists and false otherwise.
 	ContainsStage(*badger.Txn, api.StageName) bool
 	// GetStageByName retrieves a stored stage. It returns the stage and true
@@ -38,7 +35,7 @@ type Manager interface {
 	GetMatchingStage(*badger.Txn, *api.GetStageRequest) ([]*api.Stage, error)
 	// CreateLink creates a new link with the specified config. It returns an
 	// error if the link is not created and nil otherwise.
-	CreateLink(*badger.Txn, *api.CreateLinkRequest) (*api.Link, error)
+	CreateLink(*badger.Txn, *api.CreateLinkRequest) error
 	// ContainsLink returns true if a link with the given name exists and false
 	// otherwise.
 	ContainsLink(*badger.Txn, api.LinkName) bool
@@ -84,11 +81,7 @@ func (m *manager) CreateOrchestration(
 		Links:  []api.LinkName{},
 	}
 	helper := NewTxnHelper(txn)
-	err = helper.SaveOrchestration(o)
-	if err != nil {
-		return errdefs.InternalWithMsg("save error: %v", err)
-	}
-	return nil
+	return helper.SaveOrchestration(o)
 }
 
 func (m *manager) GetMatchingOrchestration(
@@ -124,16 +117,12 @@ func (m *manager) GetMatchingOrchestration(
 func (m *manager) CreateStage(
 	txn *badger.Txn,
 	req *api.CreateStageRequest,
-) (*api.Stage, error) {
+) error {
 	var err error
 	if err = m.validateCreateStageConfig(txn, req); err != nil {
-		return nil, err
+		return err
 	}
 	address := m.inferStageAddress(req)
-	err = m.inferRpc(address, req)
-	if err != nil {
-		return nil, err
-	}
 	s := &api.Stage{
 		Name:    req.Name,
 		Phase:   api.StagePending,
@@ -143,11 +132,7 @@ func (m *manager) CreateStage(
 		Asset:   req.Asset,
 	}
 	helper := NewTxnHelper(txn)
-	err = helper.SaveStage(s)
-	if err != nil {
-		return nil, errdefs.InternalWithMsg("persist error: %v", err)
-	}
-	return s, nil
+	return helper.SaveStage(s)
 }
 
 func (m *manager) inferStageAddress(req *api.CreateStageRequest) string {
@@ -164,35 +149,6 @@ func (m *manager) inferStageAddress(req *api.CreateStageRequest) string {
 		address = fmt.Sprintf("%s:%d", host, port)
 	}
 	return address
-}
-
-func (m *manager) inferRpc(
-	address string,
-	req *api.CreateStageRequest,
-) error {
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	defer conn.Close()
-	if err != nil {
-		return errdefs.InternalWithMsg(
-			"connect to %s for stage %s: %s",
-			address,
-			req.Name,
-			err,
-		)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	rpcDiscoveryCfg := &rpc.FindQuery{
-		Conn:    conn,
-		Service: req.Service,
-		Rpc:     req.Rpc,
-	}
-	err = m.reflectionManager.FindRpc(ctx, req.Name, rpcDiscoveryCfg)
-	if err != nil {
-		return errdefs.PrependMsg(err, "stage %v", req.Name)
-	}
-	return nil
 }
 
 func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {
@@ -257,10 +213,10 @@ func (m *manager) GetMatchingStage(
 func (m *manager) CreateLink(
 	txn *badger.Txn,
 	req *api.CreateLinkRequest,
-) (*api.Link, error) {
+) error {
 	var err error
 	if err = m.validateCreateLinkConfig(txn, req); err != nil {
-		return nil, err
+		return err
 	}
 	l := &api.Link{
 		Name:        req.Name,
@@ -270,10 +226,7 @@ func (m *manager) CreateLink(
 		TargetField: req.TargetField,
 	}
 	helper := NewTxnHelper(txn)
-	if err = helper.SaveLink(l); err != nil {
-		return nil, errdefs.InternalWithMsg("persist error: %v", err)
-	}
-	return l, nil
+	return helper.SaveLink(l)
 }
 
 // ContainsLink returns true if a link with the given name exists and false

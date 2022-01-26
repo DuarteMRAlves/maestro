@@ -12,11 +12,7 @@ func (s *Server) CreateStage(req *api.CreateStageRequest) error {
 	logs.LogCreateStageRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			st, err := s.storageManager.CreateStage(txn, req)
-			if err != nil {
-				return err
-			}
-			return s.flowManager.RegisterStage(st)
+			return s.storageManager.CreateStage(txn, req)
 		},
 	)
 }

@@ -9,38 +9,11 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
-	"net"
 	"testing"
 )
 
 func TestServer_CreateStage(t *testing.T) {
-	var (
-		lis                         net.Listener
-		registerTest, registerExtra bool
-	)
 	const name = "stage-name"
-
-	lis = util.NewTestListener(t)
-	tcpAddr, ok := lis.Addr().(*net.TCPAddr)
-	assert.Assert(t, ok, "address type cast")
-	testAddr := tcpAddr.String()
-	testHost := tcpAddr.IP.String()
-	testPort := tcpAddr.Port
-	registerTest, registerExtra = true, false
-	testServer := util.StartTestServer(t, lis, registerTest, registerExtra)
-	defer testServer.GracefulStop()
-
-	lis = util.NewTestListener(t)
-	extraAddr := lis.Addr().String()
-	registerTest, registerExtra = false, true
-	extraServer := util.StartTestServer(t, lis, registerTest, registerExtra)
-	defer extraServer.GracefulStop()
-
-	lis = util.NewTestListener(t)
-	bothAddr := lis.Addr().String()
-	registerTest, registerExtra = true, true
-	bothServer := util.StartTestServer(t, lis, registerTest, registerExtra)
-	defer bothServer.GracefulStop()
 
 	tests := []struct {
 		name string
@@ -49,42 +22,8 @@ func TestServer_CreateStage(t *testing.T) {
 		{
 			name: "nil asset, service and rpc",
 			req: &api.CreateStageRequest{
-				Name: name,
-				// ExtraServer only has one server and rpc
-				Address: extraAddr,
-			},
-		},
-		{
-			name: "no service and specified rpc",
-			req: &api.CreateStageRequest{
 				Name:    name,
-				Asset:   util.AssetNameForNum(0),
-				Service: "",
-				Rpc:     "Unary",
-				// testServer only has one service but four rpcs
-				Address: testAddr,
-			},
-		},
-		{
-			name: "with service and no rpc",
-			req: &api.CreateStageRequest{
-				Name:    name,
-				Asset:   util.AssetNameForNum(0),
-				Service: "pb.ExtraService",
-				Rpc:     "",
-				// both has two services and one rpc for ExtraService
-				Address: bothAddr,
-			},
-		},
-		{
-			name: "with service and rpc",
-			req: &api.CreateStageRequest{
-				Name:    name,
-				Asset:   util.AssetNameForNum(0),
-				Service: "pb.TestService",
-				Rpc:     "Unary",
-				// both has two services and four rpcs for TestService
-				Address: bothAddr,
+				Address: "some-address",
 			},
 		},
 		{
@@ -92,11 +31,10 @@ func TestServer_CreateStage(t *testing.T) {
 			req: &api.CreateStageRequest{
 				Name:    name,
 				Asset:   util.AssetNameForNum(0),
-				Service: "pb.TestService",
-				Rpc:     "Unary",
-				// both has two services and four rpcs for TestService
-				Host: testHost,
-				Port: int32(testPort),
+				Service: "Service",
+				Rpc:     "Method",
+				Host:    "host",
+				Port:    int32(12345),
 			},
 		},
 	}
@@ -265,11 +203,6 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "stage-name"
 
-	lis := util.NewTestListener(t)
-	bothAddr := lis.Addr().String()
-	bothServer := util.StartTestServer(t, lis, true, true)
-	defer bothServer.GracefulStop()
-
 	db, err := badger.Open(
 		badger.DefaultOptions("").WithInMemory(true),
 	)
@@ -292,10 +225,9 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	config := &api.CreateStageRequest{
 		Name:    name,
 		Asset:   util.AssetNameForNum(0),
-		Service: "pb.TestService",
-		Rpc:     "Unary",
-		// both has two services and four rpcs for TestService
-		Address: bothAddr,
+		Service: "Service",
+		Rpc:     "Method",
+		Address: "address",
 	}
 
 	err = s.CreateStage(config)
@@ -304,146 +236,6 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not AlreadyExists")
 	expectedMsg := fmt.Sprintf("stage '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)
-}
-
-func TestServer_CreateStage_Error(t *testing.T) {
-	const name = "stage-name"
-	tests := []struct {
-		name            string
-		registerTest    bool
-		registerExtra   bool
-		req             *api.CreateStageRequest
-		verifyErrTypeFn func(err error) bool
-		expectedErrMsg  string
-	}{
-		{
-			name:          "no services",
-			registerTest:  false,
-			registerExtra: false,
-			req: &api.CreateStageRequest{
-				Name:  name,
-				Asset: util.AssetNameForNum(0),
-				// Address injected during the test to point to the server
-			},
-			verifyErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg: fmt.Sprintf(
-				"stage %s: find rpc: find service without name: expected 1 "+
-					"available service but found 0",
-				name,
-			),
-		},
-		{
-			name:          "too many services",
-			registerTest:  true,
-			registerExtra: true,
-			req: &api.CreateStageRequest{
-				Name:  name,
-				Asset: util.AssetNameForNum(0),
-				// Address injected during the test to point to the server
-			},
-			verifyErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg: fmt.Sprintf(
-				"stage %s: find rpc: find service without name: expected 1 "+
-					"available service but found 2",
-				name,
-			),
-		},
-		{
-			name:          "no such service",
-			registerTest:  true,
-			registerExtra: true,
-			req: &api.CreateStageRequest{
-				Name:    name,
-				Asset:   util.AssetNameForNum(0),
-				Service: "NoSuchService",
-				// Address injected during the test to point to the server
-			},
-			verifyErrTypeFn: errdefs.IsNotFound,
-			expectedErrMsg: fmt.Sprintf(
-				"stage %s: find rpc: find service with name NoSuchService:"+
-					" not found",
-				name,
-			),
-		},
-		{
-			name:         "too many rpcs",
-			registerTest: true,
-			req: &api.CreateStageRequest{
-				Name:  name,
-				Asset: util.AssetNameForNum(0),
-				// Address injected during the test to point to the server
-			},
-			verifyErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg: fmt.Sprintf(
-				"stage %v: find rpc: find rpc without name: expected 1 "+
-					"available rpc but found 4",
-				name,
-			),
-		},
-		{
-			name:          "no such rpc",
-			registerTest:  true,
-			registerExtra: false,
-			req: &api.CreateStageRequest{
-				Name:  name,
-				Asset: util.AssetNameForNum(0),
-				Rpc:   "NoSuchRpc",
-				// Address injected during the test to point to the server
-			},
-			verifyErrTypeFn: errdefs.IsNotFound,
-			expectedErrMsg: fmt.Sprintf(
-				"stage %v: find rpc: find rpc with name NoSuchRpc: not found",
-				name,
-			),
-		},
-	}
-	for _, test := range tests {
-		t.Run(
-			test.name,
-			func(t *testing.T) {
-				var err error
-
-				lis := util.NewTestListener(t)
-				bothAddr := lis.Addr().String()
-				bothServer := util.StartTestServer(
-					t,
-					lis,
-					test.registerTest,
-					test.registerExtra,
-				)
-				defer bothServer.GracefulStop()
-
-				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true),
-				)
-				assert.NilError(t, err, "db creation")
-				defer db.Close()
-				s, err := NewBuilder().
-					WithGrpc().
-					WithDb(db).
-					WithLogger(logs.NewTestLogger(t)).
-					Build()
-				assert.NilError(t, err, "build server")
-				err = db.Update(
-					func(txn *badger.Txn) error {
-						populateForStages(t, txn)
-						return nil
-					},
-				)
-				assert.NilError(t, err, "Populate error")
-
-				test.req.Address = bothAddr
-
-				err = s.CreateStage(test.req)
-				assert.Assert(
-					t,
-					test.verifyErrTypeFn(err),
-					"incorrect err type",
-				)
-				assert.Error(t, err, test.expectedErrMsg)
-			},
-		)
-	}
 }
 
 func populateForStages(t *testing.T, txn *badger.Txn) {
