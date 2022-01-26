@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -36,7 +37,7 @@ func TestServer_CreateOrchestration(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 
@@ -56,7 +57,7 @@ func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 
@@ -121,7 +122,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 
@@ -152,7 +153,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 

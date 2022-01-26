@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
@@ -112,7 +113,7 @@ func TestServer_CreateStage(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 				err = db.Update(
@@ -138,7 +139,7 @@ func TestServer_CreateStage_NilConfig(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	err = db.Update(
@@ -198,7 +199,7 @@ func TestServer_CreateStage_InvalidName(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 				err = db.Update(
@@ -235,7 +236,7 @@ func TestServer_CreateStage_AssetNotFound(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	err = db.Update(
@@ -277,7 +278,7 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	err = db.Update(
@@ -420,7 +421,7 @@ func TestServer_CreateStage_Error(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 				err = db.Update(
