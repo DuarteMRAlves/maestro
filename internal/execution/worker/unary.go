@@ -5,8 +5,7 @@ import (
 	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
 	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/execution/state"
-	"github.com/DuarteMRAlves/maestro/internal/invoke"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"google.golang.org/grpc"
 	"io"
 	"time"
@@ -16,8 +15,8 @@ import (
 type UnaryWorker struct {
 	Address string
 	conn    grpc.ClientConnInterface
-	rpc     reflection.RPC
-	invoker invoke.UnaryClient
+	rpc     rpc.RPC
+	invoker rpc.UnaryClient
 
 	input  flowinput.Input
 	output flowoutput.Output

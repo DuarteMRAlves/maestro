@@ -1,4 +1,4 @@
-package reflection
+package rpc
 
 import (
 	"github.com/jhump/protoreflect/desc"
@@ -49,8 +49,10 @@ func TestMessage_Compatible_True(t *testing.T) {
 				assert.Assert(
 					t,
 					message1.Compatible(message2),
-					"messages compatible is not true")
-			})
+					"messages compatible is not true",
+				)
+			},
+		)
 	}
 }
 
@@ -99,7 +101,9 @@ func TestMessage_Compatible_False(t *testing.T) {
 				assert.Assert(
 					t,
 					!message1.Compatible(message2),
-					"messages compatible is not false")
-			})
+					"messages compatible is not false",
+				)
+			},
+		)
 	}
 }

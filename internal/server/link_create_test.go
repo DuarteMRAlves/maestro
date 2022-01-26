@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
-	mockreflection "github.com/DuarteMRAlves/maestro/internal/reflection"
+	mockreflection "github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"

@@ -1,10 +1,11 @@
-package invoke
+package rpc
 
 import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"gotest.tools/v3/assert"
 	"net"
 	"testing"
@@ -12,12 +13,12 @@ import (
 
 var dummyErr = fmt.Errorf("dummy error")
 
-type service struct {
+type testService struct {
 	pb.UnimplementedTestServiceServer
 	pb.UnimplementedExtraServiceServer
 }
 
-func (s *service) Unary(
+func (s *testService) Unary(
 	ctx context.Context,
 	request *pb.Request,
 ) (*pb.Reply, error) {
@@ -27,18 +28,6 @@ func (s *service) Unary(
 	} else {
 		return replyFromRequest(request), nil
 	}
-}
-
-func startServer(t *testing.T, lis net.Listener) *grpc.Server {
-	testServer := grpc.NewServer()
-	pb.RegisterTestServiceServer(testServer, &service{})
-	pb.RegisterExtraServiceServer(testServer, &service{})
-
-	go func() {
-		err := testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
-	}()
-	return testServer
 }
 
 func replyFromRequest(request *pb.Request) *pb.Reply {
@@ -55,10 +44,31 @@ func replyFromRequest(request *pb.Request) *pb.Reply {
 		}
 		innerMsg.RepeatedString = append(
 			innerMsg.RepeatedString,
-			repeatedString)
+			repeatedString,
+		)
 	}
 	return &pb.Reply{
 		DoubleField: doubleField,
 		InnerMsg:    innerMsg,
 	}
+}
+
+func startServer(
+	t *testing.T,
+	lis net.Listener,
+	reflectionFlag bool,
+) *grpc.Server {
+	testServer := grpc.NewServer()
+	pb.RegisterTestServiceServer(testServer, &testService{})
+	pb.RegisterExtraServiceServer(testServer, &testService{})
+
+	if reflectionFlag {
+		reflection.Register(testServer)
+	}
+
+	go func() {
+		err := testServer.Serve(lis)
+		assert.NilError(t, err, "test server error")
+	}()
+	return testServer
 }

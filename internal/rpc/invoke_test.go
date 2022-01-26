@@ -1,4 +1,4 @@
-package invoke
+package rpc
 
 import (
 	"context"
@@ -49,7 +49,7 @@ var (
 func TestUnaryClient_Invoke(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis)
+	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -78,7 +78,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis)
+	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -102,7 +102,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis)
+	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -130,7 +130,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis)
+	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

@@ -4,8 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
 	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
-	"github.com/DuarteMRAlves/maestro/internal/invoke"
-	"github.com/DuarteMRAlves/maestro/internal/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"google.golang.org/grpc"
 )
 
@@ -15,7 +14,7 @@ type Worker interface {
 
 type Cfg struct {
 	Address string
-	Rpc     reflection.RPC
+	Rpc     rpc.RPC
 	Input   flowinput.Input
 	Output  flowoutput.Output
 	Done    chan<- bool
@@ -46,7 +45,7 @@ func NewWorker(cfg *Cfg) (Worker, error) {
 			Address: cfg.Address,
 			conn:    conn,
 			rpc:     cfg.Rpc,
-			invoker: invoke.NewUnary(cfg.Rpc.FullyQualifiedName(), conn),
+			invoker: rpc.NewUnary(cfg.Rpc.FullyQualifiedName(), conn),
 			input:   cfg.Input,
 			output:  cfg.Output,
 			done:    cfg.Done,
