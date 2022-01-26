@@ -4,7 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/execution"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -30,7 +30,7 @@ type Server struct {
 }
 
 func (s *Server) ServeGrpc(lis net.Listener) error {
-	if ok, err := validate.Status(s.grpcServer != nil, grpcNotConfigured); !ok {
+	if ok, err := util.Status(s.grpcServer != nil, grpcNotConfigured); !ok {
 		return err
 	}
 	return s.grpcServer.Serve(lis)

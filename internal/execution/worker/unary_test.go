@@ -5,7 +5,7 @@ import (
 	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -15,9 +15,9 @@ import (
 )
 
 func TestUnaryWorker_Run(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
-	server := testutil.StartTestServer(t, lis, true, true)
+	server := util.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
 	rpc := &reflection.MockRPC{
@@ -92,7 +92,7 @@ func TestUnaryWorker_Run(t *testing.T) {
 		err = dynRep.ConvertTo(rep)
 		assert.NilError(t, err, "convert dynamic to Reply")
 
-		testutil.AssertUnaryRequest(t, req, rep)
+		util.AssertUnaryRequest(t, req, rep)
 	}
 }
 

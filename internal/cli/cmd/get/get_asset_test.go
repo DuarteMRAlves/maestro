@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -43,13 +43,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNumStr(0),
-					Image: testutil.AssetImageForNum(0),
+					Name:  util.AssetNameForNumStr(0),
+					Image: util.AssetImageForNum(0),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNumStr(0), testutil.AssetImageForNum(0)},
+				{util.AssetNameForNumStr(0), util.AssetImageForNum(0)},
 			},
 		},
 		{
@@ -60,66 +60,66 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNumStr(2),
-					Image: testutil.AssetImageForNum(2),
+					Name:  util.AssetNameForNumStr(2),
+					Image: util.AssetImageForNum(2),
 				},
 				{
-					Name:  testutil.AssetNameForNumStr(1),
-					Image: testutil.AssetImageForNum(1),
+					Name:  util.AssetNameForNumStr(1),
+					Image: util.AssetImageForNum(1),
 				},
 				{
-					Name:  testutil.AssetNameForNumStr(0),
-					Image: testutil.AssetImageForNum(0),
+					Name:  util.AssetNameForNumStr(0),
+					Image: util.AssetImageForNum(0),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNumStr(0), testutil.AssetImageForNum(0)},
-				{testutil.AssetNameForNumStr(1), testutil.AssetImageForNum(1)},
-				{testutil.AssetNameForNumStr(2), testutil.AssetImageForNum(2)},
+				{util.AssetNameForNumStr(0), util.AssetImageForNum(0)},
+				{util.AssetNameForNumStr(1), util.AssetImageForNum(1)},
+				{util.AssetNameForNumStr(2), util.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{testutil.AssetNameForNumStr(1)},
+			args: []string{util.AssetNameForNumStr(1)},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
-				return req.Name == testutil.AssetNameForNumStr(1) &&
+				return req.Name == util.AssetNameForNumStr(1) &&
 					req.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNumStr(1),
-					Image: testutil.AssetImageForNum(1),
+					Name:  util.AssetNameForNumStr(1),
+					Image: util.AssetImageForNum(1),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNumStr(1), testutil.AssetImageForNum(1)},
+				{util.AssetNameForNumStr(1), util.AssetImageForNum(1)},
 			},
 		},
 		{
 			name: "filter by image",
-			args: []string{"--image", testutil.AssetImageForNum(2)},
+			args: []string{"--image", util.AssetImageForNum(2)},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
 				return req.Name == "" &&
-					req.Image == testutil.AssetImageForNum(2)
+					req.Image == util.AssetImageForNum(2)
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  testutil.AssetNameForNumStr(2),
-					Image: testutil.AssetImageForNum(2),
+					Name:  util.AssetNameForNumStr(2),
+					Image: util.AssetImageForNum(2),
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{testutil.AssetNameForNumStr(2), testutil.AssetImageForNum(2)},
+				{util.AssetNameForNumStr(2), util.AssetImageForNum(2)},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{testutil.AssetNameForNumStr(3)},
+			args: []string{util.AssetNameForNumStr(3)},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
-				return req.Name == testutil.AssetNameForNumStr(3) &&
+				return req.Name == util.AssetNameForNumStr(3) &&
 					req.Image == ""
 			},
 			responses: []*pb.Asset{},
@@ -129,10 +129,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such image",
-			args: []string{"--image", testutil.AssetImageForNum(4)},
+			args: []string{"--image", util.AssetImageForNum(4)},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
 				return req.Name == "" &&
-					req.Image == testutil.AssetImageForNum(4)
+					req.Image == util.AssetImageForNum(4)
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{
@@ -145,7 +145,7 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				lis := testutil.ListenAvailablePort(t)
+				lis := util.NewTestListener(t)
 
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)

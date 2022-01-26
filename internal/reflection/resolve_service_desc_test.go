@@ -3,7 +3,7 @@ package reflection
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestClient_ResolveService_TestService(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -73,14 +73,16 @@ func assertRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		stringField.GetType())
+		stringField.GetType(),
+	)
 
 	repeatedField := descriptor.FindFieldByName("repeatedField")
 	assert.Equal(t, int32(2), repeatedField.GetNumber())
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_INT64,
-		repeatedField.GetType())
+		repeatedField.GetType(),
+	)
 	assert.Assert(t, repeatedField.IsRepeated())
 
 	repeatedInnerMsg := descriptor.FindFieldByName("repeatedInnerMsg")
@@ -88,7 +90,8 @@ func assertRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		repeatedInnerMsg.GetType())
+		repeatedInnerMsg.GetType(),
+	)
 	assert.Assert(t, repeatedInnerMsg.IsRepeated())
 
 	innerType := repeatedInnerMsg.GetMessageType()
@@ -102,14 +105,16 @@ func assertReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_DOUBLE,
-		doubleField.GetType())
+		doubleField.GetType(),
+	)
 
 	innerMsg := descriptor.FindFieldByName("innerMsg")
 	assert.Equal(t, int32(2), innerMsg.GetNumber())
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		innerMsg.GetType())
+		innerMsg.GetType(),
+	)
 
 	innerType := innerMsg.GetMessageType()
 	assert.Assert(t, innerType != nil)
@@ -122,12 +127,13 @@ func assertInnerMessageType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedString.GetType())
+		repeatedString.GetType(),
+	)
 	assert.Assert(t, repeatedString.IsRepeated())
 }
 
 func TestClient_ResolveService_ExtraService(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -170,7 +176,8 @@ func assertExtraRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedStringField.GetType())
+		repeatedStringField.GetType(),
+	)
 	assert.Assert(t, repeatedStringField.IsRepeated())
 
 	innerMsg := descriptor.FindFieldByName("innerMsg")
@@ -178,7 +185,8 @@ func assertExtraRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		innerMsg.GetType())
+		innerMsg.GetType(),
+	)
 
 	innerType := innerMsg.GetMessageType()
 	assert.Assert(t, innerType != nil)
@@ -200,7 +208,8 @@ func assertExtraReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_INT64,
-		oneOfChoice1.GetType())
+		oneOfChoice1.GetType(),
+	)
 
 	oneOfChoice2 := oneOfChoices[1]
 	assert.Equal(t, "extraInnerMsg", oneOfChoice2.GetName())
@@ -208,7 +217,8 @@ func assertExtraReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		oneOfChoice2.GetType())
+		oneOfChoice2.GetType(),
+	)
 
 	extraInnerMsg := oneOfChoice2.GetMessageType()
 	assert.Assert(t, extraInnerMsg != nil)
@@ -219,7 +229,8 @@ func assertExtraReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_DOUBLE,
-		repeatedDoubleField.GetType())
+		repeatedDoubleField.GetType(),
+	)
 	assert.Assert(t, repeatedDoubleField.IsRepeated())
 }
 
@@ -232,12 +243,13 @@ func assertExtraInnerMessageType(
 	assert.Equal(
 		t,
 		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedString.GetType())
+		repeatedString.GetType(),
+	)
 	assert.Assert(t, repeatedString.IsRepeated())
 }
 
 func TestClient_ResolveServiceNoReflection(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
@@ -262,7 +274,7 @@ func TestClient_ResolveServiceNoReflection(t *testing.T) {
 }
 
 func TestClient_ResolveServiceUnknownService(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()

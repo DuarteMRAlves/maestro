@@ -4,13 +4,13 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
 // MarshalStage creates a protobuf message representing the Stage from the Stage
 // structure.
 func MarshalStage(s *api.Stage) (*pb.Stage, error) {
-	if ok, err := validate.ArgNotNil(s, "s"); !ok {
+	if ok, err := util.ArgNotNil(s, "s"); !ok {
 		return nil, err
 	}
 	pbStage := &pb.Stage{
@@ -27,7 +27,7 @@ func MarshalStage(s *api.Stage) (*pb.Stage, error) {
 // UnmarshalStage creates a Stage struct from a protobuf message representing
 // the stage.
 func UnmarshalStage(p *pb.Stage) (*api.Stage, error) {
-	if ok, err := validate.ArgNotNil(p, "p"); !ok {
+	if ok, err := util.ArgNotNil(p, "p"); !ok {
 		return nil, errdefs.InvalidArgumentWithError(err)
 	}
 	return &api.Stage{

@@ -3,7 +3,7 @@ package invoke
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
@@ -47,7 +47,7 @@ var (
 )
 
 func TestUnaryClient_Invoke(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis)
 	defer testServer.Stop()
@@ -71,11 +71,12 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		t,
 		expectedReply,
 		reply,
-		cmpopts.IgnoreUnexported(pb.Reply{}, pb.InnerMessage{}))
+		cmpopts.IgnoreUnexported(pb.Reply{}, pb.InnerMessage{}),
+	)
 }
 
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis)
 	defer testServer.Stop()
@@ -99,7 +100,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis)
 	defer testServer.Stop()
@@ -121,12 +122,13 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsFailedPrecondition(err),
-		"error is not FailedPrecondition")
+		"error is not FailedPrecondition",
+	)
 	assert.ErrorContains(t, err, "unary invoke: ")
 }
 
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
-	lis := testutil.ListenAvailablePort(t)
+	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis)
 	defer testServer.Stop()
@@ -148,6 +150,7 @@ func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsFailedPrecondition(err),
-		"error is not FailedPrecondition")
+		"error is not FailedPrecondition",
+	)
 	assert.ErrorContains(t, err, "unary invoke: ")
 }

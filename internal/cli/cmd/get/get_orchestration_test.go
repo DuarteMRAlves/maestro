@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -49,7 +49,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					testutil.OrchestrationNameForNum(0),
+					util.OrchestrationNameForNum(0),
 					string(api.OrchestrationSucceeded),
 				},
 			},
@@ -69,24 +69,24 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					testutil.OrchestrationNameForNum(0),
+					util.OrchestrationNameForNum(0),
 					string(api.OrchestrationFailed),
 				},
 				{
-					testutil.OrchestrationNameForNum(1),
+					util.OrchestrationNameForNum(1),
 					string(api.OrchestrationRunning),
 				},
 				{
-					testutil.OrchestrationNameForNum(2),
+					util.OrchestrationNameForNum(2),
 					string(api.OrchestrationPending),
 				},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{testutil.OrchestrationNameForNum(2)},
+			args: []string{util.OrchestrationNameForNum(2)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == testutil.OrchestrationNameForNum(2) &&
+				return req.Name == util.OrchestrationNameForNum(2) &&
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
@@ -95,16 +95,16 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					testutil.OrchestrationNameForNum(2),
+					util.OrchestrationNameForNum(2),
 					string(api.OrchestrationSucceeded),
 				},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{testutil.OrchestrationNameForNum(3)},
+			args: []string{util.OrchestrationNameForNum(3)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == testutil.OrchestrationNameForNum(3) &&
+				return req.Name == util.OrchestrationNameForNum(3) &&
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{},
@@ -123,7 +123,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					testutil.OrchestrationNameForNum(1),
+					util.OrchestrationNameForNum(1),
 					string(api.OrchestrationPending),
 				},
 			},
@@ -143,7 +143,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				lis := testutil.ListenAvailablePort(t)
+				lis := util.NewTestListener(t)
 
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
@@ -202,7 +202,7 @@ func newPbOrchestration(
 	phase api.OrchestrationPhase,
 ) *pb.Orchestration {
 	return &pb.Orchestration{
-		Name:  testutil.OrchestrationNameForNum(num),
+		Name:  util.OrchestrationNameForNum(num),
 		Phase: string(phase),
 		Links: nil,
 	}

@@ -1,4 +1,4 @@
-package validate
+package util
 
 import (
 	"fmt"
@@ -24,7 +24,8 @@ func Status(b bool, msg string, msgArgs ...interface{}) (bool, error) {
 	if !b {
 		return false, fmt.Errorf(
 			"status assertion failed: '%v'",
-			fmt.Sprintf(msg, msgArgs...))
+			fmt.Sprintf(msg, msgArgs...),
+		)
 	}
 	return true, nil
 }

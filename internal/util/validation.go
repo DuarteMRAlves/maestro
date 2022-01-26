@@ -1,4 +1,4 @@
-package testutil
+package util
 
 func ValidateEqualElementsString(expected []string, actual []string) bool {
 	if len(expected) != len(actual) {

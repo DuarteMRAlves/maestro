@@ -7,7 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -117,7 +117,7 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				lis := testutil.ListenAvailablePort(t)
+				lis := util.NewTestListener(t)
 
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)

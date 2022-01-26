@@ -2,7 +2,7 @@ package resources
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/validate"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"reflect"
 	"strings"
 )
@@ -15,7 +15,7 @@ func validateInfo(v interface{}) error {
 		err error
 	)
 
-	if ok, err = validate.ArgNotNil(v, "dst"); !ok {
+	if ok, err = util.ArgNotNil(v, "dst"); !ok {
 		return err
 	}
 	value := reflect.ValueOf(v)
@@ -28,7 +28,8 @@ func validateInfo(v interface{}) error {
 	default:
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid type: expected Ptr or Struct but got %v",
-			value.Kind())
+			value.Kind(),
+		)
 	}
 
 	objType := value.Type()
@@ -60,7 +61,8 @@ func validateField(
 				if fieldValue.IsZero() {
 					return errdefs.InvalidArgumentWithMsg(
 						"missing required field: '%v'",
-						yamlName(objTypeField))
+						yamlName(objTypeField),
+					)
 				}
 			}
 		}

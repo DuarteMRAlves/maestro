@@ -5,7 +5,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
@@ -15,8 +15,8 @@ import (
 
 // assetForNum deterministically creates an asset with the given number.
 func assetForNum(num int) *api.Asset {
-	name := testutil.AssetNameForNum(num)
-	img := testutil.AssetImageForNum(num)
+	name := util.AssetNameForNum(num)
+	img := util.AssetImageForNum(num)
 	return &api.Asset{
 		Name:  name,
 		Image: img,
@@ -49,13 +49,13 @@ func mockStage(
 	assert.NilError(t, err, fmt.Sprintf("load res desc for stage: %d\n", num))
 
 	rpcManager.Rpcs.Store(
-		testutil.StageNameForNum(num),
+		util.StageNameForNum(num),
 		&reflection.MockRPC{
-			Name_: testutil.StageRpcForNum(num),
+			Name_: util.StageRpcForNum(num),
 			FQN: fmt.Sprintf(
 				"%s/%s",
-				testutil.StageServiceForNum(num),
-				testutil.StageRpcForNum(num),
+				util.StageServiceForNum(num),
+				util.StageRpcForNum(num),
 			),
 			In:    reqMsg,
 			Out:   resMsg,
@@ -64,12 +64,12 @@ func mockStage(
 	)
 
 	return &api.Stage{
-		Name:    testutil.StageNameForNum(num),
+		Name:    util.StageNameForNum(num),
 		Phase:   api.StagePending,
-		Service: testutil.StageServiceForNum(num),
-		Rpc:     testutil.StageRpcForNum(num),
-		Address: testutil.StageAddressForNum(num),
-		Asset:   testutil.AssetNameForNum(num),
+		Service: util.StageServiceForNum(num),
+		Rpc:     util.StageRpcForNum(num),
+		Address: util.StageAddressForNum(num),
+		Asset:   util.AssetNameForNum(num),
 	}
 }
 
