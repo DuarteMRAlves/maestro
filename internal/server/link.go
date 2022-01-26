@@ -9,24 +9,36 @@ import (
 
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateLink(cfg *api.Link) error {
-	s.logger.Info("Create Link.", logLink(cfg, "cfg")...)
+func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
+	var logFields []zap.Field
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "null")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("name", string(req.Name)),
+			zap.String("source-stage", string(req.SourceStage)),
+			zap.String("source-field", req.SourceField),
+			zap.String("target-stage", string(req.TargetStage)),
+			zap.String("target-field", req.TargetField),
+		}
+	}
+	s.logger.Info("Create Link.", logFields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			l, err := s.storageManager.CreateLink(txn, cfg)
+			l, err := s.storageManager.CreateLink(txn, req)
 			if err != nil {
 				return err
 			}
 			source, ok := s.storageManager.GetStageByName(
 				txn,
-				cfg.SourceStage,
+				req.SourceStage,
 			)
 			if !ok {
 				return errdefs.InternalWithMsg("source not found")
 			}
 			target, ok := s.storageManager.GetStageByName(
 				txn,
-				cfg.TargetStage,
+				req.TargetStage,
 			)
 			if !ok {
 				return errdefs.InternalWithMsg("target not found")
@@ -37,15 +49,27 @@ func (s *Server) CreateLink(cfg *api.Link) error {
 
 }
 
-func (s *Server) GetLink(query *api.Link) ([]*api.Link, error) {
+func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 	var (
-		links []*api.Link
-		err   error
+		links     []*api.Link
+		err       error
+		logFields []zap.Field
 	)
-	s.logger.Info("Get Link.", logLink(query, "query")...)
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "null")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("name", string(req.Name)),
+			zap.String("source-stage", string(req.SourceStage)),
+			zap.String("source-field", req.SourceField),
+			zap.String("target-stage", string(req.TargetStage)),
+			zap.String("target-field", req.TargetField),
+		}
+	}
+	s.logger.Info("Get Link.", logFields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			links, err = s.storageManager.GetMatchingLinks(txn, query)
+			links, err = s.storageManager.GetMatchingLinks(txn, req)
 			return err
 		},
 	)
@@ -53,17 +77,4 @@ func (s *Server) GetLink(query *api.Link) ([]*api.Link, error) {
 		return nil, err
 	}
 	return links, nil
-}
-
-func logLink(l *api.Link, field string) []zap.Field {
-	if l == nil {
-		return []zap.Field{zap.String(field, "null")}
-	}
-	return []zap.Field{
-		zap.String("name", string(l.Name)),
-		zap.String("source-stage", string(l.SourceStage)),
-		zap.String("source-field", l.SourceField),
-		zap.String("target-stage", string(l.TargetStage)),
-		zap.String("target-field", l.TargetField),
-	}
 }

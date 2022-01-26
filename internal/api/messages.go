@@ -71,6 +71,59 @@ type GetStageRequest struct {
 	Asset AssetName
 }
 
+// CreateLinkRequest represents a message to create a link.
+type CreateLinkRequest struct {
+	// Name that should be associated with the link.
+	// (required, unique)
+	Name LinkName `yaml:"name" info:"required"`
+	// SourceStage defines the name of the stage that is the source of the link.
+	// The messages returned by the rpc executed in this stage are transferred
+	// through this link to the next stage.
+	// (required)
+	SourceStage StageName `yaml:"source_stage" info:"required"`
+	// SourceField defines the field of the source message that should be sent
+	// through the link. If specified, the message transferred through this link
+	// is the field with the given name from the message returned by SourceStage.
+	// If not specified, the entire message from SourceStage is used.
+	// (optional)
+	SourceField string `yaml:"source_field"`
+	// TargetStage defines the name of the stage that is the target of the link.
+	// The messages that are transferred through this link are used as input for
+	// the rpc method in this stage.
+	// (required)
+	TargetStage StageName `yaml:"target_stage" info:"required"`
+	// TargetField defines the field of the input of TargetStage that should be
+	// filled with the messages transferred with this link. If specified, the
+	// field TargetField of message that is the input of TargetStage is set to
+	// the messages received through this link. If not specified, the entire
+	// message is sent as input to the TargetStage.
+	// (optional)
+	TargetField string `yaml:"target_field"`
+}
+
+// GetLinkRequest is a message to retrieve links with specific characteristics.
+type GetLinkRequest struct {
+	// Name should be set to retrieve only links with the given name.
+	// (optional)
+	Name LinkName
+	// SourceStage should be set to retrieve only assets with the given source
+	// stage.
+	// (optional)
+	SourceStage StageName
+	// SourceStage should be set to retrieve only assets with the given source
+	// stage.
+	// (optional)
+	SourceField string
+	// TargetStage should be set to retrieve only assets with the given target
+	// stage.
+	// (optional)
+	TargetStage StageName
+	// TargetField should be set to retrieve only assets with the given target
+	// field.
+	// (optional)
+	TargetField string
+}
+
 // CreateAssetRequest represents a message to create an asset.
 type CreateAssetRequest struct {
 	// Name that should be associated with the asset. Is required and should be

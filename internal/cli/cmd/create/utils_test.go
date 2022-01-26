@@ -25,7 +25,10 @@ func equalCreateStageRequest(
 		expected.Port == actual.Port
 }
 
-func equalLink(expected *pb.Link, actual *pb.Link) bool {
+func equalCreateLinkRequest(
+	expected *pb.CreateLinkRequest,
+	actual *pb.CreateLinkRequest,
+) bool {
 	return expected.Name == actual.Name &&
 		expected.SourceStage == actual.SourceStage &&
 		expected.SourceField == actual.SourceField &&

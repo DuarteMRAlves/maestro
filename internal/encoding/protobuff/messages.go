@@ -49,6 +49,28 @@ func UnmarshalGetStageRequest(
 	req.Asset = api.AssetName(pbReq.Asset)
 }
 
+func UnmarshalCreateLinkRequest(
+	req *api.CreateLinkRequest,
+	pbReq *pb.CreateLinkRequest,
+) {
+	req.Name = api.LinkName(pbReq.Name)
+	req.SourceStage = api.StageName(pbReq.SourceStage)
+	req.SourceField = pbReq.SourceField
+	req.TargetStage = api.StageName(pbReq.TargetStage)
+	req.TargetField = pbReq.TargetField
+}
+
+func UnmarshalGetLinkRequest(
+	req *api.GetLinkRequest,
+	pbReq *pb.GetLinkRequest,
+) {
+	req.Name = api.LinkName(pbReq.Name)
+	req.SourceStage = api.StageName(pbReq.SourceStage)
+	req.SourceField = pbReq.SourceField
+	req.TargetStage = api.StageName(pbReq.TargetStage)
+	req.TargetField = pbReq.TargetField
+}
+
 func UnmarshalCreateAssetRequest(
 	req *api.CreateAssetRequest,
 	pbReq *pb.CreateAssetRequest,

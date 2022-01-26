@@ -76,7 +76,7 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case stageKind:
 		r.Spec = new(api.CreateStageRequest)
 	case linkKind:
-		r.Spec = new(api.Link)
+		r.Spec = new(api.CreateLinkRequest)
 	case orchestrationKind:
 		r.Spec = new(api.CreateOrchestrationRequest)
 	default:

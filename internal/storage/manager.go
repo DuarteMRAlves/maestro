@@ -38,14 +38,14 @@ type Manager interface {
 	GetMatchingStage(*badger.Txn, *api.GetStageRequest) ([]*api.Stage, error)
 	// CreateLink creates a new link with the specified config. It returns an
 	// error if the link is not created and nil otherwise.
-	CreateLink(*badger.Txn, *api.Link) (*Link, error)
+	CreateLink(*badger.Txn, *api.CreateLinkRequest) (*Link, error)
 	// ContainsLink returns true if a link with the given name exists and false
 	// otherwise.
 	ContainsLink(*badger.Txn, api.LinkName) bool
 	// GetMatchingLinks retrieves stored links that match the received req.
 	// The req is a link with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
-	GetMatchingLinks(*badger.Txn, *api.Link) ([]*api.Link, error)
+	GetMatchingLinks(*badger.Txn, *api.GetLinkRequest) ([]*api.Link, error)
 	// CreateAsset creates a new asset with the specified config. It returns an
 	// error if the asset is not created and nil otherwise.
 	CreateAsset(*badger.Txn, *api.CreateAssetRequest) error
@@ -223,18 +223,18 @@ func (m *manager) GetMatchingStage(
 
 func (m *manager) CreateLink(
 	txn *badger.Txn,
-	cfg *api.Link,
+	req *api.CreateLinkRequest,
 ) (*Link, error) {
 	var err error
-	if err = m.validateCreateLinkConfig(txn, cfg); err != nil {
+	if err = m.validateCreateLinkConfig(txn, req); err != nil {
 		return nil, err
 	}
 	l := NewLink(
-		cfg.Name,
-		cfg.SourceStage,
-		cfg.SourceField,
-		cfg.TargetStage,
-		cfg.TargetField,
+		req.Name,
+		req.SourceStage,
+		req.SourceField,
+		req.TargetStage,
+		req.TargetField,
 	)
 	if err = PersistLink(txn, l); err != nil {
 		return nil, errdefs.InternalWithMsg("persist error: %v", err)
@@ -251,7 +251,7 @@ func (m *manager) ContainsLink(txn *badger.Txn, name api.LinkName) bool {
 
 func (m *manager) GetMatchingLinks(
 	txn *badger.Txn,
-	query *api.Link,
+	req *api.GetLinkRequest,
 ) ([]*api.Link, error) {
 	var (
 		l    Link
@@ -259,10 +259,10 @@ func (m *manager) GetMatchingLinks(
 		err  error
 	)
 
-	if query == nil {
-		query = &api.Link{}
+	if req == nil {
+		req = &api.GetLinkRequest{}
 	}
-	filter := buildLinkQueryFilter(query)
+	filter := buildLinkQueryFilter(req)
 	res := make([]*api.Link, 0)
 
 	it := txn.NewIterator(badger.DefaultIteratorOptions)

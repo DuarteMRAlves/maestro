@@ -37,7 +37,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsLinkKind():
-		l, ok := resource.Spec.(*api.Link)
+		l, ok := resource.Spec.(*api.CreateLinkRequest)
 		if !ok {
 			return errdefs.InternalWithMsg("link spec cast failed: %v", l)
 		}
@@ -99,8 +99,11 @@ func (c *client) CreateStage(
 	return ErrorFromGrpcError(err)
 }
 
-func (c *client) CreateLink(ctx context.Context, link *api.Link) error {
-	l := &pb.Link{
+func (c *client) CreateLink(
+	ctx context.Context,
+	link *api.CreateLinkRequest,
+) error {
+	l := &pb.CreateLinkRequest{
 		Name:        string(link.Name),
 		SourceStage: string(link.SourceStage),
 		SourceField: link.SourceField,

@@ -25,7 +25,7 @@ func TestCreateLinkWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
-		validateCfg func(cfg *pb.Link) bool
+		validateReq func(*pb.CreateLinkRequest) bool
 		response    *emptypb.Empty
 		err         error
 		expectedOut string
@@ -43,12 +43,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-field",
 				"TargetField",
 			},
-			validateCfg: func(cfg *pb.Link) bool {
-				return cfg.Name == "link-name" &&
-					cfg.SourceStage == "source-name" &&
-					cfg.SourceField == "SourceField" &&
-					cfg.TargetStage == "target-name" &&
-					cfg.TargetField == "TargetField"
+			validateReq: func(req *pb.CreateLinkRequest) bool {
+				return req.Name == "link-name" &&
+					req.SourceStage == "source-name" &&
+					req.SourceField == "SourceField" &&
+					req.TargetStage == "target-name" &&
+					req.TargetField == "TargetField"
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -63,12 +63,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-stage",
 				"target-name",
 			},
-			validateCfg: func(cfg *pb.Link) bool {
-				return cfg.Name == "link-name" &&
-					cfg.SourceStage == "source-name" &&
-					cfg.SourceField == "" &&
-					cfg.TargetStage == "target-name" &&
-					cfg.TargetField == ""
+			validateReq: func(req *pb.CreateLinkRequest) bool {
+				return req.Name == "link-name" &&
+					req.SourceStage == "source-name" &&
+					req.SourceField == "" &&
+					req.TargetStage == "target-name" &&
+					req.TargetField == ""
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -83,12 +83,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-stage",
 				"target-name",
 			},
-			validateCfg: func(cfg *pb.Link) bool {
-				return cfg.Name == "invalid--name" &&
-					cfg.SourceStage == "source-name" &&
-					cfg.SourceField == "" &&
-					cfg.TargetStage == "target-name" &&
-					cfg.TargetField == ""
+			validateReq: func(req *pb.CreateLinkRequest) bool {
+				return req.Name == "invalid--name" &&
+					req.SourceStage == "source-name" &&
+					req.SourceField == "" &&
+					req.TargetStage == "target-name" &&
+					req.TargetField == ""
 			},
 			response: nil,
 			err: status.Error(
@@ -108,12 +108,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-stage",
 				"target-name",
 			},
-			validateCfg: func(cfg *pb.Link) bool {
-				return cfg.Name == "link-name" &&
-					cfg.SourceStage == "does-not-exist" &&
-					cfg.SourceField == "" &&
-					cfg.TargetStage == "target-name" &&
-					cfg.TargetField == ""
+			validateReq: func(req *pb.CreateLinkRequest) bool {
+				return req.Name == "link-name" &&
+					req.SourceStage == "does-not-exist" &&
+					req.SourceField == "" &&
+					req.TargetStage == "target-name" &&
+					req.TargetField == ""
 			},
 			response: nil,
 			err: status.Error(
@@ -133,12 +133,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 				"--target-stage",
 				"does-not-exist",
 			},
-			validateCfg: func(cfg *pb.Link) bool {
-				return cfg.Name == "link-name" &&
-					cfg.SourceStage == "source-name" &&
-					cfg.SourceField == "" &&
-					cfg.TargetStage == "does-not-exist" &&
-					cfg.TargetField == ""
+			validateReq: func(req *pb.CreateLinkRequest) bool {
+				return req.Name == "link-name" &&
+					req.SourceStage == "source-name" &&
+					req.SourceField == "" &&
+					req.TargetStage == "does-not-exist" &&
+					req.TargetField == ""
 			},
 			err: status.Error(
 				codes.NotFound,
@@ -161,12 +161,12 @@ func TestCreateLinkWithServer(t *testing.T) {
 					LinkManagementServer: &ipb.MockLinkManagementServer{
 						CreateLinkFn: func(
 							ctx context.Context,
-							cfg *pb.Link,
+							req *pb.CreateLinkRequest,
 						) (*emptypb.Empty, error) {
-							if !test.validateCfg(cfg) {
+							if !test.validateReq(req) {
 								return nil, fmt.Errorf(
-									"validation failed with cfg %v",
-									cfg,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							return test.response, test.err

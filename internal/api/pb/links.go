@@ -19,17 +19,17 @@ func NewLinkManagementServer(api api.InternalAPI) pb.LinkManagementServer {
 
 func (s *linkManagementServer) Create(
 	_ context.Context,
-	pbLink *pb.Link,
+	pbReq *pb.CreateLinkRequest,
 ) (*emptypb.Empty, error) {
 
-	var link *api.Link
-	var err error
-	var grpcErr error = nil
+	var (
+		req     api.CreateLinkRequest
+		err     error
+		grpcErr error = nil
+	)
 
-	if link, err = protobuff.UnmarshalLink(pbLink); err != nil {
-		return &emptypb.Empty{}, GrpcErrorFromError(err)
-	}
-	err = s.api.CreateLink(link)
+	protobuff.UnmarshalCreateLinkRequest(&req, pbReq)
+	err = s.api.CreateLink(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -37,20 +37,17 @@ func (s *linkManagementServer) Create(
 }
 
 func (s *linkManagementServer) Get(
-	pbQuery *pb.Link,
+	pbReq *pb.GetLinkRequest,
 	stream pb.LinkManagement_GetServer,
 ) error {
 
 	var (
-		query *api.Link
-		err   error
+		req api.GetLinkRequest
+		err error
 	)
 
-	if query, err = protobuff.UnmarshalLink(pbQuery); err != nil {
-		return GrpcErrorFromError(err)
-	}
-
-	links, err := s.api.GetLink(query)
+	protobuff.UnmarshalGetLinkRequest(&req, pbReq)
+	links, err := s.api.GetLink(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}

@@ -27,8 +27,8 @@ func TestCreateWithServer(t *testing.T) {
 		args                  []string
 		validateAsset         func(*pb.CreateAssetRequest) bool
 		validateStage         func(*pb.CreateStageRequest) bool
-		validateLink          func(req *pb.Link) bool
-		validateOrchestration func(req *pb.CreateOrchestrationRequest) bool
+		validateLink          func(*pb.CreateLinkRequest) bool
+		validateOrchestration func(*pb.CreateOrchestrationRequest) bool
 		expectedOut           string
 	}{
 		{
@@ -82,9 +82,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateLink: func(req *pb.Link) bool {
-				return equalLink(
-					&pb.Link{
+			validateLink: func(req *pb.CreateLinkRequest) bool {
+				return equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-stage-2-stage-1",
 						SourceStage: "stage-2",
 						SourceField: "",
@@ -92,8 +92,8 @@ func TestCreateWithServer(t *testing.T) {
 						TargetField: "",
 					},
 					req,
-				) || equalLink(
-					&pb.Link{
+				) || equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-stage-1-stage-2",
 						SourceStage: "stage-1",
 						SourceField: "Field1",
@@ -197,9 +197,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateLink: func(req *pb.Link) bool {
-				return equalLink(
-					&pb.Link{
+			validateLink: func(req *pb.CreateLinkRequest) bool {
+				return equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-stage-4-stage-5",
 						SourceStage: "stage-4",
 						SourceField: "",
@@ -207,8 +207,8 @@ func TestCreateWithServer(t *testing.T) {
 						TargetField: "",
 					},
 					req,
-				) || equalLink(
-					&pb.Link{
+				) || equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-stage-5-stage-6",
 						SourceStage: "stage-5",
 						SourceField: "",
@@ -216,8 +216,8 @@ func TestCreateWithServer(t *testing.T) {
 						TargetField: "Field1",
 					},
 					req,
-				) || equalLink(
-					&pb.Link{
+				) || equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-stage-4-stage-6",
 						SourceStage: "stage-4",
 						SourceField: "",
@@ -276,9 +276,9 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/stage_not_found.yml",
 			},
-			validateLink: func(req *pb.Link) bool {
-				return equalLink(
-					&pb.Link{
+			validateLink: func(req *pb.CreateLinkRequest) bool {
+				return equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
 						Name:        "link-unknown-stage",
 						SourceStage: "stage-1",
 						SourceField: "",
@@ -321,8 +321,8 @@ func TestCreateWithServer(t *testing.T) {
 						*pb.CreateStageRequest,
 					) (*emptypb.Empty, error)
 					createLinkFn func(
-						ctx context.Context,
-						req *pb.Link,
+						context.Context,
+						*pb.CreateLinkRequest,
 					) (*emptypb.Empty, error)
 					createOrchestrationFn func(
 						context.Context,
@@ -376,7 +376,7 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateLink != nil {
 					createLinkFn = func(
 						ctx context.Context,
-						req *pb.Link,
+						req *pb.CreateLinkRequest,
 					) (*emptypb.Empty, error) {
 						if !test.validateLink(req) {
 							return nil, fmt.Errorf(

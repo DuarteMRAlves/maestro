@@ -62,14 +62,14 @@ func (c *client) GetStage(
 
 func (c *client) GetLink(
 	ctx context.Context,
-	query *pb.Link,
+	req *pb.GetLinkRequest,
 ) ([]*pb.Link, error) {
 
 	stub := pb.NewLinkManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, query)
+	stream, err := stub.Get(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
