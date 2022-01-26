@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -72,7 +72,7 @@ func TestServer_CreateLink(t *testing.T) {
 					WithGrpc().
 					WithDb(db).
 					WithReflectionManager(rpcManager).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				fmt.Println("On populate links")
 				assert.NilError(t, err, "build server")
@@ -96,7 +96,7 @@ func TestServer_CreateLink_NilConfig(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -153,7 +153,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 
@@ -185,7 +185,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -217,7 +217,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -249,7 +249,7 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -277,7 +277,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -306,7 +306,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -336,7 +336,7 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -367,7 +367,7 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -401,7 +401,7 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
@@ -435,7 +435,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 		WithGrpc().
 		WithDb(db).
 		WithReflectionManager(rpcManager).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)

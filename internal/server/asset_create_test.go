@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/testutil"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -51,7 +51,7 @@ func TestServer_CreateAsset(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 				err = s.CreateAsset(test.req)
@@ -70,7 +70,7 @@ func TestServer_CreateAsset_NilConfig(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 
@@ -120,7 +120,7 @@ func TestServer_CreateAsset_InvalidName(t *testing.T) {
 				s, err := NewBuilder().
 					WithGrpc().
 					WithDb(db).
-					WithLogger(testutil.NewLogger(t)).
+					WithLogger(logs.NewTestLogger(t)).
 					Build()
 				assert.NilError(t, err, "build server")
 
@@ -152,7 +152,7 @@ func TestServer_CreateAsset_AlreadyExists(t *testing.T) {
 	s, err := NewBuilder().
 		WithGrpc().
 		WithDb(db).
-		WithLogger(testutil.NewLogger(t)).
+		WithLogger(logs.NewTestLogger(t)).
 		Build()
 	assert.NilError(t, err, "build server")
 

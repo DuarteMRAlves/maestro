@@ -1,4 +1,4 @@
-package testutil
+package logs
 
 import (
 	"go.uber.org/zap"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func NewLogger(t *testing.T) *zap.Logger {
+func NewTestLogger(t *testing.T) *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
 	cfg.Level.SetLevel(zap.FatalLevel)
 	logger, err := cfg.Build()
