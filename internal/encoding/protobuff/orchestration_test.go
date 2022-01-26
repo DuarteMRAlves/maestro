@@ -2,7 +2,7 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -10,27 +10,27 @@ import (
 
 func TestMarshalOrchestration(t *testing.T) {
 	const (
-		name  apitypes.OrchestrationName = "OrchestrationName"
-		phase                            = apitypes.OrchestrationRunning
-		link1 apitypes.LinkName          = "Link Name 1"
-		link2 apitypes.LinkName          = "Link Name 2"
-		link3 apitypes.LinkName          = "Link Name 3"
+		name  api.OrchestrationName = "OrchestrationName"
+		phase                       = api.OrchestrationRunning
+		link1 api.LinkName          = "Link Name 1"
+		link2 api.LinkName          = "Link Name 2"
+		link3 api.LinkName          = "Link Name 3"
 	)
 	tests := []struct {
 		name string
-		o    *apitypes.Orchestration
+		o    *api.Orchestration
 	}{
 		{
 			name: "all fields with non default values",
-			o: &apitypes.Orchestration{
+			o: &api.Orchestration{
 				Name:  name,
 				Phase: phase,
-				Links: []apitypes.LinkName{link1, link2, link3},
+				Links: []api.LinkName{link1, link2, link3},
 			},
 		},
 		{
 			name: "all field with default values",
-			o: &apitypes.Orchestration{
+			o: &api.Orchestration{
 				Name:  "",
 				Phase: "",
 				Links: nil,
@@ -45,23 +45,30 @@ func TestMarshalOrchestration(t *testing.T) {
 				res, err := MarshalOrchestration(o)
 				assert.NilError(t, err, "marshal error")
 				assert.Equal(t, string(o.Name), res.Name, "orchestration name")
-				assert.Equal(t, string(o.Phase), res.Phase, "orchestration phase")
+				assert.Equal(
+					t,
+					string(o.Phase),
+					res.Phase,
+					"orchestration phase",
+				)
 				assert.Equal(
 					t,
 					len(o.Links),
 					len(res.Links),
-					"orchestration links len")
+					"orchestration links len",
+				)
 				for i, l := range o.Links {
 					assert.Equal(t, string(l), res.Links[i], "link %d equal", i)
 				}
-			})
+			},
+		)
 	}
 }
 
 func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 	const (
 		name  = "OrchestrationName"
-		phase = string(apitypes.OrchestrationPending)
+		phase = string(api.OrchestrationPending)
 		link1 = "Link Name 1"
 		link2 = "Link Name 2"
 		link3 = "Link Name 3"
@@ -96,16 +103,23 @@ func TestUnmarshalOrchestrationCorrect(t *testing.T) {
 				res, err := UnmarshalOrchestration(o)
 				assert.Equal(t, nil, err, "unmarshal error")
 				assert.Equal(t, o.Name, string(res.Name), "orchestration name")
-				assert.Equal(t, o.Phase, string(res.Phase), "orchestration phase")
+				assert.Equal(
+					t,
+					o.Phase,
+					string(res.Phase),
+					"orchestration phase",
+				)
 				assert.Equal(
 					t,
 					len(o.Links),
 					len(res.Links),
-					"orchestration links len")
+					"orchestration links len",
+				)
 				for i, l := range o.Links {
 					assert.Equal(t, l, string(res.Links[i]), "link %d equal", i)
 				}
-			})
+			},
+		)
 	}
 }
 

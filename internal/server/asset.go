@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 )
@@ -28,11 +27,11 @@ func (s *Server) CreateAsset(req *api.CreateAssetRequest) error {
 }
 
 func (s *Server) GetAsset(req *api.GetAssetRequest) (
-	[]*apitypes.Asset,
+	[]*api.Asset,
 	error,
 ) {
 	var (
-		assets    []*apitypes.Asset
+		assets    []*api.Asset
 		err       error
 		logFields []zap.Field
 	)

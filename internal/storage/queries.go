@@ -2,17 +2,16 @@ package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 )
 
 func buildOrchestrationQueryFilter(
 	req *api.GetOrchestrationRequest,
-) func(b *apitypes.Orchestration) bool {
-	filters := make([]func(b *apitypes.Orchestration) bool, 0)
+) func(b *api.Orchestration) bool {
+	filters := make([]func(b *api.Orchestration) bool, 0)
 	if req.Name != "" {
 		filters = append(
 			filters,
-			func(b *apitypes.Orchestration) bool {
+			func(b *api.Orchestration) bool {
 				return b.Name == req.Name
 			},
 		)
@@ -20,18 +19,18 @@ func buildOrchestrationQueryFilter(
 	if req.Phase != "" {
 		filters = append(
 			filters,
-			func(o *apitypes.Orchestration) bool {
+			func(o *api.Orchestration) bool {
 				return o.Phase == req.Phase
 			},
 		)
 	}
 	switch len(filters) {
 	case 0:
-		return func(b *apitypes.Orchestration) bool { return true }
+		return func(b *api.Orchestration) bool { return true }
 	case 1:
 		return filters[0]
 	default:
-		return func(b *apitypes.Orchestration) bool {
+		return func(b *api.Orchestration) bool {
 			for _, f := range filters {
 				if !f(b) {
 					return false
@@ -42,7 +41,7 @@ func buildOrchestrationQueryFilter(
 	}
 }
 
-func buildStageQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
+func buildStageQueryFilter(query *api.Stage) func(s *Stage) bool {
 	filters := make([]func(s *Stage) bool, 0)
 	if query.Name != "" {
 		filters = append(
@@ -109,7 +108,7 @@ func buildStageQueryFilter(query *apitypes.Stage) func(s *Stage) bool {
 	}
 }
 
-func buildLinkQueryFilter(query *apitypes.Link) func(l *Link) bool {
+func buildLinkQueryFilter(query *api.Link) func(l *Link) bool {
 	filters := make([]func(l *Link) bool, 0)
 	if query.Name != "" {
 		filters = append(
@@ -168,12 +167,12 @@ func buildLinkQueryFilter(query *apitypes.Link) func(l *Link) bool {
 	}
 }
 
-func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *apitypes.Asset) bool {
-	filters := make([]func(a *apitypes.Asset) bool, 0)
+func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *api.Asset) bool {
+	filters := make([]func(a *api.Asset) bool, 0)
 	if req.Name != "" {
 		filters = append(
 			filters,
-			func(a *apitypes.Asset) bool {
+			func(a *api.Asset) bool {
 				return a.Name == req.Name
 			},
 		)
@@ -181,13 +180,13 @@ func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *apitypes.Asset) boo
 	if req.Image != "" {
 		filters = append(
 			filters,
-			func(a *apitypes.Asset) bool {
+			func(a *api.Asset) bool {
 				return a.Image == req.Image
 			},
 		)
 	}
 	if len(filters) > 0 {
-		return func(a *apitypes.Asset) bool {
+		return func(a *api.Asset) bool {
 			for _, f := range filters {
 				if !f(a) {
 					return false
@@ -196,7 +195,7 @@ func buildAssetQueryFilter(req *api.GetAssetRequest) func(a *apitypes.Asset) boo
 			return true
 		}
 	}
-	return func(a *apitypes.Asset) bool {
+	return func(a *api.Asset) bool {
 		return true
 	}
 }

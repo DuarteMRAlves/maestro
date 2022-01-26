@@ -2,22 +2,22 @@ package storage
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 )
 
 type Link struct {
-	name        apitypes.LinkName
-	sourceStage apitypes.StageName
+	name        api.LinkName
+	sourceStage api.StageName
 	sourceField string
-	targetStage apitypes.StageName
+	targetStage api.StageName
 	targetField string
 }
 
 func NewLink(
-	name apitypes.LinkName,
-	sourceStage apitypes.StageName,
+	name api.LinkName,
+	sourceStage api.StageName,
 	sourceField string,
-	targetStage apitypes.StageName,
+	targetStage api.StageName,
 	targetField string,
 ) *Link {
 	return &Link{
@@ -29,11 +29,11 @@ func NewLink(
 	}
 }
 
-func (l *Link) Name() apitypes.LinkName {
+func (l *Link) Name() api.LinkName {
 	return l.name
 }
 
-func (l *Link) SourceStage() apitypes.StageName {
+func (l *Link) SourceStage() api.StageName {
 	return l.sourceStage
 }
 
@@ -41,7 +41,7 @@ func (l *Link) SourceField() string {
 	return l.sourceField
 }
 
-func (l *Link) TargetStage() apitypes.StageName {
+func (l *Link) TargetStage() api.StageName {
 	return l.targetStage
 }
 
@@ -59,8 +59,8 @@ func (l *Link) Clone() *Link {
 	}
 }
 
-func (l *Link) ToApi() *apitypes.Link {
-	return &apitypes.Link{
+func (l *Link) ToApi() *api.Link {
+	return &api.Link{
 		Name:        l.name,
 		SourceStage: l.sourceStage,
 		SourceField: l.sourceField,

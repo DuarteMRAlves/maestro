@@ -1,7 +1,7 @@
 package server
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -9,7 +9,7 @@ import (
 
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
-func (s *Server) CreateLink(cfg *apitypes.Link) error {
+func (s *Server) CreateLink(cfg *api.Link) error {
 	s.logger.Info("Create Link.", logLink(cfg, "cfg")...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
@@ -37,9 +37,9 @@ func (s *Server) CreateLink(cfg *apitypes.Link) error {
 
 }
 
-func (s *Server) GetLink(query *apitypes.Link) ([]*apitypes.Link, error) {
+func (s *Server) GetLink(query *api.Link) ([]*api.Link, error) {
 	var (
-		links []*apitypes.Link
+		links []*api.Link
 		err   error
 	)
 	s.logger.Info("Get Link.", logLink(query, "query")...)
@@ -55,7 +55,7 @@ func (s *Server) GetLink(query *apitypes.Link) ([]*apitypes.Link, error) {
 	return links, nil
 }
 
-func logLink(l *apitypes.Link, field string) []zap.Field {
+func logLink(l *api.Link, field string) []zap.Field {
 	if l == nil {
 		return []zap.Field{zap.String(field, "null")}
 	}

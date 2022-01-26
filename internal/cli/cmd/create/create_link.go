@@ -2,7 +2,7 @@ package create
 
 import (
 	"context"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -64,23 +64,28 @@ func (o *LinkOpts) addFlags(cmd *cobra.Command) {
 		&o.sourceStage,
 		"source-stage",
 		"",
-		"name of the source stage to link (required)")
-	cmd.Flags().StringVar(&o.sourceField,
+		"name of the source stage to link (required)",
+	)
+	cmd.Flags().StringVar(
+		&o.sourceField,
 		"source-field",
 		"",
 		"field in the source message to use. If not specified the whole "+
-			"message is used.")
+			"message is used.",
+	)
 	cmd.Flags().StringVar(
 		&o.targetStage,
 		"target-stage",
 		"",
-		"name of the target stage to link (required)")
+		"name of the target stage to link (required)",
+	)
 	cmd.Flags().StringVar(
 		&o.targetField,
 		"target-field",
 		"",
 		"field in the target message to set. If not specified the entire "+
-			"message is used.")
+			"message is used.",
+	)
 }
 
 // complete fills any remaining information necessary to run the command that is
@@ -110,11 +115,11 @@ func (o *LinkOpts) validate() error {
 // run executes a CreateLink command with the specified options.
 // It assumes the options were previously validated.
 func (o *LinkOpts) run() error {
-	link := &apitypes.Link{
-		Name:        apitypes.LinkName(o.name),
-		SourceStage: apitypes.StageName(o.sourceStage),
+	link := &api.Link{
+		Name:        api.LinkName(o.name),
+		SourceStage: api.StageName(o.sourceStage),
 		SourceField: o.sourceField,
-		TargetStage: apitypes.StageName(o.targetStage),
+		TargetStage: api.StageName(o.targetStage),
 		TargetField: o.targetField,
 	}
 
@@ -128,7 +133,8 @@ func (o *LinkOpts) run() error {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Second)
+		time.Second,
+	)
 	defer cancel()
 	return c.CreateLink(ctx, link)
 }

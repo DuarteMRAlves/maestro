@@ -3,7 +3,7 @@ package protobuff
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,21 +11,21 @@ import (
 
 func TestMarshalAsset(t *testing.T) {
 	const (
-		name  apitypes.AssetName = "Asset Name"
-		image                    = "user/image:version"
+		name  api.AssetName = "Asset Name"
+		image               = "user/image:version"
 	)
 	tests := []struct {
-		in apitypes.Asset
+		in api.Asset
 	}{
-		{apitypes.Asset{Name: name, Image: image}},
+		{api.Asset{Name: name, Image: image}},
 		{
-			apitypes.Asset{
+			api.Asset{
 				Name:  name,
 				Image: image,
 			},
 		},
-		{apitypes.Asset{Name: name}},
-		{apitypes.Asset{Image: image}},
+		{api.Asset{Name: name}},
+		{api.Asset{Image: image}},
 	}
 
 	for _, inner := range tests {
@@ -38,7 +38,8 @@ func TestMarshalAsset(t *testing.T) {
 				assert.NilError(t, err, "marshal error")
 				assert.Equal(t, string(in.Name), res.Name, "Asset Name")
 				assert.Equal(t, in.Image, res.Image, "Asset Image")
-			})
+			},
+		)
 	}
 }
 
@@ -59,7 +60,8 @@ func TestUnmarshalAsset(t *testing.T) {
 				res, err := UnmarshalAsset(in)
 				assert.Equal(t, nil, err, "Error")
 				assert.Equal(t, in.Name, string(res.Name), "Asset Name")
-			})
+			},
+		)
 	}
 }
 

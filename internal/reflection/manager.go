@@ -2,7 +2,7 @@ package reflection
 
 import (
 	"context"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"google.golang.org/grpc"
 	"sync"
@@ -12,10 +12,10 @@ import (
 type Manager interface {
 	// FindRpc searches for a given RPC using reflection. It then caches the rpc
 	// to be later used. The RPC is associated with the received stage name.
-	FindRpc(context.Context, apitypes.StageName, *FindQuery) error
+	FindRpc(context.Context, api.StageName, *FindQuery) error
 	// GetRpc retrieves an already loaded RPC associated with the given stage.
 	// Returns the (RPC, true) if it exists and (nil, false) otherwise.
-	GetRpc(apitypes.StageName) (RPC, bool)
+	GetRpc(api.StageName) (RPC, bool)
 }
 
 // FindQuery specifies the search config to be applied
@@ -40,7 +40,7 @@ func NewManager() Manager {
 
 func (m *manager) FindRpc(
 	ctx context.Context,
-	stage apitypes.StageName,
+	stage api.StageName,
 	cfg *FindQuery,
 ) error {
 	reflectionClient := NewClient(ctx, cfg.Conn)
@@ -77,7 +77,8 @@ func findService(available []string, cfg *FindQuery) (string, error) {
 		}
 		return "", errdefs.InvalidArgumentWithMsg(
 			"find service without name: expected 1 available service but found %v",
-			len(available))
+			len(available),
+		)
 	} else {
 		for _, s := range available {
 			if search == s {
@@ -86,7 +87,8 @@ func findService(available []string, cfg *FindQuery) (string, error) {
 		}
 		return "", errdefs.NotFoundWithMsg(
 			"find service with name %v: not found",
-			search)
+			search,
+		)
 	}
 }
 
@@ -104,7 +106,8 @@ func findRpc(
 		}
 		return nil, errdefs.InvalidArgumentWithMsg(
 			"find rpc without name: expected 1 available rpc but found %v",
-			len(available))
+			len(available),
+		)
 	} else {
 		for _, rpc := range available {
 			if search == rpc.Name() {
@@ -113,11 +116,12 @@ func findRpc(
 		}
 		return nil, errdefs.NotFoundWithMsg(
 			"find rpc with name %v: not found",
-			search)
+			search,
+		)
 	}
 }
 
-func (m *manager) GetRpc(stage apitypes.StageName) (RPC, bool) {
+func (m *manager) GetRpc(stage api.StageName) (RPC, bool) {
 	rpc, ok := m.rpcs.Load(stage)
 	if !ok {
 		return nil, false

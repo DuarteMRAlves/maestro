@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
@@ -14,10 +14,10 @@ import (
 )
 
 // assetForNum deterministically creates an asset with the given number.
-func assetForNum(num int) *apitypes.Asset {
+func assetForNum(num int) *api.Asset {
 	name := testutil.AssetNameForNum(num)
 	img := testutil.AssetImageForNum(num)
-	return &apitypes.Asset{
+	return &api.Asset{
 		Name:  name,
 		Image: img,
 	}

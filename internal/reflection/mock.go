@@ -2,7 +2,7 @@ package reflection
 
 import (
 	"context"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"sync"
 )
 
@@ -12,13 +12,13 @@ type MockManager struct {
 
 func (m *MockManager) FindRpc(
 	ctx context.Context,
-	name apitypes.StageName,
+	name api.StageName,
 	query *FindQuery,
 ) error {
 	panic("method not implemented")
 }
 
-func (m *MockManager) GetRpc(stage apitypes.StageName) (RPC, bool) {
+func (m *MockManager) GetRpc(stage api.StageName) (RPC, bool) {
 	rpc, ok := m.Rpcs.Load(stage)
 	if !ok {
 		return nil, false

@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/dgraph-io/badger/v3"
@@ -80,7 +79,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "empty name",
 			req: &api.CreateOrchestrationRequest{
 				Name: "",
-				Links: []apitypes.LinkName{
+				Links: []api.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -91,7 +90,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "invalid characters in name",
 			req: &api.CreateOrchestrationRequest{
 				Name: "?orchestration-name",
-				Links: []apitypes.LinkName{
+				Links: []api.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -102,7 +101,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			name: "invalid character sequence",
 			req: &api.CreateOrchestrationRequest{
 				Name: "invalid//name",
-				Links: []apitypes.LinkName{
+				Links: []api.LinkName{
 					testutil.LinkNameForNum(0),
 					testutil.LinkNameForNum(1),
 					testutil.LinkNameForNum(2),
@@ -159,7 +158,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 
 	req := &api.CreateOrchestrationRequest{
 		Name: name,
-		Links: []apitypes.LinkName{
+		Links: []api.LinkName{
 			testutil.LinkNameForNum(0),
 			testutil.LinkNameForNum(1),
 		},

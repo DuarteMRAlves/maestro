@@ -2,12 +2,12 @@ package protobuff
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 )
 
 // MarshalOrchestration returns a protobuf encoding of the given orchestration.
-func MarshalOrchestration(o *apitypes.Orchestration) (
+func MarshalOrchestration(o *api.Orchestration) (
 	*pb.Orchestration,
 	error,
 ) {
@@ -29,21 +29,21 @@ func MarshalOrchestration(o *apitypes.Orchestration) (
 // UnmarshalOrchestration returns an orchestration from the orchestration
 // protobuf encoding.
 func UnmarshalOrchestration(p *pb.Orchestration) (
-	*apitypes.Orchestration,
+	*api.Orchestration,
 	error,
 ) {
 	if ok, err := validate.ArgNotNil(p, "p"); !ok {
 		return nil, err
 	}
 
-	links := make([]apitypes.LinkName, 0, len(p.Links))
+	links := make([]api.LinkName, 0, len(p.Links))
 	for _, l := range p.Links {
-		links = append(links, apitypes.LinkName(l))
+		links = append(links, api.LinkName(l))
 	}
 
-	return &apitypes.Orchestration{
-		Name:  apitypes.OrchestrationName(p.Name),
-		Phase: apitypes.OrchestrationPhase(p.Phase),
+	return &api.Orchestration{
+		Name:  api.OrchestrationName(p.Name),
+		Phase: api.OrchestrationPhase(p.Phase),
 		Links: links,
 	}, nil
 }

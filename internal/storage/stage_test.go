@@ -1,26 +1,26 @@
 package storage
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestStage_Clone(t *testing.T) {
 	const (
-		oldName    apitypes.StageName = "Old Name"
-		oldPhase                      = apitypes.StageRunning
-		oldAsset   apitypes.AssetName = "Old Asset Name"
-		oldAddress                    = "OldAddress"
-		oldService                    = "OldService"
-		oldRpc                        = "OldRpc"
+		oldName    api.StageName = "Old Name"
+		oldPhase                 = api.StageRunning
+		oldAsset   api.AssetName = "Old Asset Name"
+		oldAddress               = "OldAddress"
+		oldService               = "OldService"
+		oldRpc                   = "OldRpc"
 
-		newName    apitypes.StageName = "New Name"
-		newPhase                      = apitypes.StageFailed
-		newAsset   apitypes.AssetName = "New Asset Name"
-		newAddress                    = "NewAddress"
-		newService                    = "NewService"
-		newRpc                        = "NewRpc"
+		newName    api.StageName = "New Name"
+		newPhase                 = api.StageFailed
+		newAsset   api.AssetName = "New Asset Name"
+		newAddress               = "NewAddress"
+		newService               = "NewService"
+		newRpc                   = "NewRpc"
 	)
 
 	s := &Stage{

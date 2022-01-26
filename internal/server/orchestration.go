@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 )
@@ -31,9 +30,9 @@ func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error 
 
 func (s *Server) GetOrchestration(
 	req *api.GetOrchestrationRequest,
-) ([]*apitypes.Orchestration, error) {
+) ([]*api.Orchestration, error) {
 	var (
-		orchestrations []*apitypes.Orchestration
+		orchestrations []*api.Orchestration
 		err            error
 		logFields      []zap.Field
 	)

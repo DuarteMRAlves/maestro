@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -23,7 +22,7 @@ func (s *linkManagementServer) Create(
 	pbLink *pb.Link,
 ) (*emptypb.Empty, error) {
 
-	var link *apitypes.Link
+	var link *api.Link
 	var err error
 	var grpcErr error = nil
 
@@ -43,7 +42,7 @@ func (s *linkManagementServer) Get(
 ) error {
 
 	var (
-		query *apitypes.Link
+		query *api.Link
 		err   error
 	)
 

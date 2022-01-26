@@ -1,7 +1,7 @@
 package output
 
 import (
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"gotest.tools/v3/assert"
@@ -10,9 +10,9 @@ import (
 
 func TestOutputCfg_unregisterIfExists_exists(t *testing.T) {
 	const (
-		linkName1 apitypes.LinkName = "link-name-1"
-		linkName2 apitypes.LinkName = "link-name-2"
-		linkName3 apitypes.LinkName = "link-name-3"
+		linkName1 api.LinkName = "link-name-1"
+		linkName2 api.LinkName = "link-name-2"
+		linkName3 api.LinkName = "link-name-3"
 	)
 	conn1, err := connection.New(storage.NewLink(linkName1, "", "", "", ""))
 	assert.NilError(t, err, "create connection 1")
@@ -35,10 +35,10 @@ func TestOutputCfg_unregisterIfExists_exists(t *testing.T) {
 
 func TestOutputCfg_unregisterIfExists_doesNotExist(t *testing.T) {
 	const (
-		linkName1 apitypes.LinkName = "link-name-1"
-		linkName2 apitypes.LinkName = "link-name-2"
-		linkName3 apitypes.LinkName = "link-name-3"
-		linkName4 apitypes.LinkName = "link-name-4"
+		linkName1 api.LinkName = "link-name-1"
+		linkName2 api.LinkName = "link-name-2"
+		linkName3 api.LinkName = "link-name-3"
+		linkName4 api.LinkName = "link-name-4"
 	)
 	conn1, err := connection.New(storage.NewLink(linkName1, "", "", "", ""))
 	assert.NilError(t, err, "create connection 1")

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
@@ -36,7 +35,7 @@ func validateCreateOrchestrationConfig(
 // It returns an error if a condition is not met and nil otherwise.
 func (m *manager) validateCreateStageConfig(
 	txn *badger.Txn,
-	cfg *apitypes.Stage,
+	cfg *api.Stage,
 ) error {
 	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
 		return err
@@ -81,7 +80,7 @@ func (m *manager) validateCreateStageConfig(
 // It returns an error if a condition is not met and nil otherwise.
 func (m *manager) validateCreateLinkConfig(
 	txn *badger.Txn,
-	cfg *apitypes.Link,
+	cfg *api.Link,
 ) error {
 	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
 		return err

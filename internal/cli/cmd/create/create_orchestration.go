@@ -3,7 +3,6 @@ package create
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -93,12 +92,12 @@ func (o *OrchestrationOpts) validate() error {
 // run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
 func (o *OrchestrationOpts) run() error {
-	links := make([]apitypes.LinkName, 0, len(o.links))
+	links := make([]api.LinkName, 0, len(o.links))
 	for _, l := range o.links {
-		links = append(links, apitypes.LinkName(l))
+		links = append(links, api.LinkName(l))
 	}
 	req := &api.CreateOrchestrationRequest{
-		Name:  apitypes.OrchestrationName(o.name),
+		Name:  api.OrchestrationName(o.name),
 		Links: links,
 	}
 

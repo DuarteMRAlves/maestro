@@ -2,12 +2,12 @@ package testutil
 
 import (
 	"fmt"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 )
 
 // AssetNameForNum deterministically creates an asset name for a given number.
-func AssetNameForNum(num int) apitypes.AssetName {
-	return apitypes.AssetName(fmt.Sprintf("asset-%v", num))
+func AssetNameForNum(num int) api.AssetName {
+	return api.AssetName(fmt.Sprintf("asset-%v", num))
 }
 
 // AssetNameForNumStr deterministically creates an asset name for a given number.
@@ -22,8 +22,8 @@ func AssetImageForNum(num int) string {
 }
 
 // StageNameForNum deterministically creates a stage name for a given number.
-func StageNameForNum(num int) apitypes.StageName {
-	return apitypes.StageName(fmt.Sprintf("stage-%v", num))
+func StageNameForNum(num int) api.StageName {
+	return api.StageName(fmt.Sprintf("stage-%v", num))
 }
 
 // StageNameForNumStr deterministically creates a stage name for a given number.
@@ -50,8 +50,8 @@ func StageAddressForNum(num int) string {
 }
 
 // LinkNameForNum deterministically creates a link name for a given number.
-func LinkNameForNum(num int) apitypes.LinkName {
-	return apitypes.LinkName(fmt.Sprintf("link-%v", num))
+func LinkNameForNum(num int) api.LinkName {
+	return api.LinkName(fmt.Sprintf("link-%v", num))
 }
 
 // LinkNameForNumStr deterministically creates a link name for a given number.
@@ -61,7 +61,7 @@ func LinkNameForNumStr(num int) string {
 
 // LinkSourceStageForNum deterministically creates a link source stage for a
 // given number.
-func LinkSourceStageForNum(num int) apitypes.StageName {
+func LinkSourceStageForNum(num int) api.StageName {
 	return StageNameForNum(num)
 }
 
@@ -79,7 +79,7 @@ func LinkSourceFieldForNum(num int) string {
 
 // LinkTargetStageForNum deterministically creates a link target stage for a
 // given number.
-func LinkTargetStageForNum(num int) apitypes.StageName {
+func LinkTargetStageForNum(num int) api.StageName {
 	return StageNameForNum(num + 1)
 }
 
