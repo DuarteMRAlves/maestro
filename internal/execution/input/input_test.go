@@ -3,7 +3,6 @@ package input
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -14,11 +13,35 @@ func TestInputCfg_unregisterIfExists_exists(t *testing.T) {
 		linkName2 api.LinkName = "link-name-2"
 		linkName3 api.LinkName = "link-name-3"
 	)
-	conn1, err := connection.New(storage.NewLink(linkName1, "", "", "", ""))
+	conn1, err := connection.New(
+		&api.Link{
+			Name:        linkName1,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 1")
-	conn2, err := connection.New(storage.NewLink(linkName2, "", "", "", ""))
+	conn2, err := connection.New(
+		&api.Link{
+			Name:        linkName2,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 2")
-	conn3, err := connection.New(storage.NewLink(linkName3, "", "", "", ""))
+	conn3, err := connection.New(
+		&api.Link{
+			Name:        linkName3,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 3")
 
 	cfg := NewCfg()
@@ -40,13 +63,45 @@ func TestInputCfg_unregisterIfExists_doesNotExist(t *testing.T) {
 		linkName3 api.LinkName = "link-name-3"
 		linkName4 api.LinkName = "link-name-4"
 	)
-	conn1, err := connection.New(storage.NewLink(linkName1, "", "", "", ""))
+	conn1, err := connection.New(
+		&api.Link{
+			Name:        linkName1,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 1")
-	conn2, err := connection.New(storage.NewLink(linkName2, "", "", "", ""))
+	conn2, err := connection.New(
+		&api.Link{
+			Name:        linkName2,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 2")
-	conn3, err := connection.New(storage.NewLink(linkName3, "", "", "", ""))
+	conn3, err := connection.New(
+		&api.Link{
+			Name:        linkName3,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 3")
-	conn4, err := connection.New(storage.NewLink(linkName4, "", "", "", ""))
+	conn4, err := connection.New(
+		&api.Link{
+			Name:        linkName4,
+			SourceStage: "",
+			SourceField: "",
+			TargetStage: "",
+			TargetField: "",
+		},
+	)
 	assert.NilError(t, err, "create connection 4")
 
 	cfg := NewCfg()

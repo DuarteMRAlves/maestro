@@ -80,38 +80,38 @@ func linkKey(name api.LinkName) []byte {
 	return []byte(fmt.Sprintf("link:%s", name))
 }
 
-func PersistLink(txn *badger.Txn, l *Link) error {
+func PersistLink(txn *badger.Txn, l *api.Link) error {
 	var (
 		buf bytes.Buffer
 		err error
 	)
 	_, err = fmt.Fprintln(
 		&buf,
-		l.name,
-		l.sourceStage,
-		l.sourceField,
-		l.targetStage,
-		l.targetField,
+		l.Name,
+		l.SourceStage,
+		l.SourceField,
+		l.TargetStage,
+		l.TargetField,
 	)
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
-	err = txn.Set(linkKey(l.name), buf.Bytes())
+	err = txn.Set(linkKey(l.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
 }
 
-func loadLink(l *Link, data []byte) error {
+func loadLink(l *api.Link, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	_, err := fmt.Fscanln(
 		buf,
-		&l.name,
-		&l.sourceStage,
-		&l.sourceField,
-		&l.targetStage,
-		&l.targetField,
+		&l.Name,
+		&l.SourceStage,
+		&l.SourceField,
+		&l.TargetStage,
+		&l.TargetField,
 	)
 	return err
 }

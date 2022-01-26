@@ -3,7 +3,6 @@ package execution
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
@@ -16,7 +15,13 @@ func TestManager_Register_NoFields(t *testing.T) {
 	rpcManager := &reflection.MockManager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
-	l := storage.NewLink("link-name", s1.Name, "", s2.Name, "")
+	l := &api.Link{
+		Name:        "link-name",
+		SourceStage: s1.Name,
+		SourceField: "",
+		TargetStage: s2.Name,
+		TargetField: "",
+	}
 	m := NewManager(rpcManager)
 	err := m.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")
@@ -26,13 +31,13 @@ func TestManager_Register_WithFields(t *testing.T) {
 	rpcManager := &reflection.MockManager{Rpcs: sync.Map{}}
 	s1 := stage1(t, rpcManager)
 	s2 := stage2(t, rpcManager)
-	l := storage.NewLink(
-		"link-name",
-		s1.Name,
-		"field4",
-		s2.Name,
-		"fieldName4",
-	)
+	l := &api.Link{
+		Name:        "link-name",
+		SourceStage: s1.Name,
+		SourceField: "field4",
+		TargetStage: s2.Name,
+		TargetField: "fieldName4",
+	}
 	m := NewManager(rpcManager)
 	err := m.RegisterLink(s1, s2, l)
 	assert.NilError(t, err, "register error")

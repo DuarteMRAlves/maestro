@@ -10,7 +10,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/execution/output"
 	"github.com/DuarteMRAlves/maestro/internal/execution/worker"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"sync"
 )
 
@@ -20,7 +19,7 @@ type Manager interface {
 	RegisterStage(*api.Stage) error
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
-	RegisterLink(*api.Stage, *api.Stage, *storage.Link) error
+	RegisterLink(*api.Stage, *api.Stage, *api.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
 	RegisterOrchestration(*api.Orchestration) error
 }
@@ -78,7 +77,7 @@ func (m *manager) RegisterStage(s *api.Stage) error {
 func (m *manager) RegisterLink(
 	source *api.Stage,
 	target *api.Stage,
-	link *storage.Link,
+	link *api.Link,
 ) error {
 	var (
 		ok  bool
@@ -103,27 +102,27 @@ func (m *manager) RegisterLink(
 	sourceOutput := sourceRpc.Output()
 	targetInput := targetRpc.Input()
 
-	if link.SourceField() != "" {
-		sourceOutput, ok = sourceOutput.GetMessageField(link.SourceField())
+	if link.SourceField != "" {
+		sourceOutput, ok = sourceOutput.GetMessageField(link.SourceField)
 		if !ok {
 			return errdefs.NotFoundWithMsg(
 				"field with name %s not found for message %s for source stage "+
 					"in link %s",
-				link.SourceField(),
+				link.SourceField,
 				sourceRpc.Output().FullyQualifiedName(),
-				link.Name(),
+				link.Name,
 			)
 		}
 	}
-	if link.TargetField() != "" {
-		targetInput, ok = targetInput.GetMessageField(link.TargetField())
+	if link.TargetField != "" {
+		targetInput, ok = targetInput.GetMessageField(link.TargetField)
 		if !ok {
 			return errdefs.NotFoundWithMsg(
 				"field with name %s not found for message %s for target stage "+
 					"in link %v",
-				link.TargetField(),
+				link.TargetField,
 				targetRpc.Input().FullyQualifiedName(),
-				link.Name(),
+				link.Name,
 			)
 		}
 	}
@@ -133,7 +132,7 @@ func (m *manager) RegisterLink(
 				" input %s in link %s",
 			sourceOutput.FullyQualifiedName(),
 			targetInput.FullyQualifiedName(),
-			link.Name(),
+			link.Name,
 		)
 	}
 
@@ -216,14 +215,14 @@ func workerCfgForStage(s *api.Stage, rpc reflection.RPC) *worker.Cfg {
 }
 
 func (m *manager) connectionForLink(
-	l *storage.Link,
+	l *api.Link,
 ) (*connection.Connection, error) {
 	var (
 		c   *connection.Connection
 		ok  bool
 		err error
 	)
-	name := l.Name()
+	name := l.Name
 	c, ok = m.connections[name]
 	if !ok {
 		if c, err = connection.New(l); err != nil {

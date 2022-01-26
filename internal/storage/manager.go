@@ -38,7 +38,7 @@ type Manager interface {
 	GetMatchingStage(*badger.Txn, *api.GetStageRequest) ([]*api.Stage, error)
 	// CreateLink creates a new link with the specified config. It returns an
 	// error if the link is not created and nil otherwise.
-	CreateLink(*badger.Txn, *api.CreateLinkRequest) (*Link, error)
+	CreateLink(*badger.Txn, *api.CreateLinkRequest) (*api.Link, error)
 	// ContainsLink returns true if a link with the given name exists and false
 	// otherwise.
 	ContainsLink(*badger.Txn, api.LinkName) bool
@@ -232,18 +232,18 @@ func (m *manager) GetMatchingStage(
 func (m *manager) CreateLink(
 	txn *badger.Txn,
 	req *api.CreateLinkRequest,
-) (*Link, error) {
+) (*api.Link, error) {
 	var err error
 	if err = m.validateCreateLinkConfig(txn, req); err != nil {
 		return nil, err
 	}
-	l := NewLink(
-		req.Name,
-		req.SourceStage,
-		req.SourceField,
-		req.TargetStage,
-		req.TargetField,
-	)
+	l := &api.Link{
+		Name:        req.Name,
+		SourceStage: req.SourceStage,
+		SourceField: req.SourceField,
+		TargetStage: req.TargetStage,
+		TargetField: req.TargetField,
+	}
 	if err = PersistLink(txn, l); err != nil {
 		return nil, errdefs.InternalWithMsg("persist error: %v", err)
 	}
@@ -262,7 +262,7 @@ func (m *manager) GetMatchingLinks(
 	req *api.GetLinkRequest,
 ) ([]*api.Link, error) {
 	var (
-		l    Link
+		l    api.Link
 		data []byte
 		err  error
 	)
@@ -288,7 +288,14 @@ func (m *manager) GetMatchingLinks(
 			return nil, errdefs.InternalWithMsg("decoding: %v", err)
 		}
 		if filter(&l) {
-			res = append(res, l.ToApi())
+			linkCp := &api.Link{
+				Name:        l.Name,
+				SourceStage: l.SourceStage,
+				SourceField: l.SourceField,
+				TargetStage: l.TargetStage,
+				TargetField: l.TargetField,
+			}
+			res = append(res, linkCp)
 		}
 	}
 	return res, nil

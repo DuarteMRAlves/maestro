@@ -108,55 +108,55 @@ func buildStageQueryFilter(req *api.GetStageRequest) func(s *api.Stage) bool {
 	}
 }
 
-func buildLinkQueryFilter(req *api.GetLinkRequest) func(l *Link) bool {
-	filters := make([]func(l *Link) bool, 0)
+func buildLinkQueryFilter(req *api.GetLinkRequest) func(l *api.Link) bool {
+	filters := make([]func(l *api.Link) bool, 0)
 	if req.Name != "" {
 		filters = append(
 			filters,
-			func(l *Link) bool {
-				return l.name == req.Name
+			func(l *api.Link) bool {
+				return l.Name == req.Name
 			},
 		)
 	}
 	if req.SourceStage != "" {
 		filters = append(
 			filters,
-			func(l *Link) bool {
-				return l.sourceStage == req.SourceStage
+			func(l *api.Link) bool {
+				return l.SourceStage == req.SourceStage
 			},
 		)
 	}
 	if req.SourceField != "" {
 		filters = append(
 			filters,
-			func(l *Link) bool {
-				return l.sourceField == req.SourceField
+			func(l *api.Link) bool {
+				return l.SourceField == req.SourceField
 			},
 		)
 	}
 	if req.TargetStage != "" {
 		filters = append(
 			filters,
-			func(l *Link) bool {
-				return l.targetStage == req.TargetStage
+			func(l *api.Link) bool {
+				return l.TargetStage == req.TargetStage
 			},
 		)
 	}
 	if req.TargetField != "" {
 		filters = append(
 			filters,
-			func(l *Link) bool {
-				return l.targetField == req.TargetField
+			func(l *api.Link) bool {
+				return l.TargetField == req.TargetField
 			},
 		)
 	}
 	switch len(filters) {
 	case 0:
-		return func(l *Link) bool { return true }
+		return func(l *api.Link) bool { return true }
 	case 1:
 		return filters[0]
 	default:
-		return func(l *Link) bool {
+		return func(l *api.Link) bool {
 			for _, f := range filters {
 				if !f(l) {
 					return false
