@@ -14,14 +14,14 @@ type Stage struct {
 	asset   apitypes.AssetName
 
 	// orchestration is the Orchestration where this stage is inserted.
-	orchestration *Orchestration
+	orchestration *apitypes.Orchestration
 }
 
 func NewStage(
 	name apitypes.StageName,
 	rpcSpec *RpcSpec,
 	asset apitypes.AssetName,
-	orchestration *Orchestration,
+	orchestration *apitypes.Orchestration,
 ) *Stage {
 	return &Stage{
 		name:          name,

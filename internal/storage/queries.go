@@ -7,31 +7,31 @@ import (
 
 func buildOrchestrationQueryFilter(
 	req *api.GetOrchestrationRequest,
-) func(b *Orchestration) bool {
-	filters := make([]func(b *Orchestration) bool, 0)
+) func(b *apitypes.Orchestration) bool {
+	filters := make([]func(b *apitypes.Orchestration) bool, 0)
 	if req.Name != "" {
 		filters = append(
 			filters,
-			func(b *Orchestration) bool {
-				return b.Name() == req.Name
+			func(b *apitypes.Orchestration) bool {
+				return b.Name == req.Name
 			},
 		)
 	}
 	if req.Phase != "" {
 		filters = append(
 			filters,
-			func(o *Orchestration) bool {
-				return o.phase == req.Phase
+			func(o *apitypes.Orchestration) bool {
+				return o.Phase == req.Phase
 			},
 		)
 	}
 	switch len(filters) {
 	case 0:
-		return func(b *Orchestration) bool { return true }
+		return func(b *apitypes.Orchestration) bool { return true }
 	case 1:
 		return filters[0]
 	default:
-		return func(b *Orchestration) bool {
+		return func(b *apitypes.Orchestration) bool {
 			for _, f := range filters {
 				if !f(b) {
 					return false

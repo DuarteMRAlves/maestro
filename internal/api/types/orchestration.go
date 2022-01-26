@@ -11,6 +11,9 @@ type Orchestration struct {
 	// state of the system.
 	// (optional)
 	Phase OrchestrationPhase `yaml:"-"`
+	// Stages specifies the name of the stages that compose this orchestration.
+	// (required, non-empty)
+	Stages []StageName `yaml:"stages" info:"required"`
 	// Links specifies the name of the links that compose this orchestration.
 	// (required, non-empty)
 	Links []LinkName `yaml:"links" info:"required"`

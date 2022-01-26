@@ -81,7 +81,12 @@ func (m *manager) CreateOrchestration(
 		return err
 	}
 
-	o := NewOrchestration(req.Name)
+	o := &apitypes.Orchestration{
+		Name:   req.Name,
+		Phase:  apitypes.OrchestrationPending,
+		Stages: []apitypes.StageName{},
+		Links:  []apitypes.LinkName{},
+	}
 	err = persistOrchestration(txn, o)
 	if err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
@@ -94,7 +99,7 @@ func (m *manager) GetMatchingOrchestration(
 	req *api.GetOrchestrationRequest,
 ) ([]*apitypes.Orchestration, error) {
 	var (
-		o   Orchestration
+		o   apitypes.Orchestration
 		cp  []byte
 		err error
 	)
@@ -117,12 +122,10 @@ func (m *manager) GetMatchingOrchestration(
 		if err != nil {
 			return nil, errdefs.InternalWithMsg("decoding: %v", err)
 		}
-		fmt.Println("outside")
-		fmt.Println(o)
 		if filter(&o) {
-			fmt.Println("inside")
-			fmt.Println(o)
-			res = append(res, o.ToApi())
+			orchestrationCp := &apitypes.Orchestration{}
+			copyOrchestration(orchestrationCp, &o)
+			res = append(res, orchestrationCp)
 		}
 	}
 	return res, nil
