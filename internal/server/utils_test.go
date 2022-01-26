@@ -81,8 +81,9 @@ func populateStages(
 	txn *badger.Txn,
 	stages []*api.Stage,
 ) {
+	helper := storage.NewTxnHelper(txn)
 	for _, st := range stages {
-		assert.NilError(t, storage.PersistStage(txn, st), "persist stage")
+		assert.NilError(t, helper.SaveStage(st), "persist stage")
 		assert.NilError(t, s.flowManager.RegisterStage(st), "register stage")
 	}
 }

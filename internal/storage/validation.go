@@ -135,13 +135,22 @@ func (m *manager) validateCreateLinkConfig(
 
 // validateCreateAssetRequest verifies if all conditions to create an asset are
 // met. It returns an error if a condition is not met and nil otherwise.
-func validateCreateAssetRequest(req *api.CreateAssetRequest) error {
+func (m *manager) validateCreateAssetRequest(
+	txn *badger.Txn,
+	req *api.CreateAssetRequest,
+) error {
 	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
 	if !naming.IsValidAssetName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
+			req.Name,
+		)
+	}
+	if m.ContainsAsset(txn, req.Name) {
+		return errdefs.AlreadyExistsWithMsg(
+			"asset '%v' already exists",
 			req.Name,
 		)
 	}
