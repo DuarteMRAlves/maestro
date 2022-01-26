@@ -89,14 +89,14 @@ func (c *client) GetLink(
 
 func (c *client) GetOrchestration(
 	ctx context.Context,
-	query *pb.Orchestration,
+	req *pb.GetOrchestrationRequest,
 ) ([]*pb.Orchestration, error) {
 
 	stub := pb.NewOrchestrationManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, query)
+	stream, err := stub.Get(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}

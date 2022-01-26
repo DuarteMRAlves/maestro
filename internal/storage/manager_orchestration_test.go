@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/reflection"
 	"github.com/dgraph-io/badger/v3"
@@ -14,7 +15,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 		orchestration Orchestration
 		err           error
 	)
-	cfg := &apitypes.Orchestration{Name: name}
+	req := &api.CreateOrchestrationRequest{Name: name}
 
 	m, ok := NewManager(reflection.NewManager()).(*manager)
 	assert.Assert(t, ok, "type assertion failed for manager")
@@ -24,7 +25,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	defer db.Close()
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateOrchestration(txn, cfg)
+			return m.CreateOrchestration(txn, req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -38,7 +39,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, orchestration.Name(), cfg.Name, "name not correct")
+	assert.Equal(t, orchestration.Name(), req.Name, "name not correct")
 	phase := orchestration.phase
 	assert.Equal(t, phase, apitypes.OrchestrationPending, "phase not correct")
 }
@@ -46,34 +47,34 @@ func TestManager_CreateOrchestration(t *testing.T) {
 func TestManager_GetMatchingOrchestrations(t *testing.T) {
 	tests := []struct {
 		name   string
-		query  *apitypes.Orchestration
+		req    *api.GetOrchestrationRequest
 		stored []*Orchestration
 		// names of the expected orchestrations
 		expected []apitypes.OrchestrationName
 	}{
 		{
 			name:     "zero elements stored, nil req",
-			query:    nil,
+			req:      nil,
 			stored:   []*Orchestration{},
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
 			name:     "zero elements stored, some req",
-			query:    &apitypes.Orchestration{Name: "some-name"},
+			req:      &api.GetOrchestrationRequest{Name: "some-name"},
 			stored:   []*Orchestration{},
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
-			name:  "one element stored, nil req",
-			query: nil,
+			name: "one element stored, nil req",
+			req:  nil,
 			stored: []*Orchestration{
 				orchestrationForName("some-name", apitypes.OrchestrationFailed),
 			},
 			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
-			name:  "one element stored, matching name req",
-			query: &apitypes.Orchestration{Name: "some-name"},
+			name: "one element stored, matching name req",
+			req:  &api.GetOrchestrationRequest{Name: "some-name"},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name",
@@ -83,8 +84,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			expected: []apitypes.OrchestrationName{"some-name"},
 		},
 		{
-			name:  "one element stored, non-matching name req",
-			query: &apitypes.Orchestration{Name: "unknown-name"},
+			name: "one element stored, non-matching name req",
+			req:  &api.GetOrchestrationRequest{Name: "unknown-name"},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name",
@@ -94,8 +95,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
-			name:  "multiple elements stored, nil req",
-			query: nil,
+			name: "multiple elements stored, nil req",
+			req:  nil,
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name-1",
@@ -117,8 +118,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			},
 		},
 		{
-			name:  "multiple elements stored, matching name req",
-			query: &apitypes.Orchestration{Name: "some-name-2"},
+			name: "multiple elements stored, matching name req",
+			req:  &api.GetOrchestrationRequest{Name: "some-name-2"},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name-1",
@@ -136,8 +137,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			expected: []apitypes.OrchestrationName{"some-name-2"},
 		},
 		{
-			name:  "multiple elements stored, non-matching name req",
-			query: &apitypes.Orchestration{Name: "unknown-name"},
+			name: "multiple elements stored, non-matching name req",
+			req:  &api.GetOrchestrationRequest{Name: "unknown-name"},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name-1",
@@ -155,8 +156,10 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			expected: []apitypes.OrchestrationName{},
 		},
 		{
-			name:  "multiple elements stored, matching phase req",
-			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationFailed},
+			name: "multiple elements stored, matching phase req",
+			req: &api.GetOrchestrationRequest{
+				Phase: apitypes.OrchestrationFailed,
+			},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name-1",
@@ -174,8 +177,10 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			expected: []apitypes.OrchestrationName{"some-name-3"},
 		},
 		{
-			name:  "multiple elements stored, non-matching phase req",
-			query: &apitypes.Orchestration{Phase: apitypes.OrchestrationSucceeded},
+			name: "multiple elements stored, non-matching phase req",
+			req: &api.GetOrchestrationRequest{
+				Phase: apitypes.OrchestrationSucceeded,
+			},
 			stored: []*Orchestration{
 				orchestrationForName(
 					"some-name-1",
@@ -218,7 +223,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 					func(txn *badger.Txn) error {
 						received, err = m.GetMatchingOrchestration(
 							txn,
-							test.query,
+							test.req,
 						)
 						return err
 					},

@@ -28,7 +28,7 @@ func TestCreateWithServer(t *testing.T) {
 		validateAsset         func(*pb.CreateAssetRequest) bool
 		validateStage         func(req *pb.Stage) bool
 		validateLink          func(req *pb.Link) bool
-		validateOrchestration func(req *pb.Orchestration) bool
+		validateOrchestration func(req *pb.CreateOrchestrationRequest) bool
 		expectedOut           string
 	}{
 		{
@@ -103,9 +103,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateOrchestration: func(req *pb.Orchestration) bool {
-				return equalOrchestration(
-					&pb.Orchestration{
+			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
+				return equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-1",
 						Links: []string{
 							"link-stage-1-stage-2",
@@ -113,8 +113,8 @@ func TestCreateWithServer(t *testing.T) {
 						},
 					},
 					req,
-				) || equalOrchestration(
-					&pb.Orchestration{
+				) || equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-2",
 						Links: []string{
 							"link-stage-2-stage-1",
@@ -227,9 +227,9 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
-			validateOrchestration: func(req *pb.Orchestration) bool {
-				return equalOrchestration(
-					&pb.Orchestration{
+			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
+				return equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-3",
 						Links: []string{
 							"link-stage-4-stage-5",
@@ -237,8 +237,8 @@ func TestCreateWithServer(t *testing.T) {
 						},
 					},
 					req,
-				) || equalOrchestration(
-					&pb.Orchestration{
+				) || equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-4",
 						Links: []string{
 							"link-stage-5-stage-6",
@@ -296,9 +296,9 @@ func TestCreateWithServer(t *testing.T) {
 				"-f",
 				"../../../../tests/resources/create/link_not_found.yml",
 			},
-			validateOrchestration: func(req *pb.Orchestration) bool {
-				return equalOrchestration(
-					&pb.Orchestration{
+			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
+				return equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
 						Name:  "orchestration-unknown-link",
 						Links: []string{"link-1", "unknown-link"},
 					},
@@ -325,8 +325,8 @@ func TestCreateWithServer(t *testing.T) {
 						req *pb.Link,
 					) (*emptypb.Empty, error)
 					createOrchestrationFn func(
-						ctx context.Context,
-						req *pb.Orchestration,
+						context.Context,
+						*pb.CreateOrchestrationRequest,
 					) (*emptypb.Empty, error)
 				)
 
@@ -399,7 +399,7 @@ func TestCreateWithServer(t *testing.T) {
 				if test.validateOrchestration != nil {
 					createOrchestrationFn = func(
 						ctx context.Context,
-						req *pb.Orchestration,
+						req *pb.CreateOrchestrationRequest,
 					) (*emptypb.Empty, error) {
 						if !test.validateOrchestration(req) {
 							return nil, fmt.Errorf(

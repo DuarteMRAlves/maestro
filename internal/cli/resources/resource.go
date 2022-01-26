@@ -79,7 +79,7 @@ func (r *Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	case linkKind:
 		r.Spec = new(apitypes.Link)
 	case orchestrationKind:
-		r.Spec = new(apitypes.Orchestration)
+		r.Spec = new(api.CreateOrchestrationRequest)
 	default:
 		return errdefs.InvalidArgumentWithMsg("unknown kind: '%v'", r.Kind)
 	}

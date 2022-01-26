@@ -47,7 +47,7 @@ func (c *client) CreateResource(
 		}
 		return nil
 	case resource.IsOrchestrationKind():
-		o, ok := resource.Spec.(*apitypes.Orchestration)
+		o, ok := resource.Spec.(*api.CreateOrchestrationRequest)
 		if !ok {
 			return errdefs.InternalWithMsg(
 				"orchestration spec cast failed> %v",
@@ -115,20 +115,20 @@ func (c *client) CreateLink(ctx context.Context, link *apitypes.Link) error {
 
 func (c *client) CreateOrchestration(
 	ctx context.Context,
-	orchestration *apitypes.Orchestration,
+	req *api.CreateOrchestrationRequest,
 ) error {
-	links := make([]string, 0, len(orchestration.Links))
-	for _, l := range orchestration.Links {
+	links := make([]string, 0, len(req.Links))
+	for _, l := range req.Links {
 		links = append(links, string(l))
 	}
-	o := &pb.Orchestration{
-		Name:  string(orchestration.Name),
+	pbReq := &pb.CreateOrchestrationRequest{
+		Name:  string(req.Name),
 		Links: links,
 	}
 
 	stub := pb.NewOrchestrationManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, o)
+	_, err := stub.Create(ctx, pbReq)
 
 	return ErrorFromGrpcError(err)
 }

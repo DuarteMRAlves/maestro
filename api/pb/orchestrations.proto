@@ -7,8 +7,18 @@ package pb;
 import "google/protobuf/empty.proto";
 
 service OrchestrationManagement {
-  rpc Create(Orchestration) returns (google.protobuf.Empty);
-  rpc Get(Orchestration) returns (stream Orchestration);
+  rpc Create(CreateOrchestrationRequest) returns (google.protobuf.Empty);
+  rpc Get(GetOrchestrationRequest) returns (stream Orchestration);
+}
+
+message CreateOrchestrationRequest {
+  string name = 1;
+  repeated string links = 2;
+}
+
+message GetOrchestrationRequest {
+  string name = 1;
+  string phase = 2;
 }
 
 message Orchestration {
