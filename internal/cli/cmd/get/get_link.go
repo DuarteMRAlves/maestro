@@ -70,22 +70,26 @@ func (o *LinkOpts) addFlags(cmd *cobra.Command) {
 		&o.sourceStage,
 		"source-stage",
 		"",
-		"name of the source stage to search")
+		"name of the source stage to search",
+	)
 	cmd.Flags().StringVar(
 		&o.sourceField,
 		"source-field",
 		"",
-		"field in the source message search")
+		"field in the source message search",
+	)
 	cmd.Flags().StringVar(
 		&o.targetStage,
 		"target-stage",
 		"",
-		"name of the target stage to search")
+		"name of the target stage to search",
+	)
 	cmd.Flags().StringVar(
 		&o.targetField,
 		"target-field",
 		"",
-		"field in the target message search")
+		"field in the target message search",
+	)
 }
 
 // complete fills any remaining information for the runner that is not specified
@@ -106,7 +110,7 @@ func (o *LinkOpts) validate() error {
 
 // run executes the get link command
 func (o *LinkOpts) run() error {
-	query := &pb.Link{
+	req := &pb.GetLinkRequest{
 		Name:        o.name,
 		SourceStage: o.sourceStage,
 		SourceField: o.sourceField,
@@ -125,7 +129,7 @@ func (o *LinkOpts) run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	links, err := c.GetLink(ctx, query)
+	links, err := c.GetLink(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -137,7 +141,8 @@ func (o *LinkOpts) displayLinks(links []*pb.Link) error {
 		links,
 		func(i, j int) bool {
 			return links[i].Name < links[j].Name
-		})
+		},
+	)
 	numLinks := len(links)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numLinks+1)

@@ -10,8 +10,8 @@ type InternalAPI interface {
 	CreateStage(*CreateStageRequest) error
 	GetStage(*GetStageRequest) ([]*Stage, error)
 
-	CreateLink(config *Link) error
-	GetLink(query *Link) ([]*Link, error)
+	CreateLink(*CreateLinkRequest) error
+	GetLink(*GetLinkRequest) ([]*Link, error)
 
 	CreateOrchestration(*CreateOrchestrationRequest) error
 	GetOrchestration(*GetOrchestrationRequest) ([]*Orchestration, error)

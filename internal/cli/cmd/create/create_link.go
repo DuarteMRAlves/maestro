@@ -115,7 +115,7 @@ func (o *LinkOpts) validate() error {
 // run executes a CreateLink command with the specified options.
 // It assumes the options were previously validated.
 func (o *LinkOpts) run() error {
-	link := &api.Link{
+	req := &api.CreateLinkRequest{
 		Name:        api.LinkName(o.name),
 		SourceStage: api.StageName(o.sourceStage),
 		SourceField: o.sourceField,
@@ -136,5 +136,5 @@ func (o *LinkOpts) run() error {
 		time.Second,
 	)
 	defer cancel()
-	return c.CreateLink(ctx, link)
+	return c.CreateLink(ctx, req)
 }

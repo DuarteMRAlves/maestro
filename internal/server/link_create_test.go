@@ -17,12 +17,12 @@ import (
 func TestServer_CreateLink(t *testing.T) {
 	const name = "link-name"
 	tests := []struct {
-		name   string
-		config *api.Link
+		name string
+		req  *api.CreateLinkRequest
 	}{
 		{
 			name: "correct with nil fields",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        name,
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -30,7 +30,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "correct with empty fields",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "",
@@ -40,7 +40,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "correct with fields",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "field4",
@@ -50,7 +50,7 @@ func TestServer_CreateLink(t *testing.T) {
 		},
 		{
 			name: "incompatible outer but compatible inner",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        name,
 				SourceStage: "stage-1",
 				SourceField: "field4",
@@ -79,7 +79,7 @@ func TestServer_CreateLink(t *testing.T) {
 				assert.NilError(t, err, "build server")
 				populateForLinks(t, s, rpcManager)
 				fmt.Println("On create link")
-				err = s.CreateLink(test.config)
+				err = s.CreateLink(test.req)
 				assert.NilError(t, err, "create link error")
 			},
 		)
@@ -108,18 +108,18 @@ func TestServer_CreateLink_NilConfig(t *testing.T) {
 		errdefs.IsInvalidArgument(err),
 		"error is not InvalidArgument",
 	)
-	expectedMsg := "'cfg' is nil"
+	expectedMsg := "'req' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateLink_InvalidName(t *testing.T) {
 	tests := []struct {
-		name   string
-		config *api.Link
+		name string
+		req  *api.CreateLinkRequest
 	}{
 		{
 			name: "empty name",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        "",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -127,7 +127,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid characters in name",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        "some'character",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -135,7 +135,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid character sequence",
-			config: &api.Link{
+			req: &api.CreateLinkRequest{
 				Name:        "//invalid-name",
 				SourceStage: "stage-1",
 				TargetStage: "stage-2",
@@ -158,7 +158,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 					Build()
 				assert.NilError(t, err, "build server")
 
-				err = s.CreateLink(test.config)
+				err = s.CreateLink(test.req)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
@@ -166,7 +166,7 @@ func TestServer_CreateLink_InvalidName(t *testing.T) {
 				)
 				expectedMsg := fmt.Sprintf(
 					"invalid name '%v'",
-					test.config.Name,
+					test.req.Name,
 				)
 				assert.Error(t, err, expectedMsg)
 			},
@@ -191,7 +191,7 @@ func TestServer_CreateLink_SourceEmpty(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "",
 		TargetStage: "stage-2",
@@ -223,7 +223,7 @@ func TestServer_CreateLink_TargetEmpty(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-2",
 		TargetStage: "",
@@ -255,7 +255,7 @@ func TestServer_CreateLink_EqualSourceAndTarget(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-1",
@@ -283,7 +283,7 @@ func TestServer_CreateLink_SourceNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-4",
 		TargetStage: "stage-2",
@@ -312,7 +312,7 @@ func TestServer_CreateLink_TargetNotFound(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-4",
@@ -342,7 +342,7 @@ func TestServer_CreateLink_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
@@ -373,7 +373,7 @@ func TestServer_CreateLink_UnknownSourceField(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		SourceField: "unknown-field",
@@ -407,7 +407,7 @@ func TestServer_CreateLink_UnknownTargetField(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-2",
@@ -441,7 +441,7 @@ func TestServer_CreateLink_IncompatibleMessages(t *testing.T) {
 	assert.NilError(t, err, "build server")
 	populateForLinks(t, s, rpcManager)
 
-	config := &api.Link{
+	config := &api.CreateLinkRequest{
 		Name:        name,
 		SourceStage: "stage-1",
 		TargetStage: "stage-3",

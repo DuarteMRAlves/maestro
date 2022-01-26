@@ -77,57 +77,57 @@ func (m *manager) validateCreateStageConfig(
 // It returns an error if a condition is not met and nil otherwise.
 func (m *manager) validateCreateLinkConfig(
 	txn *badger.Txn,
-	cfg *api.Link,
+	req *api.CreateLinkRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
+	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidLinkName(cfg.Name) {
-		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", cfg.Name)
+	if !naming.IsValidLinkName(req.Name) {
+		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
-	prev, _ := txn.Get(linkKey(cfg.Name))
+	prev, _ := txn.Get(linkKey(req.Name))
 	if prev != nil {
 		return errdefs.AlreadyExistsWithMsg(
 			"link '%v' already exists",
-			cfg.Name,
+			req.Name,
 		)
 	}
-	if cfg.SourceStage == "" {
+	if req.SourceStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty source stage name")
 	}
-	if cfg.TargetStage == "" {
+	if req.TargetStage == "" {
 		return errdefs.InvalidArgumentWithMsg("empty target stage name")
 	}
-	if cfg.SourceStage == cfg.TargetStage {
+	if req.SourceStage == req.TargetStage {
 		return errdefs.InvalidArgumentWithMsg(
 			"source and target stages are equal",
 		)
 	}
-	source, ok := m.GetStageByName(txn, cfg.SourceStage)
+	source, ok := m.GetStageByName(txn, req.SourceStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"source stage '%v' not found",
-			cfg.SourceStage,
+			req.SourceStage,
 		)
 	}
-	target, ok := m.GetStageByName(txn, cfg.TargetStage)
+	target, ok := m.GetStageByName(txn, req.TargetStage)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"target stage '%v' not found",
-			cfg.TargetStage,
+			req.TargetStage,
 		)
 	}
 
 	if !source.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
-			cfg.Name,
+			req.Name,
 		)
 	}
 	if !target.IsPending() {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
-			cfg.Name,
+			req.Name,
 		)
 	}
 	return nil

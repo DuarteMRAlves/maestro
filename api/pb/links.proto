@@ -7,8 +7,24 @@ package pb;
 import "google/protobuf/empty.proto";
 
 service LinkManagement {
-  rpc Create(Link) returns (google.protobuf.Empty);
-  rpc Get(Link) returns (stream Link);
+  rpc Create(CreateLinkRequest) returns (google.protobuf.Empty);
+  rpc Get(GetLinkRequest) returns (stream Link);
+}
+
+message CreateLinkRequest {
+  string name = 1;
+  string sourceStage = 2;
+  string sourceField = 3;
+  string targetStage = 4;
+  string targetField = 5;
+}
+
+message GetLinkRequest {
+  string name = 1;
+  string sourceStage = 2;
+  string sourceField = 3;
+  string targetStage = 4;
+  string targetField = 5;
 }
 
 message Link {

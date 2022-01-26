@@ -133,39 +133,36 @@ func (s *MockStageManagementServer) Get(
 // that will be called.
 type MockLinkManagementServer struct {
 	pb.UnimplementedLinkManagementServer
-	CreateLinkFn func(ctx context.Context, config *pb.Link) (
+	CreateLinkFn func(context.Context, *pb.CreateLinkRequest) (
 		*emptypb.Empty,
 		error,
 	)
-	GetLinkFn func(
-		query *pb.Link,
-		stream pb.LinkManagement_GetServer,
-	) error
+	GetLinkFn func(*pb.GetLinkRequest, pb.LinkManagement_GetServer) error
 }
 
 func (s *MockLinkManagementServer) Create(
 	ctx context.Context,
-	config *pb.Link,
+	req *pb.CreateLinkRequest,
 ) (*emptypb.Empty, error) {
 	if s.CreateLinkFn != nil {
-		return s.CreateLinkFn(ctx, config)
+		return s.CreateLinkFn(ctx, req)
 	}
 	return &emptypb.Empty{}, fmt.Errorf(
-		"method CreateLink not configured but called with config %v",
-		config,
+		"method CreateLink not configured but called with req %v",
+		req,
 	)
 }
 
 func (s *MockLinkManagementServer) Get(
-	query *pb.Link,
+	req *pb.GetLinkRequest,
 	stream pb.LinkManagement_GetServer,
 ) error {
 	if s.GetLinkFn != nil {
-		return s.GetLinkFn(query, stream)
+		return s.GetLinkFn(req, stream)
 	}
 	return fmt.Errorf(
-		"method GetLink not configured but called with query %v",
-		query,
+		"method GetLink not configured but called with req %v",
+		req,
 	)
 }
 

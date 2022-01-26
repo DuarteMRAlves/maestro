@@ -108,45 +108,45 @@ func buildStageQueryFilter(req *api.GetStageRequest) func(s *Stage) bool {
 	}
 }
 
-func buildLinkQueryFilter(query *api.Link) func(l *Link) bool {
+func buildLinkQueryFilter(req *api.GetLinkRequest) func(l *Link) bool {
 	filters := make([]func(l *Link) bool, 0)
-	if query.Name != "" {
+	if req.Name != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.name == query.Name
+				return l.name == req.Name
 			},
 		)
 	}
-	if query.SourceStage != "" {
+	if req.SourceStage != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.sourceStage == query.SourceStage
+				return l.sourceStage == req.SourceStage
 			},
 		)
 	}
-	if query.SourceField != "" {
+	if req.SourceField != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.sourceField == query.SourceField
+				return l.sourceField == req.SourceField
 			},
 		)
 	}
-	if query.TargetStage != "" {
+	if req.TargetStage != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.targetStage == query.TargetStage
+				return l.targetStage == req.TargetStage
 			},
 		)
 	}
-	if query.TargetField != "" {
+	if req.TargetField != "" {
 		filters = append(
 			filters,
 			func(l *Link) bool {
-				return l.targetField == query.TargetField
+				return l.targetField == req.TargetField
 			},
 		)
 	}

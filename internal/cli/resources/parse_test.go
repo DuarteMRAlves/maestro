@@ -75,7 +75,7 @@ var expected = []*Resource{
 	},
 	{
 		Kind: linkKind,
-		Spec: &api.Link{
+		Spec: &api.CreateLinkRequest{
 			Name:        linkName,
 			SourceStage: linkSourceStage,
 			SourceField: linkSourceField,
