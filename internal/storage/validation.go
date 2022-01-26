@@ -3,7 +3,6 @@ package storage
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/naming"
 	"github.com/DuarteMRAlves/maestro/internal/validate"
 	"github.com/dgraph-io/badger/v3"
 )
@@ -18,7 +17,7 @@ func validateCreateOrchestrationConfig(
 	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidOrchestrationName(req.Name) {
+	if !IsValidOrchestrationName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
 	prev, _ := txn.Get(orchestrationKey(req.Name))
@@ -40,7 +39,7 @@ func (m *manager) validateCreateStageConfig(
 	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidStageName(req.Name) {
+	if !IsValidStageName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			req.Name,
@@ -82,7 +81,7 @@ func (m *manager) validateCreateLinkConfig(
 	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidLinkName(req.Name) {
+	if !IsValidLinkName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
 	prev, _ := txn.Get(linkKey(req.Name))
@@ -142,7 +141,7 @@ func (m *manager) validateCreateAssetRequest(
 	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return errdefs.InvalidArgumentWithError(err)
 	}
-	if !naming.IsValidAssetName(req.Name) {
+	if !IsValidAssetName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
 			"invalid name '%v'",
 			req.Name,
