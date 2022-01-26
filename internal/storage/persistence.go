@@ -38,40 +38,40 @@ func stageKey(name api.StageName) []byte {
 	return []byte(fmt.Sprintf("stage:%s", name))
 }
 
-func PersistStage(txn *badger.Txn, s *Stage) error {
+func PersistStage(txn *badger.Txn, s *api.Stage) error {
 	var (
 		buf bytes.Buffer
 		err error
 	)
 	_, err = fmt.Fprintln(
 		&buf,
-		s.name,
-		s.phase,
-		s.rpcSpec.address,
-		s.rpcSpec.service,
-		s.rpcSpec.rpc,
-		s.asset,
+		s.Name,
+		s.Phase,
+		s.Service,
+		s.Rpc,
+		s.Address,
+		s.Asset,
 	)
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
-	err = txn.Set(stageKey(s.Name()), buf.Bytes())
+	err = txn.Set(stageKey(s.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
 }
 
-func loadStage(s *Stage, data []byte) error {
+func loadStage(s *api.Stage, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	_, err := fmt.Fscanln(
 		buf,
-		&s.name,
-		&s.phase,
-		&s.rpcSpec.address,
-		&s.rpcSpec.service,
-		&s.rpcSpec.rpc,
-		&s.asset,
+		&s.Name,
+		&s.Phase,
+		&s.Service,
+		&s.Rpc,
+		&s.Address,
+		&s.Asset,
 	)
 	return err
 }

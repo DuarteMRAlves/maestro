@@ -17,10 +17,10 @@ import (
 // Manager handles the flows that are orchestrated.
 type Manager interface {
 	// RegisterStage registers a stage to be later included in an orchestration.
-	RegisterStage(*storage.Stage) error
+	RegisterStage(*api.Stage) error
 	// RegisterLink registers a link between two stages. The first
 	// stage is the source of the link and the second is the target.
-	RegisterLink(*storage.Stage, *storage.Stage, *storage.Link) error
+	RegisterLink(*api.Stage, *api.Stage, *storage.Link) error
 	// RegisterOrchestration registers an orchestration with multiple links.
 	RegisterOrchestration(*api.Orchestration) error
 }
@@ -47,10 +47,10 @@ func NewManager(reflectionManager reflection.Manager) Manager {
 	}
 }
 
-func (m *manager) RegisterStage(s *storage.Stage) error {
-	rpc, ok := m.reflectionManager.GetRpc(s.Name())
+func (m *manager) RegisterStage(s *api.Stage) error {
+	rpc, ok := m.reflectionManager.GetRpc(s.Name)
 	if !ok {
-		return errdefs.NotFoundWithMsg("Rpc not found for stage %s", s.Name())
+		return errdefs.NotFoundWithMsg("Rpc not found for stage %s", s.Name)
 	}
 	cfg := workerCfgForStage(s, rpc)
 	w, err := worker.NewWorker(cfg)
@@ -58,7 +58,7 @@ func (m *manager) RegisterStage(s *storage.Stage) error {
 		return err
 	}
 
-	name := s.Name()
+	name := s.Name
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -76,8 +76,8 @@ func (m *manager) RegisterStage(s *storage.Stage) error {
 }
 
 func (m *manager) RegisterLink(
-	source *storage.Stage,
-	target *storage.Stage,
+	source *api.Stage,
+	target *api.Stage,
 	link *storage.Link,
 ) error {
 	var (
@@ -85,18 +85,18 @@ func (m *manager) RegisterLink(
 		err error
 	)
 
-	sourceRpc, ok := m.reflectionManager.GetRpc(source.Name())
+	sourceRpc, ok := m.reflectionManager.GetRpc(source.Name)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"Rpc not found for source %s",
-			source.Name(),
+			source.Name,
 		)
 	}
-	targetRpc, ok := m.reflectionManager.GetRpc(target.Name())
+	targetRpc, ok := m.reflectionManager.GetRpc(target.Name)
 	if !ok {
 		return errdefs.NotFoundWithMsg(
 			"Rpc not found for target %s",
-			target.Name(),
+			target.Name,
 		)
 	}
 	fmt.Println("On get input/output")
@@ -185,8 +185,8 @@ func (m *manager) RegisterOrchestration(o *api.Orchestration) error {
 	return nil
 }
 
-func (m *manager) inputCfgForStage(s *storage.Stage) *input.Cfg {
-	name := s.Name()
+func (m *manager) inputCfgForStage(s *api.Stage) *input.Cfg {
+	name := s.Name
 	cfg, ok := m.inputs[name]
 	if !ok {
 		cfg = input.NewCfg()
@@ -195,8 +195,8 @@ func (m *manager) inputCfgForStage(s *storage.Stage) *input.Cfg {
 	return cfg
 }
 
-func (m *manager) outputCfgForStage(s *storage.Stage) *output.Cfg {
-	name := s.Name()
+func (m *manager) outputCfgForStage(s *api.Stage) *output.Cfg {
+	name := s.Name
 	cfg, ok := m.outputs[name]
 	if !ok {
 		cfg = output.NewCfg()
@@ -205,9 +205,9 @@ func (m *manager) outputCfgForStage(s *storage.Stage) *output.Cfg {
 	return cfg
 }
 
-func workerCfgForStage(s *storage.Stage, rpc reflection.RPC) *worker.Cfg {
+func workerCfgForStage(s *api.Stage, rpc reflection.RPC) *worker.Cfg {
 	return &worker.Cfg{
-		Address: s.Address(),
+		Address: s.Address,
 		Rpc:     rpc,
 		Input:   nil,
 		Output:  nil,

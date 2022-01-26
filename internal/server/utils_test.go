@@ -31,7 +31,7 @@ func mockStage(
 	req interface{},
 	res interface{},
 	rpcManager *reflection.MockManager,
-) *storage.Stage {
+) *api.Stage {
 	reqType := reflect.TypeOf(req)
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
@@ -63,16 +63,14 @@ func mockStage(
 		},
 	)
 
-	return storage.NewStage(
-		testutil.StageNameForNum(num),
-		storage.NewRpcSpec(
-			testutil.StageAddressForNum(num),
-			testutil.StageServiceForNum(num),
-			testutil.StageRpcForNum(num),
-		),
-		testutil.AssetNameForNum(num),
-		nil,
-	)
+	return &api.Stage{
+		Name:    testutil.StageNameForNum(num),
+		Phase:   api.StagePending,
+		Service: testutil.StageServiceForNum(num),
+		Rpc:     testutil.StageRpcForNum(num),
+		Address: testutil.StageAddressForNum(num),
+		Asset:   testutil.AssetNameForNum(num),
+	}
 }
 
 // populateStages creates the stages in the server, asserting any occurred
@@ -81,10 +79,10 @@ func populateStages(
 	t *testing.T,
 	s *Server,
 	txn *badger.Txn,
-	stages []*storage.Stage,
+	stages []*api.Stage,
 ) {
 	for _, st := range stages {
-		storage.PersistStage(txn, st)
+		assert.NilError(t, storage.PersistStage(txn, st), "persist stage")
 		assert.NilError(t, s.flowManager.RegisterStage(st), "register stage")
 	}
 }
