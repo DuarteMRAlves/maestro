@@ -26,12 +26,12 @@ type Manager interface {
 	) ([]*api.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
-	CreateStage(*badger.Txn, *api.CreateStageRequest) (*Stage, error)
+	CreateStage(*badger.Txn, *api.CreateStageRequest) (*api.Stage, error)
 	// ContainsStage returns true if the stage exists and false otherwise.
 	ContainsStage(*badger.Txn, api.StageName) bool
 	// GetStageByName retrieves a stored stage. It returns the stage and true
 	// if the stage exists and nil, false otherwise.
-	GetStageByName(*badger.Txn, api.StageName) (*Stage, bool)
+	GetStageByName(*badger.Txn, api.StageName) (*api.Stage, bool)
 	// GetMatchingStage retrieves stored stages that match the received req.
 	// The req is a stage with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
@@ -130,7 +130,7 @@ func (m *manager) GetMatchingOrchestration(
 func (m *manager) CreateStage(
 	txn *badger.Txn,
 	req *api.CreateStageRequest,
-) (*Stage, error) {
+) (*api.Stage, error) {
 	var err error
 	if err = m.validateCreateStageConfig(txn, req); err != nil {
 		return nil, err
@@ -140,12 +140,14 @@ func (m *manager) CreateStage(
 	if err != nil {
 		return nil, err
 	}
-	spec := &RpcSpec{
-		address: address,
-		service: req.Service,
-		rpc:     req.Rpc,
+	s := &api.Stage{
+		Name:    req.Name,
+		Phase:   api.StagePending,
+		Service: req.Service,
+		Rpc:     req.Rpc,
+		Address: address,
+		Asset:   req.Asset,
 	}
-	s := NewStage(req.Name, spec, req.Asset, nil)
 	err = PersistStage(txn, s)
 	if err != nil {
 		return nil, errdefs.InternalWithMsg("persist error: %v", err)
@@ -161,7 +163,7 @@ func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {
 func (m *manager) GetStageByName(
 	txn *badger.Txn,
 	name api.StageName,
-) (*Stage, bool) {
+) (*api.Stage, bool) {
 	var (
 		data []byte
 		err  error
@@ -174,8 +176,7 @@ func (m *manager) GetStageByName(
 	if err != nil {
 		return nil, false
 	}
-	s := &Stage{}
-	s.rpcSpec = &RpcSpec{}
+	s := &api.Stage{}
 	err = loadStage(s, data)
 	if err != nil {
 		return nil, false
@@ -188,11 +189,10 @@ func (m *manager) GetMatchingStage(
 	req *api.GetStageRequest,
 ) ([]*api.Stage, error) {
 	var (
-		s    Stage
+		s    api.Stage
 		data []byte
 		err  error
 	)
-	s.rpcSpec = &RpcSpec{}
 
 	if req == nil {
 		req = &api.GetStageRequest{}
@@ -215,7 +215,15 @@ func (m *manager) GetMatchingStage(
 			return nil, errdefs.InternalWithMsg("decoding: %v", err)
 		}
 		if filter(&s) {
-			res = append(res, s.ToApi())
+			stageCp := &api.Stage{
+				Name:    s.Name,
+				Phase:   s.Phase,
+				Service: s.Service,
+				Rpc:     s.Rpc,
+				Address: s.Address,
+				Asset:   s.Asset,
+			}
+			res = append(res, stageCp)
 		}
 	}
 	return res, nil

@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	mockreflection "github.com/DuarteMRAlves/maestro/internal/reflection"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
@@ -485,7 +484,7 @@ func populateForLinks(
 		rpcManager,
 	)
 
-	stages := []*storage.Stage{stage1, stage2, stage3}
+	stages := []*api.Stage{stage1, stage2, stage3}
 	err := s.db.Update(
 		func(txn *badger.Txn) error {
 			populateStages(t, s, txn, stages)

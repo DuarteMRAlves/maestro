@@ -118,13 +118,13 @@ func (m *manager) validateCreateLinkConfig(
 		)
 	}
 
-	if !source.IsPending() {
+	if source.Phase != api.StagePending {
 		return errdefs.FailedPreconditionWithMsg(
 			"source stage is not in Pending phase for link %s",
 			req.Name,
 		)
 	}
-	if !target.IsPending() {
+	if target.Phase != api.StagePending {
 		return errdefs.FailedPreconditionWithMsg(
 			"target stage is not in Pending phase for link %s",
 			req.Name,
