@@ -4,16 +4,15 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/queue"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 )
 
 // Connection is a connection between two stages where data is transferred.
 type Connection struct {
-	link  *storage.Link
+	link  *api.Link
 	queue queue.Ring
 }
 
-func New(l *storage.Link) (*Connection, error) {
+func New(l *api.Link) (*Connection, error) {
 	q, err := queue.NewRing(1)
 	if err != nil {
 		return nil, err
@@ -26,19 +25,19 @@ func New(l *storage.Link) (*Connection, error) {
 }
 
 func (c *Connection) LinkName() api.LinkName {
-	return c.link.Name()
+	return c.link.Name
 }
 
 func (c *Connection) HasSameLinkName(other *Connection) bool {
-	return c.link.Name() == other.link.Name()
+	return c.link.Name == other.link.Name
 }
 
 func (c *Connection) HasEmptyTargetField() bool {
-	return c.link.TargetField() == ""
+	return c.link.TargetField == ""
 }
 
 func (c *Connection) HasSameTargetField(other *Connection) bool {
-	return c.link.TargetField() == other.link.TargetField()
+	return c.link.TargetField == other.link.TargetField
 }
 
 func (c *Connection) Push(s *state.State) {
