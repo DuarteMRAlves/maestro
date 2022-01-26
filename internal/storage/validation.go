@@ -14,19 +14,19 @@ import (
 // nil otherwise.
 func validateCreateOrchestrationConfig(
 	txn *badger.Txn,
-	cfg *apitypes.Orchestration,
+	req *api.CreateOrchestrationRequest,
 ) error {
-	if ok, err := validate.ArgNotNil(cfg, "cfg"); !ok {
+	if ok, err := validate.ArgNotNil(req, "req"); !ok {
 		return err
 	}
-	if !naming.IsValidOrchestrationName(cfg.Name) {
-		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", cfg.Name)
+	if !naming.IsValidOrchestrationName(req.Name) {
+		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
-	prev, _ := txn.Get(orchestrationKey(cfg.Name))
+	prev, _ := txn.Get(orchestrationKey(req.Name))
 	if prev != nil {
 		return errdefs.AlreadyExistsWithMsg(
 			"orchestration '%s' already exists",
-			cfg.Name,
+			req.Name,
 		)
 	}
 	return nil

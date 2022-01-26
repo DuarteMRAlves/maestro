@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -22,19 +21,17 @@ func NewOrchestrationManagementServer(
 
 func (s *orchestrationManagementServer) Create(
 	_ context.Context,
-	pbOrchestration *pb.Orchestration,
+	pbReq *pb.CreateOrchestrationRequest,
 ) (*emptypb.Empty, error) {
 
 	var (
-		o       *apitypes.Orchestration
+		req     api.CreateOrchestrationRequest
 		err     error
 		grpcErr error = nil
 	)
 
-	if o, err = protobuff.UnmarshalOrchestration(pbOrchestration); err != nil {
-		return &emptypb.Empty{}, GrpcErrorFromError(err)
-	}
-	err = s.api.CreateOrchestration(o)
+	protobuff.UnmarshalCreateOrchestrationRequest(&req, pbReq)
+	err = s.api.CreateOrchestration(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -42,18 +39,17 @@ func (s *orchestrationManagementServer) Create(
 }
 
 func (s *orchestrationManagementServer) Get(
-	pbQuery *pb.Orchestration,
+	pbReq *pb.GetOrchestrationRequest,
 	stream pb.OrchestrationManagement_GetServer,
 ) error {
 
-	var query *apitypes.Orchestration
-	var err error
+	var (
+		req api.GetOrchestrationRequest
+		err error
+	)
 
-	if query, err = protobuff.UnmarshalOrchestration(pbQuery); err != nil {
-		return err
-	}
-
-	orchestrations, err := s.api.GetOrchestration(query)
+	protobuff.UnmarshalGetOrchestrationRequest(&req, pbReq)
+	orchestrations, err := s.api.GetOrchestration(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}

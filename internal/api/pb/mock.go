@@ -50,39 +50,39 @@ func (m *MockMaestroServer) GrpcServer() *grpc.Server {
 // that will be called.
 type MockOrchestrationManagementServer struct {
 	pb.UnimplementedOrchestrationManagementServer
-	CreateOrchestrationFn func(ctx context.Context, config *pb.Orchestration) (
-		*emptypb.Empty,
-		error,
-	)
+	CreateOrchestrationFn func(
+		context.Context,
+		*pb.CreateOrchestrationRequest,
+	) (*emptypb.Empty, error)
 	GetOrchestrationFn func(
-		query *pb.Orchestration,
-		stream pb.OrchestrationManagement_GetServer,
+		*pb.GetOrchestrationRequest,
+		pb.OrchestrationManagement_GetServer,
 	) error
 }
 
 func (s *MockOrchestrationManagementServer) Create(
 	ctx context.Context,
-	config *pb.Orchestration,
+	req *pb.CreateOrchestrationRequest,
 ) (*emptypb.Empty, error) {
 	if s.CreateOrchestrationFn != nil {
-		return s.CreateOrchestrationFn(ctx, config)
+		return s.CreateOrchestrationFn(ctx, req)
 	}
 	return &emptypb.Empty{}, fmt.Errorf(
-		"method CreateOrchestration not configured but called with config %v",
-		config,
+		"method CreateOrchestration not configured but called with req %v",
+		req,
 	)
 }
 
 func (s *MockOrchestrationManagementServer) Get(
-	query *pb.Orchestration,
+	req *pb.GetOrchestrationRequest,
 	stream pb.OrchestrationManagement_GetServer,
 ) error {
 	if s.GetOrchestrationFn != nil {
-		return s.GetOrchestrationFn(query, stream)
+		return s.GetOrchestrationFn(req, stream)
 	}
 	return fmt.Errorf(
-		"method GetOrchestration not configured but called with query %v",
-		query,
+		"method GetOrchestration not configured but called with req %v",
+		req,
 	)
 }
 

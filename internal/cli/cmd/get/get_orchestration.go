@@ -103,7 +103,7 @@ func (o *OrchestrationOpts) validate() error {
 
 // run executes the get link command
 func (o *OrchestrationOpts) run() error {
-	query := &pb.Orchestration{
+	req := &pb.GetOrchestrationRequest{
 		Name:  o.name,
 		Phase: o.phase,
 	}
@@ -119,7 +119,7 @@ func (o *OrchestrationOpts) run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	orchestrations, err := c.GetOrchestration(ctx, query)
+	orchestrations, err := c.GetOrchestration(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,8 @@ func (o *OrchestrationOpts) displayOrchestrations(
 		orchestrations,
 		func(i, j int) bool {
 			return orchestrations[i].Name < orchestrations[j].Name
-		})
+		},
+	)
 	numOrchestrations := len(orchestrations)
 	// Add space for all assets plus the header
 	data := make([][]string, 0, numOrchestrations+1)

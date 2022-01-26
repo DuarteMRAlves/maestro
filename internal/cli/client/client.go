@@ -15,12 +15,12 @@ type Client interface {
 	CreateAsset(context.Context, *api.CreateAssetRequest) error
 	CreateStage(ctx context.Context, s *apitypes.Stage) error
 	CreateLink(ctx context.Context, l *apitypes.Link) error
-	CreateOrchestration(ctx context.Context, o *apitypes.Orchestration) error
+	CreateOrchestration(context.Context, *api.CreateOrchestrationRequest) error
 
 	GetAsset(context.Context, *pb.GetAssetRequest) ([]*pb.Asset, error)
 	GetStage(ctx context.Context, query *pb.Stage) ([]*pb.Stage, error)
 	GetLink(ctx context.Context, query *pb.Link) ([]*pb.Link, error)
-	GetOrchestration(ctx context.Context, query *pb.Orchestration) (
+	GetOrchestration(context.Context, *pb.GetOrchestrationRequest) (
 		[]*pb.Orchestration,
 		error,
 	)

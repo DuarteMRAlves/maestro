@@ -6,22 +6,22 @@ import (
 )
 
 func buildOrchestrationQueryFilter(
-	query *apitypes.Orchestration,
+	req *api.GetOrchestrationRequest,
 ) func(b *Orchestration) bool {
 	filters := make([]func(b *Orchestration) bool, 0)
-	if query.Name != "" {
+	if req.Name != "" {
 		filters = append(
 			filters,
 			func(b *Orchestration) bool {
-				return b.Name() == query.Name
+				return b.Name() == req.Name
 			},
 		)
 	}
-	if query.Phase != "" {
+	if req.Phase != "" {
 		filters = append(
 			filters,
 			func(o *Orchestration) bool {
-				return o.phase == query.Phase
+				return o.phase == req.Phase
 			},
 		)
 	}

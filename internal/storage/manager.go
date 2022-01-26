@@ -14,16 +14,16 @@ import (
 
 // Manager manages the storage of created orchestrations.
 type Manager interface {
-	// CreateOrchestration creates an orchestration from the given config. The
+	// CreateOrchestration creates an orchestration from the given request. The
 	// function returns an error if the orchestration name is not valid.
-	CreateOrchestration(*badger.Txn, *apitypes.Orchestration) error
+	CreateOrchestration(*badger.Txn, *api.CreateOrchestrationRequest) error
 	// GetMatchingOrchestration retrieves stored orchestrations that match the
 	// received req. The req is an orchestration with the fields that the
 	// returned orchestrations should have. If a field is empty, then all values
 	// for that field are accepted.
 	GetMatchingOrchestration(
 		*badger.Txn,
-		*apitypes.Orchestration,
+		*api.GetOrchestrationRequest,
 	) ([]*apitypes.Orchestration, error)
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
@@ -74,14 +74,14 @@ func NewManager(reflectionManager reflection.Manager) Manager {
 
 func (m *manager) CreateOrchestration(
 	txn *badger.Txn,
-	cfg *apitypes.Orchestration,
+	req *api.CreateOrchestrationRequest,
 ) error {
 	var err error
-	if err = validateCreateOrchestrationConfig(txn, cfg); err != nil {
+	if err = validateCreateOrchestrationConfig(txn, req); err != nil {
 		return err
 	}
 
-	o := NewOrchestration(cfg.Name)
+	o := NewOrchestration(req.Name)
 	err = persistOrchestration(txn, o)
 	if err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
@@ -91,17 +91,17 @@ func (m *manager) CreateOrchestration(
 
 func (m *manager) GetMatchingOrchestration(
 	txn *badger.Txn,
-	query *apitypes.Orchestration,
+	req *api.GetOrchestrationRequest,
 ) ([]*apitypes.Orchestration, error) {
 	var (
 		o   Orchestration
 		cp  []byte
 		err error
 	)
-	if query == nil {
-		query = &apitypes.Orchestration{}
+	if req == nil {
+		req = &api.GetOrchestrationRequest{}
 	}
-	filter := buildOrchestrationQueryFilter(query)
+	filter := buildOrchestrationQueryFilter(req)
 	res := make([]*apitypes.Orchestration, 0)
 
 	it := txn.NewIterator(badger.DefaultIteratorOptions)

@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/testutil"
@@ -13,12 +14,12 @@ import (
 func TestServer_CreateOrchestration(t *testing.T) {
 	const name = "orchestration-name"
 	tests := []struct {
-		name   string
-		config *apitypes.Orchestration
+		name string
+		req  *api.CreateOrchestrationRequest
 	}{
 		{
 			name: "correct with name",
-			config: &apitypes.Orchestration{
+			req: &api.CreateOrchestrationRequest{
 				Name: name,
 			},
 		},
@@ -29,7 +30,8 @@ func TestServer_CreateOrchestration(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -39,15 +41,17 @@ func TestServer_CreateOrchestration(t *testing.T) {
 					Build()
 				assert.NilError(t, err, "build server")
 
-				err = s.CreateOrchestration(test.config)
+				err = s.CreateOrchestration(test.req)
 				assert.NilError(t, err, "create orchestration error")
-			})
+			},
+		)
 	}
 }
 
 func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -61,19 +65,20 @@ func TestServer_CreateOrchestration_NilConfig(t *testing.T) {
 	assert.Assert(
 		t,
 		errdefs.IsInvalidArgument(err),
-		"error is not InvalidArgument")
-	expectedMsg := "'cfg' is nil"
+		"error is not InvalidArgument",
+	)
+	expectedMsg := "'req' is nil"
 	assert.Error(t, err, expectedMsg)
 }
 
 func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 	tests := []struct {
-		name   string
-		config *apitypes.Orchestration
+		name string
+		req  *api.CreateOrchestrationRequest
 	}{
 		{
 			name: "empty name",
-			config: &apitypes.Orchestration{
+			req: &api.CreateOrchestrationRequest{
 				Name: "",
 				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
@@ -84,7 +89,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid characters in name",
-			config: &apitypes.Orchestration{
+			req: &api.CreateOrchestrationRequest{
 				Name: "?orchestration-name",
 				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
@@ -95,7 +100,7 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 		},
 		{
 			name: "invalid character sequence",
-			config: &apitypes.Orchestration{
+			req: &api.CreateOrchestrationRequest{
 				Name: "invalid//name",
 				Links: []apitypes.LinkName{
 					testutil.LinkNameForNum(0),
@@ -110,7 +115,8 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				db, err := badger.Open(
-					badger.DefaultOptions("").WithInMemory(true))
+					badger.DefaultOptions("").WithInMemory(true),
+				)
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 				s, err := NewBuilder().
@@ -120,16 +126,19 @@ func TestServer_CreateOrchestration_InvalidName(t *testing.T) {
 					Build()
 				assert.NilError(t, err, "build server")
 
-				err = s.CreateOrchestration(test.config)
+				err = s.CreateOrchestration(test.req)
 				assert.Assert(
 					t,
 					errdefs.IsInvalidArgument(err),
-					"error is not InvalidArgument")
+					"error is not InvalidArgument",
+				)
 				expectedMsg := fmt.Sprintf(
 					"invalid name '%v'",
-					test.config.Name)
+					test.req.Name,
+				)
 				assert.Error(t, err, expectedMsg)
-			})
+			},
+		)
 	}
 }
 
@@ -137,7 +146,8 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 	var err error
 	const name = "orchestration-name"
 	db, err := badger.Open(
-		badger.DefaultOptions("").WithInMemory(true))
+		badger.DefaultOptions("").WithInMemory(true),
+	)
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
 	s, err := NewBuilder().
@@ -147,7 +157,7 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 		Build()
 	assert.NilError(t, err, "build server")
 
-	config := &apitypes.Orchestration{
+	req := &api.CreateOrchestrationRequest{
 		Name: name,
 		Links: []apitypes.LinkName{
 			testutil.LinkNameForNum(0),
@@ -155,9 +165,9 @@ func TestServer_CreateOrchestration_AlreadyExists(t *testing.T) {
 		},
 	}
 
-	err = s.CreateOrchestration(config)
+	err = s.CreateOrchestration(req)
 	assert.NilError(t, err, "first creation has an error")
-	err = s.CreateOrchestration(config)
+	err = s.CreateOrchestration(req)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "error is not AlreadyExists")
 	expectedMsg := fmt.Sprintf("orchestration '%v' already exists", name)
 	assert.Error(t, err, expectedMsg)

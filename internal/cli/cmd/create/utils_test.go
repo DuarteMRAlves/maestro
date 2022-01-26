@@ -30,9 +30,9 @@ func equalLink(expected *pb.Link, actual *pb.Link) bool {
 		expected.TargetField == actual.TargetField
 }
 
-func equalOrchestration(
-	expected *pb.Orchestration,
-	actual *pb.Orchestration,
+func equalCreateOrchestrationRequest(
+	expected *pb.CreateOrchestrationRequest,
+	actual *pb.CreateOrchestrationRequest,
 ) bool {
 	return expected.Name == actual.Name &&
 		testutil.ValidateEqualElementsString(expected.Links, actual.Links)

@@ -25,7 +25,7 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        []string
-		validateCfg func(cfg *pb.Orchestration) bool
+		validateReq func(req *pb.CreateOrchestrationRequest) bool
 		response    *emptypb.Empty
 		err         error
 		expectedOut string
@@ -33,11 +33,11 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 		{
 			name: "create a orchestration with all arguments",
 			args: []string{"orchestration-name", "--link=link1,link2"},
-			validateCfg: func(cfg *pb.Orchestration) bool {
-				return cfg.Name == "orchestration-name" &&
-					len(cfg.Links) == 2 &&
-					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
-						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
+				return req.Name == "orchestration-name" &&
+					len(req.Links) == 2 &&
+					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
+						(req.Links[0] == "link2" && req.Links[1] == "link1"))
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -52,11 +52,11 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				"--link",
 				"link1",
 			},
-			validateCfg: func(cfg *pb.Orchestration) bool {
-				return cfg.Name == "orchestration-name" &&
-					len(cfg.Links) == 2 &&
-					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
-						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
+				return req.Name == "orchestration-name" &&
+					len(req.Links) == 2 &&
+					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
+						(req.Links[0] == "link2" && req.Links[1] == "link1"))
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -65,10 +65,10 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 		{
 			name: "create a orchestration with required arguments",
 			args: []string{"orchestration-name", "--link=link1"},
-			validateCfg: func(cfg *pb.Orchestration) bool {
-				return cfg.Name == "orchestration-name" &&
-					len(cfg.Links) == 1 &&
-					cfg.Links[0] == "link1"
+			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
+				return req.Name == "orchestration-name" &&
+					len(req.Links) == 1 &&
+					req.Links[0] == "link1"
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -77,11 +77,11 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 		{
 			name: "create a orchestration with invalid name",
 			args: []string{"invalid--name", "--link=link1,link2"},
-			validateCfg: func(cfg *pb.Orchestration) bool {
-				return cfg.Name == "invalid--name" &&
-					len(cfg.Links) == 2 &&
-					((cfg.Links[0] == "link1" && cfg.Links[1] == "link2") ||
-						(cfg.Links[0] == "link2" && cfg.Links[1] == "link1"))
+			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
+				return req.Name == "invalid--name" &&
+					len(req.Links) == 2 &&
+					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
+						(req.Links[0] == "link2" && req.Links[1] == "link1"))
 			},
 			response: nil,
 			err: status.Error(
@@ -98,11 +98,11 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				"orchestration-name",
 				"--link=link1,does-not-exist",
 			},
-			validateCfg: func(cfg *pb.Orchestration) bool {
-				return cfg.Name == "orchestration-name" &&
-					len(cfg.Links) == 2 &&
-					((cfg.Links[0] == "link1" && cfg.Links[1] == "does-not-exist") ||
-						(cfg.Links[0] == "does-not-exist" && cfg.Links[1] == "link1"))
+			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
+				return req.Name == "orchestration-name" &&
+					len(req.Links) == 2 &&
+					((req.Links[0] == "link1" && req.Links[1] == "does-not-exist") ||
+						(req.Links[0] == "does-not-exist" && req.Links[1] == "link1"))
 			},
 			response: nil,
 			err: status.Error(
@@ -126,12 +126,12 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						CreateOrchestrationFn: func(
 							ctx context.Context,
-							cfg *pb.Orchestration,
+							req *pb.CreateOrchestrationRequest,
 						) (*emptypb.Empty, error) {
-							if !test.validateCfg(cfg) {
+							if !test.validateReq(req) {
 								return nil, fmt.Errorf(
-									"validation failed with cfg %v",
-									cfg,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							return test.response, test.err

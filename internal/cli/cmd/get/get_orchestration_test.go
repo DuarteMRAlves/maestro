@@ -20,19 +20,18 @@ import (
 // table.
 func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 	tests := []struct {
-		name          string
-		args          []string
-		validateQuery func(query *pb.Orchestration) bool
-		responses     []*pb.Orchestration
-		output        [][]string
+		name        string
+		args        []string
+		validateReq func(req *pb.GetOrchestrationRequest) bool
+		responses   []*pb.Orchestration
+		output      [][]string
 	}{
 		{
 			name: "empty orchestrations",
 			args: []string{},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == "" &&
+					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{},
 			output:    [][]string{{NameText, PhaseText}},
@@ -40,10 +39,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "one orchestration",
 			args: []string{},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == "" &&
+					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
 				newPbOrchestration(0, apitypes.OrchestrationSucceeded),
@@ -59,10 +57,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "multiple orchestrations",
 			args: []string{},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == "" &&
-					query.Phase == "" &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == "" &&
+					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
 				newPbOrchestration(1, apitypes.OrchestrationRunning),
@@ -88,10 +85,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by name",
 			args: []string{testutil.OrchestrationNameForNum(2)},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == testutil.OrchestrationNameForNum(2) &&
-					query.Phase == "" &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == testutil.OrchestrationNameForNum(2) &&
+					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
 				newPbOrchestration(2, apitypes.OrchestrationSucceeded),
@@ -107,10 +103,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such name",
 			args: []string{testutil.OrchestrationNameForNum(3)},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == testutil.OrchestrationNameForNum(3) &&
-					query.Phase == "" &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == testutil.OrchestrationNameForNum(3) &&
+					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{},
 			output:    [][]string{{NameText, PhaseText}},
@@ -118,10 +113,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "filter by phase",
 			args: []string{"--phase", string(apitypes.OrchestrationPending)},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == "" &&
-					query.Phase == string(apitypes.OrchestrationPending) &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == "" &&
+					req.Phase == string(apitypes.OrchestrationPending)
 			},
 			responses: []*pb.Orchestration{
 				newPbOrchestration(1, apitypes.OrchestrationPending),
@@ -137,10 +131,9 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		{
 			name: "no such phase",
 			args: []string{"--phase", string(apitypes.OrchestrationRunning)},
-			validateQuery: func(query *pb.Orchestration) bool {
-				return query.Name == "" &&
-					query.Phase == string(apitypes.OrchestrationRunning) &&
-					len(query.Links) == 0
+			validateReq: func(req *pb.GetOrchestrationRequest) bool {
+				return req.Name == "" &&
+					req.Phase == string(apitypes.OrchestrationRunning)
 			},
 			responses: []*pb.Orchestration{},
 			output:    [][]string{{NameText, PhaseText}},
@@ -158,13 +151,13 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				mockServer := ipb.MockMaestroServer{
 					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						GetOrchestrationFn: func(
-							query *pb.Orchestration,
+							req *pb.GetOrchestrationRequest,
 							stream pb.OrchestrationManagement_GetServer,
 						) error {
-							if !test.validateQuery(query) {
+							if !test.validateReq(req) {
 								return fmt.Errorf(
-									"validation failed with query %v",
-									query,
+									"validation failed with req %v",
+									req,
 								)
 							}
 							for _, o := range test.responses {

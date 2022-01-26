@@ -1,36 +1,53 @@
 package server
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 )
 
-func (s *Server) CreateOrchestration(config *apitypes.Orchestration) error {
-	s.logger.Info(
-		"Create Orchestration.",
-		logOrchestration(config, "config")...,
-	)
+func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error {
+	var logFields []zap.Field
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "nil")}
+	} else {
+		links := make([]string, 0, len(req.Links))
+		for _, l := range req.Links {
+			links = append(links, string(l))
+		}
+		logFields = []zap.Field{
+			zap.String("name", string(req.Name)),
+			zap.Strings("links", links),
+		}
+	}
+	s.logger.Info("Create Orchestration.", logFields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.storageManager.CreateOrchestration(txn, config)
+			return s.storageManager.CreateOrchestration(txn, req)
 		},
 	)
 }
 
 func (s *Server) GetOrchestration(
-	query *apitypes.Orchestration,
+	req *api.GetOrchestrationRequest,
 ) ([]*apitypes.Orchestration, error) {
 	var (
 		orchestrations []*apitypes.Orchestration
 		err            error
+		logFields      []zap.Field
 	)
-	s.logger.Info("Get Orchestration.", logOrchestration(query, "query")...)
+	if req == nil {
+		logFields = []zap.Field{zap.String("req", "nil")}
+	} else {
+		logFields = []zap.Field{zap.String("name", string(req.Name))}
+	}
+	s.logger.Info("Get Orchestration.", logFields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
 			orchestrations, err = s.storageManager.GetMatchingOrchestration(
 				txn,
-				query,
+				req,
 			)
 			return err
 		},
@@ -39,21 +56,4 @@ func (s *Server) GetOrchestration(
 		return nil, err
 	}
 	return orchestrations, nil
-}
-
-func logOrchestration(
-	o *apitypes.Orchestration,
-	field string,
-) []zap.Field {
-	if o == nil {
-		return []zap.Field{zap.String(field, "null")}
-	}
-	links := make([]string, 0, len(o.Links))
-	for _, l := range o.Links {
-		links = append(links, string(l))
-	}
-	return []zap.Field{
-		zap.String("name", string(o.Name)),
-		zap.Strings("links", links),
-	}
 }

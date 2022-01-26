@@ -2,6 +2,7 @@ package create
 
 import (
 	"context"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	apitypes "github.com/DuarteMRAlves/maestro/internal/api/types"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/util"
@@ -62,7 +63,8 @@ func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
 		&o.links,
 		"link",
 		nil,
-		"links to include in the orchestration")
+		"links to include in the orchestration",
+	)
 }
 
 // complete fills any remaining information necessary to run the command that is
@@ -95,7 +97,7 @@ func (o *OrchestrationOpts) run() error {
 	for _, l := range o.links {
 		links = append(links, apitypes.LinkName(l))
 	}
-	or := &apitypes.Orchestration{
+	req := &api.CreateOrchestrationRequest{
 		Name:  apitypes.OrchestrationName(o.name),
 		Links: links,
 	}
@@ -110,7 +112,8 @@ func (o *OrchestrationOpts) run() error {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Second)
+		time.Second,
+	)
 	defer cancel()
-	return c.CreateOrchestration(ctx, or)
+	return c.CreateOrchestration(ctx, req)
 }

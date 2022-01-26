@@ -56,13 +56,3 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 	}
 	return assets, nil
 }
-
-func logAsset(a *apitypes.Asset, field string) []zap.Field {
-	if a == nil {
-		return []zap.Field{zap.String(field, "null")}
-	}
-	return []zap.Field{
-		zap.String("name", string(a.Name)),
-		zap.String("image", a.Image),
-	}
-}
