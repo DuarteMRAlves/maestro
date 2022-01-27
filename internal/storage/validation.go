@@ -45,14 +45,14 @@ func (m *manager) validateCreateStageRequest(
 			req.Name,
 		)
 	}
-	prev, _ := txn.Get(stageKey(req.Name))
-	if prev != nil {
+	helper := NewTxnHelper(txn)
+	if helper.ContainsStage(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"stage '%v' already exists",
 			req.Name,
 		)
 	}
-	helper := NewTxnHelper(txn)
+
 	if !helper.ContainsOrchestration(req.Orchestration) {
 		return errdefs.NotFoundWithMsg(
 			"orchestration '%v' not found",
@@ -60,7 +60,7 @@ func (m *manager) validateCreateStageRequest(
 		)
 	}
 	// Asset is not required but if specified should exist.
-	if req.Asset != "" && !m.ContainsAsset(txn, req.Asset) {
+	if req.Asset != "" && !helper.ContainsAsset(req.Asset) {
 		return errdefs.NotFoundWithMsg(
 			"asset '%v' not found",
 			req.Asset,
@@ -154,7 +154,8 @@ func (m *manager) validateCreateAssetRequest(
 			req.Name,
 		)
 	}
-	if m.ContainsAsset(txn, req.Name) {
+	helper := NewTxnHelper(txn)
+	if helper.ContainsAsset(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",
 			req.Name,
