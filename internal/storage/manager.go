@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
@@ -56,13 +55,55 @@ type Manager interface {
 }
 
 type manager struct {
-	reflectionManager rpc.Manager
+	rpcManager rpc.Manager
 }
 
-func NewManager(reflectionManager rpc.Manager) Manager {
-	return &manager{
-		reflectionManager: reflectionManager,
+// ManagerContext contains configuration to create a new storage manager.
+type ManagerContext struct {
+	// DB is the underlying db where the data should be stored
+	DB *badger.DB
+	// RpcManager provides the manager that handles the rpcs for the stages
+	RpcManager rpc.Manager
+	// CreateDefault specifies whether a default orchestration with the name
+	// "default" should be created.
+	CreateDefault bool
+}
+
+func NewDefaultContext(db *badger.DB, rpcManager rpc.Manager) ManagerContext {
+	return ManagerContext{
+		DB:            db,
+		RpcManager:    rpcManager,
+		CreateDefault: true,
 	}
+}
+
+func NewTestContext(db *badger.DB) ManagerContext {
+	return ManagerContext{
+		DB:            db,
+		RpcManager:    rpc.NewManager(),
+		CreateDefault: false,
+	}
+}
+
+func NewManager(ctx ManagerContext) (Manager, error) {
+	if ctx.CreateDefault {
+		err := ctx.DB.Update(
+			func(txn *badger.Txn) error {
+				helper := NewTxnHelper(txn)
+				if !helper.ContainsOrchestration(defaultOrchestrationName) {
+					return helper.SaveOrchestration(defaultOrchestration())
+				}
+				return nil
+			},
+		)
+		if err != nil {
+			return nil, errdefs.PrependMsg(err, "new storage manager")
+		}
+	}
+	m := &manager{
+		rpcManager: ctx.RpcManager,
+	}
+	return m, nil
 }
 
 func (m *manager) CreateOrchestration(
@@ -119,36 +160,14 @@ func (m *manager) CreateStage(
 	req *api.CreateStageRequest,
 ) error {
 	var err error
-	if err = m.validateCreateStageConfig(txn, req); err != nil {
+	helper := NewTxnHelper(txn)
+	ctx := newCreateStageContext(req, helper)
+
+	if err = ctx.validateAndComplete(); err != nil {
 		return err
 	}
-	address := m.inferStageAddress(req)
-	s := &api.Stage{
-		Name:    req.Name,
-		Phase:   api.StagePending,
-		Service: req.Service,
-		Rpc:     req.Rpc,
-		Address: address,
-		Asset:   req.Asset,
-	}
-	helper := NewTxnHelper(txn)
+	s := ctx.stage()
 	return helper.SaveStage(s)
-}
-
-func (m *manager) inferStageAddress(req *api.CreateStageRequest) string {
-	address := req.Address
-	// If address is empty, fill it from req host and port.
-	if address == "" {
-		host, port := req.Host, req.Port
-		if host == "" {
-			host = "localhost"
-		}
-		if port == 0 {
-			port = 8061
-		}
-		address = fmt.Sprintf("%s:%d", host, port)
-	}
-	return address
 }
 
 func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {

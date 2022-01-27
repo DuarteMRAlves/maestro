@@ -49,7 +49,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					util.OrchestrationNameForNum(0),
+					util.OrchestrationNameForNumStr(0),
 					string(api.OrchestrationSucceeded),
 				},
 			},
@@ -69,24 +69,24 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					util.OrchestrationNameForNum(0),
+					util.OrchestrationNameForNumStr(0),
 					string(api.OrchestrationFailed),
 				},
 				{
-					util.OrchestrationNameForNum(1),
+					util.OrchestrationNameForNumStr(1),
 					string(api.OrchestrationRunning),
 				},
 				{
-					util.OrchestrationNameForNum(2),
+					util.OrchestrationNameForNumStr(2),
 					string(api.OrchestrationPending),
 				},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{util.OrchestrationNameForNum(2)},
+			args: []string{util.OrchestrationNameForNumStr(2)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == util.OrchestrationNameForNum(2) &&
+				return req.Name == util.OrchestrationNameForNumStr(2) &&
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
@@ -95,16 +95,16 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					util.OrchestrationNameForNum(2),
+					util.OrchestrationNameForNumStr(2),
 					string(api.OrchestrationSucceeded),
 				},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{util.OrchestrationNameForNum(3)},
+			args: []string{util.OrchestrationNameForNumStr(3)},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == util.OrchestrationNameForNum(3) &&
+				return req.Name == util.OrchestrationNameForNumStr(3) &&
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{},
@@ -123,7 +123,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					util.OrchestrationNameForNum(1),
+					util.OrchestrationNameForNumStr(1),
 					string(api.OrchestrationPending),
 				},
 			},
@@ -202,7 +202,7 @@ func newPbOrchestration(
 	phase api.OrchestrationPhase,
 ) *pb.Orchestration {
 	return &pb.Orchestration{
-		Name:  util.OrchestrationNameForNum(num),
+		Name:  util.OrchestrationNameForNumStr(num),
 		Phase: string(phase),
 		Links: nil,
 	}

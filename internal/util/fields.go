@@ -97,6 +97,12 @@ func LinkTargetFieldForNum(num int) string {
 
 // OrchestrationNameForNum deterministically creates an asset name for a given
 // number.
-func OrchestrationNameForNum(num int) string {
-	return fmt.Sprintf("orchestration-%v", num)
+func OrchestrationNameForNum(num int) api.OrchestrationName {
+	return api.OrchestrationName(fmt.Sprintf("orchestration-%v", num))
+}
+
+// OrchestrationNameForNumStr deterministically creates an asset name for a given
+// number.
+func OrchestrationNameForNumStr(num int) string {
+	return string(OrchestrationNameForNum(num))
 }

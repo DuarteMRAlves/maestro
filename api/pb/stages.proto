@@ -18,7 +18,8 @@ message CreateStageRequest {
   string address = 4;
   string host = 5;
   int32 port = 6;
-  string asset = 7;
+  string orchestration = 7;
+  string asset = 8;
 }
 
 message GetStageRequest {
@@ -27,7 +28,8 @@ message GetStageRequest {
   string service = 3;
   string rpc = 4;
   string address = 5;
-  string asset = 6;
+  string orchestration = 6;
+  string asset = 7;
 }
 
 message Stage {
@@ -36,5 +38,6 @@ message Stage {
   string service = 3;
   string rpc = 4;
   string address = 5;
-  string asset = 6;
+  string orchestration = 6;
+  string asset = 7;
 }

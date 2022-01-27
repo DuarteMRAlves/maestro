@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -16,12 +15,13 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	)
 	req := &api.CreateOrchestrationRequest{Name: name}
 
-	m, ok := NewManager(rpc.NewManager()).(*manager)
-	assert.Assert(t, ok, "type assertion failed for manager")
-
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
+
+	m, err := NewManager(NewTestContext(db))
+	assert.NilError(t, err, "manager creation")
+
 	err = db.Update(
 		func(txn *badger.Txn) error {
 			return m.CreateOrchestration(txn, req)
@@ -206,7 +206,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
 
-				m := NewManager(rpc.NewManager())
+				m, err := NewManager(NewTestContext(db))
+				assert.NilError(t, err, "manager creation")
 
 				for _, o := range test.stored {
 					err = db.Update(

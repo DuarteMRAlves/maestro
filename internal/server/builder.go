@@ -69,7 +69,7 @@ func (b *Builder) Build() (*Server, error) {
 	s := &Server{}
 	s.logger = b.logger
 	s.db = b.db
-	b.initManagers(s)
+	err = b.initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
@@ -100,10 +100,16 @@ func (b *Builder) validate() error {
 	return nil
 }
 
-func (b *Builder) initManagers(s *Server) {
+func (b *Builder) initManagers(s *Server) error {
+	var err error
 	s.reflectionManager = b.reflectionManager
-	s.storageManager = storage.NewManager(s.reflectionManager)
+	storageManagerCtx := storage.NewDefaultContext(s.db, s.reflectionManager)
+	s.storageManager, err = storage.NewManager(storageManagerCtx)
+	if err != nil {
+		return errdefs.PrependMsg(err, "init managers:")
+	}
 	s.flowManager = execution.NewManager(s.reflectionManager)
+	return nil
 }
 
 func activateGrpc(s *Server, b *Builder) {

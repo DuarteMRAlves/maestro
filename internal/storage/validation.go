@@ -30,9 +30,9 @@ func validateCreateOrchestrationConfig(
 	return nil
 }
 
-// validateCreateStageConfig verifies if all conditions to create a stage are met.
+// validateCreateStageRequest verifies if all conditions to create a stage are met.
 // It returns an error if a condition is not met and nil otherwise.
-func (m *manager) validateCreateStageConfig(
+func (m *manager) validateCreateStageRequest(
 	txn *badger.Txn,
 	req *api.CreateStageRequest,
 ) error {
@@ -50,6 +50,13 @@ func (m *manager) validateCreateStageConfig(
 		return errdefs.AlreadyExistsWithMsg(
 			"stage '%v' already exists",
 			req.Name,
+		)
+	}
+	helper := NewTxnHelper(txn)
+	if !helper.ContainsOrchestration(req.Orchestration) {
+		return errdefs.NotFoundWithMsg(
+			"orchestration '%v' not found",
+			req.Orchestration,
 		)
 	}
 	// Asset is not required but if specified should exist.

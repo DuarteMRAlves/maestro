@@ -80,6 +80,11 @@ func (h *TxnHelper) SaveOrchestration(o *api.Orchestration) error {
 	return nil
 }
 
+func (h *TxnHelper) ContainsOrchestration(name api.OrchestrationName) bool {
+	item, _ := h.txn.Get(orchestrationKey(name))
+	return item != nil
+}
+
 func (h *TxnHelper) LoadOrchestration(
 	o *api.Orchestration,
 	name api.OrchestrationName,
@@ -152,15 +157,20 @@ func (h *TxnHelper) SaveStage(s *api.Stage) error {
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(
-		&buf,
-		s.Name,
-		s.Phase,
-		s.Service,
-		s.Rpc,
-		s.Address,
-		s.Asset,
-	)
+	buf.WriteString(string(s.Name))
+	buf.WriteByte(';')
+	buf.WriteString(string(s.Phase))
+	buf.WriteByte(';')
+	buf.WriteString(s.Service)
+	buf.WriteByte(';')
+	buf.WriteString(s.Rpc)
+	buf.WriteByte(';')
+	buf.WriteString(s.Address)
+	buf.WriteByte(';')
+	buf.WriteString(string(s.Orchestration))
+	buf.WriteByte(';')
+	buf.WriteString(string(s.Asset))
+
 	if err != nil {
 		return errdefs.InternalWithMsg("encoding error: %v", err)
 	}
@@ -169,6 +179,11 @@ func (h *TxnHelper) SaveStage(s *api.Stage) error {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
+}
+
+func (h *TxnHelper) ContainsStage(name api.StageName) bool {
+	item, _ := h.txn.Get(stageKey(name))
+	return item != nil
 }
 
 func (h *TxnHelper) LoadStage(s *api.Stage, name api.StageName) error {
@@ -202,16 +217,20 @@ func (h *TxnHelper) IterStages(
 
 func loadStage(s *api.Stage, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(
-		buf,
-		&s.Name,
-		&s.Phase,
-		&s.Service,
-		&s.Rpc,
-		&s.Address,
-		&s.Asset,
-	)
-	return err
+	splits := strings.Split(buf.String(), ";")
+	if len(splits) != 7 {
+		return errdefs.InternalWithMsg(
+			"invalid format: expected 4 semi-colon separated values",
+		)
+	}
+	s.Name = api.StageName(splits[0])
+	s.Phase = api.StagePhase(splits[1])
+	s.Service = splits[2]
+	s.Rpc = splits[3]
+	s.Address = splits[4]
+	s.Orchestration = api.OrchestrationName(splits[5])
+	s.Asset = api.AssetName(splits[6])
+	return nil
 }
 
 func (h *TxnHelper) SaveLink(l *api.Link) error {
@@ -279,6 +298,11 @@ func (h *TxnHelper) SaveAsset(a *api.Asset) error {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
+}
+
+func (h *TxnHelper) ContainsAsset(name api.AssetName) bool {
+	item, _ := h.txn.Get(assetKey(name))
+	return item != nil
 }
 
 func (h *TxnHelper) IterAssets(

@@ -58,6 +58,8 @@ type Stage struct {
 	Rpc string
 	// Address where to connect to the grpc server.
 	Address string
+	// Orchestration that is associated with this stage
+	Orchestration OrchestrationName
 	// Asset that should be used to run the stage.
 	Asset AssetName
 }
