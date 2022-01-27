@@ -23,8 +23,6 @@ type Manager interface {
 	// CreateStage creates a new stage with the specified config.
 	// It returns an error if the asset can not be created and nil otherwise.
 	CreateStage(*badger.Txn, *api.CreateStageRequest) error
-	// ContainsStage returns true if the stage exists and false otherwise.
-	ContainsStage(*badger.Txn, api.StageName) bool
 	// GetStageByName retrieves a stored stage. It returns the stage and true
 	// if the stage exists and nil, false otherwise.
 	GetStageByName(*badger.Txn, api.StageName) (*api.Stage, bool)
@@ -35,9 +33,6 @@ type Manager interface {
 	// CreateLink creates a new link with the specified config. It returns an
 	// error if the link is not created and nil otherwise.
 	CreateLink(*badger.Txn, *api.CreateLinkRequest) error
-	// ContainsLink returns true if a link with the given name exists and false
-	// otherwise.
-	ContainsLink(*badger.Txn, api.LinkName) bool
 	// GetMatchingLinks retrieves stored links that match the received req.
 	// The req is a link with the fields that the returned stage should have.
 	// If a field is empty, then all values for that field are accepted.
@@ -45,9 +40,6 @@ type Manager interface {
 	// CreateAsset creates a new asset with the specified config. It returns an
 	// error if the asset is not created and nil otherwise.
 	CreateAsset(*badger.Txn, *api.CreateAssetRequest) error
-	// ContainsAsset returns true if an asset with the given name exists and
-	// false otherwise.
-	ContainsAsset(*badger.Txn, api.AssetName) bool
 	// GetMatchingAssets retrieves stored assets that match the received req.
 	// The req is an asset with the fields that the returned stage should
 	// have. If a field is empty, then all values for that field are accepted.
@@ -170,11 +162,6 @@ func (m *manager) CreateStage(
 	return helper.SaveStage(s)
 }
 
-func (m *manager) ContainsStage(txn *badger.Txn, name api.StageName) bool {
-	item, _ := txn.Get(stageKey(name))
-	return item != nil
-}
-
 func (m *manager) GetStageByName(
 	txn *badger.Txn,
 	name api.StageName,
@@ -248,13 +235,6 @@ func (m *manager) CreateLink(
 	return helper.SaveLink(l)
 }
 
-// ContainsLink returns true if a link with the given name exists and false
-// otherwise.
-func (m *manager) ContainsLink(txn *badger.Txn, name api.LinkName) bool {
-	item, _ := txn.Get(linkKey(name))
-	return item != nil
-}
-
 func (m *manager) GetMatchingLinks(
 	txn *badger.Txn,
 	req *api.GetLinkRequest,
@@ -299,11 +279,6 @@ func (m *manager) CreateAsset(
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
 	return nil
-}
-
-func (m *manager) ContainsAsset(txn *badger.Txn, name api.AssetName) bool {
-	item, _ := txn.Get(assetKey(name))
-	return item != nil
 }
 
 func (m *manager) GetMatchingAssets(
