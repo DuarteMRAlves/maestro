@@ -107,19 +107,11 @@ func TestCreateWithServer(t *testing.T) {
 				return equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-1",
-						Links: []string{
-							"link-stage-1-stage-2",
-							"link-stage-2-stage-1",
-						},
 					},
 					req,
 				) || equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-2",
-						Links: []string{
-							"link-stage-2-stage-1",
-							"link-stage-1-stage-2",
-						},
 					},
 					req,
 				)
@@ -231,20 +223,11 @@ func TestCreateWithServer(t *testing.T) {
 				return equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-3",
-						Links: []string{
-							"link-stage-4-stage-5",
-							"link-stage-5-stage-6",
-						},
 					},
 					req,
 				) || equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-4",
-						Links: []string{
-							"link-stage-5-stage-6",
-							"link-stage-4-stage-5",
-							"link-stage-4-stage-6",
-						},
 					},
 					req,
 				)
@@ -289,23 +272,6 @@ func TestCreateWithServer(t *testing.T) {
 				)
 			},
 			expectedOut: "not found: target stage 'unknown-stage' not found",
-		},
-		{
-			name: "link not found",
-			args: []string{
-				"-f",
-				"../../../../tests/resources/create/link_not_found.yml",
-			},
-			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
-				return equalCreateOrchestrationRequest(
-					&pb.CreateOrchestrationRequest{
-						Name:  "orchestration-unknown-link",
-						Links: []string{"link-1", "unknown-link"},
-					},
-					req,
-				)
-			},
-			expectedOut: "not found: link 'unknown-link' not found",
 		},
 	}
 	for _, test := range tests {

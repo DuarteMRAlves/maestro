@@ -37,9 +37,6 @@ spec:
 kind: orchestration
 spec:
   name: orchestration-2
-  links:
-    - link-stage-2-stage-1
-    - link-stage-1-stage-2
 ---
 kind: asset
 spec:
@@ -57,6 +54,3 @@ spec:
 kind: orchestration
 spec:
   name: orchestration-1
-  links:
-    - link-stage-1-stage-2
-    - link-stage-2-stage-1

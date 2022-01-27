@@ -88,9 +88,9 @@ func (o *Options) run() error {
 	resourcesByKind := make([]*resources.Resource, 0, orderedResourcesSize)
 
 	resourcesByKind = append(resourcesByKind, assets...)
+	resourcesByKind = append(resourcesByKind, orchestrations...)
 	resourcesByKind = append(resourcesByKind, stages...)
 	resourcesByKind = append(resourcesByKind, links...)
-	resourcesByKind = append(resourcesByKind, orchestrations...)
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
@@ -102,7 +102,8 @@ func (o *Options) run() error {
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Second)
+		time.Second,
+	)
 	defer cancel()
 
 	for _, r := range resourcesByKind {

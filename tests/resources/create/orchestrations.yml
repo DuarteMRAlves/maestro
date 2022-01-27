@@ -1,14 +1,7 @@
 kind: orchestration
 spec:
   name: orchestration-3
-  links:
-    - link-stage-4-stage-5
-    - link-stage-5-stage-6
 ---
 kind: orchestration
 spec:
   name: orchestration-4
-  links:
-    - link-stage-5-stage-6
-    - link-stage-4-stage-5
-    - link-stage-4-stage-6

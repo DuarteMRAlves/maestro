@@ -13,7 +13,6 @@ service OrchestrationManagement {
 
 message CreateOrchestrationRequest {
   string name = 1;
-  repeated string links = 2;
 }
 
 message GetOrchestrationRequest {

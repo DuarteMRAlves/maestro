@@ -32,43 +32,9 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 	}{
 		{
 			name: "create a orchestration with all arguments",
-			args: []string{"orchestration-name", "--link=link1,link2"},
+			args: []string{"orchestration-name"},
 			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
-				return req.Name == "orchestration-name" &&
-					len(req.Links) == 2 &&
-					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
-						(req.Links[0] == "link2" && req.Links[1] == "link1"))
-			},
-			response:    &emptypb.Empty{},
-			err:         nil,
-			expectedOut: "",
-		},
-		{
-			name: "create a orchestration with separate links",
-			args: []string{
-				"orchestration-name",
-				"--link",
-				"link2",
-				"--link",
-				"link1",
-			},
-			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
-				return req.Name == "orchestration-name" &&
-					len(req.Links) == 2 &&
-					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
-						(req.Links[0] == "link2" && req.Links[1] == "link1"))
-			},
-			response:    &emptypb.Empty{},
-			err:         nil,
-			expectedOut: "",
-		},
-		{
-			name: "create a orchestration with required arguments",
-			args: []string{"orchestration-name", "--link=link1"},
-			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
-				return req.Name == "orchestration-name" &&
-					len(req.Links) == 1 &&
-					req.Links[0] == "link1"
+				return req.Name == "orchestration-name"
 			},
 			response:    &emptypb.Empty{},
 			err:         nil,
@@ -76,12 +42,9 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 		},
 		{
 			name: "create a orchestration with invalid name",
-			args: []string{"invalid--name", "--link=link1,link2"},
+			args: []string{"invalid--name"},
 			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
-				return req.Name == "invalid--name" &&
-					len(req.Links) == 2 &&
-					((req.Links[0] == "link1" && req.Links[1] == "link2") ||
-						(req.Links[0] == "link2" && req.Links[1] == "link1"))
+				return req.Name == "invalid--name"
 			},
 			response: nil,
 			err: status.Error(
@@ -91,27 +54,6 @@ func TestCreateOrchestrationWithServer(t *testing.T) {
 				).Error(),
 			),
 			expectedOut: "invalid argument: invalid name 'invalid--name'",
-		},
-		{
-			name: "create a orchestration no such link",
-			args: []string{
-				"orchestration-name",
-				"--link=link1,does-not-exist",
-			},
-			validateReq: func(req *pb.CreateOrchestrationRequest) bool {
-				return req.Name == "orchestration-name" &&
-					len(req.Links) == 2 &&
-					((req.Links[0] == "link1" && req.Links[1] == "does-not-exist") ||
-						(req.Links[0] == "does-not-exist" && req.Links[1] == "link1"))
-			},
-			response: nil,
-			err: status.Error(
-				codes.NotFound,
-				errdefs.NotFoundWithMsg(
-					"link 'does-not-exist' not found",
-				).Error(),
-			),
-			expectedOut: "not found: link 'does-not-exist' not found",
 		},
 	}
 	for _, test := range tests {
@@ -171,13 +113,8 @@ func TestCreateOrchestrationWithoutServer(t *testing.T) {
 	}{
 		{
 			"no name",
-			[]string{"--link=link1,link2"},
+			[]string{},
 			"invalid argument: please specify a orchestration name",
-		},
-		{
-			"no link",
-			[]string{"orchestration-name"},
-			"invalid argument: please specify at least one link",
 		},
 	}
 	for _, test := range tests {

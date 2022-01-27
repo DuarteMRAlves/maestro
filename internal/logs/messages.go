@@ -13,14 +13,7 @@ func LogCreateOrchestrationRequest(
 	if req == nil {
 		logFields = []zap.Field{zap.String("req", "nil")}
 	} else {
-		links := make([]string, 0, len(req.Links))
-		for _, l := range req.Links {
-			links = append(links, string(l))
-		}
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.Strings("links", links),
-		}
+		logFields = []zap.Field{zap.String("name", string(req.Name))}
 	}
 	logger.Info("Create Orchestration.", logFields...)
 }
