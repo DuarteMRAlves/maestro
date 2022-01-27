@@ -2,7 +2,6 @@ package create
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
 func equalCreateAssetRequest(
@@ -40,6 +39,5 @@ func equalCreateOrchestrationRequest(
 	expected *pb.CreateOrchestrationRequest,
 	actual *pb.CreateOrchestrationRequest,
 ) bool {
-	return expected.Name == actual.Name &&
-		util.ValidateEqualElementsString(expected.Links, actual.Links)
+	return expected.Name == actual.Name
 }

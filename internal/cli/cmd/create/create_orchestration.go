@@ -17,8 +17,7 @@ type OrchestrationOpts struct {
 	// address for the maestro server
 	maestro string
 
-	name  string
-	links []string
+	name string
 }
 
 // NewCmdCreateOrchestration returns a new command that create a orchestration from
@@ -57,13 +56,6 @@ func NewCmdCreateOrchestration() *cobra.Command {
 // run the CreateLink command
 func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
-
-	cmd.Flags().StringSliceVar(
-		&o.links,
-		"link",
-		nil,
-		"links to include in the orchestration",
-	)
 }
 
 // complete fills any remaining information necessary to run the command that is
@@ -81,24 +73,14 @@ func (o *OrchestrationOpts) validate() error {
 	if o.name == "" {
 		return errdefs.InvalidArgumentWithMsg("please specify a orchestration name")
 	}
-	if len(o.links) == 0 {
-		return errdefs.InvalidArgumentWithMsg(
-			"please specify at least one link",
-		)
-	}
 	return nil
 }
 
 // run executes the create orchestration command with the specified options.
 // It assumes the options were previously validated.
 func (o *OrchestrationOpts) run() error {
-	links := make([]api.LinkName, 0, len(o.links))
-	for _, l := range o.links {
-		links = append(links, api.LinkName(l))
-	}
 	req := &api.CreateOrchestrationRequest{
-		Name:  api.OrchestrationName(o.name),
-		Links: links,
+		Name: api.OrchestrationName(o.name),
 	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())

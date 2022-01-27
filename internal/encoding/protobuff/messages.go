@@ -10,10 +10,6 @@ func UnmarshalCreateOrchestrationRequest(
 	pbReq *pb.CreateOrchestrationRequest,
 ) {
 	req.Name = api.OrchestrationName(pbReq.Name)
-	req.Links = make([]api.LinkName, 0, len(pbReq.Links))
-	for _, l := range pbReq.Links {
-		req.Links = append(req.Links, api.LinkName(l))
-	}
 }
 
 func UnmarshalGetOrchestrationRequest(

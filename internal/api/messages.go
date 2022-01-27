@@ -5,9 +5,6 @@ type CreateOrchestrationRequest struct {
 	// Name that should be associated with the orchestration.
 	// (required, unique)
 	Name OrchestrationName `yaml:"name" info:"required"`
-	// Links specifies the name of the links that compose this orchestration.
-	// (required, non-empty)
-	Links []LinkName `yaml:"links" info:"required"`
 }
 
 // GetOrchestrationRequest represents a message to retrieve orchestrations with

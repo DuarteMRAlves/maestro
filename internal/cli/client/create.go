@@ -122,13 +122,8 @@ func (c *client) CreateOrchestration(
 	ctx context.Context,
 	req *api.CreateOrchestrationRequest,
 ) error {
-	links := make([]string, 0, len(req.Links))
-	for _, l := range req.Links {
-		links = append(links, string(l))
-	}
 	pbReq := &pb.CreateOrchestrationRequest{
-		Name:  string(req.Name),
-		Links: links,
+		Name: string(req.Name),
 	}
 
 	stub := pb.NewOrchestrationManagementClient(c.conn)
