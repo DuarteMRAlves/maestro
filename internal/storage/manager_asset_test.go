@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -22,11 +21,13 @@ func TestManager_CreateAsset(t *testing.T) {
 	)
 	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	m := NewManager(rpc.NewManager())
-
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
+
+	m, err := NewManager(NewTestContext(db))
+	assert.NilError(t, err, "manager creation")
+
 	err = db.Update(
 		func(txn *badger.Txn) error {
 			return m.CreateAsset(txn, cfg)
@@ -54,11 +55,12 @@ func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 		errMsg                         = "'req' is nil"
 	)
 
-	m := NewManager(rpc.NewManager())
-
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
+
+	m, err := NewManager(NewTestContext(db))
+	assert.NilError(t, err, "manager creation")
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
@@ -88,11 +90,12 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	)
 	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	m := NewManager(rpc.NewManager())
-
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
+
+	m, err := NewManager(NewTestContext(db))
+	assert.NilError(t, err, "manager creation")
 
 	// First create
 	err = db.Update(
@@ -209,11 +212,12 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Asset
 
-				m := NewManager(rpc.NewManager())
-
 				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 				assert.NilError(t, err, "db creation")
 				defer db.Close()
+
+				m, err := NewManager(NewTestContext(db))
+				assert.NilError(t, err, "manager creation")
 
 				for _, n := range test.stored {
 					err = db.Update(

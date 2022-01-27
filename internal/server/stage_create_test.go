@@ -239,11 +239,6 @@ func TestServer_CreateStage_AlreadyExists(t *testing.T) {
 }
 
 func populateForStages(t *testing.T, txn *badger.Txn) {
-	assets := []*api.Asset{
-		assetForNum(0),
-	}
 	helper := storage.NewTxnHelper(txn)
-	for _, a := range assets {
-		assert.NilError(t, helper.SaveAsset(a))
-	}
+	assert.NilError(t, helper.SaveAsset(assetForNum(0)))
 }

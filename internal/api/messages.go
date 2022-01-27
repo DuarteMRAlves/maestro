@@ -44,6 +44,11 @@ type CreateStageRequest struct {
 	// to 8061. Should not be specified if Address is defined.
 	// (optional, conflicts: Address)
 	Port int32 `yaml:"port"`
+	// Orchestration specifies the name of the Orchestration where this stage
+	// should be inserted. If not specified, the stage will be inserted into the
+	// default Orchestration.
+	// (optional)
+	Orchestration OrchestrationName `yaml:"orchestration"`
 	// Asset that should be used to run the stage
 	// (optional)
 	Asset AssetName `yaml:"asset"`
@@ -66,6 +71,10 @@ type GetStageRequest struct {
 	// Address should be specified to retrieve stages with the given address.
 	// (optional)
 	Address string
+	// Orchestration should be specified to retrieve stages with the given
+	// orchestration.
+	// (optional)
+	Orchestration OrchestrationName
 	// Asset should be specified to retrieve stages with the given asset.
 	// (optional)
 	Asset AssetName
