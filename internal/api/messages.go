@@ -105,6 +105,11 @@ type CreateLinkRequest struct {
 	// message is sent as input to the TargetStage.
 	// (optional)
 	TargetField string `yaml:"target_field"`
+	// Orchestration specifies the orchestration where this link should be
+	// inserted. If not specified, the link will be inserted into the "default"
+	// orchestration.
+	// (optional)
+	Orchestration OrchestrationName `yaml:"orchestration"`
 }
 
 // GetLinkRequest is a message to retrieve links with specific characteristics.
@@ -128,6 +133,10 @@ type GetLinkRequest struct {
 	// field.
 	// (optional)
 	TargetField string
+	// Orchestration should be specified to retrieve links with the given
+	// orchestration.
+	// (optional)
+	Orchestration OrchestrationName
 }
 
 // CreateAssetRequest represents a message to create an asset.
