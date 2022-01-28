@@ -47,7 +47,7 @@ func (c *CreateStageContext) validateAndComplete() error {
 	}
 	orchestrationName = c.req.Orchestration
 	if orchestrationName == "" {
-		orchestrationName = "default"
+		orchestrationName = defaultOrchestrationName
 	}
 	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
 		return errdefs.NotFoundWithMsg(
@@ -107,4 +107,133 @@ func (c *CreateStageContext) stage() *api.Stage {
 		Orchestration: c.orchestration.Name,
 		Asset:         c.req.Asset,
 	}
+}
+
+type CreateLinkContext struct {
+	// req contains the received request. This request should not be changed.
+	req *api.CreateLinkRequest
+
+	orchestration *api.Orchestration
+	source        *api.Stage
+	target        *api.Stage
+
+	txnHelper *TxnHelper
+}
+
+func newCreateLinkContext(
+	req *api.CreateLinkRequest,
+	txnHelper *TxnHelper,
+) *CreateLinkContext {
+	return &CreateLinkContext{
+		req:       req,
+		txnHelper: txnHelper,
+	}
+}
+
+func (c *CreateLinkContext) validateAndComplete() error {
+	var orchestrationName api.OrchestrationName
+	if ok, err := util.ArgNotNil(c.req, "req"); !ok {
+		return err
+	}
+	if !IsValidLinkName(c.req.Name) {
+		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", c.req.Name)
+	}
+	if c.txnHelper.ContainsLink(c.req.Name) {
+		return errdefs.AlreadyExistsWithMsg(
+			"link '%v' already exists",
+			c.req.Name,
+		)
+	}
+	orchestrationName = c.req.Orchestration
+	if orchestrationName == "" {
+		orchestrationName = defaultOrchestrationName
+	}
+	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
+		return errdefs.NotFoundWithMsg(
+			"orchestration '%v' not found",
+			orchestrationName,
+		)
+	}
+	c.orchestration = &api.Orchestration{}
+	err := c.txnHelper.LoadOrchestration(c.orchestration, orchestrationName)
+	if err != nil {
+		return errdefs.PrependMsg(err, "load orchestration")
+	}
+	if c.req.SourceStage == "" {
+		return errdefs.InvalidArgumentWithMsg("empty source stage name")
+	}
+	if c.req.TargetStage == "" {
+		return errdefs.InvalidArgumentWithMsg("empty target stage name")
+	}
+	if !c.txnHelper.ContainsStage(c.req.SourceStage) {
+		return errdefs.NotFoundWithMsg(
+			"source stage '%v' not found",
+			c.req.SourceStage,
+		)
+	}
+	c.source = &api.Stage{}
+	if err := c.txnHelper.LoadStage(c.source, c.req.SourceStage); err != nil {
+		return errdefs.PrependMsg(err, "load source stage")
+	}
+	if !c.txnHelper.ContainsStage(c.req.TargetStage) {
+		return errdefs.NotFoundWithMsg(
+			"target stage '%v' not found",
+			c.req.TargetStage,
+		)
+	}
+	c.target = &api.Stage{}
+	if err := c.txnHelper.LoadStage(c.target, c.req.TargetStage); err != nil {
+		return errdefs.PrependMsg(err, "load source stage")
+	}
+	if c.source.Orchestration != orchestrationName {
+		return errdefs.FailedPreconditionWithMsg(
+			"orchestration for link '%s' is '%s' but source stage is registered in '%s'.",
+			c.req.Name,
+			orchestrationName,
+			c.source.Orchestration,
+		)
+	}
+	if c.target.Orchestration != orchestrationName {
+		return errdefs.FailedPreconditionWithMsg(
+			"orchestration for link '%s' is '%s' but target stage is registered in '%s'.",
+			c.req.Name,
+			orchestrationName,
+			c.target.Orchestration,
+		)
+	}
+	if c.source.Phase != api.StagePending {
+		return errdefs.FailedPreconditionWithMsg(
+			"source stage is not in Pending phase for link '%s'.",
+			c.req.Name,
+		)
+	}
+	if c.target.Phase != api.StagePending {
+		return errdefs.FailedPreconditionWithMsg(
+			"target stage is not in Pending phase for link '%s'.",
+			c.req.Name,
+		)
+	}
+	return nil
+}
+
+func (c *CreateLinkContext) persist() error {
+	var err error
+
+	c.orchestration.Links = append(c.orchestration.Links, c.req.Name)
+	if err = c.txnHelper.SaveOrchestration(c.orchestration); err != nil {
+		return errdefs.PrependMsg(err, "save orchestration")
+	}
+
+	l := &api.Link{
+		Name:          c.req.Name,
+		SourceStage:   c.req.SourceStage,
+		SourceField:   c.req.SourceField,
+		TargetStage:   c.req.TargetStage,
+		TargetField:   c.req.TargetField,
+		Orchestration: c.orchestration.Name,
+	}
+	if err = c.txnHelper.SaveLink(l); err != nil {
+		return errdefs.PrependMsg(err, "save link")
+	}
+	return nil
 }

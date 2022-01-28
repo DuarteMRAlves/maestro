@@ -4,19 +4,16 @@ package api
 // executed.
 type Orchestration struct {
 	// Name that should be associated with the orchestration.
-	// (required, unique)
-	Name OrchestrationName `yaml:"name" info:"required"`
+	// (unique)
+	Name OrchestrationName
 	// Phase specifies the current phase of the Orchestration. This field should
 	// not be defined in a yaml file as it is a value defined by the current
 	// state of the system.
-	// (optional)
-	Phase OrchestrationPhase `yaml:"-"`
+	Phase OrchestrationPhase
 	// Stages specifies the name of the stages that compose this orchestration.
-	// (required, non-empty)
-	Stages []StageName `yaml:"stages" info:"required"`
+	Stages []StageName
 	// Links specifies the name of the links that compose this orchestration.
-	// (required, non-empty)
-	Links []LinkName `yaml:"links" info:"required"`
+	Links []LinkName
 }
 
 // OrchestrationName is a name that uniquely identifies an Orchestration.
@@ -113,6 +110,8 @@ type Link struct {
 	// message is sent as input to the TargetStage.
 	// (optional)
 	TargetField string
+	// Orchestration that is associated with this link
+	Orchestration OrchestrationName
 }
 
 // LinkName is a name that uniquely identifies a Link
@@ -120,14 +119,11 @@ type LinkName string
 
 // Asset represents an image with a grpc server that can be deployed.
 type Asset struct {
-	// Name that should be associated with the asset. Is required and should be
-	// unique.
-	// (required, unique)
-	Name AssetName `yaml:"name" info:"required"`
-	// Image specifies the container image that should be associated with this
-	// asset
-	// (optional)
-	Image string `yaml:"image"`
+	// Name that should be associated with the asset.
+	// (unique)
+	Name AssetName
+	// Image specifies the container image associated with this asset.
+	Image string
 }
 
 // AssetName is a name that uniquely identifies an Asset

@@ -239,12 +239,19 @@ func (h *TxnHelper) SaveLink(l *api.Link) error {
 	buf.WriteString(string(l.TargetStage))
 	buf.WriteByte(';')
 	buf.WriteString(l.TargetField)
+	buf.WriteByte(';')
+	buf.WriteString(string(l.Orchestration))
 
 	err = h.txn.Set(linkKey(l.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
+}
+
+func (h *TxnHelper) ContainsLink(name api.LinkName) bool {
+	item, _ := h.txn.Get(linkKey(name))
+	return item != nil
 }
 
 func (h *TxnHelper) LoadLink(l *api.Link, name api.LinkName) error {
@@ -279,9 +286,9 @@ func (h *TxnHelper) IterLinks(
 func loadLink(l *api.Link, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	splits := strings.Split(buf.String(), ";")
-	if len(splits) != 5 {
+	if len(splits) != 6 {
 		return errdefs.InternalWithMsg(
-			"invalid format: expected 5 semi-colon separated values",
+			"invalid format: expected 6 semi-colon separated values",
 		)
 	}
 	l.Name = api.LinkName(splits[0])
@@ -289,6 +296,7 @@ func loadLink(l *api.Link, data []byte) error {
 	l.SourceField = splits[2]
 	l.TargetStage = api.StageName(splits[3])
 	l.TargetField = splits[4]
+	l.Orchestration = api.OrchestrationName(splits[5])
 	return nil
 }
 

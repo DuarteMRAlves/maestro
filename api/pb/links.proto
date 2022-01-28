@@ -17,6 +17,7 @@ message CreateLinkRequest {
   string sourceField = 3;
   string targetStage = 4;
   string targetField = 5;
+  string orchestration = 6;
 }
 
 message GetLinkRequest {
@@ -25,6 +26,7 @@ message GetLinkRequest {
   string sourceField = 3;
   string targetStage = 4;
   string targetField = 5;
+  string orchestration = 6;
 }
 
 message Link {
@@ -33,4 +35,5 @@ message Link {
   string sourceField = 3;
   string targetStage = 4;
   string targetField = 5;
+  string orchestration = 6;
 }

@@ -221,18 +221,13 @@ func (m *manager) CreateLink(
 	req *api.CreateLinkRequest,
 ) error {
 	var err error
-	if err = m.validateCreateLinkConfig(txn, req); err != nil {
+	helper := NewTxnHelper(txn)
+	ctx := newCreateLinkContext(req, helper)
+
+	if err = ctx.validateAndComplete(); err != nil {
 		return err
 	}
-	l := &api.Link{
-		Name:        req.Name,
-		SourceStage: req.SourceStage,
-		SourceField: req.SourceField,
-		TargetStage: req.TargetStage,
-		TargetField: req.TargetField,
-	}
-	helper := NewTxnHelper(txn)
-	return helper.SaveLink(l)
+	return ctx.persist()
 }
 
 func (m *manager) GetMatchingLinks(
