@@ -69,10 +69,6 @@ func (h *TxnHelper) SaveOrchestration(o *api.Orchestration) error {
 			buf.WriteByte(',')
 		}
 	}
-
-	if err != nil {
-		return errdefs.InternalWithMsg("encoding error: %v", err)
-	}
 	err = h.txn.Set(orchestrationKey(o.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
@@ -170,10 +166,6 @@ func (h *TxnHelper) SaveStage(s *api.Stage) error {
 	buf.WriteString(string(s.Orchestration))
 	buf.WriteByte(';')
 	buf.WriteString(string(s.Asset))
-
-	if err != nil {
-		return errdefs.InternalWithMsg("encoding error: %v", err)
-	}
 	err = h.txn.Set(stageKey(s.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
@@ -220,7 +212,7 @@ func loadStage(s *api.Stage, data []byte) error {
 	splits := strings.Split(buf.String(), ";")
 	if len(splits) != 7 {
 		return errdefs.InternalWithMsg(
-			"invalid format: expected 4 semi-colon separated values",
+			"invalid format: expected 7 semi-colon separated values",
 		)
 	}
 	s.Name = api.StageName(splits[0])
@@ -238,22 +230,35 @@ func (h *TxnHelper) SaveLink(l *api.Link) error {
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(
-		&buf,
-		l.Name,
-		l.SourceStage,
-		l.SourceField,
-		l.TargetStage,
-		l.TargetField,
-	)
-	if err != nil {
-		return errdefs.InternalWithMsg("encoding error: %v", err)
-	}
+	buf.WriteString(string(l.Name))
+	buf.WriteByte(';')
+	buf.WriteString(string(l.SourceStage))
+	buf.WriteByte(';')
+	buf.WriteString(l.SourceField)
+	buf.WriteByte(';')
+	buf.WriteString(string(l.TargetStage))
+	buf.WriteByte(';')
+	buf.WriteString(l.TargetField)
+
 	err = h.txn.Set(linkKey(l.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
 	}
 	return nil
+}
+
+func (h *TxnHelper) LoadLink(l *api.Link, name api.LinkName) error {
+	var (
+		item *badger.Item
+		data []byte
+		err  error
+	)
+	item, err = h.txn.Get(linkKey(name))
+	if err != nil {
+		return err
+	}
+	data, err = item.ValueCopy(nil)
+	return loadLink(l, data)
 }
 
 func (h *TxnHelper) IterLinks(
@@ -273,15 +278,18 @@ func (h *TxnHelper) IterLinks(
 
 func loadLink(l *api.Link, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(
-		buf,
-		&l.Name,
-		&l.SourceStage,
-		&l.SourceField,
-		&l.TargetStage,
-		&l.TargetField,
-	)
-	return err
+	splits := strings.Split(buf.String(), ";")
+	if len(splits) != 5 {
+		return errdefs.InternalWithMsg(
+			"invalid format: expected 5 semi-colon separated values",
+		)
+	}
+	l.Name = api.LinkName(splits[0])
+	l.SourceStage = api.StageName(splits[1])
+	l.SourceField = splits[2]
+	l.TargetStage = api.StageName(splits[3])
+	l.TargetField = splits[4]
+	return nil
 }
 
 func (h *TxnHelper) SaveAsset(a *api.Asset) error {
@@ -289,10 +297,9 @@ func (h *TxnHelper) SaveAsset(a *api.Asset) error {
 		buf bytes.Buffer
 		err error
 	)
-	_, err = fmt.Fprintln(&buf, a.Name, a.Image)
-	if err != nil {
-		return errdefs.InternalWithMsg("encoding error: %v", err)
-	}
+	buf.WriteString(string(a.Name))
+	buf.WriteByte(';')
+	buf.WriteString(a.Image)
 	err = h.txn.Set(assetKey(a.Name), buf.Bytes())
 	if err != nil {
 		return errdefs.InternalWithMsg("storage error: %v", err)
@@ -303,6 +310,20 @@ func (h *TxnHelper) SaveAsset(a *api.Asset) error {
 func (h *TxnHelper) ContainsAsset(name api.AssetName) bool {
 	item, _ := h.txn.Get(assetKey(name))
 	return item != nil
+}
+
+func (h *TxnHelper) LoadAsset(a *api.Asset, name api.AssetName) error {
+	var (
+		item *badger.Item
+		data []byte
+		err  error
+	)
+	item, err = h.txn.Get(assetKey(name))
+	if err != nil {
+		return err
+	}
+	data, err = item.ValueCopy(nil)
+	return loadAsset(a, data)
 }
 
 func (h *TxnHelper) IterAssets(
@@ -322,8 +343,15 @@ func (h *TxnHelper) IterAssets(
 
 func loadAsset(a *api.Asset, data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(buf, &a.Name, &a.Image)
-	return err
+	splits := strings.Split(buf.String(), ";")
+	if len(splits) != 2 {
+		return errdefs.InternalWithMsg(
+			"invalid format: expected 2 semi-colon separated values",
+		)
+	}
+	a.Name = api.AssetName(splits[0])
+	a.Image = splits[1]
+	return nil
 }
 
 func (h *TxnHelper) iterValues(
