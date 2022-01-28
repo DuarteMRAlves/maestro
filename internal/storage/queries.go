@@ -91,6 +91,14 @@ func buildStageQueryFilter(req *api.GetStageRequest) func(s *api.Stage) bool {
 			},
 		)
 	}
+	if req.Orchestration != "" {
+		filters = append(
+			filters,
+			func(s *api.Stage) bool {
+				return s.Orchestration == req.Orchestration
+			},
+		)
+	}
 	switch len(filters) {
 	case 0:
 		return func(s *api.Stage) bool { return true }
