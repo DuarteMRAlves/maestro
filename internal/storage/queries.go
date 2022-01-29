@@ -158,6 +158,14 @@ func buildLinkQueryFilter(req *api.GetLinkRequest) func(l *api.Link) bool {
 			},
 		)
 	}
+	if req.Orchestration != "" {
+		filters = append(
+			filters,
+			func(l *api.Link) bool {
+				return l.Orchestration == req.Orchestration
+			},
+		)
+	}
 	switch len(filters) {
 	case 0:
 		return func(l *api.Link) bool { return true }
