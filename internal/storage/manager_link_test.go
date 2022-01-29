@@ -387,3 +387,291 @@ func testCreateLinkError(
 	assert.Assert(t, assertErrTypeFn(err), "wrong error type")
 	assert.Equal(t, expectedErrMsg, err.Error(), "wrong error message")
 }
+
+func TestManager_GetMatchingLinks(t *testing.T) {
+	tests := []struct {
+		name   string
+		req    *api.GetLinkRequest
+		stored []*api.Link
+		// names of the expected links
+		expected []api.LinkName
+	}{
+		{
+			name:     "zero elements stored, nil req",
+			req:      nil,
+			stored:   []*api.Link{},
+			expected: []api.LinkName{},
+		},
+		{
+			name:     "zero elements stored, some req",
+			req:      &api.GetLinkRequest{Name: "some-name"},
+			stored:   []*api.Link{},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "one element stored, nil req",
+			req:  nil,
+			stored: []*api.Link{
+				testLink(0),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(0)},
+		},
+		{
+			name: "one element stored, matching name req",
+			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(0)},
+			stored: []*api.Link{
+				testLink(0),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(0)},
+		},
+		{
+			name: "one element stored, non-matching name req",
+			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(1)},
+			stored: []*api.Link{
+				testLink(2),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, nil req",
+			req:  nil,
+			stored: []*api.Link{
+				testLink(1),
+				testLink(5),
+				testLink(3),
+			},
+			expected: []api.LinkName{
+				util.LinkNameForNum(1),
+				util.LinkNameForNum(3),
+				util.LinkNameForNum(5),
+			},
+		},
+		{
+			name: "multiple elements stored, matching name req",
+			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(2)},
+			stored: []*api.Link{
+				testLink(3),
+				testLink(1),
+				testLink(2),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(2)},
+		},
+		{
+			name: "multiple elements stored, non-matching name req",
+			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(2)},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(3),
+				testLink(1),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, matching source stage req",
+			req:  &api.GetLinkRequest{SourceStage: util.LinkSourceStageForNum(4)},
+			stored: []*api.Link{
+				testLink(3),
+				testLink(4),
+				testLink(2),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(4)},
+		},
+		{
+			name: "multiple elements stored, non-matching source stage req",
+			req:  &api.GetLinkRequest{SourceStage: util.LinkSourceStageForNum(4)},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(3),
+				testLink(1),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, matching source field req",
+			req:  &api.GetLinkRequest{SourceField: util.LinkSourceFieldForNum(1)},
+			stored: []*api.Link{
+				testLink(1),
+				testLink(4),
+				testLink(2),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(1)},
+		},
+		{
+			name: "multiple elements stored, non-matching source field req",
+			req:  &api.GetLinkRequest{SourceField: util.LinkSourceFieldForNum(1)},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(3),
+				testLink(2),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, matching target stage req",
+			req:  &api.GetLinkRequest{TargetStage: util.LinkTargetStageForNum(3)},
+			stored: []*api.Link{
+				testLink(3),
+				testLink(4),
+				testLink(2),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(3)},
+		},
+		{
+			name: "multiple elements stored, non-matching target stage req",
+			req:  &api.GetLinkRequest{TargetStage: util.LinkTargetStageForNum(3)},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(4),
+				testLink(1),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, matching target field req",
+			req:  &api.GetLinkRequest{TargetField: util.LinkTargetFieldForNum(3)},
+			stored: []*api.Link{
+				testLink(1),
+				testLink(3),
+				testLink(2),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(3)},
+		},
+		{
+			name: "multiple elements stored, non-matching target field req",
+			req:  &api.GetLinkRequest{TargetField: util.LinkTargetFieldForNum(3)},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(1),
+				testLink(2),
+			},
+			expected: []api.LinkName{},
+		},
+		{
+			name: "multiple elements stored, matching orchestration req",
+			req: &api.GetLinkRequest{
+				Orchestration: util.OrchestrationNameForNum(0),
+			},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(3),
+				testLink(1),
+			},
+			expected: []api.LinkName{util.LinkNameForNum(0)},
+		},
+		{
+			name: "multiple elements stored, non-matching orchestration req",
+			req: &api.GetLinkRequest{
+				Orchestration: util.OrchestrationNameForNum(2),
+			},
+			stored: []*api.Link{
+				testLink(0),
+				testLink(3),
+				testLink(4),
+			},
+			expected: []api.LinkName{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				var received []*api.Link
+
+				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+				assert.NilError(t, err, "db creation")
+				defer db.Close()
+
+				m, err := NewManager(NewTestContext(db))
+				assert.NilError(t, err, "manager creation")
+
+				for _, l := range test.stored {
+					err = db.Update(
+						func(txn *badger.Txn) error {
+							return saveLinkAndDependencies(txn, l)
+						},
+					)
+				}
+
+				err = db.View(
+					func(txn *badger.Txn) error {
+						received, err = m.GetMatchingLinks(
+							txn,
+							test.req,
+						)
+						return err
+					},
+				)
+				assert.NilError(t, err, "get orchestration")
+				assert.Equal(t, len(test.expected), len(received))
+
+				seen := make(map[api.LinkName]bool, 0)
+				for _, e := range test.expected {
+					seen[e] = false
+				}
+
+				for _, r := range received {
+					alreadySeen, exists := seen[r.Name]
+					assert.Assert(t, exists, "element should be expected")
+					// Elements can't be seen twice
+					assert.Assert(t, !alreadySeen, "element already seen")
+					seen[r.Name] = true
+				}
+
+				for _, e := range test.expected {
+					// All elements should be seen
+					assert.Assert(t, seen[e], "element not seen")
+				}
+			},
+		)
+	}
+}
+
+func testLink(num int) *api.Link {
+	return &api.Link{
+		Name:          util.LinkNameForNum(num),
+		SourceStage:   util.LinkSourceStageForNum(num),
+		SourceField:   util.LinkSourceFieldForNum(num),
+		TargetStage:   util.LinkTargetStageForNum(num),
+		TargetField:   util.LinkTargetFieldForNum(num),
+		Orchestration: util.OrchestrationNameForNum(num),
+	}
+}
+
+func saveLinkAndDependencies(txn *badger.Txn, l *api.Link) error {
+	helper := TxnHelper{txn: txn}
+	if !helper.ContainsOrchestration(l.Orchestration) {
+		err := helper.SaveOrchestration(
+			orchestrationForName(
+				l.Orchestration,
+				api.OrchestrationRunning,
+			),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	if !helper.ContainsStage(l.SourceStage) {
+		err := helper.SaveStage(
+			&api.Stage{
+				Name:          l.SourceStage,
+				Orchestration: l.Orchestration,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+	if !helper.ContainsStage(l.TargetStage) {
+		err := helper.SaveStage(
+			&api.Stage{
+				Name:          l.TargetStage,
+				Orchestration: l.Orchestration,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return helper.SaveLink(l)
+}
