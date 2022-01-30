@@ -10,18 +10,18 @@ type Input interface {
 	Next() (*State, error)
 }
 
-// InputCfg represents the several input connections for a stage
-type InputCfg struct {
+// InputBuilder registers the several connections for an input.
+type InputBuilder struct {
 	connections []*Connection
 }
 
-func NewInputCfg() *InputCfg {
-	return &InputCfg{
+func NewInputBuilder() *InputBuilder {
+	return &InputBuilder{
 		connections: []*Connection{},
 	}
 }
 
-func (i *InputCfg) Register(c *Connection) error {
+func (i *InputBuilder) WithConnection(c *Connection) error {
 	// A previous link that consumes the entire message already exists
 	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
@@ -40,21 +40,7 @@ func (i *InputCfg) Register(c *Connection) error {
 	return nil
 }
 
-func (i *InputCfg) UnregisterIfExists(search *Connection) {
-	idx := -1
-	for j, c := range i.connections {
-		if c.HasSameLinkName(search) {
-			idx = j
-			break
-		}
-	}
-	if idx != -1 {
-		i.connections[idx] = i.connections[len(i.connections)-1]
-		i.connections = i.connections[:len(i.connections)-1]
-	}
-}
-
-func (i *InputCfg) ToInput() Input {
+func (i *InputBuilder) Build() Input {
 	switch len(i.connections) {
 	case 1:
 		return &SingleInput{connection: i.connections[0]}

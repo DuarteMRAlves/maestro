@@ -10,18 +10,18 @@ type Output interface {
 	Yield(s *State)
 }
 
-// OutputCfg represents the several output connections for a stage
-type OutputCfg struct {
+// OutputBuilder registers the several connections for an output.
+type OutputBuilder struct {
 	connections []*Connection
 }
 
-func NewOutputCfg() *OutputCfg {
-	return &OutputCfg{
+func NewOutputBuilder() *OutputBuilder {
+	return &OutputBuilder{
 		connections: []*Connection{},
 	}
 }
 
-func (o *OutputCfg) Register(c *Connection) error {
+func (o *OutputBuilder) WithConnection(c *Connection) error {
 	for _, prev := range o.connections {
 		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
@@ -35,7 +35,7 @@ func (o *OutputCfg) Register(c *Connection) error {
 	return nil
 }
 
-func (o *OutputCfg) UnregisterIfExists(search *Connection) {
+func (o *OutputBuilder) UnregisterIfExists(search *Connection) {
 	idx := -1
 	for i, c := range o.connections {
 		if c.HasSameLinkName(search) {
@@ -49,7 +49,7 @@ func (o *OutputCfg) UnregisterIfExists(search *Connection) {
 	}
 }
 
-func (o *OutputCfg) ToFlow() Output {
+func (o *OutputBuilder) Build() Output {
 	switch len(o.connections) {
 	case 1:
 		return &SingleOutput{connection: o.connections[0]}
