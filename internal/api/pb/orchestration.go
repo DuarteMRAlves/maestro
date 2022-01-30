@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -30,7 +29,7 @@ func (s *orchestrationManagementServer) Create(
 		grpcErr error = nil
 	)
 
-	protobuff.UnmarshalCreateOrchestrationRequest(&req, pbReq)
+	UnmarshalCreateOrchestrationRequest(&req, pbReq)
 	err = s.api.CreateOrchestration(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
@@ -48,13 +47,13 @@ func (s *orchestrationManagementServer) Get(
 		err error
 	)
 
-	protobuff.UnmarshalGetOrchestrationRequest(&req, pbReq)
+	UnmarshalGetOrchestrationRequest(&req, pbReq)
 	orchestrations, err := s.api.GetOrchestration(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
 	for _, a := range orchestrations {
-		pbOrchestration, err := protobuff.MarshalOrchestration(a)
+		pbOrchestration, err := MarshalOrchestration(a)
 		if err != nil {
 			return err
 		}

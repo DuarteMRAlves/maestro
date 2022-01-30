@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -26,7 +25,7 @@ func (s *stageManagementServer) Create(
 	var err error
 	var grpcErr error = nil
 
-	protobuff.UnmarshalCreateStageRequest(&req, pbReq)
+	UnmarshalCreateStageRequest(&req, pbReq)
 	err = s.api.CreateStage(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
@@ -44,13 +43,13 @@ func (s *stageManagementServer) Get(
 		err error
 	)
 
-	protobuff.UnmarshalGetStageRequest(&req, pbReq)
+	UnmarshalGetStageRequest(&req, pbReq)
 	stages, err := s.api.GetStage(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
 	for _, s := range stages {
-		pbStage, err := protobuff.MarshalStage(s)
+		pbStage, err := MarshalStage(s)
 		if err != nil {
 			return err
 		}

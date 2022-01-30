@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -28,7 +27,7 @@ func (s *assetManagementServer) Create(
 	var err error
 	var grpcErr error = nil
 
-	protobuff.UnmarshalCreateAssetRequest(&req, pbReq)
+	UnmarshalCreateAssetRequest(&req, pbReq)
 	err = s.api.CreateAsset(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
@@ -46,14 +45,14 @@ func (s *assetManagementServer) Get(
 		err   error
 	)
 
-	protobuff.UnmarshalGetAssetRequest(&query, pbQuery)
+	UnmarshalGetAssetRequest(&query, pbQuery)
 
 	assets, err := s.api.GetAsset(&query)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
 	for _, a := range assets {
-		pbAsset, err := protobuff.MarshalAsset(a)
+		pbAsset, err := MarshalAsset(a)
 		if err != nil {
 			return err
 		}
