@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/encoding/protobuff"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -28,7 +27,7 @@ func (s *linkManagementServer) Create(
 		grpcErr error = nil
 	)
 
-	protobuff.UnmarshalCreateLinkRequest(&req, pbReq)
+	UnmarshalCreateLinkRequest(&req, pbReq)
 	err = s.api.CreateLink(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
@@ -46,13 +45,13 @@ func (s *linkManagementServer) Get(
 		err error
 	)
 
-	protobuff.UnmarshalGetLinkRequest(&req, pbReq)
+	UnmarshalGetLinkRequest(&req, pbReq)
 	links, err := s.api.GetLink(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
 	for _, l := range links {
-		pbLink, err := protobuff.MarshalLink(l)
+		pbLink, err := MarshalLink(l)
 		if err != nil {
 			return err
 		}

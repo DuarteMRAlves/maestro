@@ -1,4 +1,4 @@
-package protobuff
+package pb
 
 import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
