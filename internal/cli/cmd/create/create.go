@@ -2,12 +2,15 @@ package create
 
 import (
 	"context"
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"io"
 	"time"
 )
 
@@ -17,7 +20,12 @@ type Options struct {
 	// address for the maestro server
 	maestro string
 
+	// names of the resources to create
+	names []string
 	files []string
+
+	// Output for the cobra.Command to be executed.
+	outWriter io.Writer
 }
 
 func NewCmdCreate() *cobra.Command {
@@ -26,9 +34,14 @@ func NewCmdCreate() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "create resources of a given type",
-		Args:  cobra.MaximumNArgs(0),
-		Run: func(cmd *cobra.Command, _ []string) {
-			err := o.validate()
+		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			err = o.complete(cmd, args)
+			if err != nil {
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				return
+			}
+			err = o.validate()
 			if err != nil {
 				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
@@ -50,6 +63,14 @@ func NewCmdCreate() *cobra.Command {
 func (o *Options) addFlags(cmd *cobra.Command) {
 	util.AddMaestroFlag(cmd, &o.maestro)
 	util.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
+}
+
+// complete fills any remaining information that is required to execute the
+// create command.
+func (o *Options) complete(cmd *cobra.Command, args []string) error {
+	o.names = args
+	o.outWriter = cmd.OutOrStdout()
+	return nil
 }
 
 // validate verifies if the user inputs are valid and there are no conflits
@@ -88,6 +109,29 @@ func (o *Options) run() error {
 		return errdefs.PrependMsg(err, "create")
 	}
 
+	if len(o.names) != 0 {
+		seen := make(map[string]bool)
+		for _, n := range o.names {
+			seen[n] = false
+		}
+		assets = o.filterAssets(assets, seen)
+		orchestrations = o.filterOrchestrations(orchestrations, seen)
+		stages = o.filterStages(stages, seen)
+		links = o.filterLinks(links, seen)
+		for n, s := range seen {
+			if !s {
+				_, err = fmt.Fprintf(
+					o.outWriter,
+					"warning: resource '%s' not founc",
+					n,
+				)
+				if err != nil {
+					return errdefs.UnknownWithMsg("create: %v", err)
+				}
+			}
+		}
+	}
+
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
 		return errdefs.UnavailableWithMsg("create connection: %v", err)
@@ -123,4 +167,68 @@ func (o *Options) run() error {
 		}
 	}
 	return nil
+}
+
+func (o *Options) filterAssets(
+	requests []*api.CreateAssetRequest,
+	seen map[string]bool,
+) []*api.CreateAssetRequest {
+	filtered := make([]*api.CreateAssetRequest, 0)
+	for _, req := range requests {
+		name := string(req.Name)
+		_, exists := seen[name]
+		if exists {
+			filtered = append(filtered, req)
+			seen[name] = true
+		}
+	}
+	return filtered
+}
+
+func (o *Options) filterOrchestrations(
+	requests []*api.CreateOrchestrationRequest,
+	seen map[string]bool,
+) []*api.CreateOrchestrationRequest {
+	filtered := make([]*api.CreateOrchestrationRequest, 0)
+	for _, req := range requests {
+		name := string(req.Name)
+		_, exists := seen[name]
+		if exists {
+			filtered = append(filtered, req)
+			seen[name] = true
+		}
+	}
+	return filtered
+}
+
+func (o *Options) filterStages(
+	requests []*api.CreateStageRequest,
+	seen map[string]bool,
+) []*api.CreateStageRequest {
+	filtered := make([]*api.CreateStageRequest, 0)
+	for _, req := range requests {
+		name := string(req.Name)
+		_, exists := seen[name]
+		if exists {
+			filtered = append(filtered, req)
+			seen[name] = true
+		}
+	}
+	return filtered
+}
+
+func (o *Options) filterLinks(
+	requests []*api.CreateLinkRequest,
+	seen map[string]bool,
+) []*api.CreateLinkRequest {
+	filtered := make([]*api.CreateLinkRequest, 0)
+	for _, req := range requests {
+		name := string(req.Name)
+		_, exists := seen[name]
+		if exists {
+			filtered = append(filtered, req)
+			seen[name] = true
+		}
+	}
+	return filtered
 }
