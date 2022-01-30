@@ -158,8 +158,7 @@ func (m *manager) CreateStage(
 	if err = ctx.validateAndComplete(); err != nil {
 		return err
 	}
-	s := ctx.stage()
-	return helper.SaveStage(s)
+	return ctx.persist()
 }
 
 func (m *manager) GetStageByName(
