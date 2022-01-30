@@ -47,7 +47,7 @@ func (c *CreateStageContext) validateAndComplete() error {
 	}
 	orchestrationName = c.req.Orchestration
 	if orchestrationName == "" {
-		orchestrationName = defaultOrchestrationName
+		orchestrationName = DefaultOrchestrationName
 	}
 	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
 		return errdefs.NotFoundWithMsg(
@@ -157,7 +157,7 @@ func (c *CreateLinkContext) validateAndComplete() error {
 	}
 	orchestrationName = c.req.Orchestration
 	if orchestrationName == "" {
-		orchestrationName = defaultOrchestrationName
+		orchestrationName = DefaultOrchestrationName
 	}
 	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
 		return errdefs.NotFoundWithMsg(

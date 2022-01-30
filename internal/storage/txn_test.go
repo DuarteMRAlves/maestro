@@ -345,9 +345,9 @@ func TestTxnHelper_SaveLink(t *testing.T) {
 				SourceField:   "",
 				TargetStage:   "",
 				TargetField:   "",
-				Orchestration: defaultOrchestrationName,
+				Orchestration: DefaultOrchestrationName,
 			},
-			expected: []byte("some-name;;;;;" + defaultOrchestrationName),
+			expected: []byte("some-name;;;;;" + DefaultOrchestrationName),
 		},
 		{
 			name: "non default link",
@@ -407,14 +407,14 @@ func TestTxnHelper_LoadLink(t *testing.T) {
 	}{
 		{
 			name:   "default link",
-			stored: []byte("some-name;;;;;" + defaultOrchestrationName),
+			stored: []byte("some-name;;;;;" + DefaultOrchestrationName),
 			expected: &api.Link{
 				Name:          "some-name",
 				SourceStage:   "",
 				SourceField:   "",
 				TargetStage:   "",
 				TargetField:   "",
-				Orchestration: defaultOrchestrationName,
+				Orchestration: DefaultOrchestrationName,
 			},
 		},
 		{
