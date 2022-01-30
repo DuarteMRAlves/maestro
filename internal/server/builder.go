@@ -1,8 +1,7 @@
 package server
 
 import (
-	"github.com/DuarteMRAlves/maestro/api/pb"
-	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
+	apipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/execution"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
@@ -114,18 +113,6 @@ func (b *Builder) initManagers(s *Server) error {
 
 func activateGrpc(s *Server, b *Builder) {
 	grpcServer := grpc.NewServer(b.grpcOpts...)
-
-	assetManagementServer := ipb.NewAssetManagementServer(s)
-	stageManagementServer := ipb.NewStageManagementServer(s)
-	linkManagementServer := ipb.NewLinkManagementServer(s)
-	orchestrationManagementServer := ipb.NewOrchestrationManagementServer(s)
-
-	pb.RegisterAssetManagementServer(grpcServer, assetManagementServer)
-	pb.RegisterStageManagementServer(grpcServer, stageManagementServer)
-	pb.RegisterLinkManagementServer(grpcServer, linkManagementServer)
-	pb.RegisterOrchestrationManagementServer(
-		grpcServer,
-		orchestrationManagementServer,
-	)
+	apipb.RegisterServices(grpcServer, s)
 	s.grpcServer = grpcServer
 }
