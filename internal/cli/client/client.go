@@ -4,13 +4,11 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
 	"google.golang.org/grpc"
 )
 
 // Client offers an interface to connect to the maestro server
 type Client interface {
-	CreateResource(ctx context.Context, r *resources.Resource) error
 	CreateAsset(context.Context, *api.CreateAssetRequest) error
 	CreateStage(context.Context, *api.CreateStageRequest) error
 	CreateLink(context.Context, *api.CreateLinkRequest) error

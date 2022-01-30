@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
@@ -13,47 +14,90 @@ func IsValidKinds(resources []*Resource) error {
 	return nil
 }
 
-// FilterAssets creates a new array with the resources whose kind is asset.
-func FilterAssets(resources []*Resource) []*Resource {
-	assets := make([]*Resource, 0)
+// FilterCreateAssetRequests creates a new array with the requests to create
+// assets.
+func FilterCreateAssetRequests(resources []*Resource) (
+	[]*api.CreateAssetRequest,
+	error,
+) {
+	requests := make([]*api.CreateAssetRequest, 0)
 	for _, r := range resources {
 		if r.IsAssetKind() {
-			assets = append(assets, r)
+			req, ok := r.Spec.(*api.CreateAssetRequest)
+			if !ok {
+				return nil, errdefs.InternalWithMsg(
+					"create asset request spec cast failed: %v",
+					r,
+				)
+			}
+			requests = append(requests, req)
 		}
 	}
-	return assets
+	return requests, nil
 }
 
-// FilterStages creates a new array with the resources whose kind is stage.
-func FilterStages(resources []*Resource) []*Resource {
-	stages := make([]*Resource, 0)
+// FilterCreateStageRequests creates a new array with the requests to create
+// stages.
+func FilterCreateStageRequests(resources []*Resource) (
+	[]*api.CreateStageRequest,
+	error,
+) {
+	requests := make([]*api.CreateStageRequest, 0)
 	for _, r := range resources {
 		if r.IsStageKind() {
-			stages = append(stages, r)
+			req, ok := r.Spec.(*api.CreateStageRequest)
+			if !ok {
+				return nil, errdefs.InternalWithMsg(
+					"stage spec cast failed: %v",
+					r,
+				)
+			}
+			requests = append(requests, req)
 		}
 	}
-	return stages
+	return requests, nil
 }
 
-// FilterLinks creates a new array with the resources whose kind is asset.
-func FilterLinks(resources []*Resource) []*Resource {
-	links := make([]*Resource, 0)
+// FilterCreateLinkRequests creates a new array with the requests to create
+// links.
+func FilterCreateLinkRequests(resources []*Resource) (
+	[]*api.CreateLinkRequest,
+	error,
+) {
+	requests := make([]*api.CreateLinkRequest, 0)
 	for _, r := range resources {
 		if r.IsLinkKind() {
-			links = append(links, r)
+			req, ok := r.Spec.(*api.CreateLinkRequest)
+			if !ok {
+				return nil, errdefs.InternalWithMsg(
+					"link spec cast failed: %v",
+					r,
+				)
+			}
+			requests = append(requests, req)
 		}
 	}
-	return links
+	return requests, nil
 }
 
-// FilterOrchestrations creates a new array with the resources whose kind is
-// orchestration.
-func FilterOrchestrations(resources []*Resource) []*Resource {
-	orchestrations := make([]*Resource, 0)
+// FilterCreateOrchestrationRequests creates a new array with the requests to
+// create orchestrations.
+func FilterCreateOrchestrationRequests(resources []*Resource) (
+	[]*api.CreateOrchestrationRequest,
+	error,
+) {
+	requests := make([]*api.CreateOrchestrationRequest, 0)
 	for _, r := range resources {
 		if r.IsOrchestrationKind() {
-			orchestrations = append(orchestrations, r)
+			req, ok := r.Spec.(*api.CreateOrchestrationRequest)
+			if !ok {
+				return nil, errdefs.InternalWithMsg(
+					"orchestration spec cast failed> %v",
+					req,
+				)
+			}
+			requests = append(requests, req)
 		}
 	}
-	return orchestrations
+	return requests, nil
 }

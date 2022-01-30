@@ -9,7 +9,8 @@ func AddMaestroFlag(cmd *cobra.Command, value *string) {
 		value,
 		"maestro",
 		"localhost:50051",
-		"address to connect to the maestro server")
+		"address to connect to the maestro server",
+	)
 }
 
 // AddFilesFlag adds a flag that should be used to ask for multiple files
