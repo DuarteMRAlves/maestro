@@ -30,7 +30,7 @@ func TestManager_CreateLink(t *testing.T) {
 				SourceField:   "",
 				TargetStage:   util.LinkTargetStageForNum(0),
 				TargetField:   "",
-				Orchestration: defaultOrchestrationName,
+				Orchestration: DefaultOrchestrationName,
 			},
 		},
 		{
@@ -82,7 +82,7 @@ func testCreateLink(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			orchestrationName := defaultOrchestrationName
+			orchestrationName := DefaultOrchestrationName
 			if req.Orchestration != "" {
 				orchestrationName = req.Orchestration
 			}

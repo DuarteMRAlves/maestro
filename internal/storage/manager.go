@@ -82,7 +82,7 @@ func NewManager(ctx ManagerContext) (Manager, error) {
 		err := ctx.DB.Update(
 			func(txn *badger.Txn) error {
 				helper := NewTxnHelper(txn)
-				if !helper.ContainsOrchestration(defaultOrchestrationName) {
+				if !helper.ContainsOrchestration(DefaultOrchestrationName) {
 					return helper.SaveOrchestration(defaultOrchestration())
 				}
 				return nil
