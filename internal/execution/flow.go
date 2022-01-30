@@ -1,4 +1,4 @@
-package flow
+package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
@@ -9,6 +9,6 @@ type Flow struct {
 	orchestration *api.Orchestration
 }
 
-func New(o *api.Orchestration) *Flow {
+func NewFlow(o *api.Orchestration) *Flow {
 	return &Flow{orchestration: o}
 }

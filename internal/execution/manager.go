@@ -4,11 +4,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
-	"github.com/DuarteMRAlves/maestro/internal/execution/flow"
-	"github.com/DuarteMRAlves/maestro/internal/execution/input"
-	"github.com/DuarteMRAlves/maestro/internal/execution/output"
-	"github.com/DuarteMRAlves/maestro/internal/execution/worker"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"sync"
 )
@@ -26,22 +21,22 @@ type Manager interface {
 
 type manager struct {
 	mu          sync.RWMutex
-	workers     map[api.StageName]worker.Worker
-	inputs      map[api.StageName]*input.Cfg
-	outputs     map[api.StageName]*output.Cfg
-	connections map[api.LinkName]*connection.Connection
-	flows       map[api.OrchestrationName]*flow.Flow
+	workers     map[api.StageName]Worker
+	inputs      map[api.StageName]*InputCfg
+	outputs     map[api.StageName]*InputCfg
+	connections map[api.LinkName]*Connection
+	flows       map[api.OrchestrationName]*Flow
 
 	reflectionManager rpc.Manager
 }
 
 func NewManager(reflectionManager rpc.Manager) Manager {
 	return &manager{
-		workers:           map[api.StageName]worker.Worker{},
-		inputs:            map[api.StageName]*input.Cfg{},
-		outputs:           map[api.StageName]*output.Cfg{},
-		connections:       map[api.LinkName]*connection.Connection{},
-		flows:             map[api.OrchestrationName]*flow.Flow{},
+		workers:           map[api.StageName]Worker{},
+		inputs:            map[api.StageName]*InputCfg{},
+		outputs:           map[api.StageName]*InputCfg{},
+		connections:       map[api.LinkName]*Connection{},
+		flows:             map[api.OrchestrationName]*Flow{},
 		reflectionManager: reflectionManager,
 	}
 }
@@ -52,7 +47,7 @@ func (m *manager) RegisterStage(s *api.Stage) error {
 		return errdefs.NotFoundWithMsg("Rpc not found for stage %s", s.Name)
 	}
 	cfg := workerCfgForStage(s, rpc)
-	w, err := worker.NewWorker(cfg)
+	w, err := NewWorker(cfg)
 	if err != nil {
 		return err
 	}
@@ -179,33 +174,33 @@ func (m *manager) RegisterOrchestration(o *api.Orchestration) error {
 		}
 	}
 
-	m.flows[o.Name] = flow.New(o)
+	m.flows[o.Name] = NewFlow(o)
 
 	return nil
 }
 
-func (m *manager) inputCfgForStage(s *api.Stage) *input.Cfg {
+func (m *manager) inputCfgForStage(s *api.Stage) *InputCfg {
 	name := s.Name
 	cfg, ok := m.inputs[name]
 	if !ok {
-		cfg = input.NewCfg()
+		cfg = NewInputCfg()
 		m.inputs[name] = cfg
 	}
 	return cfg
 }
 
-func (m *manager) outputCfgForStage(s *api.Stage) *output.Cfg {
+func (m *manager) outputCfgForStage(s *api.Stage) *InputCfg {
 	name := s.Name
 	cfg, ok := m.outputs[name]
 	if !ok {
-		cfg = output.NewCfg()
+		cfg = NewInputCfg()
 		m.outputs[name] = cfg
 	}
 	return cfg
 }
 
-func workerCfgForStage(s *api.Stage, rpc rpc.RPC) *worker.Cfg {
-	return &worker.Cfg{
+func workerCfgForStage(s *api.Stage, rpc rpc.RPC) *WorkerCfg {
+	return &WorkerCfg{
 		Address: s.Address,
 		Rpc:     rpc,
 		Input:   nil,
@@ -216,16 +211,16 @@ func workerCfgForStage(s *api.Stage, rpc rpc.RPC) *worker.Cfg {
 
 func (m *manager) connectionForLink(
 	l *api.Link,
-) (*connection.Connection, error) {
+) (*Connection, error) {
 	var (
-		c   *connection.Connection
+		c   *Connection
 		ok  bool
 		err error
 	)
 	name := l.Name
 	c, ok = m.connections[name]
 	if !ok {
-		if c, err = connection.New(l); err != nil {
+		if c, err = NewConnection(l); err != nil {
 			return nil, err
 		}
 		m.connections[name] = c

@@ -1,4 +1,4 @@
-package state
+package execution
 
 // State defines a structure to manage the flow of a computation. This State is
 // created in a source stage with a unique id, that is transferred through the
@@ -12,7 +12,7 @@ type State struct {
 // Id is a unique id that identifies a computation flow.
 type Id int
 
-func New(id Id, msg interface{}) *State {
+func NewState(id Id, msg interface{}) *State {
 	return &State{
 		id:  id,
 		msg: msg,
