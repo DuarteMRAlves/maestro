@@ -1,29 +1,27 @@
-package output
+package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
-	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 )
 
 // Output receives the output flow.State for a given stage and sends it to the
 // next stages.
 type Output interface {
-	Yield(s *state.State)
+	Yield(s *State)
 }
 
-// Cfg represents the several output connections for a stage
-type Cfg struct {
-	connections []*connection.Connection
+// OutputCfg represents the several output connections for a stage
+type OutputCfg struct {
+	connections []*Connection
 }
 
-func NewCfg() *Cfg {
-	return &Cfg{
-		connections: []*connection.Connection{},
+func NewOutputCfg() *OutputCfg {
+	return &OutputCfg{
+		connections: []*Connection{},
 	}
 }
 
-func (o *Cfg) Register(c *connection.Connection) error {
+func (o *OutputCfg) Register(c *Connection) error {
 	for _, prev := range o.connections {
 		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
@@ -37,7 +35,7 @@ func (o *Cfg) Register(c *connection.Connection) error {
 	return nil
 }
 
-func (o *Cfg) UnregisterIfExists(search *connection.Connection) {
+func (o *OutputCfg) UnregisterIfExists(search *Connection) {
 	idx := -1
 	for i, c := range o.connections {
 		if c.HasSameLinkName(search) {
@@ -51,7 +49,7 @@ func (o *Cfg) UnregisterIfExists(search *connection.Connection) {
 	}
 }
 
-func (o *Cfg) ToFlow() Output {
+func (o *OutputCfg) ToFlow() Output {
 	switch len(o.connections) {
 	case 1:
 		return &SingleOutput{connection: o.connections[0]}
@@ -62,9 +60,9 @@ func (o *Cfg) ToFlow() Output {
 // SingleOutput is a struct that implements Output for a single output
 // connection.
 type SingleOutput struct {
-	connection *connection.Connection
+	connection *Connection
 }
 
-func (o *SingleOutput) Yield(s *state.State) {
+func (o *SingleOutput) Yield(s *State) {
 	o.connection.Push(s)
 }

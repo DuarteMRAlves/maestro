@@ -1,8 +1,7 @@
-package connection
+package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/queue"
 )
 
@@ -12,7 +11,7 @@ type Connection struct {
 	queue queue.Ring
 }
 
-func New(l *api.Link) (*Connection, error) {
+func NewConnection(l *api.Link) (*Connection, error) {
 	q, err := queue.NewRing(1)
 	if err != nil {
 		return nil, err
@@ -40,10 +39,10 @@ func (c *Connection) HasSameTargetField(other *Connection) bool {
 	return c.link.TargetField == other.link.TargetField
 }
 
-func (c *Connection) Push(s *state.State) {
+func (c *Connection) Push(s *State) {
 	c.queue.Push(s)
 }
 
-func (c *Connection) Pop() *state.State {
-	return c.queue.Pop().(*state.State)
+func (c *Connection) Pop() *State {
+	return c.queue.Pop().(*State)
 }

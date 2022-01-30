@@ -1,29 +1,27 @@
-package input
+package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/execution/connection"
-	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 )
 
 // Input joins the input connections for a given stage and provides the next
 // State to be processed.
 type Input interface {
-	Next() (*state.State, error)
+	Next() (*State, error)
 }
 
-// Cfg represents the several input connections for a stage
-type Cfg struct {
-	connections []*connection.Connection
+// InputCfg represents the several input connections for a stage
+type InputCfg struct {
+	connections []*Connection
 }
 
-func NewCfg() *Cfg {
-	return &Cfg{
-		connections: []*connection.Connection{},
+func NewInputCfg() *InputCfg {
+	return &InputCfg{
+		connections: []*Connection{},
 	}
 }
 
-func (i *Cfg) Register(c *connection.Connection) error {
+func (i *InputCfg) Register(c *Connection) error {
 	// A previous link that consumes the entire message already exists
 	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
@@ -42,7 +40,7 @@ func (i *Cfg) Register(c *connection.Connection) error {
 	return nil
 }
 
-func (i *Cfg) UnregisterIfExists(search *connection.Connection) {
+func (i *InputCfg) UnregisterIfExists(search *Connection) {
 	idx := -1
 	for j, c := range i.connections {
 		if c.HasSameLinkName(search) {
@@ -56,7 +54,7 @@ func (i *Cfg) UnregisterIfExists(search *connection.Connection) {
 	}
 }
 
-func (i *Cfg) ToInput() Input {
+func (i *InputCfg) ToInput() Input {
 	switch len(i.connections) {
 	case 1:
 		return &SingleInput{connection: i.connections[0]}
@@ -66,9 +64,9 @@ func (i *Cfg) ToInput() Input {
 
 // SingleInput is a struct the implements the Input for a single input.
 type SingleInput struct {
-	connection *connection.Connection
+	connection *Connection
 }
 
-func (i *SingleInput) Next() (*state.State, error) {
+func (i *SingleInput) Next() (*State, error) {
 	return i.connection.Pop(), nil
 }

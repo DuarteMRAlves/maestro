@@ -1,9 +1,6 @@
-package worker
+package execution
 
 import (
-	flowinput "github.com/DuarteMRAlves/maestro/internal/execution/input"
-	flowoutput "github.com/DuarteMRAlves/maestro/internal/execution/output"
-	"github.com/DuarteMRAlves/maestro/internal/execution/state"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
@@ -53,12 +50,12 @@ func TestUnaryWorker_Run(t *testing.T) {
 			},
 		},
 	}
-	states := []*state.State{state.New(1, msgs[0]), state.New(3, msgs[1])}
-	input := flowinput.NewMockInput(states)
-	output := flowoutput.NewMockOutput()
+	states := []*State{NewState(1, msgs[0]), NewState(3, msgs[1])}
+	input := NewMockInput(states)
+	output := NewMockOutput()
 	done := make(chan bool)
 
-	cfg := &Cfg{
+	cfg := &WorkerCfg{
 		Address: addr,
 		Rpc:     rpc,
 		Input:   input,
