@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/util"
+	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"

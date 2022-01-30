@@ -3,8 +3,8 @@ package create
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/cli/client"
+	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/cli/resources"
-	"github.com/DuarteMRAlves/maestro/internal/cli/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -42,12 +42,6 @@ func NewCmdCreate() *cobra.Command {
 
 	o.addFlags(cmd)
 
-	// Subcommands
-	cmd.AddCommand(NewCmdCreateAsset())
-	cmd.AddCommand(NewCmdCreateStage())
-	cmd.AddCommand(NewCmdCreateLink())
-	cmd.AddCommand(NewCmdCreateOrchestration())
-
 	return cmd
 }
 
@@ -77,20 +71,22 @@ func (o *Options) run() error {
 		return err
 	}
 
-	assets := resources.FilterAssets(parsed)
-	stages := resources.FilterStages(parsed)
-	links := resources.FilterLinks(parsed)
-	orchestrations := resources.FilterOrchestrations(parsed)
-
-	orderedResourcesSize :=
-		len(assets) + len(stages) + len(links) + len(orchestrations)
-
-	resourcesByKind := make([]*resources.Resource, 0, orderedResourcesSize)
-
-	resourcesByKind = append(resourcesByKind, assets...)
-	resourcesByKind = append(resourcesByKind, orchestrations...)
-	resourcesByKind = append(resourcesByKind, stages...)
-	resourcesByKind = append(resourcesByKind, links...)
+	assets, err := resources.FilterCreateAssetRequests(parsed)
+	if err != nil {
+		return errdefs.PrependMsg(err, "create")
+	}
+	orchestrations, err := resources.FilterCreateOrchestrationRequests(parsed)
+	if err != nil {
+		return errdefs.PrependMsg(err, "create")
+	}
+	stages, err := resources.FilterCreateStageRequests(parsed)
+	if err != nil {
+		return errdefs.PrependMsg(err, "create")
+	}
+	links, err := resources.FilterCreateLinkRequests(parsed)
+	if err != nil {
+		return errdefs.PrependMsg(err, "create")
+	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
 	if err != nil {
@@ -106,8 +102,23 @@ func (o *Options) run() error {
 	)
 	defer cancel()
 
-	for _, r := range resourcesByKind {
-		if err := c.CreateResource(ctx, r); err != nil {
+	for _, req := range assets {
+		if err := c.CreateAsset(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, req := range orchestrations {
+		if err := c.CreateOrchestration(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, req := range stages {
+		if err := c.CreateStage(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, req := range links {
+		if err := c.CreateLink(ctx, req); err != nil {
 			return err
 		}
 	}
