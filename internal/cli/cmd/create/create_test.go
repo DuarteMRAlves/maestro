@@ -235,6 +235,70 @@ func TestCreateWithServer(t *testing.T) {
 			expectedOut: "",
 		},
 		{
+			name: "filter resources",
+			args: []string{
+				"-f",
+				"../../../../tests/resources/create/resources.yml",
+				"asset-2",
+				"stage-1",
+				"stage-2",
+				"link-stage-2-stage-1",
+				"orchestration-2",
+			},
+			validateAsset: func(req *pb.CreateAssetRequest) bool {
+				return equalCreateAssetRequest(
+					&pb.CreateAssetRequest{Name: "asset-2", Image: "image-2"},
+					req,
+				)
+			},
+			validateStage: func(req *pb.CreateStageRequest) bool {
+				return equalCreateStageRequest(
+					&pb.CreateStageRequest{
+						Name:    "stage-1",
+						Asset:   "asset-1",
+						Service: "Service1",
+						Rpc:     "Rpc1",
+						Address: "address-1",
+						Host:    "",
+						Port:    0,
+					},
+					req,
+				) || equalCreateStageRequest(
+					&pb.CreateStageRequest{
+						Name:    "stage-2",
+						Asset:   "asset-2",
+						Service: "Service2",
+						Rpc:     "Rpc2",
+						Address: "address-2",
+						Host:    "",
+						Port:    0,
+					},
+					req,
+				)
+			},
+			validateLink: func(req *pb.CreateLinkRequest) bool {
+				return equalCreateLinkRequest(
+					&pb.CreateLinkRequest{
+						Name:        "link-stage-2-stage-1",
+						SourceStage: "stage-2",
+						SourceField: "",
+						TargetStage: "stage-1",
+						TargetField: "",
+					},
+					req,
+				)
+			},
+			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
+				return equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
+						Name: "orchestration-2",
+					},
+					req,
+				)
+			},
+			expectedOut: "",
+		},
+		{
 			name: "asset not found",
 			args: []string{
 				"-f",
