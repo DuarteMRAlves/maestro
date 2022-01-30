@@ -109,7 +109,10 @@ func testCreateStage(
 	req *api.CreateStageRequest,
 	expected *api.Stage,
 ) {
-	var stored api.Stage
+	var (
+		stored        api.Stage
+		orchestration api.Orchestration
+	)
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	assert.NilError(t, err, "db creation")
 	defer db.Close()
@@ -158,6 +161,23 @@ func testCreateStage(
 		"orchestration not equal",
 	)
 	assert.Equal(t, expected.Asset, stored.Asset, "asset not equal")
+
+	err = db.View(
+		func(txn *badger.Txn) error {
+			helper := TxnHelper{txn: txn}
+			return helper.LoadOrchestration(
+				&orchestration,
+				stored.Orchestration,
+			)
+		},
+	)
+	found := false
+	for _, s := range orchestration.Stages {
+		if s == stored.Name {
+			found = true
+		}
+	}
+	assert.Assert(t, found, "stage is not in orchestration")
 }
 
 func TestManager_CreateStage_Error(t *testing.T) {

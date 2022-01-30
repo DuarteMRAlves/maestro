@@ -97,8 +97,15 @@ func (c *CreateStageContext) inferStageAddress() {
 	c.inferredAddress = address
 }
 
-func (c *CreateStageContext) stage() *api.Stage {
-	return &api.Stage{
+func (c *CreateStageContext) persist() error {
+	var err error
+
+	c.orchestration.Stages = append(c.orchestration.Stages, c.req.Name)
+	if err = c.txnHelper.SaveOrchestration(c.orchestration); err != nil {
+		return errdefs.PrependMsg(err, "save orchestration")
+	}
+
+	s := &api.Stage{
 		Name:          c.req.Name,
 		Phase:         api.StagePending,
 		Service:       c.req.Service,
@@ -107,6 +114,10 @@ func (c *CreateStageContext) stage() *api.Stage {
 		Orchestration: c.orchestration.Name,
 		Asset:         c.req.Asset,
 	}
+	if err = c.txnHelper.SaveStage(s); err != nil {
+		return errdefs.PrependMsg(err, "save link")
+	}
+	return nil
 }
 
 type CreateLinkContext struct {
