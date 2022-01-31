@@ -1,0 +1,26 @@
+// This file provides the definitions for a linear orchestration.
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
+
+package pb;
+
+service Linear1 {
+  rpc Process(LinearInitial) returns (LinearIntermediate);
+}
+
+service Linear2 {
+  rpc Process(LinearIntermediate) returns (LinearFinal);
+}
+
+message LinearInitial {
+  int64 value = 1;
+}
+
+message LinearIntermediate {
+  int64 value = 1;
+}
+
+message LinearFinal {
+  int64 value = 1;
+}

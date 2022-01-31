@@ -10,7 +10,3 @@ type Execution struct {
 
 	workers map[api.StageName]Worker
 }
-
-func NewExecution(o *api.Orchestration) *Execution {
-	return &Execution{orchestration: o}
-}

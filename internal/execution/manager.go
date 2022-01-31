@@ -2,7 +2,6 @@ package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
@@ -54,15 +53,9 @@ func (m *manager) StartExecution(
 		return nil
 	}
 
-	txnHelper := storage.NewTxnHelper(txn)
-	orchestration := &api.Orchestration{}
+	m.executions[name], err = newBuilder(txn, m.reflectionManager).
+		withOrchestration(name).
+		build()
 
-	err = txnHelper.LoadOrchestration(orchestration, req.Orchestration)
-	if err != nil {
-		return errdefs.PrependMsg(err, "start execution")
-	}
-
-	m.executions[name] = NewExecution(orchestration)
-
-	return nil
+	return err
 }
