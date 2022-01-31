@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"google.golang.org/grpc"
 	"sync"
 )
 
@@ -10,15 +11,11 @@ type MockManager struct {
 	Rpcs sync.Map
 }
 
-func (m *MockManager) FindRpc(
-	ctx context.Context,
-	name api.StageName,
-	query *FindQuery,
-) error {
-	panic("method not implemented")
-}
-
-func (m *MockManager) GetRpc(stage api.StageName) (RPC, bool) {
+func (m *MockManager) GetRpc(
+	_ context.Context,
+	_ grpc.ClientConnInterface,
+	stage api.StageName,
+) (RPC, bool) {
 	rpc, ok := m.Rpcs.Load(stage)
 	if !ok {
 		return nil, false
