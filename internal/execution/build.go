@@ -153,7 +153,7 @@ func (b *Builder) loadRpcs() error {
 func (b *Builder) loadInputsAndOutputs() error {
 	b.inputBuilders = make(map[api.StageName]*InputBuilder, len(b.stages))
 	b.outputBuilders = make(map[api.StageName]*OutputBuilder, len(b.stages))
-	for name, _ := range b.stages {
+	for name := range b.stages {
 		b.inputBuilders[name] = NewInputBuilder()
 		b.outputBuilders[name] = NewOutputBuilder()
 	}

@@ -15,10 +15,7 @@ import (
 )
 
 func TestBuilder_build(t *testing.T) {
-	var (
-		e   *Execution
-		err error
-	)
+	var err error
 
 	lis1 := util.NewTestListener(t)
 	addr1 := lis1.Addr().String()
@@ -42,7 +39,7 @@ func TestBuilder_build(t *testing.T) {
 	err = db.View(
 		func(txn *badger.Txn) error {
 			builder := newBuilder(txn, rpcManager)
-			e, err = builder.withOrchestration("default").build()
+			_, err = builder.withOrchestration("default").build()
 			return err
 		},
 	)
