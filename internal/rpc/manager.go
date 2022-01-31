@@ -5,63 +5,45 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"google.golang.org/grpc"
-	"sync"
 )
 
 // Manager stores the RPC objects for a given stage.
 type Manager interface {
-	// FindRpc searches for a given RPC using rpc. It then caches the rpc
-	// to be later used. The RPC is associated with the received stage name.
-	FindRpc(context.Context, api.StageName, *FindQuery) error
-	// GetRpc retrieves an already loaded RPC associated with the given stage.
-	// Returns the (RPC, true) if it exists and (nil, false) otherwise.
-	GetRpc(api.StageName) (RPC, bool)
+	// GetRpc searches for a given RPC using the grpc reflection api.
+	GetRpc(context.Context, grpc.ClientConnInterface, *api.Stage) (RPC, error)
 }
 
-// FindQuery specifies the search config to be applied
-type FindQuery struct {
-	// Conn specifies the connection to be used when performing the search.
-	Conn grpc.ClientConnInterface
-	// Service specifies the name of the service to be searched. If not defined,
-	// only one service should exist, which is the one used.
-	Service string
-	// Rpc specifies the name of the method to be searched. If not defined,
-	// only one method should exist inside the grpc service.
-	Rpc string
-}
-
-type manager struct {
-	rpcs sync.Map
-}
+type manager struct{}
 
 func NewManager() Manager {
-	return &manager{rpcs: sync.Map{}}
+	return &manager{}
 }
 
-func (m *manager) FindRpc(
+func (m *manager) GetRpc(
 	ctx context.Context,
-	stage api.StageName,
-	cfg *FindQuery,
-) error {
-	reflectionClient := NewReflectionClient(ctx, cfg.Conn)
-	availableServices, err := reflectionClient.ListServices()
+	conn grpc.ClientConnInterface,
+	stage *api.Stage,
+) (RPC, error) {
+	var err error
+
+	client := NewReflectionClient(ctx, conn)
+	availableServices, err := client.ListServices()
 	if err != nil {
-		return errdefs.PrependMsg(err, "find rpc")
+		return nil, errdefs.PrependMsg(err, "find rpc")
 	}
-	serviceName, err := findService(availableServices, cfg)
+	srvName, err := findService(availableServices, stage)
 	if err != nil {
-		return errdefs.PrependMsg(err, "find rpc")
+		return nil, errdefs.PrependMsg(err, "find rpc")
 	}
-	service, err := reflectionClient.ResolveService(serviceName)
+	srv, err := client.ResolveService(srvName)
 	if err != nil {
-		return errdefs.PrependMsg(err, "find rpc")
+		return nil, errdefs.PrependMsg(err, "find rpc")
 	}
-	rpc, err := findRpc(service.RPCs(), cfg)
+	stageRpc, err := findRpc(srv.RPCs(), stage)
 	if err != nil {
-		return errdefs.PrependMsg(err, "find rpc")
+		return nil, errdefs.PrependMsg(err, "find rpc")
 	}
-	m.rpcs.Store(stage, rpc)
-	return nil
+	return stageRpc, nil
 }
 
 // findService finds the service that should be used to call the rpc.
@@ -69,8 +51,8 @@ func (m *manager) FindRpc(
 // service is not specified, then only one available service must exist that
 // will be used. An error is returned if none of the above conditions is
 // verified.
-func findService(available []string, cfg *FindQuery) (string, error) {
-	search := cfg.Service
+func findService(available []string, stage *api.Stage) (string, error) {
+	search := stage.Service
 	if search == "" {
 		if len(available) == 1 {
 			return available[0], nil
@@ -95,11 +77,8 @@ func findService(available []string, cfg *FindQuery) (string, error) {
 // findRpc find the rpc to be called. If a rpc name was specified in the config,
 // then it verifies it exists in the available rpcs and returns it. Otherwise,
 // it verifies only a single rpc is available and returns it.
-func findRpc(
-	available []RPC,
-	cfg *FindQuery,
-) (RPC, error) {
-	search := cfg.Rpc
+func findRpc(available []RPC, stage *api.Stage) (RPC, error) {
+	search := stage.Rpc
 	if search == "" {
 		if len(available) == 1 {
 			return available[0], nil
@@ -119,12 +98,4 @@ func findRpc(
 			search,
 		)
 	}
-}
-
-func (m *manager) GetRpc(stage api.StageName) (RPC, bool) {
-	rpc, ok := m.rpcs.Load(stage)
-	if !ok {
-		return nil, false
-	}
-	return rpc.(RPC), true
 }

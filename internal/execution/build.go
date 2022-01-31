@@ -114,40 +114,31 @@ func (b *Builder) loadLinks() error {
 }
 
 func (b *Builder) loadRpcs() error {
-	var (
-		stageRpc rpc.RPC
-		query    rpc.FindQuery
-		err      error
-	)
-
-	o := b.orchestration
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	b.rpcs = make(map[api.StageName]rpc.RPC, len(o.Stages))
-	for _, name := range o.Stages {
-		s, ok := b.stages[name]
-		if !ok {
-			return errdefs.InternalWithMsg("unknown stage: %s", name)
-		}
-		query.Conn, err = grpc.Dial(s.Address, grpc.WithInsecure())
-		if err != nil {
-			return errdefs.InternalWithMsg("dial %s: %v", name, err)
-		}
-		query.Service = s.Service
-		query.Rpc = s.Rpc
-		err = b.rpcManager.FindRpc(ctx, name, &query)
+	b.rpcs = make(map[api.StageName]rpc.RPC, len(b.stages))
+	for name, s := range b.stages {
+		stageRpc, err := b.loadRpc(ctx, s)
 		if err != nil {
 			return errdefs.PrependMsg(err, "load rpcs")
-		}
-		stageRpc, ok = b.rpcManager.GetRpc(name)
-		if !ok {
-			return errdefs.InternalWithMsg("load rpcs: get rpc for %s", name)
 		}
 		b.rpcs[name] = stageRpc
 	}
 	return nil
+}
+
+func (b *Builder) loadRpc(ctx context.Context, s *api.Stage) (rpc.RPC, error) {
+	conn, err := grpc.Dial(s.Address, grpc.WithInsecure())
+	if err != nil {
+		return nil, errdefs.InternalWithMsg(
+			"dial %s: %v",
+			s.Name,
+			err,
+		)
+	}
+	defer conn.Close()
+	return b.rpcManager.GetRpc(ctx, conn, s)
 }
 
 func (b *Builder) loadInputsAndOutputs() error {
