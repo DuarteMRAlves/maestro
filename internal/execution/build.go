@@ -233,6 +233,8 @@ func (b *Builder) buildWorkers() error {
 	var err error
 
 	b.workers = make(map[api.StageName]Worker, len(b.stages))
+	sources := make([]api.StageName, 0)
+	sinks := make([]api.StageName, 0)
 	for name, stage := range b.stages {
 
 		stageRpc, ok := b.rpcs[name]
@@ -260,10 +262,32 @@ func (b *Builder) buildWorkers() error {
 			Output:  outputBuilder.Build(),
 			Done:    make(chan bool),
 		}
+
+		if cfg.Input.IsSource() {
+			sources = append(sources, name)
+		}
+		if cfg.Output.IsSink() {
+			sinks = append(sinks, name)
+		}
+
 		b.workers[name], err = NewWorker(cfg)
 		if err != nil {
 			return errdefs.PrependMsg(err, "build workers")
 		}
+	}
+	if len(sources) != 1 {
+		return errdefs.InvalidArgumentWithMsg(
+			"expected one source stage but found %d: %v",
+			len(sources),
+			sources,
+		)
+	}
+	if len(sinks) != 1 {
+		return errdefs.InvalidArgumentWithMsg(
+			"expected one sink stage but found %d: %v",
+			len(sinks),
+			sinks,
+		)
 	}
 	return nil
 }
