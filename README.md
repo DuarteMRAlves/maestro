@@ -56,7 +56,7 @@ executed.
 ## Developing
 
 * Install golang version 1.17.6
-* Install protobuf version 3.19.3
+* Install protobuf version 3.19.4
 * Run the following commands:
 
 ```shell
