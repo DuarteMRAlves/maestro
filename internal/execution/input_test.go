@@ -25,7 +25,8 @@ func TestSourceInput_Next(t *testing.T) {
 	msg, err := rpc.NewMessage(reqDesc)
 	assert.NilError(t, err, "message Request")
 
-	input := NewInputBuilder().WithMessage(msg).Build()
+	input, err := NewInputBuilder().WithMessage(msg).Build()
+	assert.NilError(t, err, "build input")
 
 	sourceInput, ok := input.(*SourceInput)
 	assert.Assert(t, ok, "source input cast")

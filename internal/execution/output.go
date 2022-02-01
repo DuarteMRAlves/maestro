@@ -11,6 +11,33 @@ type Output interface {
 	IsSink() bool
 }
 
+// SingleOutput is a struct that implements Output for a single output
+// connection.
+type SingleOutput struct {
+	connection *Connection
+}
+
+func (o *SingleOutput) Yield(s *State) {
+	o.connection.Push(s)
+}
+
+func (o *SingleOutput) IsSink() bool {
+	return false
+}
+
+// SinkOutput defines the last output of the orchestration, where all messages
+// are dropped.
+type SinkOutput struct {
+}
+
+func (o *SinkOutput) Yield(_ *State) {
+	// Do nothing, just drop message.
+}
+
+func (o *SinkOutput) IsSink() bool {
+	return true
+}
+
 // OutputBuilder registers the several connections for an output.
 type OutputBuilder struct {
 	connections []*Connection
@@ -50,39 +77,16 @@ func (o *OutputBuilder) UnregisterIfExists(search *Connection) {
 	}
 }
 
-func (o *OutputBuilder) Build() Output {
+func (o *OutputBuilder) Build() (Output, error) {
 	switch len(o.connections) {
 	case 0:
-		return &SinkOutput{}
+		return &SinkOutput{}, nil
 	case 1:
-		return &SingleOutput{connection: o.connections[0]}
+		return &SingleOutput{connection: o.connections[0]}, nil
+	default:
+		return nil, errdefs.FailedPreconditionWithMsg(
+			"too many connections: expected 0 or 1 but received %d",
+			len(o.connections),
+		)
 	}
-	return nil
-}
-
-// SingleOutput is a struct that implements Output for a single output
-// connection.
-type SingleOutput struct {
-	connection *Connection
-}
-
-func (o *SingleOutput) Yield(s *State) {
-	o.connection.Push(s)
-}
-
-func (o *SingleOutput) IsSink() bool {
-	return false
-}
-
-// SinkOutput defines the last output of the orchestration, where all messages
-// are dropped.
-type SinkOutput struct {
-}
-
-func (o *SinkOutput) Yield(_ *State) {
-	// Do nothing, just drop message.
-}
-
-func (o *SinkOutput) IsSink() bool {
-	return true
 }

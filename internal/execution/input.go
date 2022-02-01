@@ -13,6 +13,35 @@ type Input interface {
 	IsSource() bool
 }
 
+// SingleInput is a struct the implements the Input for a single input.
+type SingleInput struct {
+	connection *Connection
+}
+
+func (i *SingleInput) Next() (*State, error) {
+	return i.connection.Pop(), nil
+}
+
+func (i *SingleInput) IsSource() bool {
+	return false
+}
+
+// SourceInput is the source of the orchestration. It defines the initial ids of
+// the states and sends empty messages of the received type.
+type SourceInput struct {
+	id  int32
+	msg rpc.Message
+}
+
+func (i *SourceInput) Next() (*State, error) {
+	id := Id(atomic.AddInt32(&(i.id), 1))
+	return NewState(id, i.msg.NewEmpty()), nil
+}
+
+func (i *SourceInput) IsSource() bool {
+	return true
+}
+
 // InputBuilder registers the several connections for an input.
 type InputBuilder struct {
 	connections []*Connection
@@ -49,41 +78,21 @@ func (i *InputBuilder) WithConnection(c *Connection) error {
 	return nil
 }
 
-func (i *InputBuilder) Build() Input {
+func (i *InputBuilder) Build() (Input, error) {
 	switch len(i.connections) {
 	case 0:
-		return &SourceInput{id: 0, msg: i.msg}
+		if i.msg == nil {
+			return nil, errdefs.FailedPreconditionWithMsg(
+				"message required without 0 connections",
+			)
+		}
+		return &SourceInput{id: 0, msg: i.msg}, nil
 	case 1:
-		return &SingleInput{connection: i.connections[0]}
+		return &SingleInput{connection: i.connections[0]}, nil
+	default:
+		return nil, errdefs.FailedPreconditionWithMsg(
+			"too many connections: expected 0 or 1 but received %d",
+			len(i.connections),
+		)
 	}
-	return nil
-}
-
-// SingleInput is a struct the implements the Input for a single input.
-type SingleInput struct {
-	connection *Connection
-}
-
-func (i *SingleInput) Next() (*State, error) {
-	return i.connection.Pop(), nil
-}
-
-func (i *SingleInput) IsSource() bool {
-	return false
-}
-
-// SourceInput is the source of the orchestration. It defines the initial ids of
-// the states and sends empty messages of the received type.
-type SourceInput struct {
-	id  int32
-	msg rpc.Message
-}
-
-func (i *SourceInput) Next() (*State, error) {
-	id := Id(atomic.AddInt32(&(i.id), 1))
-	return NewState(id, i.msg.NewEmpty()), nil
-}
-
-func (i *SourceInput) IsSource() bool {
-	return true
 }

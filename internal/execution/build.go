@@ -230,7 +230,11 @@ func (b *Builder) loadInputsAndOutputs() error {
 }
 
 func (b *Builder) buildWorkers() error {
-	var err error
+	var (
+		input  Input
+		output Output
+		err    error
+	)
 
 	b.workers = make(map[api.StageName]Worker, len(b.stages))
 	sources := make([]api.StageName, 0)
@@ -255,11 +259,19 @@ func (b *Builder) buildWorkers() error {
 				name,
 			)
 		}
+		input, err = inputBuilder.Build()
+		if err != nil {
+			return errdefs.PrependMsg(err, "input build error for %s", name)
+		}
+		output, err = outputBuilder.Build()
+		if err != nil {
+			return errdefs.PrependMsg(err, "output build error for %s", name)
+		}
 		cfg := &WorkerCfg{
 			Address: stage.Address,
 			Rpc:     stageRpc,
-			Input:   inputBuilder.Build(),
-			Output:  outputBuilder.Build(),
+			Input:   input,
+			Output:  output,
 			Done:    make(chan bool),
 		}
 
