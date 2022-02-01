@@ -51,6 +51,8 @@ func (o *OutputBuilder) UnregisterIfExists(search *Connection) {
 
 func (o *OutputBuilder) Build() Output {
 	switch len(o.connections) {
+	case 0:
+		return &SinkOutput{}
 	case 1:
 		return &SingleOutput{connection: o.connections[0]}
 	}
@@ -65,4 +67,13 @@ type SingleOutput struct {
 
 func (o *SingleOutput) Yield(s *State) {
 	o.connection.Push(s)
+}
+
+// SinkOutput defines the last output of the orchestration, where all messages
+// are dropped.
+type SinkOutput struct {
+}
+
+func (o *SinkOutput) Yield(_ *State) {
+	// Do nothing, just drop message.
 }
