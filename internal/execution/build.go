@@ -145,7 +145,11 @@ func (b *Builder) loadInputsAndOutputs() error {
 	b.inputBuilders = make(map[api.StageName]*InputBuilder, len(b.stages))
 	b.outputBuilders = make(map[api.StageName]*OutputBuilder, len(b.stages))
 	for name := range b.stages {
-		b.inputBuilders[name] = NewInputBuilder()
+		stageRpc, ok := b.rpcs[name]
+		if !ok {
+			return errdefs.InternalWithMsg("rpc not found for %s", name)
+		}
+		b.inputBuilders[name] = NewInputBuilder().WithMessage(stageRpc.Input())
 		b.outputBuilders[name] = NewOutputBuilder()
 	}
 

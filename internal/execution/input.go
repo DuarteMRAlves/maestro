@@ -2,6 +2,8 @@ package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
+	"sync/atomic"
 )
 
 // Input joins the input connections for a given stage and provides the next
@@ -13,12 +15,18 @@ type Input interface {
 // InputBuilder registers the several connections for an input.
 type InputBuilder struct {
 	connections []*Connection
+	msg         rpc.Message
 }
 
 func NewInputBuilder() *InputBuilder {
 	return &InputBuilder{
 		connections: []*Connection{},
 	}
+}
+
+func (i *InputBuilder) WithMessage(msg rpc.Message) *InputBuilder {
+	i.msg = msg
+	return i
 }
 
 func (i *InputBuilder) WithConnection(c *Connection) error {
@@ -42,6 +50,8 @@ func (i *InputBuilder) WithConnection(c *Connection) error {
 
 func (i *InputBuilder) Build() Input {
 	switch len(i.connections) {
+	case 0:
+		return &SourceInput{id: 0, msg: i.msg}
 	case 1:
 		return &SingleInput{connection: i.connections[0]}
 	}
@@ -55,4 +65,16 @@ type SingleInput struct {
 
 func (i *SingleInput) Next() (*State, error) {
 	return i.connection.Pop(), nil
+}
+
+// SourceInput is the source of the orchestration. It defines the initial ids of
+// the states and sends empty messages of the received type.
+type SourceInput struct {
+	id  int32
+	msg rpc.Message
+}
+
+func (i *SourceInput) Next() (*State, error) {
+	id := Id(atomic.AddInt32(&(i.id), 1))
+	return NewState(id, i.msg.NewEmpty()), nil
 }
