@@ -8,6 +8,7 @@ import (
 // next stages.
 type Output interface {
 	Yield(s *State)
+	IsSink() bool
 }
 
 // OutputBuilder registers the several connections for an output.
@@ -69,6 +70,10 @@ func (o *SingleOutput) Yield(s *State) {
 	o.connection.Push(s)
 }
 
+func (o *SingleOutput) IsSink() bool {
+	return false
+}
+
 // SinkOutput defines the last output of the orchestration, where all messages
 // are dropped.
 type SinkOutput struct {
@@ -76,4 +81,8 @@ type SinkOutput struct {
 
 func (o *SinkOutput) Yield(_ *State) {
 	// Do nothing, just drop message.
+}
+
+func (o *SinkOutput) IsSink() bool {
+	return true
 }

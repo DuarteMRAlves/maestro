@@ -3,8 +3,9 @@ package execution
 import "io"
 
 type MockInput struct {
-	send []*State
-	idx  int
+	send   []*State
+	idx    int
+	source bool
 }
 
 func NewMockInput(states []*State) *MockInput {
@@ -20,8 +21,13 @@ func (i *MockInput) Next() (*State, error) {
 	return s, nil
 }
 
+func (i *MockInput) IsSource() bool {
+	return i.source
+}
+
 type MockOutput struct {
 	States []*State
+	Sink   bool
 }
 
 func NewMockOutput() *MockOutput {
@@ -30,4 +36,8 @@ func NewMockOutput() *MockOutput {
 
 func (o *MockOutput) Yield(s *State) {
 	o.States = append(o.States, s)
+}
+
+func (o *MockOutput) IsSink() bool {
+	return o.Sink
 }

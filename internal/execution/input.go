@@ -10,6 +10,7 @@ import (
 // State to be processed.
 type Input interface {
 	Next() (*State, error)
+	IsSource() bool
 }
 
 // InputBuilder registers the several connections for an input.
@@ -67,6 +68,10 @@ func (i *SingleInput) Next() (*State, error) {
 	return i.connection.Pop(), nil
 }
 
+func (i *SingleInput) IsSource() bool {
+	return false
+}
+
 // SourceInput is the source of the orchestration. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type SourceInput struct {
@@ -77,4 +82,8 @@ type SourceInput struct {
 func (i *SourceInput) Next() (*State, error) {
 	id := Id(atomic.AddInt32(&(i.id), 1))
 	return NewState(id, i.msg.NewEmpty()), nil
+}
+
+func (i *SourceInput) IsSource() bool {
+	return true
 }
