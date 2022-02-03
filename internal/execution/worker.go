@@ -78,9 +78,11 @@ func (w *UnaryWorker) Run(term <-chan struct{}) {
 	)
 
 	inChan := make(chan *State)
-	defer close(inChan)
+	// FIXME: these resources leak
+	// defer close(inChan)
 	errChan := make(chan error)
-	defer close(errChan)
+	// FIXME: these resources leak
+	// defer close(errChan)
 
 	inputHandler := func() {
 		for {
