@@ -1,20 +1,19 @@
 package execution
 
-import "io"
-
 type MockInput struct {
 	send   []*State
 	idx    int
 	source bool
+	termFn func() (*State, error)
 }
 
-func NewMockInput(states []*State) *MockInput {
-	return &MockInput{send: states, idx: 0}
+func NewMockInput(states []*State, termFn func() (*State, error)) *MockInput {
+	return &MockInput{send: states, idx: 0, termFn: termFn}
 }
 
 func (i *MockInput) Next() (*State, error) {
 	if len(i.send) == i.idx {
-		return nil, io.EOF
+		return i.termFn()
 	}
 	s := i.send[i.idx]
 	i.idx += 1
