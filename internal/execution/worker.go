@@ -96,7 +96,7 @@ func (w *UnaryWorker) Run(term <-chan struct{}) {
 			}
 
 			out = NewState(in.Id(), rep)
-			w.output.Yield(out)
+			w.output.Chan() <- out
 		case <-term:
 			w.done <- true
 			return
