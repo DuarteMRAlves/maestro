@@ -7,7 +7,6 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 	"gotest.tools/v3/assert"
-	"io"
 	"reflect"
 	"testing"
 )
@@ -51,13 +50,11 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 			},
 		},
 	}
-	states := []*State{NewState(1, msgs[0]), NewState(3, msgs[1])}
-	input := NewMockInput(
-		states,
-		func() (*State, error) {
-			return nil, io.EOF
-		},
-	)
+	states := []*State{
+		NewState(1, msgs[0]),
+		NewState(3, msgs[1]),
+	}
+	input := NewMockInput(append(states, NewEOFState(4)), func() {})
 	output := NewMockOutput()
 	done := make(chan bool)
 
@@ -77,6 +74,7 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	go w.Run(term)
 
 	<-done
+	input.Close()
 
 	assert.Equal(
 		t,
@@ -144,15 +142,11 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 
 	inputSync := make(chan bool)
 	defer close(inputSync)
-	inputTerm := make(chan bool)
-	defer close(inputTerm)
 
 	input := NewMockInput(
 		states,
-		func() (*State, error) {
+		func() {
 			inputSync <- true
-			<-inputTerm
-			return nil, io.EOF
 		},
 	)
 	output := NewMockOutput()
@@ -179,6 +173,8 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 	term <- struct{}{}
 
 	<-done
+	// Release input
+	input.Close()
 
 	assert.Equal(
 		t,
@@ -201,9 +197,6 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 
 		util.AssertUnaryRequest(t, req, rep)
 	}
-
-	// Release input
-	inputTerm <- true
 }
 
 func requestMessage(t *testing.T) rpc.Message {

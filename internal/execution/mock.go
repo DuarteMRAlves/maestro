@@ -4,20 +4,39 @@ type MockInput struct {
 	send   []*State
 	idx    int
 	source bool
-	termFn func() (*State, error)
+	termFn func()
+
+	ch  chan *State
+	end chan struct{}
 }
 
-func NewMockInput(states []*State, termFn func() (*State, error)) *MockInput {
-	return &MockInput{send: states, idx: 0, termFn: termFn}
+func NewMockInput(states []*State, termFn func()) *MockInput {
+	ch := make(chan *State)
+	end := make(chan struct{})
+
+	i := &MockInput{send: states, idx: 0, termFn: termFn, ch: ch, end: end}
+	go func() {
+		defer close(i.ch)
+		defer close(i.end)
+		for {
+			if len(i.send) == i.idx {
+				termFn()
+				<-i.end
+				return
+			}
+			i.ch <- i.send[i.idx]
+			i.idx += 1
+		}
+	}()
+	return i
 }
 
-func (i *MockInput) Next() (*State, error) {
-	if len(i.send) == i.idx {
-		return i.termFn()
-	}
-	s := i.send[i.idx]
-	i.idx += 1
-	return s, nil
+func (i *MockInput) Chan() <-chan *State {
+	return i.ch
+}
+
+func (i *MockInput) Close() {
+	i.end <- struct{}{}
 }
 
 func (i *MockInput) IsSource() bool {
