@@ -44,16 +44,42 @@ func (i *MockInput) IsSource() bool {
 }
 
 type MockOutput struct {
-	States []*State
+	States chan *State
 	Sink   bool
+
+	ch  chan *State
+	end chan struct{}
 }
 
-func NewMockOutput() *MockOutput {
-	return &MockOutput{States: make([]*State, 0)}
+func NewMockOutput(expected int) *MockOutput {
+	ch := make(chan *State)
+	end := make(chan struct{})
+
+	o := &MockOutput{States: make(chan *State, expected), ch: ch, end: end}
+
+	go func() {
+		defer close(o.ch)
+		defer close(o.end)
+		defer close(o.States)
+		for {
+			select {
+			case s := <-o.ch:
+				o.States <- s
+			case <-o.end:
+				return
+			}
+		}
+	}()
+
+	return o
 }
 
-func (o *MockOutput) Yield(s *State) {
-	o.States = append(o.States, s)
+func (o *MockOutput) Chan() chan<- *State {
+	return o.ch
+}
+
+func (o *MockOutput) Close() {
+	o.end <- struct{}{}
 }
 
 func (o *MockOutput) IsSink() bool {

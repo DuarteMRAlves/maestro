@@ -17,45 +17,15 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	server := util.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
-	rpc := &rpc.MockRPC{
-		Name_: "Unary",
-		FQN:   "pb.TestService/Unary",
-		In:    requestMessage(t),
-		Out:   replyMessage(t),
-		Unary: true,
-	}
-	msgs := []*pb.Request{
-		{
-			StringField:   "string-1",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "1"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-		{
-			StringField:   "string-2",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "2"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-	}
+	rpc := testRpc(t)
+	msgs := testRequests()
+
 	states := []*State{
 		NewState(1, msgs[0]),
 		NewState(3, msgs[1]),
 	}
 	input := NewMockInput(append(states, NewEOFState(4)), func() {})
-	output := NewMockOutput()
+	output := NewMockOutput(len(states))
 	done := make(chan bool)
 
 	cfg := &WorkerCfg{
@@ -75,15 +45,13 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 
 	<-done
 	input.Close()
+	output.Close()
 
-	assert.Equal(
-		t,
-		len(states),
-		len(output.States),
-		"correct number of replies",
-	)
+	rcvStates := collectState(output)
+
+	assert.Equal(t, len(states), len(rcvStates), "correct number of replies")
 	for i, in := range states {
-		out := output.States[i]
+		out := rcvStates[i]
 		assert.Equal(t, in.Id(), out.Id(), "correct received id")
 
 		req, ok := in.Msg().(*pb.Request)
@@ -105,39 +73,8 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 	server := util.StartTestServer(t, lis, true, true)
 	defer server.Stop()
 
-	rpc := &rpc.MockRPC{
-		Name_: "Unary",
-		FQN:   "pb.TestService/Unary",
-		In:    requestMessage(t),
-		Out:   replyMessage(t),
-		Unary: true,
-	}
-	msgs := []*pb.Request{
-		{
-			StringField:   "string-1",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "1"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-		{
-			StringField:   "string-2",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "2"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-	}
+	rpc := testRpc(t)
+	msgs := testRequests()
 	states := []*State{NewState(1, msgs[0]), NewState(3, msgs[1])}
 
 	inputSync := make(chan bool)
@@ -149,7 +86,7 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 			inputSync <- true
 		},
 	)
-	output := NewMockOutput()
+	output := NewMockOutput(len(states))
 	done := make(chan bool)
 	defer close(done)
 
@@ -175,15 +112,13 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 	<-done
 	// Release input
 	input.Close()
+	output.Close()
 
-	assert.Equal(
-		t,
-		len(states),
-		len(output.States),
-		"correct number of replies",
-	)
+	rcvStates := collectState(output)
+
+	assert.Equal(t, len(states), len(rcvStates), "correct number of replies")
 	for i, in := range states {
-		out := output.States[i]
+		out := rcvStates[i]
 		assert.Equal(t, in.Id(), out.Id(), "correct received id")
 
 		req, ok := in.Msg().(*pb.Request)
@@ -196,6 +131,58 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 		assert.NilError(t, err, "convert dynamic to Reply")
 
 		util.AssertUnaryRequest(t, req, rep)
+	}
+}
+
+func collectState(output *MockOutput) []*State {
+	rcvStates := make([]*State, 0)
+	collect := make(chan struct{})
+	go func() {
+		for s := range output.States {
+			rcvStates = append(rcvStates, s)
+		}
+		collect <- struct{}{}
+	}()
+	<-collect
+	return rcvStates
+}
+
+func testRpc(t *testing.T) *rpc.MockRPC {
+	return &rpc.MockRPC{
+		Name_: "Unary",
+		FQN:   "pb.TestService/Unary",
+		In:    requestMessage(t),
+		Out:   replyMessage(t),
+		Unary: true,
+	}
+}
+
+func testRequests() []*pb.Request {
+	return []*pb.Request{
+		{
+			StringField:   "string-1",
+			RepeatedField: []int64{1, 2, 3, 4},
+			RepeatedInnerMsg: []*pb.InnerMessage{
+				{
+					RepeatedString: []string{"hello", "world", "1"},
+				},
+				{
+					RepeatedString: []string{"other", "message", "2"},
+				},
+			},
+		},
+		{
+			StringField:   "string-2",
+			RepeatedField: []int64{1, 2, 3, 4},
+			RepeatedInnerMsg: []*pb.InnerMessage{
+				{
+					RepeatedString: []string{"hello", "world", "2"},
+				},
+				{
+					RepeatedString: []string{"other", "message", "2"},
+				},
+			},
+		},
 	}
 }
 
