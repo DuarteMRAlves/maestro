@@ -10,7 +10,7 @@ import (
 )
 
 type Worker interface {
-	Run()
+	Run(<-chan struct{})
 }
 
 type WorkerCfg struct {
@@ -70,34 +70,60 @@ type UnaryWorker struct {
 	done chan<- bool
 }
 
-func (w *UnaryWorker) Run() {
+func (w *UnaryWorker) Run(term <-chan struct{}) {
 	var (
 		in, out  *State
 		req, rep interface{}
 		err      error
 	)
 
+	inChan := make(chan *State)
+	// FIXME: these resources leak
+	// defer close(inChan)
+	errChan := make(chan error)
+	// FIXME: these resources leak
+	// defer close(errChan)
+
+	inputHandler := func() {
+		for {
+			in, err := w.input.Next()
+			if err != nil {
+				errChan <- err
+				if err == io.EOF {
+					break
+				}
+			} else {
+				inChan <- in
+			}
+		}
+	}
+
+	go inputHandler()
+
 	for {
-		in, err = w.input.Next()
-		if err != nil {
+		select {
+		case in = <-inChan:
+			req = in.Msg()
+			rep = w.rpc.Output().NewEmpty()
+
+			err = w.invoke(req, rep)
+			if err != nil {
+				panic(err)
+			}
+
+			out = NewState(in.Id(), rep)
+			w.output.Yield(out)
+		case err = <-errChan:
 			if err == io.EOF {
-				break
+				w.done <- true
+				return
 			}
 			panic(err)
+		case <-term:
+			w.done <- true
+			return
 		}
-
-		req = in.Msg()
-		rep = w.rpc.Output().NewEmpty()
-
-		err = w.invoke(req, rep)
-		if err != nil {
-			panic(err)
-		}
-
-		out = NewState(in.Id(), rep)
-		w.output.Yield(out)
 	}
-	w.done <- true
 }
 
 func (w *UnaryWorker) invoke(req interface{}, rep interface{}) error {
