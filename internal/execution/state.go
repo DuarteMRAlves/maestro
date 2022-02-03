@@ -1,5 +1,7 @@
 package execution
 
+import "io"
+
 // State defines a structure to manage the flow of a computation. This State is
 // created in a source stage with a unique id, that is transferred through the
 // orchestration, identifying the flow so that messages in parallel branches can
@@ -7,6 +9,7 @@ package execution
 type State struct {
 	id  Id
 	msg interface{}
+	err error
 }
 
 // Id is a unique id that identifies a computation flow.
@@ -19,14 +22,26 @@ func NewState(id Id, msg interface{}) *State {
 	}
 }
 
-func (f *State) Id() Id {
-	return f.id
+func NewEOFState(id Id) *State {
+	return &State{
+		id:  id,
+		msg: nil,
+		err: io.EOF,
+	}
 }
 
-func (f *State) Msg() interface{} {
-	return f.msg
+func (s *State) Id() Id {
+	return s.id
 }
 
-func (f *State) Update(msg interface{}) {
-	f.msg = msg
+func (s *State) Msg() interface{} {
+	return s.msg
+}
+
+func (s *State) Err() error {
+	return s.err
+}
+
+func (s *State) Update(msg interface{}) {
+	s.msg = msg
 }

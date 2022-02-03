@@ -77,32 +77,16 @@ func (w *UnaryWorker) Run(term <-chan struct{}) {
 		err      error
 	)
 
-	inChan := make(chan *State)
-	// FIXME: these resources leak
-	// defer close(inChan)
-	errChan := make(chan error)
-	// FIXME: these resources leak
-	// defer close(errChan)
-
-	inputHandler := func() {
-		for {
-			in, err := w.input.Next()
-			if err != nil {
-				errChan <- err
-				if err == io.EOF {
-					break
-				}
-			} else {
-				inChan <- in
-			}
-		}
-	}
-
-	go inputHandler()
-
 	for {
 		select {
-		case in = <-inChan:
+		case in = <-w.input.Chan():
+			if in.Err() == io.EOF {
+				w.done <- true
+				return
+			}
+			if in.Err() != nil {
+				panic(in.Err())
+			}
 			req = in.Msg()
 			rep = w.rpc.Output().NewEmpty()
 
@@ -113,12 +97,6 @@ func (w *UnaryWorker) Run(term <-chan struct{}) {
 
 			out = NewState(in.Id(), rep)
 			w.output.Yield(out)
-		case err = <-errChan:
-			if err == io.EOF {
-				w.done <- true
-				return
-			}
-			panic(err)
 		case <-term:
 			w.done <- true
 			return

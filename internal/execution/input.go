@@ -3,23 +3,52 @@ package execution
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"sync/atomic"
 )
 
 // Input joins the input connections for a given stage and provides the next
 // State to be processed.
 type Input interface {
-	Next() (*State, error)
+	Chan() <-chan *State
+	Close()
 	IsSource() bool
 }
 
 // SingleInput is a struct the implements the Input for a single input.
 type SingleInput struct {
 	connection *Connection
+	ch         chan *State
+	end        chan struct{}
 }
 
-func (i *SingleInput) Next() (*State, error) {
-	return i.connection.Pop(), nil
+func NewSingleInput(conn *Connection) *SingleInput {
+	ch := make(chan *State)
+	end := make(chan struct{})
+
+	i := &SingleInput{
+		connection: conn,
+		ch:         ch,
+		end:        end,
+	}
+	go func() {
+		defer close(i.ch)
+		defer close(i.end)
+		for {
+			select {
+			case i.ch <- conn.Pop():
+			case <-i.end:
+				return
+			}
+		}
+	}()
+	return i
+}
+
+func (i *SingleInput) Chan() <-chan *State {
+	return i.ch
+}
+
+func (i *SingleInput) Close() {
+	i.end <- struct{}{}
 }
 
 func (i *SingleInput) IsSource() bool {
@@ -31,11 +60,44 @@ func (i *SingleInput) IsSource() bool {
 type SourceInput struct {
 	id  int32
 	msg rpc.Message
+	ch  chan *State
+	end chan struct{}
 }
 
-func (i *SourceInput) Next() (*State, error) {
-	id := Id(atomic.AddInt32(&(i.id), 1))
-	return NewState(id, i.msg.NewEmpty()), nil
+func NewSourceOutput(initial int32, msg rpc.Message) *SourceInput {
+	ch := make(chan *State)
+
+	i := &SourceInput{
+		id:  initial,
+		msg: msg,
+		ch:  ch,
+	}
+	go func() {
+		defer close(i.ch)
+		defer close(i.end)
+		for {
+			select {
+			case i.ch <- i.next():
+			case <-i.end:
+				return
+			}
+		}
+	}()
+	return i
+}
+
+func (i *SourceInput) next() *State {
+	s := NewState(Id(i.id), i.msg.NewEmpty())
+	i.id++
+	return s
+}
+
+func (i *SourceInput) Chan() <-chan *State {
+	return i.ch
+}
+
+func (i *SourceInput) Close() {
+	i.end <- struct{}{}
 }
 
 func (i *SourceInput) IsSource() bool {
@@ -86,9 +148,9 @@ func (i *InputBuilder) Build() (Input, error) {
 				"message required without 0 connections",
 			)
 		}
-		return &SourceInput{id: 0, msg: i.msg}, nil
+		return NewSourceOutput(1, i.msg), nil
 	case 1:
-		return &SingleInput{connection: i.connections[0]}, nil
+		return NewSingleInput(i.connections[0]), nil
 	default:
 		return nil, errdefs.FailedPreconditionWithMsg(
 			"too many connections: expected 0 or 1 but received %d",

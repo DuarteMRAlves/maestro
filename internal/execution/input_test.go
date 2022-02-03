@@ -32,7 +32,7 @@ func TestSourceInput_Next(t *testing.T) {
 	assert.Assert(t, ok, "source input cast")
 
 	for i := 1; i < 10; i++ {
-		state, err = sourceInput.Next()
+		state = <-sourceInput.Chan()
 		assert.NilError(t, err, "next at iter %d", i)
 		assert.Equal(t, Id(i), state.Id(), "id at iter %d", i)
 		opt := cmpopts.IgnoreUnexported(dynamic.Message{})
