@@ -10,7 +10,73 @@ import (
 )
 
 type Worker interface {
-	Run(<-chan struct{})
+	Run(*RunCfg)
+}
+
+// RunCfg specifies the configuration that the Worker should use when running.
+type RunCfg struct {
+	// term is a channel that will be signaled if the Worker should stop.
+	term <-chan struct{}
+	// errs is a channel that the worker should use to send errors in order to
+	// be processed.
+	// The io.EOF error should not be sent through this channel at is just a
+	// termination signal
+	errs chan<- error
+}
+
+// UnaryWorker manages the execution of a stage in a pipeline
+type UnaryWorker struct {
+	Address string
+	conn    grpc.ClientConnInterface
+	rpc     rpc.RPC
+	invoker rpc.UnaryClient
+
+	input  Input
+	output Output
+
+	done chan<- bool
+}
+
+func (w *UnaryWorker) Run(cfg *RunCfg) {
+	var (
+		in, out  *State
+		req, rep interface{}
+		err      error
+	)
+
+	for {
+		select {
+		case in = <-w.input.Chan():
+			if in.Err() == io.EOF {
+				w.done <- true
+				return
+			}
+			if in.Err() != nil {
+				cfg.errs <- in.Err()
+				continue
+			}
+			req = in.Msg()
+			rep = w.rpc.Output().NewEmpty()
+
+			err = w.invoke(req, rep)
+			if err != nil {
+				cfg.errs <- err
+				continue
+			}
+
+			out = NewState(in.Id(), rep)
+			w.output.Chan() <- out
+		case <-cfg.term:
+			w.done <- true
+			return
+		}
+	}
+}
+
+func (w *UnaryWorker) invoke(req interface{}, rep interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	return w.invoker.Invoke(ctx, req, rep)
 }
 
 type WorkerCfg struct {
@@ -55,57 +121,4 @@ func NewWorker(cfg *WorkerCfg) (Worker, error) {
 	default:
 		return nil, errdefs.InvalidArgumentWithMsg("unsupported rpc type")
 	}
-}
-
-// UnaryWorker manages the execution of a stage in a pipeline
-type UnaryWorker struct {
-	Address string
-	conn    grpc.ClientConnInterface
-	rpc     rpc.RPC
-	invoker rpc.UnaryClient
-
-	input  Input
-	output Output
-
-	done chan<- bool
-}
-
-func (w *UnaryWorker) Run(term <-chan struct{}) {
-	var (
-		in, out  *State
-		req, rep interface{}
-		err      error
-	)
-
-	for {
-		select {
-		case in = <-w.input.Chan():
-			if in.Err() == io.EOF {
-				w.done <- true
-				return
-			}
-			if in.Err() != nil {
-				panic(in.Err())
-			}
-			req = in.Msg()
-			rep = w.rpc.Output().NewEmpty()
-
-			err = w.invoke(req, rep)
-			if err != nil {
-				panic(err)
-			}
-
-			out = NewState(in.Id(), rep)
-			w.output.Chan() <- out
-		case <-term:
-			w.done <- true
-			return
-		}
-	}
-}
-
-func (w *UnaryWorker) invoke(req interface{}, rep interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	return w.invoker.Invoke(ctx, req, rep)
 }

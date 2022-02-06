@@ -40,8 +40,14 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	assert.NilError(t, err, "create worker error")
 
 	term := make(chan struct{})
+	errs := make(chan error)
+	runCfg := &RunCfg{
+		term: term,
+		errs: errs,
+	}
 	defer close(term)
-	go w.Run(term)
+	defer close(errs)
+	go w.Run(runCfg)
 
 	<-done
 	input.Close()
@@ -65,6 +71,7 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 
 		util.AssertUnaryRequest(t, req, rep)
 	}
+	assert.Equal(t, 0, len(errs), "No errors")
 }
 
 func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
@@ -101,13 +108,18 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 	w, err := NewWorker(cfg)
 	assert.NilError(t, err, "create worker error")
 	term := make(chan struct{})
-	defer close(term)
-	go w.Run(term)
+	errs := make(chan error)
+	runCfg := &RunCfg{
+		term: term,
+		errs: errs,
+	}
+	defer close(errs)
+	go w.Run(runCfg)
 
 	// Wait for last input to be sent. Now the input function will block.
 	<-inputSync
 
-	term <- struct{}{}
+	close(term)
 
 	<-done
 	// Release input
@@ -132,6 +144,7 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 
 		util.AssertUnaryRequest(t, req, rep)
 	}
+	assert.Equal(t, 0, len(errs), "No errors")
 }
 
 func collectState(output *MockOutput) []*State {
