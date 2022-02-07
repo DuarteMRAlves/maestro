@@ -24,8 +24,6 @@ func TestExecution_LinearPipeline(t *testing.T) {
 		err error
 	)
 
-	expected := []*pb.LinearMessage{{Value: 2}, {Value: 4}, {Value: 6}}
-
 	sourceLis := util.NewTestListener(t)
 	sourceAddr := sourceLis.Addr().String()
 	sourceServer := startLinearSource(t, sourceLis)
@@ -65,8 +63,11 @@ func TestExecution_LinearPipeline(t *testing.T) {
 	e.Start()
 	<-done
 	e.Stop()
-	for i, e := range expected {
-		assert.Equal(t, e.Value, collect[i].Value)
+	var prev int64 = 0
+	for _, msg := range collect {
+		assert.Assert(t, msg.Value >= prev)
+		assert.Assert(t, msg.Value%2 == 0)
+		prev = msg.Value
 	}
 }
 
