@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/jhump/protoreflect/desc"
 )
@@ -9,6 +10,9 @@ import (
 type RPC interface {
 	Name() string
 	FullyQualifiedName() string
+	// InvokePath returns the path that should be used to invoke this rpc in a
+	// remote server.
+	InvokePath() string
 	Service() Service
 	Input() Message
 	Output() Message
@@ -33,6 +37,10 @@ func (r *rpc) Name() string {
 
 func (r *rpc) FullyQualifiedName() string {
 	return r.desc.GetFullyQualifiedName()
+}
+
+func (r *rpc) InvokePath() string {
+	return fmt.Sprintf("/%s/%s", r.Service().FullyQualifiedName(), r.Name())
 }
 
 func (r *rpc) Service() Service {

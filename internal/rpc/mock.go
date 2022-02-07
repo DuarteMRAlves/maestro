@@ -48,6 +48,7 @@ func (s *MockService) RPCs() []RPC {
 type MockRPC struct {
 	Name_    string
 	FQN      string
+	Invoke   string
 	Service_ Service
 	In       Message
 	Out      Message
@@ -60,6 +61,10 @@ func (r *MockRPC) Name() string {
 
 func (r *MockRPC) FullyQualifiedName() string {
 	return r.FQN
+}
+
+func (r *MockRPC) InvokePath() string {
+	return r.Invoke
 }
 
 func (r *MockRPC) Service() Service {

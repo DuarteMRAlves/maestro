@@ -17,6 +17,8 @@ type Worker interface {
 type RunCfg struct {
 	// term is a channel that will be signaled if the Worker should stop.
 	term <-chan struct{}
+	// done is a channel that the Worker should close to signal is has finished.
+	done chan<- struct{}
 	// errs is a channel that the worker should use to send errors in order to
 	// be processed.
 	// The io.EOF error should not be sent through this channel at is just a
@@ -48,7 +50,7 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 		select {
 		case in = <-w.input.Chan():
 			if in.Err() == io.EOF {
-				w.done <- true
+				close(cfg.done)
 				return
 			}
 			if in.Err() != nil {
@@ -67,7 +69,7 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 			out = NewState(in.Id(), rep)
 			w.output.Chan() <- out
 		case <-cfg.term:
-			w.done <- true
+			close(cfg.done)
 			return
 		}
 	}
@@ -84,7 +86,6 @@ type WorkerCfg struct {
 	Rpc     rpc.RPC
 	Input   Input
 	Output  Output
-	Done    chan<- bool
 }
 
 func (c *WorkerCfg) Clone() *WorkerCfg {
@@ -93,7 +94,6 @@ func (c *WorkerCfg) Clone() *WorkerCfg {
 		Rpc:     c.Rpc,
 		Input:   c.Input,
 		Output:  c.Output,
-		Done:    c.Done,
 	}
 }
 
@@ -112,10 +112,9 @@ func NewWorker(cfg *WorkerCfg) (Worker, error) {
 			Address: cfg.Address,
 			conn:    conn,
 			rpc:     cfg.Rpc,
-			invoker: rpc.NewUnary(cfg.Rpc.FullyQualifiedName(), conn),
+			invoker: rpc.NewUnary(cfg.Rpc.InvokePath(), conn),
 			input:   cfg.Input,
 			output:  cfg.Output,
-			done:    cfg.Done,
 		}
 		return w, nil
 	default:

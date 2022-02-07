@@ -26,14 +26,12 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	}
 	input := NewMockInput(append(states, NewEOFState(4)), func() {})
 	output := NewMockOutput(len(states))
-	done := make(chan bool)
 
 	cfg := &WorkerCfg{
 		Address: addr,
 		Rpc:     rpc,
 		Input:   input,
 		Output:  output,
-		Done:    done,
 	}
 
 	w, err := NewWorker(cfg)
@@ -41,9 +39,11 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 
 	term := make(chan struct{})
 	errs := make(chan error)
+	done := make(chan struct{})
 	runCfg := &RunCfg{
 		term: term,
 		errs: errs,
+		done: done,
 	}
 	defer close(term)
 	defer close(errs)
@@ -94,24 +94,23 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 		},
 	)
 	output := NewMockOutput(len(states))
-	done := make(chan bool)
-	defer close(done)
 
 	cfg := &WorkerCfg{
 		Address: addr,
 		Rpc:     rpc,
 		Input:   input,
 		Output:  output,
-		Done:    done,
 	}
 
 	w, err := NewWorker(cfg)
 	assert.NilError(t, err, "create worker error")
 	term := make(chan struct{})
 	errs := make(chan error)
+	done := make(chan struct{})
 	runCfg := &RunCfg{
 		term: term,
 		errs: errs,
+		done: done,
 	}
 	defer close(errs)
 	go w.Run(runCfg)
@@ -162,11 +161,12 @@ func collectState(output *MockOutput) []*State {
 
 func testRpc(t *testing.T) *rpc.MockRPC {
 	return &rpc.MockRPC{
-		Name_: "Unary",
-		FQN:   "pb.TestService/Unary",
-		In:    requestMessage(t),
-		Out:   replyMessage(t),
-		Unary: true,
+		Name_:  "Unary",
+		FQN:    "pb.TestService/Unary",
+		Invoke: "pb.TestService/Unary",
+		In:     requestMessage(t),
+		Out:    replyMessage(t),
+		Unary:  true,
 	}
 }
 
