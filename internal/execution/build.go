@@ -272,7 +272,6 @@ func (b *Builder) buildWorkers() error {
 			Rpc:     stageRpc,
 			Input:   input,
 			Output:  output,
-			Done:    make(chan bool),
 		}
 
 		if cfg.Input.IsSource() {

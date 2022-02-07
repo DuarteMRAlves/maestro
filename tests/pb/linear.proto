@@ -3,24 +3,22 @@ syntax = "proto3";
 
 option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
 
+import "google/protobuf/empty.proto";
+
 package pb;
 
-service Linear1 {
-  rpc Process(LinearInitial) returns (LinearIntermediate);
+service LinearSource {
+  rpc Process(google.protobuf.Empty) returns (LinearMessage);
 }
 
-service Linear2 {
-  rpc Process(LinearIntermediate) returns (LinearFinal);
+service LinearTransform {
+  rpc Process(LinearMessage) returns (LinearMessage);
 }
 
-message LinearInitial {
-  int64 value = 1;
+service LinearSink {
+  rpc Process(LinearMessage) returns (google.protobuf.Empty);
 }
 
-message LinearIntermediate {
-  int64 value = 1;
-}
-
-message LinearFinal {
+message LinearMessage {
   int64 value = 1;
 }
