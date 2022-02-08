@@ -33,8 +33,8 @@ type UnaryStage struct {
 	rpc     rpc.RPC
 	invoker rpc.UnaryClient
 
-	input  Input
-	output Output
+	input  <-chan *State
+	output chan<- *State
 }
 
 func (s *UnaryStage) Run(cfg *RunCfg) {
@@ -46,7 +46,7 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 
 	for {
 		select {
-		case in = <-s.input.Chan():
+		case in = <-s.input:
 		case <-cfg.term:
 			close(cfg.done)
 			return
@@ -71,7 +71,7 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 		out = NewState(in.Id(), rep)
 
 		select {
-		case s.output.Chan() <- out:
+		case s.output <- out:
 		case <-cfg.term:
 			close(cfg.done)
 			return
@@ -88,8 +88,8 @@ func (s *UnaryStage) invoke(req interface{}, rep interface{}) error {
 type StageCfg struct {
 	Address string
 	Rpc     rpc.RPC
-	Input   Input
-	Output  Output
+	Input   <-chan *State
+	Output  chan<- *State
 }
 
 func (c *StageCfg) Clone() *StageCfg {
