@@ -35,8 +35,6 @@ type UnaryWorker struct {
 
 	input  Input
 	output Output
-
-	done chan<- bool
 }
 
 func (w *UnaryWorker) Run(cfg *RunCfg) {
@@ -49,25 +47,31 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 	for {
 		select {
 		case in = <-w.input.Chan():
-			if in.Err() == io.EOF {
-				close(cfg.done)
-				return
-			}
-			if in.Err() != nil {
-				cfg.errs <- in.Err()
-				continue
-			}
-			req = in.Msg()
-			rep = w.rpc.Output().NewEmpty()
+		case <-cfg.term:
+			close(cfg.done)
+			return
+		}
+		if in.Err() == io.EOF {
+			close(cfg.done)
+			return
+		}
+		if in.Err() != nil {
+			cfg.errs <- in.Err()
+			continue
+		}
+		req = in.Msg()
+		rep = w.rpc.Output().NewEmpty()
 
-			err = w.invoke(req, rep)
-			if err != nil {
-				cfg.errs <- err
-				continue
-			}
+		err = w.invoke(req, rep)
+		if err != nil {
+			cfg.errs <- err
+			continue
+		}
 
-			out = NewState(in.Id(), rep)
-			w.output.Chan() <- out
+		out = NewState(in.Id(), rep)
+
+		select {
+		case w.output.Chan() <- out:
 		case <-cfg.term:
 			close(cfg.done)
 			return

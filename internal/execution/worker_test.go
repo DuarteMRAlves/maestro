@@ -127,15 +127,17 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 
 	rcvStates := collectState(output)
 
-	assert.Equal(t, len(states), len(rcvStates), "correct number of replies")
-	for i, in := range states {
-		out := rcvStates[i]
-		assert.Equal(t, in.Id(), out.Id(), "correct received id")
+	// May not receive all inputs if the context closes to fast when the input
+	// closes.
+	assert.Assert(t, len(rcvStates) <= len(states))
+	for i, rcv := range rcvStates {
+		exp := states[i]
+		assert.Equal(t, exp.Id(), rcv.Id(), "correct received id")
 
-		req, ok := in.Msg().(*pb.Request)
+		req, ok := exp.Msg().(*pb.Request)
 		assert.Assert(t, ok, "request type assertion")
 
-		dynRep, ok := out.Msg().(*dynamic.Message)
+		dynRep, ok := rcv.Msg().(*dynamic.Message)
 		assert.Assert(t, ok, "reply type assertion")
 		rep := &pb.Reply{}
 		err = dynRep.ConvertTo(rep)
