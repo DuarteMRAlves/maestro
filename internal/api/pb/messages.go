@@ -30,6 +30,7 @@ func UnmarshalCreateStageRequest(
 	req.Address = pbReq.Address
 	req.Host = pbReq.Host
 	req.Port = pbReq.Port
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
 	req.Asset = api.AssetName(pbReq.Asset)
 }
 
@@ -42,6 +43,7 @@ func UnmarshalGetStageRequest(
 	req.Service = pbReq.Service
 	req.Rpc = pbReq.Rpc
 	req.Address = pbReq.Address
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
 	req.Asset = api.AssetName(pbReq.Asset)
 }
 
@@ -54,6 +56,7 @@ func UnmarshalCreateLinkRequest(
 	req.SourceField = pbReq.SourceField
 	req.TargetStage = api.StageName(pbReq.TargetStage)
 	req.TargetField = pbReq.TargetField
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
 }
 
 func UnmarshalGetLinkRequest(
@@ -65,6 +68,7 @@ func UnmarshalGetLinkRequest(
 	req.SourceField = pbReq.SourceField
 	req.TargetStage = api.StageName(pbReq.TargetStage)
 	req.TargetField = pbReq.TargetField
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
 }
 
 func UnmarshalCreateAssetRequest(
