@@ -15,41 +15,19 @@ type Input interface {
 
 // SingleInput is a struct the implements the Input for a single input.
 type SingleInput struct {
-	connection *Connection
-	ch         chan *State
-	end        chan struct{}
+	conn *Connection
 }
 
 func NewSingleInput(conn *Connection) *SingleInput {
-	ch := make(chan *State)
-	end := make(chan struct{})
-
-	i := &SingleInput{
-		connection: conn,
-		ch:         ch,
-		end:        end,
-	}
-	go func() {
-		defer close(i.ch)
-		defer close(i.end)
-		for {
-			select {
-			case i.ch <- conn.Pop():
-			case <-i.end:
-				return
-			}
-		}
-	}()
+	i := &SingleInput{conn: conn}
 	return i
 }
 
 func (i *SingleInput) Chan() <-chan *State {
-	return i.ch
+	return i.conn.Chan()
 }
 
-func (i *SingleInput) Close() {
-	i.end <- struct{}{}
-}
+func (i *SingleInput) Close() {}
 
 func (i *SingleInput) IsSource() bool {
 	return false

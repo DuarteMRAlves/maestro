@@ -16,40 +16,20 @@ type Output interface {
 // connection.
 type SingleOutput struct {
 	connection *Connection
-	ch         chan *State
-	end        chan struct{}
 }
 
 func NewSingleOutput(conn *Connection) *SingleOutput {
-	ch := make(chan *State)
-	end := make(chan struct{})
-
 	o := &SingleOutput{
 		connection: conn,
-		ch:         ch,
-		end:        end,
 	}
-	go func() {
-		defer close(o.ch)
-		defer close(o.end)
-		for {
-			select {
-			case s := <-o.ch:
-				o.connection.Push(s)
-			case <-o.end:
-				return
-			}
-		}
-	}()
 	return o
 }
 
 func (o *SingleOutput) Chan() chan<- *State {
-	return o.ch
+	return o.connection.Chan()
 }
 
 func (o *SingleOutput) Close() {
-	o.end <- struct{}{}
 }
 
 func (o *SingleOutput) IsSink() bool {
