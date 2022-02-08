@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestUnaryWorker_RunAndEOF(t *testing.T) {
+func TestUnaryStage_RunAndEOF(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	server := util.StartTestServer(t, lis, true, true)
@@ -27,15 +27,15 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	input := NewMockInput(append(states, NewEOFState(4)), func() {})
 	output := NewMockOutput(len(states))
 
-	cfg := &WorkerCfg{
+	cfg := &StageCfg{
 		Address: addr,
 		Rpc:     rpc,
 		Input:   input,
 		Output:  output,
 	}
 
-	w, err := NewWorker(cfg)
-	assert.NilError(t, err, "create worker error")
+	s, err := NewStage(cfg)
+	assert.NilError(t, err, "create stage error")
 
 	term := make(chan struct{})
 	errs := make(chan error)
@@ -47,7 +47,7 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	}
 	defer close(term)
 	defer close(errs)
-	go w.Run(runCfg)
+	go s.Run(runCfg)
 
 	<-done
 	input.Close()
@@ -74,7 +74,7 @@ func TestUnaryWorker_RunAndEOF(t *testing.T) {
 	assert.Equal(t, 0, len(errs), "No errors")
 }
 
-func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
+func TestUnaryStage_RunAndCtxDone(t *testing.T) {
 	lis := util.NewTestListener(t)
 	addr := lis.Addr().String()
 	server := util.StartTestServer(t, lis, true, true)
@@ -95,15 +95,15 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 	)
 	output := NewMockOutput(len(states))
 
-	cfg := &WorkerCfg{
+	cfg := &StageCfg{
 		Address: addr,
 		Rpc:     rpc,
 		Input:   input,
 		Output:  output,
 	}
 
-	w, err := NewWorker(cfg)
-	assert.NilError(t, err, "create worker error")
+	s, err := NewStage(cfg)
+	assert.NilError(t, err, "create stage error")
 	term := make(chan struct{})
 	errs := make(chan error)
 	done := make(chan struct{})
@@ -113,7 +113,7 @@ func TestUnaryWorker_RunAndCtxDone(t *testing.T) {
 		done: done,
 	}
 	defer close(errs)
-	go w.Run(runCfg)
+	go s.Run(runCfg)
 
 	// Wait for last input to be sent. Now the input function will block.
 	<-inputSync

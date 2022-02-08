@@ -14,7 +14,7 @@ import (
 // Builder constructs an execution from an orchestration.
 type Builder struct {
 	orchestration *api.Orchestration
-	workers       map[api.StageName]Worker
+	workers       map[api.StageName]Stage
 
 	orchestrationName api.OrchestrationName
 	stages            map[api.StageName]*api.Stage
@@ -197,7 +197,7 @@ func (b *Builder) loadInputsAndOutputs() error {
 			)
 		}
 
-		conn := NewConnection(l)
+		conn := NewLink(l)
 
 		err := b.inputBuilders[targetName].WithConnection(conn)
 		if err != nil {
@@ -229,7 +229,7 @@ func (b *Builder) buildWorkers() error {
 		err    error
 	)
 
-	b.workers = make(map[api.StageName]Worker, len(b.stages))
+	b.workers = make(map[api.StageName]Stage, len(b.stages))
 	sources := make([]api.StageName, 0)
 	sinks := make([]api.StageName, 0)
 	for name, stage := range b.stages {
@@ -260,7 +260,7 @@ func (b *Builder) buildWorkers() error {
 		if err != nil {
 			return errdefs.PrependMsg(err, "output build error for %s", name)
 		}
-		cfg := &WorkerCfg{
+		cfg := &StageCfg{
 			Address: stage.Address,
 			Rpc:     stageRpc,
 			Input:   input,
@@ -274,7 +274,7 @@ func (b *Builder) buildWorkers() error {
 			sinks = append(sinks, name)
 		}
 
-		b.workers[name], err = NewWorker(cfg)
+		b.workers[name], err = NewStage(cfg)
 		if err != nil {
 			return errdefs.PrependMsg(err, "build workers")
 		}

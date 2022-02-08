@@ -15,10 +15,10 @@ type Output interface {
 // SingleOutput is a struct that implements Output for a single output
 // connection.
 type SingleOutput struct {
-	connection *Connection
+	connection *Link
 }
 
-func NewSingleOutput(conn *Connection) *SingleOutput {
+func NewSingleOutput(conn *Link) *SingleOutput {
 	o := &SingleOutput{
 		connection: conn,
 	}
@@ -80,16 +80,16 @@ func (o *SinkOutput) IsSink() bool {
 
 // OutputBuilder registers the several connections for an output.
 type OutputBuilder struct {
-	connections []*Connection
+	connections []*Link
 }
 
 func NewOutputBuilder() *OutputBuilder {
 	return &OutputBuilder{
-		connections: []*Connection{},
+		connections: []*Link{},
 	}
 }
 
-func (o *OutputBuilder) WithConnection(c *Connection) error {
+func (o *OutputBuilder) WithConnection(c *Link) error {
 	for _, prev := range o.connections {
 		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
@@ -103,7 +103,7 @@ func (o *OutputBuilder) WithConnection(c *Connection) error {
 	return nil
 }
 
-func (o *OutputBuilder) UnregisterIfExists(search *Connection) {
+func (o *OutputBuilder) UnregisterIfExists(search *Link) {
 	idx := -1
 	for i, c := range o.connections {
 		if c.HasSameLinkName(search) {
