@@ -3,7 +3,7 @@ package server
 import (
 	apipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/execution"
+	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
@@ -107,7 +107,7 @@ func (b *Builder) initManagers(s *Server) error {
 	if err != nil {
 		return errdefs.PrependMsg(err, "init managers:")
 	}
-	s.flowManager = execution.NewManager(s.reflectionManager)
+	s.flowManager = exec.NewManager(s.reflectionManager)
 	return nil
 }
 

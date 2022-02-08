@@ -1,4 +1,4 @@
-package execution
+package exec
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
@@ -8,7 +8,7 @@ import (
 type Execution struct {
 	orchestration *api.Orchestration
 
-	workers map[api.StageName]Stage
+	stages map[api.StageName]Stage
 
 	term chan struct{}
 	errs chan error
@@ -18,7 +18,7 @@ type Execution struct {
 func (e *Execution) Start() {
 	e.term = make(chan struct{})
 	e.errs = make(chan error)
-	e.done = make(map[api.StageName]<-chan struct{}, len(e.workers))
+	e.done = make(map[api.StageName]<-chan struct{}, len(e.stages))
 
 	go func() {
 		err, open := <-e.errs
@@ -26,7 +26,7 @@ func (e *Execution) Start() {
 			panic(err)
 		}
 	}()
-	for n, w := range e.workers {
+	for n, s := range e.stages {
 		ch := make(chan struct{})
 		e.done[n] = ch
 		cfg := &RunCfg{
@@ -34,7 +34,7 @@ func (e *Execution) Start() {
 			errs: e.errs,
 			done: ch,
 		}
-		go w.Run(cfg)
+		go s.Run(cfg)
 	}
 }
 
