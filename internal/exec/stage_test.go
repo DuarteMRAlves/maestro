@@ -4,6 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 	"gotest.tools/v3/assert"
@@ -153,4 +154,42 @@ func replyMessage(t *testing.T) rpc.Message {
 	assert.NilError(t, err, "message Reply")
 
 	return msg
+}
+
+func TestSourceStage_Run(t *testing.T) {
+	var (
+		state *State
+		err   error
+	)
+
+	reqType := reflect.TypeOf(pb.Request{})
+
+	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
+	assert.NilError(t, err, "load desc Request")
+
+	msg, err := rpc.NewMessage(reqDesc)
+	assert.NilError(t, err, "message Request")
+
+	ch := make(chan *State)
+	st := NewSourceStage(1, ch, msg)
+	assert.NilError(t, err, "build input")
+
+	term := make(chan struct{})
+	done := make(chan struct{})
+	errs := make(chan error)
+
+	go st.Run(&RunCfg{term: term, done: done, errs: errs})
+
+	for i := 1; i < 10; i++ {
+		state = <-ch
+		assert.NilError(t, err, "next at iter %d", i)
+		assert.Equal(t, Id(i), state.Id(), "id at iter %d", i)
+		opt := cmpopts.IgnoreUnexported(dynamic.Message{})
+		assert.DeepEqual(t, msg.NewEmpty(), state.Msg(), opt)
+	}
+
+	close(term)
+	<-done
+	close(errs)
+	assert.Assert(t, len(errs) == 0)
 }

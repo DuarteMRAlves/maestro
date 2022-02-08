@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
@@ -20,7 +21,7 @@ type Builder struct {
 	stages            map[api.StageName]*api.Stage
 	links             map[api.LinkName]*api.Link
 	rpcs              map[api.StageName]rpc.RPC
-	inputBuilders     map[api.StageName]*InputBuilder
+	inputs            map[api.StageName]*InputDesc
 	outputBuilders    map[api.StageName]*OutputBuilder
 
 	txnHelper  *storage.TxnHelper
@@ -142,14 +143,14 @@ func (b *Builder) loadRpc(ctx context.Context, s *api.Stage) (rpc.RPC, error) {
 }
 
 func (b *Builder) loadInputsAndOutputs() error {
-	b.inputBuilders = make(map[api.StageName]*InputBuilder, len(b.stages))
+	b.inputs = make(map[api.StageName]*InputDesc, len(b.stages))
 	b.outputBuilders = make(map[api.StageName]*OutputBuilder, len(b.stages))
 	for name := range b.stages {
 		stageRpc, ok := b.rpcs[name]
 		if !ok {
 			return errdefs.InternalWithMsg("rpc not found for %s", name)
 		}
-		b.inputBuilders[name] = NewInputBuilder().WithMessage(stageRpc.Input())
+		b.inputs[name] = NewInputDesc().WithMessage(stageRpc.Input())
 		b.outputBuilders[name] = NewOutputBuilder()
 	}
 
@@ -199,7 +200,7 @@ func (b *Builder) loadInputsAndOutputs() error {
 
 		conn := NewLink(l)
 
-		err := b.inputBuilders[targetName].WithConnection(conn)
+		err := b.inputs[targetName].WithConnection(conn)
 		if err != nil {
 			return errdefs.PrependMsg(
 				err,
@@ -224,21 +225,20 @@ func (b *Builder) loadInputsAndOutputs() error {
 
 func (b *Builder) buildExecStages() error {
 	var (
-		input  Input
-		output Output
-		err    error
+		inputChan chan *State
+		auxStage  Stage
+		output    Output
+		err       error
 	)
 
 	b.execStages = make(map[api.StageName]Stage, len(b.stages))
-	sources := make([]api.StageName, 0)
-	sinks := make([]api.StageName, 0)
 	for name, stage := range b.stages {
 
 		stageRpc, ok := b.rpcs[name]
 		if !ok {
 			return errdefs.InternalWithMsg("rpc not found for %s", name)
 		}
-		inputBuilder, ok := b.inputBuilders[name]
+		inputBuilder, ok := b.inputs[name]
 		if !ok {
 			return errdefs.InternalWithMsg(
 				"input builder not found for %s",
@@ -252,9 +252,16 @@ func (b *Builder) buildExecStages() error {
 				name,
 			)
 		}
-		input, err = inputBuilder.Build()
+		inputChan, auxStage, err = inputBuilder.BuildExecutionResources()
 		if err != nil {
 			return errdefs.PrependMsg(err, "input build error for %s", name)
+		}
+		if auxStage != nil {
+			auxName := fmt.Sprintf(
+				"%s-input",
+				name,
+			)
+			b.execStages[api.StageName(auxName)] = auxStage
 		}
 		output, err = outputBuilder.Build()
 		if err != nil {
@@ -263,15 +270,8 @@ func (b *Builder) buildExecStages() error {
 		cfg := &StageCfg{
 			Address: stage.Address,
 			Rpc:     stageRpc,
-			Input:   input.Chan(),
+			Input:   inputChan,
 			Output:  output.Chan(),
-		}
-
-		if input.IsSource() {
-			sources = append(sources, name)
-		}
-		if output.IsSink() {
-			sinks = append(sinks, name)
 		}
 
 		b.execStages[name], err = NewStage(cfg)
@@ -279,19 +279,62 @@ func (b *Builder) buildExecStages() error {
 			return errdefs.PrependMsg(err, "build execStages")
 		}
 	}
-	if len(sources) != 1 {
-		return errdefs.InvalidArgumentWithMsg(
-			"expected one source stage but found %d: %v",
-			len(sources),
-			sources,
-		)
-	}
-	if len(sinks) != 1 {
-		return errdefs.InvalidArgumentWithMsg(
-			"expected one sink stage but found %d: %v",
-			len(sinks),
-			sinks,
-		)
-	}
 	return nil
+}
+
+// InputDesc stores the necessary information to handle the input of a stage.
+type InputDesc struct {
+	connections []*Link
+	msg         rpc.Message
+}
+
+func NewInputDesc() *InputDesc {
+	return &InputDesc{
+		connections: []*Link{},
+	}
+}
+
+func (i *InputDesc) WithMessage(msg rpc.Message) *InputDesc {
+	i.msg = msg
+	return i
+}
+
+func (i *InputDesc) WithConnection(c *Link) error {
+	// A previous link that consumes the entire message already exists
+	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
+		return errdefs.FailedPreconditionWithMsg(
+			"link that receives the full message already exists",
+		)
+	}
+	for _, prev := range i.connections {
+		if prev.HasSameTargetField(c) {
+			return errdefs.InvalidArgumentWithMsg(
+				"link with the same target field already registered: %s",
+				prev.LinkName(),
+			)
+		}
+	}
+	i.connections = append(i.connections, c)
+	return nil
+}
+
+func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
+	switch len(i.connections) {
+	case 0:
+		if i.msg == nil {
+			return nil, nil, errdefs.FailedPreconditionWithMsg(
+				"message required without 0 connections",
+			)
+		}
+		ch := make(chan *State)
+		s := NewSourceStage(1, ch, i.msg)
+		return ch, s, nil
+	case 1:
+		return i.connections[0].Chan(), nil, nil
+	default:
+		return nil, nil, errdefs.FailedPreconditionWithMsg(
+			"too many connections: expected 0 or 1 but received %d",
+			len(i.connections),
+		)
+	}
 }
