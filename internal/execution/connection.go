@@ -2,25 +2,20 @@ package execution
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/queue"
 )
 
 // Connection is a connection between two stages where data is transferred.
 type Connection struct {
-	link  *api.Link
-	queue queue.Ring
+	link *api.Link
+	ch   chan *State
 }
 
-func NewConnection(l *api.Link) (*Connection, error) {
-	q, err := queue.NewRing(1)
-	if err != nil {
-		return nil, err
-	}
+func NewConnection(l *api.Link) *Connection {
 	f := &Connection{
-		link:  l,
-		queue: q,
+		link: l,
+		ch:   make(chan *State),
 	}
-	return f, nil
+	return f
 }
 
 func (c *Connection) LinkName() api.LinkName {
@@ -39,10 +34,6 @@ func (c *Connection) HasSameTargetField(other *Connection) bool {
 	return c.link.TargetField == other.link.TargetField
 }
 
-func (c *Connection) Push(s *State) {
-	c.queue.Push(s)
-}
-
-func (c *Connection) Pop() *State {
-	return c.queue.Pop().(*State)
+func (c *Connection) Chan() chan *State {
+	return c.ch
 }

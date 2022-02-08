@@ -197,16 +197,9 @@ func (b *Builder) loadInputsAndOutputs() error {
 			)
 		}
 
-		conn, err := NewConnection(l)
-		if err != nil {
-			return errdefs.PrependMsg(
-				err,
-				"create internal connection for %s",
-				l.Name,
-			)
-		}
+		conn := NewConnection(l)
 
-		err = b.inputBuilders[targetName].WithConnection(conn)
+		err := b.inputBuilders[targetName].WithConnection(conn)
 		if err != nil {
 			return errdefs.PrependMsg(
 				err,
