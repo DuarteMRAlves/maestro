@@ -1,4 +1,4 @@
-package execution
+package exec
 
 import (
 	"context"
@@ -68,7 +68,7 @@ func (b *Builder) build() (*Execution, error) {
 	}
 	e := &Execution{
 		orchestration: b.orchestration,
-		workers:       b.execStages,
+		stages:        b.execStages,
 	}
 	return e, nil
 }

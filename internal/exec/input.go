@@ -1,4 +1,4 @@
-package execution
+package exec
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"

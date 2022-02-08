@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/execution"
+	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
@@ -19,7 +19,7 @@ const grpcNotConfigured = "grpc server not configured"
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
 	storageManager    storage.Manager
-	flowManager       execution.Manager
+	flowManager       exec.Manager
 	reflectionManager rpc.Manager
 
 	grpcServer *grpc.Server
