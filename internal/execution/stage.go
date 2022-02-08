@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-type Worker interface {
+type Stage interface {
 	Run(*RunCfg)
 }
 
-// RunCfg specifies the configuration that the Worker should use when running.
+// RunCfg specifies the configuration that the Stage should use when running.
 type RunCfg struct {
-	// term is a channel that will be signaled if the Worker should stop.
+	// term is a channel that will be signaled if the Stage should stop.
 	term <-chan struct{}
-	// done is a channel that the Worker should close to signal is has finished.
+	// done is a channel that the Stage should close to signal is has finished.
 	done chan<- struct{}
 	// errs is a channel that the worker should use to send errors in order to
 	// be processed.
@@ -26,8 +26,8 @@ type RunCfg struct {
 	errs chan<- error
 }
 
-// UnaryWorker manages the execution of a stage in a pipeline
-type UnaryWorker struct {
+// UnaryStage manages the execution of a stage in a pipeline.
+type UnaryStage struct {
 	Address string
 	conn    grpc.ClientConnInterface
 	rpc     rpc.RPC
@@ -37,7 +37,7 @@ type UnaryWorker struct {
 	output Output
 }
 
-func (w *UnaryWorker) Run(cfg *RunCfg) {
+func (s *UnaryStage) Run(cfg *RunCfg) {
 	var (
 		in, out  *State
 		req, rep interface{}
@@ -46,7 +46,7 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 
 	for {
 		select {
-		case in = <-w.input.Chan():
+		case in = <-s.input.Chan():
 		case <-cfg.term:
 			close(cfg.done)
 			return
@@ -60,9 +60,9 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 			continue
 		}
 		req = in.Msg()
-		rep = w.rpc.Output().NewEmpty()
+		rep = s.rpc.Output().NewEmpty()
 
-		err = w.invoke(req, rep)
+		err = s.invoke(req, rep)
 		if err != nil {
 			cfg.errs <- err
 			continue
@@ -71,7 +71,7 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 		out = NewState(in.Id(), rep)
 
 		select {
-		case w.output.Chan() <- out:
+		case s.output.Chan() <- out:
 		case <-cfg.term:
 			close(cfg.done)
 			return
@@ -79,21 +79,21 @@ func (w *UnaryWorker) Run(cfg *RunCfg) {
 	}
 }
 
-func (w *UnaryWorker) invoke(req interface{}, rep interface{}) error {
+func (s *UnaryStage) invoke(req interface{}, rep interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	return w.invoker.Invoke(ctx, req, rep)
+	return s.invoker.Invoke(ctx, req, rep)
 }
 
-type WorkerCfg struct {
+type StageCfg struct {
 	Address string
 	Rpc     rpc.RPC
 	Input   Input
 	Output  Output
 }
 
-func (c *WorkerCfg) Clone() *WorkerCfg {
-	return &WorkerCfg{
+func (c *StageCfg) Clone() *StageCfg {
+	return &StageCfg{
 		Address: c.Address,
 		Rpc:     c.Rpc,
 		Input:   c.Input,
@@ -101,7 +101,7 @@ func (c *WorkerCfg) Clone() *WorkerCfg {
 	}
 }
 
-func NewWorker(cfg *WorkerCfg) (Worker, error) {
+func NewStage(cfg *StageCfg) (Stage, error) {
 	cfg = cfg.Clone()
 	switch {
 	case cfg.Rpc.IsUnary():
@@ -112,7 +112,7 @@ func NewWorker(cfg *WorkerCfg) (Worker, error) {
 				cfg.Address,
 			)
 		}
-		w := &UnaryWorker{
+		w := &UnaryStage{
 			Address: cfg.Address,
 			conn:    conn,
 			rpc:     cfg.Rpc,

@@ -8,7 +8,7 @@ import (
 type Execution struct {
 	orchestration *api.Orchestration
 
-	workers map[api.StageName]Worker
+	workers map[api.StageName]Stage
 
 	term chan struct{}
 	errs chan error

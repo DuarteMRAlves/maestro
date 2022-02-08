@@ -15,10 +15,10 @@ type Input interface {
 
 // SingleInput is a struct the implements the Input for a single input.
 type SingleInput struct {
-	conn *Connection
+	conn *Link
 }
 
-func NewSingleInput(conn *Connection) *SingleInput {
+func NewSingleInput(conn *Link) *SingleInput {
 	i := &SingleInput{conn: conn}
 	return i
 }
@@ -84,13 +84,13 @@ func (i *SourceInput) IsSource() bool {
 
 // InputBuilder registers the several connections for an input.
 type InputBuilder struct {
-	connections []*Connection
+	connections []*Link
 	msg         rpc.Message
 }
 
 func NewInputBuilder() *InputBuilder {
 	return &InputBuilder{
-		connections: []*Connection{},
+		connections: []*Link{},
 	}
 }
 
@@ -99,7 +99,7 @@ func (i *InputBuilder) WithMessage(msg rpc.Message) *InputBuilder {
 	return i
 }
 
-func (i *InputBuilder) WithConnection(c *Connection) error {
+func (i *InputBuilder) WithConnection(c *Link) error {
 	// A previous link that consumes the entire message already exists
 	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
