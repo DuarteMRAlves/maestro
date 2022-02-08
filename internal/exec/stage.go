@@ -125,3 +125,41 @@ func NewStage(cfg *StageCfg) (Stage, error) {
 		return nil, errdefs.InvalidArgumentWithMsg("unsupported rpc type")
 	}
 }
+
+// SourceStage is the source of the orchestration. It defines the initial ids of
+// the states and sends empty messages of the received type.
+type SourceStage struct {
+	id  int32
+	msg rpc.Message
+	ch  chan *State
+}
+
+func NewSourceStage(
+	initial int32,
+	ch chan *State,
+	msg rpc.Message,
+) *SourceStage {
+	i := &SourceStage{
+		id:  initial,
+		msg: msg,
+		ch:  ch,
+	}
+	return i
+}
+
+func (s *SourceStage) Run(cfg *RunCfg) {
+	for {
+		select {
+		case s.ch <- s.next():
+		case <-cfg.term:
+			close(cfg.done)
+			return
+		}
+	}
+}
+
+func (s *SourceStage) next() *State {
+	st := NewState(Id(s.id), s.msg.NewEmpty())
+	s.id++
+	return st
+}
