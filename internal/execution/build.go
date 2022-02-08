@@ -14,7 +14,7 @@ import (
 // Builder constructs an execution from an orchestration.
 type Builder struct {
 	orchestration *api.Orchestration
-	workers       map[api.StageName]Stage
+	execStages    map[api.StageName]Stage
 
 	orchestrationName api.OrchestrationName
 	stages            map[api.StageName]*api.Stage
@@ -62,13 +62,13 @@ func (b *Builder) build() (*Execution, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = b.buildWorkers()
+	err = b.buildExecStages()
 	if err != nil {
 		return nil, err
 	}
 	e := &Execution{
 		orchestration: b.orchestration,
-		workers:       b.workers,
+		workers:       b.execStages,
 	}
 	return e, nil
 }
@@ -222,14 +222,14 @@ func (b *Builder) loadInputsAndOutputs() error {
 	return nil
 }
 
-func (b *Builder) buildWorkers() error {
+func (b *Builder) buildExecStages() error {
 	var (
 		input  Input
 		output Output
 		err    error
 	)
 
-	b.workers = make(map[api.StageName]Stage, len(b.stages))
+	b.execStages = make(map[api.StageName]Stage, len(b.stages))
 	sources := make([]api.StageName, 0)
 	sinks := make([]api.StageName, 0)
 	for name, stage := range b.stages {
@@ -263,20 +263,20 @@ func (b *Builder) buildWorkers() error {
 		cfg := &StageCfg{
 			Address: stage.Address,
 			Rpc:     stageRpc,
-			Input:   input,
-			Output:  output,
+			Input:   input.Chan(),
+			Output:  output.Chan(),
 		}
 
-		if cfg.Input.IsSource() {
+		if input.IsSource() {
 			sources = append(sources, name)
 		}
-		if cfg.Output.IsSink() {
+		if output.IsSink() {
 			sinks = append(sinks, name)
 		}
 
-		b.workers[name], err = NewStage(cfg)
+		b.execStages[name], err = NewStage(cfg)
 		if err != nil {
-			return errdefs.PrependMsg(err, "build workers")
+			return errdefs.PrependMsg(err, "build execStages")
 		}
 	}
 	if len(sources) != 1 {

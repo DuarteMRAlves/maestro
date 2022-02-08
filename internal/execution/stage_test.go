@@ -24,8 +24,12 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 		NewState(1, msgs[0]),
 		NewState(3, msgs[1]),
 	}
-	input := NewMockInput(append(states, NewEOFState(4)), func() {})
-	output := NewMockOutput(len(states))
+	input := make(chan *State, len(states)+1)
+	input <- states[0]
+	input <- states[1]
+	input <- NewEOFState(4)
+
+	output := make(chan *State, len(states))
 
 	cfg := &StageCfg{
 		Address: addr,
@@ -50,8 +54,8 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	go s.Run(runCfg)
 
 	<-done
-	input.Close()
-	output.Close()
+	close(input)
+	close(output)
 
 	rcvStates := collectState(output)
 
@@ -74,85 +78,11 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	assert.Equal(t, 0, len(errs), "No errors")
 }
 
-func TestUnaryStage_RunAndCtxDone(t *testing.T) {
-	lis := util.NewTestListener(t)
-	addr := lis.Addr().String()
-	server := util.StartTestServer(t, lis, true, true)
-	defer server.Stop()
-
-	rpc := testRpc(t)
-	msgs := testRequests()
-	states := []*State{NewState(1, msgs[0]), NewState(3, msgs[1])}
-
-	inputSync := make(chan bool)
-	defer close(inputSync)
-
-	input := NewMockInput(
-		states,
-		func() {
-			inputSync <- true
-		},
-	)
-	output := NewMockOutput(len(states))
-
-	cfg := &StageCfg{
-		Address: addr,
-		Rpc:     rpc,
-		Input:   input,
-		Output:  output,
-	}
-
-	s, err := NewStage(cfg)
-	assert.NilError(t, err, "create stage error")
-	term := make(chan struct{})
-	errs := make(chan error)
-	done := make(chan struct{})
-	runCfg := &RunCfg{
-		term: term,
-		errs: errs,
-		done: done,
-	}
-	defer close(errs)
-	go s.Run(runCfg)
-
-	// Wait for last input to be sent. Now the input function will block.
-	<-inputSync
-
-	close(term)
-
-	<-done
-	// Release input
-	input.Close()
-	output.Close()
-
-	rcvStates := collectState(output)
-
-	// May not receive all inputs if the context closes to fast when the input
-	// closes.
-	assert.Assert(t, len(rcvStates) <= len(states))
-	for i, rcv := range rcvStates {
-		exp := states[i]
-		assert.Equal(t, exp.Id(), rcv.Id(), "correct received id")
-
-		req, ok := exp.Msg().(*pb.Request)
-		assert.Assert(t, ok, "request type assertion")
-
-		dynRep, ok := rcv.Msg().(*dynamic.Message)
-		assert.Assert(t, ok, "reply type assertion")
-		rep := &pb.Reply{}
-		err = dynRep.ConvertTo(rep)
-		assert.NilError(t, err, "convert dynamic to Reply")
-
-		util.AssertUnaryRequest(t, req, rep)
-	}
-	assert.Equal(t, 0, len(errs), "No errors")
-}
-
-func collectState(output *MockOutput) []*State {
+func collectState(output <-chan *State) []*State {
 	rcvStates := make([]*State, 0)
 	collect := make(chan struct{})
 	go func() {
-		for s := range output.States {
+		for s := range output {
 			rcvStates = append(rcvStates, s)
 		}
 		collect <- struct{}{}
