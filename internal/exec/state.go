@@ -1,6 +1,9 @@
 package exec
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // State defines a structure to manage the flow of a computation. This State is
 // created in a source stage with a unique id, that is transferred through the
@@ -44,4 +47,8 @@ func (s *State) Err() error {
 
 func (s *State) Update(msg interface{}) {
 	s.msg = msg
+}
+
+func (s *State) String() string {
+	return fmt.Sprintf("State{Id:%d,Msg:%v,Err:%v}", s.id, s.msg, s.err)
 }
