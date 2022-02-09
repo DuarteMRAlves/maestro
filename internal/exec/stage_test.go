@@ -193,3 +193,83 @@ func TestSourceStage_Run(t *testing.T) {
 	close(errs)
 	assert.Assert(t, len(errs) == 0)
 }
+
+func TestMergeStage_Run(t *testing.T) {
+	fields := []string{"in1", "in2", "in3"}
+
+	input1 := make(chan *State)
+	input2 := make(chan *State)
+	input3 := make(chan *State)
+	inputs := []<-chan *State{input1, input2, input3}
+
+	output := make(chan *State)
+
+	outType := reflect.TypeOf(pb.MergeMessage{})
+	outDesc, err := desc.LoadMessageDescriptorForType(outType)
+	assert.NilError(t, err, "load desc MergeMessage")
+	msg, err := rpc.NewMessage(outDesc)
+	assert.NilError(t, err, "create message MergeMessage")
+
+	s := NewMergeStage(fields, inputs, output, msg)
+
+	term := make(chan struct{})
+	done := make(chan struct{})
+	errs := make(chan error)
+
+	expected := []*State{
+		NewState(3, testMergeMessage(3)),
+		NewState(6, testMergeMessage(6)),
+	}
+
+	go func() {
+		input1 <- NewState(1, &pb.MergeInner1{Val: 1})
+		input1 <- NewState(2, &pb.MergeInner1{Val: 2})
+		input1 <- NewState(3, &pb.MergeInner1{Val: 3})
+		input1 <- NewState(6, &pb.MergeInner1{Val: 6})
+	}()
+
+	go func() {
+		input2 <- NewState(2, &pb.MergeInner2{Val: 2})
+		input2 <- NewState(3, &pb.MergeInner2{Val: 3})
+		input2 <- NewState(5, &pb.MergeInner2{Val: 5})
+		input2 <- NewState(6, &pb.MergeInner2{Val: 6})
+	}()
+
+	go func() {
+		input3 <- NewState(1, &pb.MergeInner3{Val: 2})
+		input3 <- NewState(3, &pb.MergeInner3{Val: 3})
+		input3 <- NewState(5, &pb.MergeInner3{Val: 5})
+		input3 <- NewState(6, &pb.MergeInner3{Val: 6})
+	}()
+
+	go s.Run(&RunCfg{term: term, done: done, errs: errs})
+
+	for i, exp := range expected {
+		out := <-output
+		assert.NilError(t, err, "next at iter %d", i)
+		assert.Equal(t, exp.id, out.Id(), "id at iter %d", i)
+		expMsg, ok := exp.Msg().(*pb.MergeMessage)
+		assert.Assert(t, ok, "cast for exp at iter %d", i)
+		dynMsg, ok := out.Msg().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for out at iter %d", i)
+		outMsg := &pb.MergeMessage{}
+		err = dynMsg.ConvertTo(outMsg)
+		assert.NilError(t, err, "convert dyn to out")
+		assert.Equal(t, expMsg.In1.Val, outMsg.In1.Val)
+		assert.Equal(t, expMsg.In2.Val, outMsg.In2.Val)
+		assert.Equal(t, expMsg.In3.Val, outMsg.In3.Val)
+	}
+
+	close(term)
+	<-done
+	close(errs)
+	assert.Assert(t, len(errs) == 0)
+}
+
+func testMergeMessage(val int32) *pb.MergeMessage {
+	return &pb.MergeMessage{
+		In1: &pb.MergeInner1{Val: val},
+		In2: &pb.MergeInner2{Val: val},
+		In3: &pb.MergeInner3{Val: val},
+	}
+}

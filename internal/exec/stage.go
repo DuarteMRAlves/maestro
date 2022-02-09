@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
+	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"io"
 	"time"
@@ -185,6 +186,105 @@ func (s *SinkStage) Run(cfg *RunCfg) {
 		case <-cfg.term:
 			close(cfg.done)
 			return
+		}
+	}
+}
+
+// MergeStage collects multiple messages from multiple channels and build a
+// single message that sends to the downstream stage.
+type MergeStage struct {
+	// fields are the names of the fields of the generated message that should
+	// be filled with the collected messages.
+	fields []string
+	// inputs are the several input channels from which to collect the messages.
+	inputs []<-chan *State
+	// output is the channel used to send messages to the downstream stage.
+	output chan<- *State
+	// msg describes the message to create and send to the downstream stage.
+	msg rpc.Message
+	// currId is the current id being constructed.
+	currId Id
+}
+
+func NewMergeStage(
+	fields []string,
+	inputs []<-chan *State,
+	output chan<- *State,
+	msg rpc.Message,
+) *MergeStage {
+	return &MergeStage{
+		fields: fields,
+		inputs: inputs,
+		output: output,
+		msg:    msg,
+		currId: 0,
+	}
+}
+
+func (s *MergeStage) Run(cfg *RunCfg) {
+	var (
+		// partial is the current message being constructed.
+		partial *dynamic.Message
+		state   *State
+		done    bool
+	)
+
+	latest := make([]*State, 0, len(s.inputs))
+	for i := 0; i < len(s.inputs); i++ {
+		latest = append(latest, nil)
+	}
+	for {
+		partial = s.msg.NewEmpty()
+		setFields := 0
+		for i, input := range s.inputs {
+			state = latest[i]
+			if state == nil || state.Id() < s.currId {
+				state, done = s.takeUntilCurrId(input, cfg.term)
+				if done {
+					close(cfg.done)
+					return
+				}
+				latest[i] = state
+			}
+			// The message with the current id was discarded. The number of set
+			// fields is smaller than the number of inputs and so the message
+			// will not be discarded.
+			if state.Id() > s.currId {
+				s.currId = state.Id()
+				break
+			}
+			partial.SetFieldByName(s.fields[i], state.Msg())
+			setFields++
+		}
+		// All fields from inputs were set. The message can be sent
+		if setFields == len(s.inputs) {
+			sendState := NewState(s.currId, partial)
+			select {
+			case s.output <- sendState:
+			case <-cfg.term:
+				close(cfg.done)
+				return
+			}
+			s.currId++
+			for i := 0; i < len(s.inputs); i++ {
+				latest[i] = nil
+			}
+		}
+	}
+}
+
+func (s *MergeStage) takeUntilCurrId(
+	input <-chan *State,
+	term <-chan struct{},
+) (*State, bool) {
+	for {
+		select {
+		case state := <-input:
+			if state.Id() >= s.currId {
+				return state, false
+			}
+		case <-term:
+			return nil, true
 		}
 	}
 }
