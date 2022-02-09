@@ -163,3 +163,28 @@ func (s *SourceStage) next() *State {
 	s.id++
 	return st
 }
+
+// SinkStage defines the last output of the orchestration, where all messages
+// are dropped.
+type SinkStage struct {
+	ch chan *State
+}
+
+func NewSinkOutput(ch chan *State) *SinkStage {
+	s := &SinkStage{
+		ch: ch,
+	}
+	return s
+}
+
+func (s *SinkStage) Run(cfg *RunCfg) {
+	for {
+		select {
+		// Discard results
+		case <-s.ch:
+		case <-cfg.term:
+			close(cfg.done)
+			return
+		}
+	}
+}

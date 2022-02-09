@@ -22,7 +22,7 @@ type Builder struct {
 	links             map[api.LinkName]*api.Link
 	rpcs              map[api.StageName]rpc.RPC
 	inputs            map[api.StageName]*InputDesc
-	outputBuilders    map[api.StageName]*OutputBuilder
+	outputs           map[api.StageName]*OutputDesc
 
 	txnHelper  *storage.TxnHelper
 	rpcManager rpc.Manager
@@ -144,14 +144,14 @@ func (b *Builder) loadRpc(ctx context.Context, s *api.Stage) (rpc.RPC, error) {
 
 func (b *Builder) loadInputsAndOutputs() error {
 	b.inputs = make(map[api.StageName]*InputDesc, len(b.stages))
-	b.outputBuilders = make(map[api.StageName]*OutputBuilder, len(b.stages))
+	b.outputs = make(map[api.StageName]*OutputDesc, len(b.stages))
 	for name := range b.stages {
 		stageRpc, ok := b.rpcs[name]
 		if !ok {
 			return errdefs.InternalWithMsg("rpc not found for %s", name)
 		}
 		b.inputs[name] = NewInputDesc().WithMessage(stageRpc.Input())
-		b.outputBuilders[name] = NewOutputBuilder()
+		b.outputs[name] = NewOutputBuilder()
 	}
 
 	for _, l := range b.links {
@@ -210,7 +210,7 @@ func (b *Builder) loadInputsAndOutputs() error {
 			)
 		}
 
-		err = b.outputBuilders[sourceName].WithConnection(conn)
+		err = b.outputs[sourceName].WithConnection(conn)
 		if err != nil {
 			return errdefs.PrependMsg(
 				err,
@@ -225,10 +225,9 @@ func (b *Builder) loadInputsAndOutputs() error {
 
 func (b *Builder) buildExecStages() error {
 	var (
-		inputChan chan *State
-		auxStage  Stage
-		output    Output
-		err       error
+		inputChan, outputChan chan *State
+		auxStage              Stage
+		err                   error
 	)
 
 	b.execStages = make(map[api.StageName]Stage, len(b.stages))
@@ -245,7 +244,7 @@ func (b *Builder) buildExecStages() error {
 				name,
 			)
 		}
-		outputBuilder, ok := b.outputBuilders[name]
+		outputBuilder, ok := b.outputs[name]
 		if !ok {
 			return errdefs.InternalWithMsg(
 				"output builder not found for %s",
@@ -263,15 +262,22 @@ func (b *Builder) buildExecStages() error {
 			)
 			b.execStages[api.StageName(auxName)] = auxStage
 		}
-		output, err = outputBuilder.Build()
+		outputChan, auxStage, err = outputBuilder.BuildExecutionResources()
 		if err != nil {
 			return errdefs.PrependMsg(err, "output build error for %s", name)
+		}
+		if auxStage != nil {
+			auxName := fmt.Sprintf(
+				"%s-output",
+				name,
+			)
+			b.execStages[api.StageName(auxName)] = auxStage
 		}
 		cfg := &StageCfg{
 			Address: stage.Address,
 			Rpc:     stageRpc,
 			Input:   inputChan,
-			Output:  output.Chan(),
+			Output:  outputChan,
 		}
 
 		b.execStages[name], err = NewStage(cfg)
@@ -335,6 +341,47 @@ func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
 		return nil, nil, errdefs.FailedPreconditionWithMsg(
 			"too many connections: expected 0 or 1 but received %d",
 			len(i.connections),
+		)
+	}
+}
+
+// OutputDesc registers the several connections for an output.
+type OutputDesc struct {
+	connections []*Link
+}
+
+func NewOutputBuilder() *OutputDesc {
+	return &OutputDesc{
+		connections: []*Link{},
+	}
+}
+
+func (o *OutputDesc) WithConnection(c *Link) error {
+	for _, prev := range o.connections {
+		if prev.HasSameLinkName(c) {
+			return errdefs.InvalidArgumentWithMsg(
+				"Link with an equal name already registered: %s",
+				prev.LinkName(),
+			)
+		}
+	}
+
+	o.connections = append(o.connections, c)
+	return nil
+}
+
+func (o *OutputDesc) BuildExecutionResources() (chan *State, Stage, error) {
+	switch len(o.connections) {
+	case 0:
+		ch := make(chan *State)
+		s := NewSinkOutput(ch)
+		return ch, s, nil
+	case 1:
+		return o.connections[0].Chan(), nil, nil
+	default:
+		return nil, nil, errdefs.FailedPreconditionWithMsg(
+			"too many connections: expected 0 or 1 but received %d",
+			len(o.connections),
 		)
 	}
 }
