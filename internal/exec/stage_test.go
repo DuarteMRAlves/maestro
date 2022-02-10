@@ -33,14 +33,7 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 
 	output := make(chan *State, len(states))
 
-	cfg := &StageCfg{
-		Address: addr,
-		Rpc:     rpc,
-		Input:   input,
-		Output:  output,
-	}
-
-	s, err := NewStage(cfg)
+	s, err := NewRpcStage(addr, rpc, input, output)
 	assert.NilError(t, err, "create stage error")
 
 	term := make(chan struct{})

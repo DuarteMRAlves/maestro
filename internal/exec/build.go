@@ -264,14 +264,13 @@ func (b *Builder) buildExecStages() error {
 		if stage != nil {
 			b.stageMap.AddOutputStage(name, stage)
 		}
-		cfg := &StageCfg{
-			Address: apiStage.Address,
-			Rpc:     stageRpc,
-			Input:   inputChan,
-			Output:  outputChan,
-		}
 
-		stage, err = NewStage(cfg)
+		stage, err = NewRpcStage(
+			apiStage.Address,
+			stageRpc,
+			inputChan,
+			outputChan,
+		)
 		if err != nil {
 			return errdefs.PrependMsg(err, "build rpc stage")
 		}
