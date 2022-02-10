@@ -70,11 +70,10 @@ func TestTxnHelper_SaveOrchestration(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						helper := NewTxnHelper(txn)
 						return helper.SaveOrchestration(test.orchestration)
@@ -163,11 +162,10 @@ func TestTxnHelper_LoadOrchestration(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var loaded api.Orchestration
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
 							orchestrationKey(test.expected.Name),
@@ -232,11 +230,10 @@ func TestTxnHelper_SaveStage(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						helper := NewTxnHelper(txn)
 						return helper.SaveStage(test.stage)
@@ -301,11 +298,10 @@ func TestTxnHelper_LoadStage(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var loaded api.Stage
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
 							stageKey(test.expected.Name),
@@ -368,11 +364,10 @@ func TestTxnHelper_SaveLink(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						helper := NewTxnHelper(txn)
 						return helper.SaveLink(test.link)
@@ -435,11 +430,10 @@ func TestTxnHelper_LoadLink(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var loaded api.Link
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
 							linkKey(test.expected.Name),
@@ -494,11 +488,10 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						helper := NewTxnHelper(txn)
 						return helper.SaveAsset(test.asset)
@@ -553,11 +546,10 @@ func TestTxnHelper_LoadAsset(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var loaded api.Asset
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
-				err = db.Update(
+				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
 							assetKey(test.expected.Name),

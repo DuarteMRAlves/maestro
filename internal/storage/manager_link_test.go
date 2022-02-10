@@ -73,8 +73,7 @@ func testCreateLink(
 		stored        api.Link
 		orchestration api.Orchestration
 	)
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -317,8 +316,7 @@ func testCreateLinkError(
 	assertErrTypeFn func(error) bool,
 	expectedErrMsg string,
 ) {
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -578,8 +576,7 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Link
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))

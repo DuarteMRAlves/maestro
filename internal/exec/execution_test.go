@@ -45,8 +45,7 @@ func TestExecution_LinearPipeline(t *testing.T) {
 
 	rpcManager := rpc.NewManager()
 
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "create db")
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err = initDb(db, sourceAddr, transformAddr, sinkAddr)

@@ -21,8 +21,7 @@ func TestManager_CreateAsset(t *testing.T) {
 	)
 	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -55,8 +54,7 @@ func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 		errMsg                         = "'req' is nil"
 	)
 
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -90,8 +88,7 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	)
 	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -212,8 +209,7 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Asset
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))
