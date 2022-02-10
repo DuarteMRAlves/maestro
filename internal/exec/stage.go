@@ -28,6 +28,35 @@ type RunCfg struct {
 	errs chan<- error
 }
 
+func NewRpcStage(
+	address string,
+	rpcDesc rpc.RPC,
+	input <-chan *State,
+	output chan<- *State,
+) (Stage, error) {
+	switch {
+	case rpcDesc.IsUnary():
+		conn, err := grpc.Dial(address, grpc.WithInsecure())
+		if err != nil {
+			return nil, errdefs.InvalidArgumentWithMsg(
+				"unable to connect to address: %s",
+				address,
+			)
+		}
+		w := &UnaryStage{
+			Address: address,
+			conn:    conn,
+			rpc:     rpcDesc,
+			invoker: rpc.NewUnary(rpcDesc.InvokePath(), conn),
+			input:   input,
+			output:  output,
+		}
+		return w, nil
+	default:
+		return nil, errdefs.InvalidArgumentWithMsg("unsupported rpc type")
+	}
+}
+
 // UnaryStage manages the execution of a stage in a pipeline.
 type UnaryStage struct {
 	Address string
@@ -85,47 +114,6 @@ func (s *UnaryStage) invoke(req interface{}, rep interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	return s.invoker.Invoke(ctx, req, rep)
-}
-
-type StageCfg struct {
-	Address string
-	Rpc     rpc.RPC
-	Input   <-chan *State
-	Output  chan<- *State
-}
-
-func (c *StageCfg) Clone() *StageCfg {
-	return &StageCfg{
-		Address: c.Address,
-		Rpc:     c.Rpc,
-		Input:   c.Input,
-		Output:  c.Output,
-	}
-}
-
-func NewStage(cfg *StageCfg) (Stage, error) {
-	cfg = cfg.Clone()
-	switch {
-	case cfg.Rpc.IsUnary():
-		conn, err := grpc.Dial(cfg.Address, grpc.WithInsecure())
-		if err != nil {
-			return nil, errdefs.InvalidArgumentWithMsg(
-				"unable to connect to address: %s",
-				cfg.Address,
-			)
-		}
-		w := &UnaryStage{
-			Address: cfg.Address,
-			conn:    conn,
-			rpc:     cfg.Rpc,
-			invoker: rpc.NewUnary(cfg.Rpc.InvokePath(), conn),
-			input:   cfg.Input,
-			output:  cfg.Output,
-		}
-		return w, nil
-	default:
-		return nil, errdefs.InvalidArgumentWithMsg("unsupported rpc type")
-	}
 }
 
 // SourceStage is the source of the orchestration. It defines the initial ids of
