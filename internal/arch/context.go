@@ -1,9 +1,10 @@
-package storage
+package arch
 
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
@@ -12,7 +13,7 @@ type CreateStageContext struct {
 	// req contains the received request. This request should not be changed.
 	req *api.CreateStageRequest
 
-	txnHelper *TxnHelper
+	txnHelper *kv.TxnHelper
 
 	orchestration   *api.Orchestration
 	inferredAddress string
@@ -20,7 +21,7 @@ type CreateStageContext struct {
 
 func newCreateStageContext(
 	req *api.CreateStageRequest,
-	txnHelper *TxnHelper,
+	txnHelper *kv.TxnHelper,
 ) *CreateStageContext {
 	return &CreateStageContext{
 		req:       req,
@@ -128,12 +129,12 @@ type CreateLinkContext struct {
 	source        *api.Stage
 	target        *api.Stage
 
-	txnHelper *TxnHelper
+	txnHelper *kv.TxnHelper
 }
 
 func newCreateLinkContext(
 	req *api.CreateLinkRequest,
-	txnHelper *TxnHelper,
+	txnHelper *kv.TxnHelper,
 ) *CreateLinkContext {
 	return &CreateLinkContext{
 		req:       req,

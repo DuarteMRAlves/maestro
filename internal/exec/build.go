@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"google.golang.org/grpc"
 	"time"
@@ -24,13 +24,13 @@ type Builder struct {
 	inputs            map[api.StageName]*InputDesc
 	outputs           map[api.StageName]*OutputDesc
 
-	txnHelper  *storage.TxnHelper
+	txnHelper  *kv.TxnHelper
 	rpcManager rpc.Manager
 }
 
 func newBuilder(txn *badger.Txn, rpcManager rpc.Manager) *Builder {
 	return &Builder{
-		txnHelper:  storage.NewTxnHelper(txn),
+		txnHelper:  kv.NewTxnHelper(txn),
 		rpcManager: rpcManager,
 	}
 }

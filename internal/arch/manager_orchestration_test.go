@@ -1,7 +1,8 @@
-package storage
+package arch
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -15,7 +16,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	)
 	req := &api.CreateOrchestrationRequest{Name: name}
 
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -30,7 +31,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := TxnHelper{txn: txn}
+			helper := kv.NewTxnHelper(txn)
 			return helper.LoadOrchestration(&orchestration, name)
 		},
 	)
@@ -201,7 +202,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Orchestration
 
-				db := NewTestDb(t)
+				db := kv.NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))
@@ -210,7 +211,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 				for _, o := range test.stored {
 					err = db.Update(
 						func(txn *badger.Txn) error {
-							helper := TxnHelper{txn: txn}
+							helper := kv.NewTxnHelper(txn)
 							return helper.SaveOrchestration(o)
 						},
 					)

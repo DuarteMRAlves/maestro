@@ -1,13 +1,14 @@
-package storage
+package arch
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 )
 
-// Manager manages the storage of created orchestrations.
+// Manager manages the architecture of created orchestrations.
 type Manager interface {
 	// CreateOrchestration creates an orchestration from the given request. The
 	// function returns an error if the orchestration name is not valid.
@@ -81,7 +82,7 @@ func NewManager(ctx ManagerContext) (Manager, error) {
 	if ctx.CreateDefault {
 		err := ctx.DB.Update(
 			func(txn *badger.Txn) error {
-				helper := NewTxnHelper(txn)
+				helper := kv.NewTxnHelper(txn)
 				if !helper.ContainsOrchestration(DefaultOrchestrationName) {
 					return helper.SaveOrchestration(defaultOrchestration())
 				}
@@ -113,7 +114,7 @@ func (m *manager) CreateOrchestration(
 		Stages: []api.StageName{},
 		Links:  []api.LinkName{},
 	}
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	return helper.SaveOrchestration(o)
 }
 
@@ -129,7 +130,7 @@ func (m *manager) GetMatchingOrchestration(
 	filter := buildOrchestrationQueryFilter(req)
 	res := make([]*api.Orchestration, 0)
 
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	err = helper.IterOrchestrations(
 		func(o *api.Orchestration) error {
 			if filter(o) {
@@ -139,7 +140,7 @@ func (m *manager) GetMatchingOrchestration(
 			}
 			return nil
 		},
-		DefaultIterOpts(),
+		kv.DefaultIterOpts(),
 	)
 	if err != nil {
 		return nil, err
@@ -152,7 +153,7 @@ func (m *manager) CreateStage(
 	req *api.CreateStageRequest,
 ) error {
 	var err error
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	ctx := newCreateStageContext(req, helper)
 
 	if err = ctx.validateAndComplete(); err != nil {
@@ -165,20 +166,9 @@ func (m *manager) GetStageByName(
 	txn *badger.Txn,
 	name api.StageName,
 ) (*api.Stage, bool) {
-	var (
-		data []byte
-		err  error
-	)
-	item, _ := txn.Get(stageKey(name))
-	if item == nil {
-		return nil, false
-	}
-	data, err = item.ValueCopy(nil)
-	if err != nil {
-		return nil, false
-	}
+	helper := kv.NewTxnHelper(txn)
 	s := &api.Stage{}
-	err = loadStage(s, data)
+	err := helper.LoadStage(s, name)
 	if err != nil {
 		return nil, false
 	}
@@ -197,7 +187,7 @@ func (m *manager) GetMatchingStage(
 	filter := buildStageQueryFilter(req)
 	res := make([]*api.Stage, 0)
 
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	err = helper.IterStages(
 		func(s *api.Stage) error {
 			if filter(s) {
@@ -207,7 +197,7 @@ func (m *manager) GetMatchingStage(
 			}
 			return nil
 		},
-		DefaultIterOpts(),
+		kv.DefaultIterOpts(),
 	)
 	if err != nil {
 		return nil, err
@@ -220,7 +210,7 @@ func (m *manager) CreateLink(
 	req *api.CreateLinkRequest,
 ) error {
 	var err error
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	ctx := newCreateLinkContext(req, helper)
 
 	if err = ctx.validateAndComplete(); err != nil {
@@ -241,7 +231,7 @@ func (m *manager) GetMatchingLinks(
 	filter := buildLinkQueryFilter(req)
 	res := make([]*api.Link, 0)
 
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	err = helper.IterLinks(
 		func(l *api.Link) error {
 			if filter(l) {
@@ -251,7 +241,7 @@ func (m *manager) GetMatchingLinks(
 			}
 			return nil
 		},
-		DefaultIterOpts(),
+		kv.DefaultIterOpts(),
 	)
 	if err != nil {
 		return nil, err
@@ -268,7 +258,7 @@ func (m *manager) CreateAsset(
 		return err
 	}
 	asset := &api.Asset{Name: req.Name, Image: req.Image}
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	if err = helper.SaveAsset(asset); err != nil {
 		return errdefs.InternalWithMsg("persist error: %v", err)
 	}
@@ -287,7 +277,7 @@ func (m *manager) GetMatchingAssets(
 	filter := buildAssetQueryFilter(req)
 	res := make([]*api.Asset, 0)
 
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	err = helper.IterAssets(
 		func(a *api.Asset) error {
 			if filter(a) {
@@ -297,7 +287,7 @@ func (m *manager) GetMatchingAssets(
 			}
 			return nil
 		},
-		DefaultIterOpts(),
+		kv.DefaultIterOpts(),
 	)
 	if err != nil {
 		return nil, err

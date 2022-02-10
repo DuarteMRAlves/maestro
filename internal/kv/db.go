@@ -1,4 +1,4 @@
-package storage
+package kv
 
 import (
 	"github.com/dgraph-io/badger/v3"

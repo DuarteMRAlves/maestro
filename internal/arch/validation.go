@@ -1,8 +1,9 @@
-package storage
+package arch
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 )
@@ -20,8 +21,8 @@ func validateCreateOrchestrationConfig(
 	if !IsValidOrchestrationName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
-	prev, _ := txn.Get(orchestrationKey(req.Name))
-	if prev != nil {
+	helper := kv.NewTxnHelper(txn)
+	if helper.ContainsOrchestration(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"orchestration '%s' already exists",
 			req.Name,
@@ -45,7 +46,7 @@ func (m *manager) validateCreateStageRequest(
 			req.Name,
 		)
 	}
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	if helper.ContainsStage(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"stage '%v' already exists",
@@ -91,8 +92,8 @@ func (m *manager) validateCreateLinkConfig(
 	if !IsValidLinkName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
-	prev, _ := txn.Get(linkKey(req.Name))
-	if prev != nil {
+	helper := kv.NewTxnHelper(txn)
+	if helper.ContainsLink(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"link '%v' already exists",
 			req.Name,
@@ -154,7 +155,7 @@ func (m *manager) validateCreateAssetRequest(
 			req.Name,
 		)
 	}
-	helper := NewTxnHelper(txn)
+	helper := kv.NewTxnHelper(txn)
 	if helper.ContainsAsset(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",

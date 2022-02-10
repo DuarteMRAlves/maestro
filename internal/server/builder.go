@@ -2,10 +2,10 @@ package server
 
 import (
 	apipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
+	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -102,8 +102,8 @@ func (b *Builder) validate() error {
 func (b *Builder) initManagers(s *Server) error {
 	var err error
 	s.reflectionManager = b.reflectionManager
-	storageManagerCtx := storage.NewDefaultContext(s.db, s.reflectionManager)
-	s.storageManager, err = storage.NewManager(storageManagerCtx)
+	storageManagerCtx := arch.NewDefaultContext(s.db, s.reflectionManager)
+	s.storageManager, err = arch.NewManager(storageManagerCtx)
 	if err != nil {
 		return errdefs.PrependMsg(err, "init managers:")
 	}
