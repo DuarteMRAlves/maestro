@@ -2,7 +2,6 @@ package exec
 
 import (
 	"context"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
@@ -15,7 +14,7 @@ import (
 // Builder constructs an execution from an orchestration.
 type Builder struct {
 	orchestration *api.Orchestration
-	execStages    map[api.StageName]Stage
+	stageMap      *StageMap
 
 	orchestrationName api.OrchestrationName
 	stages            map[api.StageName]*api.Stage
@@ -30,6 +29,7 @@ type Builder struct {
 
 func newBuilder(txn *badger.Txn, rpcManager rpc.Manager) *Builder {
 	return &Builder{
+		stageMap:   NewStageMap(),
 		txnHelper:  kv.NewTxnHelper(txn),
 		rpcManager: rpcManager,
 	}
@@ -69,7 +69,7 @@ func (b *Builder) build() (*Execution, error) {
 	}
 	e := &Execution{
 		orchestration: b.orchestration,
-		stages:        b.execStages,
+		stages:        b.stageMap,
 	}
 	return e, nil
 }
@@ -226,12 +226,11 @@ func (b *Builder) loadInputsAndOutputs() error {
 func (b *Builder) buildExecStages() error {
 	var (
 		inputChan, outputChan chan *State
-		auxStage              Stage
+		stage                 Stage
 		err                   error
 	)
 
-	b.execStages = make(map[api.StageName]Stage, len(b.stages))
-	for name, stage := range b.stages {
+	for name, apiStage := range b.stages {
 
 		stageRpc, ok := b.rpcs[name]
 		if !ok {
@@ -251,39 +250,32 @@ func (b *Builder) buildExecStages() error {
 				name,
 			)
 		}
-		inputChan, auxStage, err = inputBuilder.BuildExecutionResources()
+		inputChan, stage, err = inputBuilder.BuildExecutionResources()
 		if err != nil {
 			return errdefs.PrependMsg(err, "input build error for %s", name)
 		}
-		if auxStage != nil {
-			auxName := fmt.Sprintf(
-				"%s-input",
-				name,
-			)
-			b.execStages[api.StageName(auxName)] = auxStage
+		if stage != nil {
+			b.stageMap.AddInputStage(name, stage)
 		}
-		outputChan, auxStage, err = outputBuilder.BuildExecutionResources()
+		outputChan, stage, err = outputBuilder.BuildExecutionResources()
 		if err != nil {
 			return errdefs.PrependMsg(err, "output build error for %s", name)
 		}
-		if auxStage != nil {
-			auxName := fmt.Sprintf(
-				"%s-output",
-				name,
-			)
-			b.execStages[api.StageName(auxName)] = auxStage
+		if stage != nil {
+			b.stageMap.AddOutputStage(name, stage)
 		}
 		cfg := &StageCfg{
-			Address: stage.Address,
+			Address: apiStage.Address,
 			Rpc:     stageRpc,
 			Input:   inputChan,
 			Output:  outputChan,
 		}
 
-		b.execStages[name], err = NewStage(cfg)
+		stage, err = NewStage(cfg)
 		if err != nil {
-			return errdefs.PrependMsg(err, "build execStages")
+			return errdefs.PrependMsg(err, "build rpc stage")
 		}
+		b.stageMap.AddRpcStage(name, stage)
 	}
 	return nil
 }
