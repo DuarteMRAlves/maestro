@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
+	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"io"
@@ -285,6 +286,81 @@ func (s *MergeStage) takeUntilCurrId(
 			}
 		case <-term:
 			return nil, true
+		}
+	}
+}
+
+// SplitStage divides a stage output into multiple channels. It can send the
+// entire message, or a field.
+type SplitStage struct {
+	// fields are the names of the fields of the received message that should
+	// be sent through the respective channel. If field is the empty string, the
+	// entire message is sent.
+	fields []string
+	// input is the channel from which to receive the messages.
+	input <-chan *State
+	// outputs are the several channels where to send messages.
+	outputs []chan<- *State
+}
+
+func NewSplitStage(
+	fields []string,
+	input <-chan *State,
+	outputs []chan<- *State,
+) *SplitStage {
+	return &SplitStage{
+		fields:  fields,
+		input:   input,
+		outputs: outputs,
+	}
+}
+
+func (s *SplitStage) Run(cfg *RunCfg) {
+	var (
+		state *State
+		send  interface{}
+	)
+	for {
+		select {
+		case state = <-s.input:
+		case <-cfg.term:
+			close(cfg.done)
+			return
+		}
+		msg, ok := state.Msg().(proto.Message)
+		if !ok {
+			cfg.errs <- errdefs.InternalWithMsg("Invalid message type")
+			continue
+		}
+		dyn, err := dynamic.AsDynamicMessage(msg)
+		if err != nil {
+			cfg.errs <- errdefs.InternalWithMsg(
+				"convert proto msg to dynamic: %s",
+				err,
+			)
+			continue
+		}
+		for i, out := range s.outputs {
+			send = dyn
+			field := s.fields[i]
+			if field != "" {
+				send, err = dyn.TryGetFieldByName(field)
+				if err != nil {
+					cfg.errs <- errdefs.InternalWithMsg(
+						"get field '%s': %s",
+						field,
+						err,
+					)
+					continue
+				}
+			}
+			newState := NewState(state.Id(), send)
+			select {
+			case out <- newState:
+			case <-cfg.term:
+				close(cfg.done)
+				return
+			}
 		}
 	}
 }

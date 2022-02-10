@@ -23,3 +23,18 @@ message MergeInner2 {
 message MergeInner3 {
   int32 val = 1;
 }
+
+// SplitMessage defines a message to test the split stage.
+message SplitMessage {
+  SplitInner1 out1 = 1;
+  int32 val = 2;
+  SplitInner2 out2 = 3;
+}
+
+message SplitInner1 {
+  int32 val = 1;
+}
+
+message SplitInner2 {
+  int32 val = 1;
+}
