@@ -15,8 +15,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	)
 	req := &api.CreateOrchestrationRequest{Name: name}
 
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -202,8 +201,7 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Orchestration
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))

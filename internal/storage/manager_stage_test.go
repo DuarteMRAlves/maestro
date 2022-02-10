@@ -113,8 +113,7 @@ func testCreateStage(
 		stored        api.Stage
 		orchestration api.Orchestration
 	)
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -272,8 +271,7 @@ func testCreateStageError(
 	assertErrTypeFn func(error) bool,
 	expectedErrMsg string,
 ) {
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	assert.NilError(t, err, "db creation")
+	db := NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -538,8 +536,7 @@ func TestManager_GetMatchingStages(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Stage
 
-				db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-				assert.NilError(t, err, "db creation")
+				db := NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))
