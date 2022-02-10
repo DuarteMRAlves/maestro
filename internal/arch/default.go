@@ -1,4 +1,4 @@
-package storage
+package arch
 
 import "github.com/DuarteMRAlves/maestro/internal/api"
 

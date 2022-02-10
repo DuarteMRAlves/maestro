@@ -2,10 +2,10 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -18,7 +18,7 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	storageManager    storage.Manager
+	storageManager    arch.Manager
 	flowManager       exec.Manager
 	reflectionManager rpc.Manager
 

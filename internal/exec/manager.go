@@ -2,8 +2,8 @@ package exec
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"sync"
 )
@@ -44,7 +44,7 @@ func (m *manager) StartExecution(
 
 	name = req.Orchestration
 	if name == "" {
-		name = storage.DefaultOrchestrationName
+		name = arch.DefaultOrchestrationName
 	}
 
 	_, exists := m.executions[name]

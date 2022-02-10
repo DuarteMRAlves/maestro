@@ -1,9 +1,10 @@
-package storage
+package arch
 
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -21,7 +22,7 @@ func TestManager_CreateAsset(t *testing.T) {
 	)
 	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -35,10 +36,8 @@ func TestManager_CreateAsset(t *testing.T) {
 	assert.NilError(t, err, "create error not nil")
 	err = db.View(
 		func(txn *badger.Txn) error {
-			item, err := txn.Get(assetKey(assetName))
-			assert.NilError(t, err, "get error")
-			cp, err := item.ValueCopy(nil)
-			return loadAsset(&asset, cp)
+			helper := kv.NewTxnHelper(txn)
+			return helper.LoadAsset(&asset, assetName)
 		},
 	)
 	assert.NilError(t, err, "load error")
@@ -48,13 +47,14 @@ func TestManager_CreateAsset(t *testing.T) {
 
 func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 	const assetName = "Asset-Name"
+	var asset api.Asset
 
 	var (
 		req    *api.CreateAssetRequest = nil
 		errMsg                         = "'req' is nil"
 	)
 
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -69,9 +69,8 @@ func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 	assert.ErrorContains(t, err, errMsg)
 	err = db.View(
 		func(txn *badger.Txn) error {
-			item, err := txn.Get(assetKey(assetName))
-			assert.Assert(t, item == nil, "nil item")
-			return err
+			helper := kv.NewTxnHelper(txn)
+			return helper.LoadAsset(&asset, assetName)
 		},
 	)
 	assert.Assert(t, err == badger.ErrKeyNotFound)
@@ -88,7 +87,7 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	)
 	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewTestContext(db))
@@ -103,10 +102,8 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	assert.NilError(t, err, "create error not nil")
 	err = db.View(
 		func(txn *badger.Txn) error {
-			item, err := txn.Get(assetKey(assetName))
-			assert.NilError(t, err, "get error")
-			cp, err := item.ValueCopy(nil)
-			return loadAsset(&asset, cp)
+			helper := kv.NewTxnHelper(txn)
+			return helper.LoadAsset(&asset, assetName)
 		},
 	)
 	assert.NilError(t, err, "load error")
@@ -130,10 +127,8 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	// Store should keep old asset
 	err = db.View(
 		func(txn *badger.Txn) error {
-			item, err := txn.Get(assetKey(assetName))
-			assert.NilError(t, err, "get error")
-			cp, err := item.ValueCopy(nil)
-			return loadAsset(&asset, cp)
+			helper := kv.NewTxnHelper(txn)
+			return helper.LoadAsset(&asset, assetName)
 		},
 	)
 	assert.NilError(t, err, "load error")
@@ -209,7 +204,7 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Asset
 
-				db := NewTestDb(t)
+				db := kv.NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))

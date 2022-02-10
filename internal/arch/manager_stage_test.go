@@ -1,9 +1,10 @@
-package storage
+package arch
 
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
@@ -113,7 +114,7 @@ func testCreateStage(
 		stored        api.Stage
 		orchestration api.Orchestration
 	)
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -121,7 +122,7 @@ func testCreateStage(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			helper := NewTxnHelper(txn)
+			helper := kv.NewTxnHelper(txn)
 			a := &api.Asset{Name: util.AssetNameForNum(0)}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
@@ -143,7 +144,7 @@ func testCreateStage(
 	assert.NilError(t, err, "create error not nil")
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := TxnHelper{txn: txn}
+			helper := kv.NewTxnHelper(txn)
 			return helper.LoadStage(&stored, req.Name)
 		},
 	)
@@ -163,7 +164,7 @@ func testCreateStage(
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := TxnHelper{txn: txn}
+			helper := kv.NewTxnHelper(txn)
 			return helper.LoadOrchestration(
 				&orchestration,
 				stored.Orchestration,
@@ -271,7 +272,7 @@ func testCreateStageError(
 	assertErrTypeFn func(error) bool,
 	expectedErrMsg string,
 ) {
-	db := NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
@@ -279,7 +280,7 @@ func testCreateStageError(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			helper := NewTxnHelper(txn)
+			helper := kv.NewTxnHelper(txn)
 			a := &api.Asset{Name: util.AssetNameForNum(0)}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
@@ -536,7 +537,7 @@ func TestManager_GetMatchingStages(t *testing.T) {
 			func(t *testing.T) {
 				var received []*api.Stage
 
-				db := NewTestDb(t)
+				db := kv.NewTestDb(t)
 				defer db.Close()
 
 				m, err := NewManager(NewTestContext(db))
@@ -597,7 +598,7 @@ func testStage(num int, phase api.StagePhase) *api.Stage {
 }
 
 func saveStageAndDependencies(txn *badger.Txn, s *api.Stage) error {
-	helper := TxnHelper{txn: txn}
+	helper := kv.NewTxnHelper(txn)
 	if !helper.ContainsOrchestration(s.Orchestration) {
 		err := helper.SaveOrchestration(
 			orchestrationForName(

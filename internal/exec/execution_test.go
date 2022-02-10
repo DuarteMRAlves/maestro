@@ -3,8 +3,8 @@ package exec
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
@@ -45,7 +45,7 @@ func TestExecution_LinearPipeline(t *testing.T) {
 
 	rpcManager := rpc.NewManager()
 
-	db := storage.NewTestDb(t)
+	db := kv.NewTestDb(t)
 	defer db.Close()
 
 	err = initDb(db, sourceAddr, transformAddr, sinkAddr)
@@ -228,7 +228,7 @@ func initDb(db *badger.DB, sourceAddr, transformAddr, sinkAddr string) error {
 
 	return db.Update(
 		func(txn *badger.Txn) error {
-			helper := storage.NewTxnHelper(txn)
+			helper := kv.NewTxnHelper(txn)
 			err = helper.SaveOrchestration(o)
 			if err != nil {
 				return err

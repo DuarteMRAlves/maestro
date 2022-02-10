@@ -1,4 +1,4 @@
-package storage
+package kv
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
@@ -341,9 +341,9 @@ func TestTxnHelper_SaveLink(t *testing.T) {
 				SourceField:   "",
 				TargetStage:   "",
 				TargetField:   "",
-				Orchestration: DefaultOrchestrationName,
+				Orchestration: "some-orchestration",
 			},
-			expected: []byte("some-name;;;;;" + DefaultOrchestrationName),
+			expected: []byte("some-name;;;;;some-orchestration"),
 		},
 		{
 			name: "non default link",
@@ -402,14 +402,14 @@ func TestTxnHelper_LoadLink(t *testing.T) {
 	}{
 		{
 			name:   "default link",
-			stored: []byte("some-name;;;;;" + DefaultOrchestrationName),
+			stored: []byte("some-name;;;;;some-orchestration"),
 			expected: &api.Link{
 				Name:          "some-name",
 				SourceStage:   "",
 				SourceField:   "",
 				TargetStage:   "",
 				TargetField:   "",
-				Orchestration: DefaultOrchestrationName,
+				Orchestration: "some-orchestration",
 			},
 		},
 		{
