@@ -8,17 +8,17 @@ import (
 type Execution struct {
 	orchestration *api.Orchestration
 
-	stages map[api.StageName]Stage
+	stages *StageMap
 
 	term chan struct{}
 	errs chan error
-	done map[api.StageName]<-chan struct{}
+	done []<-chan struct{}
 }
 
 func (e *Execution) Start() {
 	e.term = make(chan struct{})
 	e.errs = make(chan error)
-	e.done = make(map[api.StageName]<-chan struct{}, len(e.stages))
+	e.done = make([]<-chan struct{}, 0, e.stages.Len())
 
 	go func() {
 		err, open := <-e.errs
@@ -26,16 +26,18 @@ func (e *Execution) Start() {
 			panic(err)
 		}
 	}()
-	for n, s := range e.stages {
-		ch := make(chan struct{})
-		e.done[n] = ch
-		cfg := &RunCfg{
-			term: e.term,
-			errs: e.errs,
-			done: ch,
-		}
-		go s.Run(cfg)
-	}
+	e.stages.Iter(
+		func(s Stage) {
+			ch := make(chan struct{})
+			e.done = append(e.done, ch)
+			cfg := &RunCfg{
+				term: e.term,
+				errs: e.errs,
+				done: ch,
+			}
+			go s.Run(cfg)
+		},
+	)
 }
 
 func (e *Execution) Stop() {
