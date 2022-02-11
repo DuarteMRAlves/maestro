@@ -18,7 +18,7 @@ import (
 	"testing"
 )
 
-func TestExecution_LinearPipeline(t *testing.T) {
+func TestExecution_Linear(t *testing.T) {
 	var (
 		e   *Execution
 		err error
@@ -48,7 +48,7 @@ func TestExecution_LinearPipeline(t *testing.T) {
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	err = initDb(db, sourceAddr, transformAddr, sinkAddr)
+	err = initLinearDb(db, sourceAddr, transformAddr, sinkAddr)
 	assert.NilError(t, err, "init db")
 
 	err = db.View(
@@ -168,7 +168,10 @@ func startLinearSink(
 	return s
 }
 
-func initDb(db *badger.DB, sourceAddr, transformAddr, sinkAddr string) error {
+func initLinearDb(
+	db *badger.DB,
+	sourceAddr, transformAddr, sinkAddr string,
+) error {
 	var err error
 
 	o := &api.Orchestration{
@@ -246,6 +249,267 @@ func initDb(db *badger.DB, sourceAddr, transformAddr, sinkAddr string) error {
 				return err
 			}
 			err = helper.SaveLink(sourceToTransform)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveLink(transformToSink)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+func TestExecution_SplitAndMerge(t *testing.T) {
+	var (
+		e   *Execution
+		err error
+	)
+
+	sourceLis := util.NewTestListener(t)
+	sourceAddr := sourceLis.Addr().String()
+	sourceServer := startSplitAndMergeSource(t, sourceLis)
+	defer sourceServer.Stop()
+
+	transformLis := util.NewTestListener(t)
+	transformAddr := transformLis.Addr().String()
+	transformServer := startSplitAndMergeTransform(t, transformLis)
+	defer transformServer.Stop()
+
+	max := 3
+	collect := make([]*pb.SplitAndMergePair, 0, max)
+	done := make(chan struct{})
+
+	sinkLis := util.NewTestListener(t)
+	sinkAddr := sinkLis.Addr().String()
+	sinkServer := startSplitAndMergeSink(t, sinkLis, max, &collect, done)
+	defer sinkServer.Stop()
+
+	rpcManager := rpc.NewManager()
+
+	db := kv.NewTestDb(t)
+	defer db.Close()
+
+	err = initSplitAndMergeDb(db, sourceAddr, transformAddr, sinkAddr)
+	assert.NilError(t, err, "init db")
+
+	err = db.View(
+		func(txn *badger.Txn) error {
+			builder := newBuilder(txn, rpcManager)
+			e, err = builder.withOrchestration("default").build()
+			return err
+		},
+	)
+
+	assert.NilError(t, err, "build error")
+	e.Start()
+	<-done
+	e.Stop()
+	assert.Equal(t, 3, len(collect), "invalid length")
+	for i, msg := range collect {
+		val := int64(i)
+		assert.Equal(t, msg.Source.Value, val+1)
+		assert.Equal(t, msg.Transformed.Value, (val+1)*2)
+	}
+}
+
+type SplitAndMergeSource struct {
+	pb.UnimplementedSplitAndMergeSourceServer
+	counter int64
+}
+
+func (s *SplitAndMergeSource) Process(
+	_ context.Context,
+	_ *emptypb.Empty,
+) (*pb.SplitAndMergeMessage, error) {
+	msg := &pb.SplitAndMergeMessage{Value: s.counter}
+	atomic.AddInt64(&s.counter, 1)
+	return msg, nil
+}
+
+type SplitAndMergeTransform struct {
+	pb.UnimplementedSplitAndMergeTransformServer
+}
+
+func (_ *SplitAndMergeTransform) Process(
+	_ context.Context,
+	msg *pb.SplitAndMergeMessage,
+) (*pb.SplitAndMergeMessage, error) {
+	msg.Value *= 2
+	return msg, nil
+}
+
+type SplitAndMergeSink struct {
+	pb.UnimplementedSplitAndMergeSinkServer
+	max     int
+	collect *[]*pb.SplitAndMergePair
+	done    chan<- struct{}
+	mu      sync.Mutex
+}
+
+func (s *SplitAndMergeSink) Process(
+	_ context.Context,
+	msg *pb.SplitAndMergePair,
+) (*emptypb.Empty, error) {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// Receive while not at full capacity
+	if len(*s.collect) < s.max {
+		*s.collect = append(*s.collect, msg)
+	}
+	// Notify when full. Remaining messages are discarded.
+	if len(*s.collect) == s.max && s.done != nil {
+		close(s.done)
+		s.done = nil
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func startSplitAndMergeSource(t *testing.T, lis net.Listener) *grpc.Server {
+	s := grpc.NewServer()
+	pb.RegisterSplitAndMergeSourceServer(s, &SplitAndMergeSource{counter: 1})
+	reflection.Register(s)
+
+	go func() {
+		err := s.Serve(lis)
+		assert.NilError(t, err, "split and merge source server error")
+	}()
+	return s
+}
+
+func startSplitAndMergeTransform(t *testing.T, lis net.Listener) *grpc.Server {
+	s := grpc.NewServer()
+	pb.RegisterSplitAndMergeTransformServer(s, &SplitAndMergeTransform{})
+	reflection.Register(s)
+
+	go func() {
+		err := s.Serve(lis)
+		assert.NilError(t, err, "split and merge transform server error")
+	}()
+	return s
+}
+
+func startSplitAndMergeSink(
+	t *testing.T,
+	lis net.Listener,
+	max int,
+	collect *[]*pb.SplitAndMergePair,
+	done chan<- struct{},
+) *grpc.Server {
+	s := grpc.NewServer()
+	pb.RegisterSplitAndMergeSinkServer(
+		s,
+		&SplitAndMergeSink{max: max, collect: collect, done: done},
+	)
+	reflection.Register(s)
+
+	go func() {
+		err := s.Serve(lis)
+		assert.NilError(t, err, "split and merge sink server error")
+	}()
+	return s
+}
+
+func initSplitAndMergeDb(
+	db *badger.DB,
+	sourceAddr, transformAddr, sinkAddr string,
+) error {
+	var err error
+
+	o := &api.Orchestration{
+		Name:   "default",
+		Phase:  api.OrchestrationPending,
+		Stages: []api.StageName{"source", "transform", "sink"},
+		Links: []api.LinkName{
+			"link-source-transform",
+			"link-transform-sink",
+			"link-source-sink",
+		},
+	}
+
+	source := &api.Stage{
+		Name:          "source",
+		Phase:         api.StagePending,
+		Service:       "pb.SplitAndMergeSource",
+		Rpc:           "Process",
+		Address:       sourceAddr,
+		Orchestration: "default",
+		Asset:         "",
+	}
+
+	transform := &api.Stage{
+		Name:          "transform",
+		Phase:         api.StagePending,
+		Service:       "pb.SplitAndMergeTransform",
+		Rpc:           "Process",
+		Address:       transformAddr,
+		Orchestration: "default",
+		Asset:         "",
+	}
+
+	sink := &api.Stage{
+		Name:          "sink",
+		Phase:         api.StagePending,
+		Service:       "pb.SplitAndMergeSink",
+		Rpc:           "Process",
+		Address:       sinkAddr,
+		Orchestration: "default",
+		Asset:         "",
+	}
+
+	sourceToTransform := &api.Link{
+		Name:          "link-source-transform",
+		SourceStage:   "source",
+		SourceField:   "",
+		TargetStage:   "transform",
+		TargetField:   "",
+		Orchestration: "default",
+	}
+
+	sourceToSink := &api.Link{
+		Name:          "link-source-sink",
+		SourceStage:   "source",
+		SourceField:   "",
+		TargetStage:   "sink",
+		TargetField:   "source",
+		Orchestration: "default",
+	}
+
+	transformToSink := &api.Link{
+		Name:          "link-transform-sink",
+		SourceStage:   "transform",
+		SourceField:   "",
+		TargetStage:   "sink",
+		TargetField:   "transformed",
+		Orchestration: "default",
+	}
+
+	return db.Update(
+		func(txn *badger.Txn) error {
+			helper := kv.NewTxnHelper(txn)
+			err = helper.SaveOrchestration(o)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveStage(source)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveStage(transform)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveStage(sink)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveLink(sourceToTransform)
+			if err != nil {
+				return err
+			}
+			err = helper.SaveLink(sourceToSink)
 			if err != nil {
 				return err
 			}
