@@ -257,10 +257,7 @@ func (b *Builder) buildExecStages() error {
 		if stage != nil {
 			b.stageMap.AddInputStage(name, stage)
 		}
-		outputChan, stage, err = outputBuilder.BuildExecutionResources()
-		if err != nil {
-			return errdefs.PrependMsg(err, "output build error for %s", name)
-		}
+		outputChan, stage = outputBuilder.BuildExecutionResources()
 		if stage != nil {
 			b.stageMap.AddOutputStage(name, stage)
 		}
@@ -281,13 +278,13 @@ func (b *Builder) buildExecStages() error {
 
 // InputDesc stores the necessary information to handle the input of a stage.
 type InputDesc struct {
-	connections []*Link
-	msg         rpc.Message
+	links []*Link
+	msg   rpc.Message
 }
 
 func NewInputDesc() *InputDesc {
 	return &InputDesc{
-		connections: []*Link{},
+		links: []*Link{},
 	}
 }
 
@@ -298,12 +295,12 @@ func (i *InputDesc) WithMessage(msg rpc.Message) *InputDesc {
 
 func (i *InputDesc) WithConnection(c *Link) error {
 	// A previous link that consumes the entire message already exists
-	if len(i.connections) == 1 && i.connections[0].HasEmptyTargetField() {
+	if len(i.links) == 1 && i.links[0].HasEmptyTargetField() {
 		return errdefs.FailedPreconditionWithMsg(
 			"link that receives the full message already exists",
 		)
 	}
-	for _, prev := range i.connections {
+	for _, prev := range i.links {
 		if prev.HasSameTargetField(c) {
 			return errdefs.InvalidArgumentWithMsg(
 				"link with the same target field already registered: %s",
@@ -311,44 +308,70 @@ func (i *InputDesc) WithConnection(c *Link) error {
 			)
 		}
 	}
-	i.connections = append(i.connections, c)
+	i.links = append(i.links, c)
 	return nil
 }
 
 func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
-	switch len(i.connections) {
+	switch len(i.links) {
 	case 0:
 		if i.msg == nil {
 			return nil, nil, errdefs.FailedPreconditionWithMsg(
-				"message required without 0 connections",
+				"message required without 0 links.",
 			)
 		}
 		ch := make(chan *State)
 		s := NewSourceStage(1, ch, i.msg)
 		return ch, s, nil
 	case 1:
-		return i.connections[0].Chan(), nil, nil
+		if !i.links[0].HasEmptyTargetField() {
+			if i.msg == nil {
+				return nil, nil, errdefs.FailedPreconditionWithMsg(
+					"message required without one link with sub message.",
+				)
+			}
+			output, s := i.buildMergeStage()
+			return output, s, nil
+		}
+		return i.links[0].Chan(), nil, nil
 	default:
-		return nil, nil, errdefs.FailedPreconditionWithMsg(
-			"too many connections: expected 0 or 1 but received %d",
-			len(i.connections),
-		)
+		if i.msg == nil {
+			return nil, nil, errdefs.FailedPreconditionWithMsg(
+				"message required without multiple links.",
+			)
+		}
+		output, s := i.buildMergeStage()
+		return output, s, nil
 	}
 }
 
-// OutputDesc registers the several connections for an output.
+func (i *InputDesc) buildMergeStage() (chan *State, *MergeStage) {
+	fields := make([]string, 0, len(i.links))
+	// channels where the stage will receive the several inputs.
+	inputs := make([]<-chan *State, 0, len(i.links))
+	// channel where the stage will send the constructed messages.
+	output := make(chan *State)
+	for _, l := range i.links {
+		fields = append(fields, l.TargetField())
+		inputs = append(inputs, l.Chan())
+	}
+	s := NewMergeStage(fields, inputs, output, i.msg)
+	return output, s
+}
+
+// OutputDesc registers the several links for an output.
 type OutputDesc struct {
-	connections []*Link
+	links []*Link
 }
 
 func NewOutputBuilder() *OutputDesc {
 	return &OutputDesc{
-		connections: []*Link{},
+		links: []*Link{},
 	}
 }
 
 func (o *OutputDesc) WithConnection(c *Link) error {
-	for _, prev := range o.connections {
+	for _, prev := range o.links {
 		if prev.HasSameLinkName(c) {
 			return errdefs.InvalidArgumentWithMsg(
 				"Link with an equal name already registered: %s",
@@ -357,22 +380,39 @@ func (o *OutputDesc) WithConnection(c *Link) error {
 		}
 	}
 
-	o.connections = append(o.connections, c)
+	o.links = append(o.links, c)
 	return nil
 }
 
-func (o *OutputDesc) BuildExecutionResources() (chan *State, Stage, error) {
-	switch len(o.connections) {
+func (o *OutputDesc) BuildExecutionResources() (chan *State, Stage) {
+	switch len(o.links) {
 	case 0:
 		ch := make(chan *State)
 		s := NewSinkOutput(ch)
-		return ch, s, nil
+		return ch, s
 	case 1:
-		return o.connections[0].Chan(), nil, nil
+		// We have only one link, but we want a sub message. We can use the
+		// split stage with just one output that retrieves the desired message
+		// part.
+		if o.links[0].SourceField() != "" {
+			return o.buildSplitStage()
+		}
+		return o.links[0].Chan(), nil
 	default:
-		return nil, nil, errdefs.FailedPreconditionWithMsg(
-			"too many connections: expected 0 or 1 but received %d",
-			len(o.connections),
-		)
+		return o.buildSplitStage()
 	}
+}
+
+func (o *OutputDesc) buildSplitStage() (chan *State, Stage) {
+	fields := make([]string, 0, len(o.links))
+	// channel where the stage will send the produced states.
+	input := make(chan *State)
+	// channels to split the received states.
+	outputs := make([]chan<- *State, 0, len(o.links))
+	for _, l := range o.links {
+		fields = append(fields, l.SourceField())
+		outputs = append(outputs, l.Chan())
+	}
+	s := NewSplitStage(fields, input, outputs)
+	return input, s
 }
