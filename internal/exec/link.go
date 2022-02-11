@@ -18,22 +18,29 @@ func NewLink(l *api.Link) *Link {
 	return f
 }
 
-func (c *Link) LinkName() api.LinkName {
-	return c.link.Name
+func (l *Link) LinkName() api.LinkName {
+	return l.link.Name
 }
 
-func (c *Link) HasSameLinkName(other *Link) bool {
-	return c.link.Name == other.link.Name
+func (l *Link) HasSameLinkName(other *Link) bool {
+	return l.link.Name == other.link.Name
 }
 
-func (c *Link) HasEmptyTargetField() bool {
-	return c.link.TargetField == ""
+func (l *Link) SourceField() string {
+	return l.link.SourceField
+}
+func (l *Link) TargetField() string {
+	return l.link.TargetField
 }
 
-func (c *Link) HasSameTargetField(other *Link) bool {
-	return c.link.TargetField == other.link.TargetField
+func (l *Link) HasEmptyTargetField() bool {
+	return l.link.TargetField == ""
 }
 
-func (c *Link) Chan() chan *State {
-	return c.ch
+func (l *Link) HasSameTargetField(other *Link) bool {
+	return l.link.TargetField == other.link.TargetField
+}
+
+func (l *Link) Chan() chan *State {
+	return l.ch
 }
