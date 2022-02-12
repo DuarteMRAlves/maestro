@@ -11,8 +11,17 @@ import (
 	"time"
 )
 
+// Stage executes a stage in an orchestration. A stage can be a rpc stage, that
+// executes an rpc and was specified by the user, or an auxiliary stage to
+// control the flow of the pipeline, such as source or a sink.
 type Stage interface {
+	// Run executes the given stage with a config. This function terminates when
+	// the term channel is signalled. The function signals the done channel as
+	// the last instruction before returning.
 	Run(*RunCfg)
+	// Close shuts down the output channels of these stages, cleaning up the
+	// pipeline.
+	Close()
 }
 
 // RunCfg specifies the configuration that the Stage should use when running.
@@ -116,23 +125,27 @@ func (s *UnaryStage) invoke(req interface{}, rep interface{}) error {
 	return s.invoker.Invoke(ctx, req, rep)
 }
 
+func (s *UnaryStage) Close() {
+	close(s.output)
+}
+
 // SourceStage is the source of the orchestration. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type SourceStage struct {
-	id  int32
-	msg rpc.Message
-	ch  chan *State
+	id     int32
+	msg    rpc.Message
+	output chan<- *State
 }
 
 func NewSourceStage(
 	initial int32,
-	ch chan *State,
+	output chan<- *State,
 	msg rpc.Message,
 ) *SourceStage {
 	i := &SourceStage{
-		id:  initial,
-		msg: msg,
-		ch:  ch,
+		id:     initial,
+		msg:    msg,
+		output: output,
 	}
 	return i
 }
@@ -140,7 +153,7 @@ func NewSourceStage(
 func (s *SourceStage) Run(cfg *RunCfg) {
 	for {
 		select {
-		case s.ch <- s.next():
+		case s.output <- s.next():
 		case <-cfg.term:
 			close(cfg.done)
 			return
@@ -154,15 +167,19 @@ func (s *SourceStage) next() *State {
 	return st
 }
 
+func (s *SourceStage) Close() {
+	close(s.output)
+}
+
 // SinkStage defines the last output of the orchestration, where all messages
 // are dropped.
 type SinkStage struct {
-	ch chan *State
+	input <-chan *State
 }
 
-func NewSinkOutput(ch chan *State) *SinkStage {
+func NewSinkOutput(input <-chan *State) *SinkStage {
 	s := &SinkStage{
-		ch: ch,
+		input: input,
 	}
 	return s
 }
@@ -171,12 +188,16 @@ func (s *SinkStage) Run(cfg *RunCfg) {
 	for {
 		select {
 		// Discard results
-		case <-s.ch:
+		case <-s.input:
 		case <-cfg.term:
 			close(cfg.done)
 			return
 		}
 	}
+}
+
+func (s *SinkStage) Close() {
+	// Do nothing, the input channel will be closed by the upstream stage.
 }
 
 // MergeStage collects multiple messages from multiple channels and build a
@@ -278,6 +299,10 @@ func (s *MergeStage) takeUntilCurrId(
 	}
 }
 
+func (s *MergeStage) Close() {
+	close(s.output)
+}
+
 // SplitStage divides a stage output into multiple channels. It can send the
 // entire message, or a field.
 type SplitStage struct {
@@ -350,5 +375,11 @@ func (s *SplitStage) Run(cfg *RunCfg) {
 				return
 			}
 		}
+	}
+}
+
+func (s *SplitStage) Close() {
+	for _, c := range s.outputs {
+		close(c)
 	}
 }

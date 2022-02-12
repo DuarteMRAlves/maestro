@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
@@ -50,7 +49,7 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 
 	<-done
 	close(input)
-	close(output)
+	s.Close()
 
 	rcvStates := collectState(output)
 
@@ -186,6 +185,8 @@ func TestSourceStage_Run(t *testing.T) {
 	<-done
 	close(errs)
 	assert.Assert(t, len(errs) == 0)
+
+	st.Close()
 }
 
 func TestMergeStage_Run(t *testing.T) {
@@ -258,6 +259,11 @@ func TestMergeStage_Run(t *testing.T) {
 	<-done
 	close(errs)
 	assert.Assert(t, len(errs) == 0)
+
+	close(input1)
+	close(input2)
+	close(input3)
+	s.Close()
 }
 
 func testMergeMessage(val int32) *pb.MergeMessage {
@@ -311,9 +317,6 @@ func TestSplitStage_Run(t *testing.T) {
 	go s.Run(&RunCfg{term: term, done: done, errs: errs})
 
 	for i := 0; i < len(expected1); i++ {
-		fmt.Println("On iter:", i)
-
-		fmt.Println("Checking 1")
 		exp1 := expected1[i]
 		out1 := <-output1
 		assert.NilError(t, out1.Err(), "err 1 at iter %d", i)
@@ -324,7 +327,6 @@ func TestSplitStage_Run(t *testing.T) {
 		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
 		assert.Equal(t, expMsg1.Val, outMsg1.Val)
 
-		fmt.Println("Checking 2")
 		exp2 := expected2[i]
 		out2 := <-output2
 		assert.NilError(t, out2.Err(), "err 2 at iter %d", i)
@@ -340,7 +342,6 @@ func TestSplitStage_Run(t *testing.T) {
 		assert.Equal(t, expMsg2.Val, outMsg2.Val)
 		assert.Equal(t, expMsg2.Out2.Val, outMsg2.Out2.Val)
 
-		fmt.Println("Checking 3")
 		exp3 := expected3[i]
 		out3 := <-output3
 		assert.NilError(t, out3.Err(), "err 3 at iter %d", i)
@@ -356,6 +357,8 @@ func TestSplitStage_Run(t *testing.T) {
 	<-done
 	close(errs)
 	assert.Assert(t, len(errs) == 0)
+	close(input)
+	s.Close()
 }
 
 func testSplitMessage(val int32) *pb.SplitMessage {

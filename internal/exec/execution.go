@@ -46,4 +46,9 @@ func (e *Execution) Stop() {
 		<-d
 	}
 	close(e.errs)
+	e.stages.Iter(
+		func(s Stage) {
+			s.Close()
+		},
+	)
 }
