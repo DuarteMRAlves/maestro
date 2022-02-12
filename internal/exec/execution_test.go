@@ -62,11 +62,10 @@ func TestExecution_Linear(t *testing.T) {
 	e.Start()
 	<-done
 	e.Stop()
-	var prev int64 = 0
-	for _, msg := range collect {
-		assert.Assert(t, msg.Value >= prev)
-		assert.Assert(t, msg.Value%2 == 0)
-		prev = msg.Value
+	assert.Equal(t, 3, len(collect), "invalid length")
+	for i, msg := range collect {
+		val := int64(i)
+		assert.Equal(t, msg.Value, (val+1)*2)
 	}
 }
 
