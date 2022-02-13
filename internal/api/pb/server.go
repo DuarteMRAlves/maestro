@@ -17,6 +17,7 @@ func RegisterServices(s *grpc.Server, api api.InternalAPI) {
 		s,
 		&orchestrationsService{api: api},
 	)
+	pb.RegisterExecutionManagementServer(s, &executionsService{api: api})
 }
 
 type assetsService struct {
@@ -215,4 +216,26 @@ func (s *linksService) Get(
 		stream.Send(pbLink)
 	}
 	return nil
+}
+
+type executionsService struct {
+	pb.UnimplementedExecutionManagementServer
+	api api.InternalAPI
+}
+
+func (s *executionsService) Start(
+	_ context.Context,
+	pbReq *pb.StartExecutionRequest,
+) (*emptypb.Empty, error) {
+	var (
+		req api.StartExecutionRequest
+		err error
+	)
+
+	UnmarshalStartExecutionRequest(&req, pbReq)
+	err = s.api.StartExecution(&req)
+	if err != nil {
+		return nil, GrpcErrorFromError(err)
+	}
+	return &emptypb.Empty{}, nil
 }

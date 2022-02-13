@@ -146,3 +146,12 @@ func TestGetAssetRequest(t *testing.T) {
 	assert.Equal(t, orig.Name, string(unmarshalled.Name))
 	assert.Equal(t, orig.Image, unmarshalled.Image)
 }
+
+func TestStartExecutionRequest(t *testing.T) {
+	var unmarshalled api.StartExecutionRequest
+
+	orig := &pb.StartExecutionRequest{Orchestration: "Orchestration"}
+
+	UnmarshalStartExecutionRequest(&unmarshalled, orig)
+	assert.Equal(t, orig.Orchestration, string(unmarshalled.Orchestration))
+}

@@ -15,7 +15,7 @@ type Manager interface {
 	// StartExecution starts the execution associated with the orchestration
 	// with the received name. If no Execution for that name exists, a new
 	// execution is created and started.
-	StartExecution(*badger.Txn, api.StartOrchestrationRequest) error
+	StartExecution(*badger.Txn, *api.StartExecutionRequest) error
 }
 
 type manager struct {
@@ -34,7 +34,7 @@ func NewManager(reflectionManager rpc.Manager) Manager {
 
 func (m *manager) StartExecution(
 	txn *badger.Txn,
-	req api.StartOrchestrationRequest,
+	req *api.StartExecutionRequest,
 ) error {
 	var (
 		name api.OrchestrationName

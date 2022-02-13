@@ -160,8 +160,8 @@ type GetAssetRequest struct {
 	Image string
 }
 
-// StartOrchestrationRequest starts the execution of a given orchestration.
-type StartOrchestrationRequest struct {
+// StartExecutionRequest starts the execution of a given orchestration.
+type StartExecutionRequest struct {
 	// Orchestration specifies the orchestration to start.
 	Orchestration OrchestrationName
 }

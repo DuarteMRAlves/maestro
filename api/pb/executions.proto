@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+// ExecutionManagement services handles operations related to executions.
+service ExecutionManagement {
+  rpc Start(StartExecutionRequest) returns (google.protobuf.Empty);
+}
+
+// StartExecutionRequest is a message that specifies an orchestration to be
+// executed.
+message StartExecutionRequest {
+  string orchestration = 1;
+}
