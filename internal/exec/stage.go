@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/golang/protobuf/proto"
-	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"io"
 	"time"
@@ -80,7 +78,7 @@ type UnaryStage struct {
 func (s *UnaryStage) Run(cfg *RunCfg) {
 	var (
 		in, out  *State
-		req, rep interface{}
+		req, rep rpc.DynMessage
 		err      error
 	)
 
@@ -102,7 +100,7 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 		req = in.Msg()
 		rep = s.rpc.Output().NewEmpty()
 
-		err = s.invoke(req, rep)
+		err = s.invoke(req.GrpcMsg(), rep.GrpcMsg())
 		if err != nil {
 			cfg.errs <- err
 			continue
@@ -133,14 +131,14 @@ func (s *UnaryStage) Close() {
 // the states and sends empty messages of the received type.
 type SourceStage struct {
 	id     int32
-	msg    rpc.Message
+	msg    rpc.MessageDesc
 	output chan<- *State
 }
 
 func NewSourceStage(
 	initial int32,
 	output chan<- *State,
-	msg rpc.Message,
+	msg rpc.MessageDesc,
 ) *SourceStage {
 	i := &SourceStage{
 		id:     initial,
@@ -211,7 +209,7 @@ type MergeStage struct {
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- *State
 	// msg describes the message to create and send to the downstream stage.
-	msg rpc.Message
+	msg rpc.MessageDesc
 	// currId is the current id being constructed.
 	currId Id
 }
@@ -220,7 +218,7 @@ func NewMergeStage(
 	fields []string,
 	inputs []<-chan *State,
 	output chan<- *State,
-	msg rpc.Message,
+	msg rpc.MessageDesc,
 ) *MergeStage {
 	return &MergeStage{
 		fields: fields,
@@ -234,7 +232,7 @@ func NewMergeStage(
 func (s *MergeStage) Run(cfg *RunCfg) {
 	var (
 		// partial is the current message being constructed.
-		partial *dynamic.Message
+		partial rpc.DynMessage
 		state   *State
 		done    bool
 	)
@@ -263,7 +261,7 @@ func (s *MergeStage) Run(cfg *RunCfg) {
 				s.currId = state.Id()
 				break
 			}
-			partial.SetFieldByName(s.fields[i], state.Msg())
+			partial.SetField(s.fields[i], state.Msg().GrpcMsg())
 			setFields++
 		}
 		// All fields from inputs were set. The message can be sent
@@ -331,7 +329,8 @@ func NewSplitStage(
 func (s *SplitStage) Run(cfg *RunCfg) {
 	var (
 		state *State
-		send  interface{}
+		send  rpc.DynMessage
+		err   error
 	)
 	for {
 		select {
@@ -340,24 +339,12 @@ func (s *SplitStage) Run(cfg *RunCfg) {
 			close(cfg.done)
 			return
 		}
-		msg, ok := state.Msg().(proto.Message)
-		if !ok {
-			cfg.errs <- errdefs.InternalWithMsg("Invalid message type")
-			continue
-		}
-		dyn, err := dynamic.AsDynamicMessage(msg)
-		if err != nil {
-			cfg.errs <- errdefs.InternalWithMsg(
-				"convert proto msg to dynamic: %s",
-				err,
-			)
-			continue
-		}
+		msg := state.Msg()
 		for i, out := range s.outputs {
-			send = dyn
+			send = msg
 			field := s.fields[i]
 			if field != "" {
-				send, err = dyn.TryGetFieldByName(field)
+				send, err = msg.GetField(field)
 				if err != nil {
 					cfg.errs <- errdefs.InternalWithMsg(
 						"get field '%s': %s",

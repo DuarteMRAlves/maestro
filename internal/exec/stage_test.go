@@ -19,7 +19,7 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	defer server.Stop()
 
 	rpc := testRpc(t)
-	msgs := testRequests()
+	msgs := testRequests(t)
 
 	states := []*State{
 		NewState(1, msgs[0]),
@@ -58,10 +58,13 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 		out := rcvStates[i]
 		assert.Equal(t, in.Id(), out.Id(), "correct received id")
 
-		req, ok := in.Msg().(*pb.Request)
+		dynReq, ok := in.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "request type assertion")
+		req := &pb.Request{}
+		err = dynReq.ConvertTo(req)
+		assert.NilError(t, err, "convert dynamic to Request")
 
-		dynRep, ok := out.Msg().(*dynamic.Message)
+		dynRep, ok := out.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "reply type assertion")
 		rep := &pb.Reply{}
 		err = dynRep.ConvertTo(rep)
@@ -96,9 +99,9 @@ func testRpc(t *testing.T) *rpc.MockRPC {
 	}
 }
 
-func testRequests() []*pb.Request {
-	return []*pb.Request{
-		{
+func testRequests(t *testing.T) []rpc.DynMessage {
+	msg1, err := rpc.DynMessageFromProto(
+		&pb.Request{
 			StringField:   "string-1",
 			RepeatedField: []int64{1, 2, 3, 4},
 			RepeatedInnerMsg: []*pb.InnerMessage{
@@ -110,7 +113,10 @@ func testRequests() []*pb.Request {
 				},
 			},
 		},
-		{
+	)
+	assert.NilError(t, err, "create message 1")
+	msg2, err := rpc.DynMessageFromProto(
+		&pb.Request{
 			StringField:   "string-2",
 			RepeatedField: []int64{1, 2, 3, 4},
 			RepeatedInnerMsg: []*pb.InnerMessage{
@@ -122,10 +128,13 @@ func testRequests() []*pb.Request {
 				},
 			},
 		},
-	}
+	)
+	assert.NilError(t, err, "create message 2")
+
+	return []rpc.DynMessage{msg1, msg2}
 }
 
-func requestMessage(t *testing.T) rpc.Message {
+func requestMessage(t *testing.T) rpc.MessageDesc {
 	reqType := reflect.TypeOf(pb.Request{})
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
@@ -137,7 +146,7 @@ func requestMessage(t *testing.T) rpc.Message {
 	return msg
 }
 
-func replyMessage(t *testing.T) rpc.Message {
+func replyMessage(t *testing.T) rpc.MessageDesc {
 	repType := reflect.TypeOf(pb.Reply{})
 
 	repDesc, err := desc.LoadMessageDescriptorForType(repType)
@@ -178,7 +187,12 @@ func TestSourceStage_Run(t *testing.T) {
 		assert.NilError(t, err, "next at iter %d", i)
 		assert.Equal(t, Id(i), state.Id(), "id at iter %d", i)
 		opt := cmpopts.IgnoreUnexported(dynamic.Message{})
-		assert.DeepEqual(t, msg.NewEmpty(), state.Msg(), opt)
+		assert.DeepEqual(
+			t,
+			msg.NewEmpty().GrpcMsg(),
+			state.Msg().GrpcMsg(),
+			opt,
+		)
 	}
 
 	close(term)
@@ -212,29 +226,29 @@ func TestMergeStage_Run(t *testing.T) {
 	errs := make(chan error)
 
 	expected := []*State{
-		NewState(3, testMergeMessage(3)),
-		NewState(6, testMergeMessage(6)),
+		NewState(3, testMergeMessage(t, 3)),
+		NewState(6, testMergeMessage(t, 6)),
 	}
 
 	go func() {
-		input1 <- NewState(1, &pb.MergeInner1{Val: 1})
-		input1 <- NewState(2, &pb.MergeInner1{Val: 2})
-		input1 <- NewState(3, &pb.MergeInner1{Val: 3})
-		input1 <- NewState(6, &pb.MergeInner1{Val: 6})
+		input1 <- NewState(1, testMergeInner1Message(t, 1))
+		input1 <- NewState(2, testMergeInner1Message(t, 2))
+		input1 <- NewState(3, testMergeInner1Message(t, 3))
+		input1 <- NewState(6, testMergeInner1Message(t, 6))
 	}()
 
 	go func() {
-		input2 <- NewState(2, &pb.MergeInner2{Val: 2})
-		input2 <- NewState(3, &pb.MergeInner2{Val: 3})
-		input2 <- NewState(5, &pb.MergeInner2{Val: 5})
-		input2 <- NewState(6, &pb.MergeInner2{Val: 6})
+		input2 <- NewState(2, testMergeInner2Message(t, 2))
+		input2 <- NewState(3, testMergeInner2Message(t, 3))
+		input2 <- NewState(5, testMergeInner2Message(t, 5))
+		input2 <- NewState(6, testMergeInner2Message(t, 6))
 	}()
 
 	go func() {
-		input3 <- NewState(1, &pb.MergeInner3{Val: 2})
-		input3 <- NewState(3, &pb.MergeInner3{Val: 3})
-		input3 <- NewState(5, &pb.MergeInner3{Val: 5})
-		input3 <- NewState(6, &pb.MergeInner3{Val: 6})
+		input3 <- NewState(1, testMergeInner3Message(t, 2))
+		input3 <- NewState(3, testMergeInner3Message(t, 3))
+		input3 <- NewState(5, testMergeInner3Message(t, 5))
+		input3 <- NewState(6, testMergeInner3Message(t, 6))
 	}()
 
 	go s.Run(&RunCfg{term: term, done: done, errs: errs})
@@ -243,9 +257,12 @@ func TestMergeStage_Run(t *testing.T) {
 		out := <-output
 		assert.NilError(t, out.Err(), "out err at iter %d", i)
 		assert.Equal(t, exp.id, out.Id(), "id at iter %d", i)
-		expMsg, ok := exp.Msg().(*pb.MergeMessage)
+		expDyn, ok := exp.Msg().GrpcMsg().(*dynamic.Message)
+		expMsg := &pb.MergeMessage{}
+		err = expDyn.ConvertTo(expMsg)
+		assert.NilError(t, err, "convert dyn to exp")
 		assert.Assert(t, ok, "cast for exp at iter %d", i)
-		dynMsg, ok := out.Msg().(*dynamic.Message)
+		dynMsg, ok := out.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out at iter %d", i)
 		outMsg := &pb.MergeMessage{}
 		err = dynMsg.ConvertTo(outMsg)
@@ -266,12 +283,36 @@ func TestMergeStage_Run(t *testing.T) {
 	s.Close()
 }
 
-func testMergeMessage(val int32) *pb.MergeMessage {
-	return &pb.MergeMessage{
+func testMergeMessage(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.MergeMessage{
 		In1: &pb.MergeInner1{Val: val},
 		In2: &pb.MergeInner2{Val: val},
 		In3: &pb.MergeInner3{Val: val},
 	}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create merge message")
+	return msg
+}
+
+func testMergeInner1Message(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.MergeInner1{Val: val}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create merge inner 1message")
+	return msg
+}
+
+func testMergeInner2Message(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.MergeInner2{Val: val}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create merge inner 2 message")
+	return msg
+}
+
+func testMergeInner3Message(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.MergeInner3{Val: val}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create merge inner 3 message")
+	return msg
 }
 
 func TestSplitStage_Run(t *testing.T) {
@@ -293,25 +334,25 @@ func TestSplitStage_Run(t *testing.T) {
 	errs := make(chan error)
 
 	expected1 := []*State{
-		NewState(Id(1), &pb.SplitInner1{Val: 1}),
-		NewState(Id(3), &pb.SplitInner1{Val: 3}),
-		NewState(Id(5), &pb.SplitInner1{Val: 5}),
+		NewState(Id(1), testSplitInner1Message(t, 1)),
+		NewState(Id(3), testSplitInner1Message(t, 3)),
+		NewState(Id(5), testSplitInner1Message(t, 5)),
 	}
 	expected2 := []*State{
-		NewState(Id(1), testSplitMessage(1)),
-		NewState(Id(3), testSplitMessage(3)),
-		NewState(Id(5), testSplitMessage(5)),
+		NewState(Id(1), testSplitMessage(t, 1)),
+		NewState(Id(3), testSplitMessage(t, 3)),
+		NewState(Id(5), testSplitMessage(t, 5)),
 	}
 	expected3 := []*State{
-		NewState(Id(1), &pb.SplitInner2{Val: 1}),
-		NewState(Id(3), &pb.SplitInner2{Val: 3}),
-		NewState(Id(5), &pb.SplitInner2{Val: 5}),
+		NewState(Id(1), testSplitInner2Message(t, 1)),
+		NewState(Id(3), testSplitInner2Message(t, 3)),
+		NewState(Id(5), testSplitInner2Message(t, 5)),
 	}
 
 	go func() {
-		input <- NewState(Id(1), testSplitMessage(1))
-		input <- NewState(Id(3), testSplitMessage(3))
-		input <- NewState(Id(5), testSplitMessage(5))
+		input <- NewState(Id(1), testSplitMessage(t, 1))
+		input <- NewState(Id(3), testSplitMessage(t, 3))
+		input <- NewState(Id(5), testSplitMessage(t, 5))
 	}()
 
 	go s.Run(&RunCfg{term: term, done: done, errs: errs})
@@ -321,22 +362,30 @@ func TestSplitStage_Run(t *testing.T) {
 		out1 := <-output1
 		assert.NilError(t, out1.Err(), "err 1 at iter %d", i)
 		assert.Equal(t, exp1.Id(), out1.Id(), "id 1 at iter %d", i)
-		expMsg1, ok := exp1.Msg().(*pb.SplitInner1)
+		expDyn1, ok := exp1.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
-		outMsg1, ok := out1.Msg().(*pb.SplitInner1)
+		expMsg1 := &pb.SplitInner1{}
+		err = expDyn1.ConvertTo(expMsg1)
+		assert.NilError(t, err, "convert dyn 1 to exp 1")
+		outDyn1, ok := out1.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
+		outMsg1 := &pb.SplitInner1{}
+		err = outDyn1.ConvertTo(outMsg1)
 		assert.Equal(t, expMsg1.Val, outMsg1.Val)
 
 		exp2 := expected2[i]
 		out2 := <-output2
 		assert.NilError(t, out2.Err(), "err 2 at iter %d", i)
 		assert.Equal(t, exp2.Id(), out2.Id(), "id 2 at iter %d", i)
-		expMsg2, ok := exp2.Msg().(*pb.SplitMessage)
+		expDyn2, ok := exp2.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 2 at iter %d", i)
-		dynMsg2, ok := out2.Msg().(*dynamic.Message)
+		expMsg2 := &pb.SplitMessage{}
+		err = expDyn2.ConvertTo(expMsg2)
+		assert.NilError(t, err, "convert dyn 2 to exp 2")
+		dynDyn2, ok := out2.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 2 at iter %d", i)
 		outMsg2 := &pb.SplitMessage{}
-		err = dynMsg2.ConvertTo(outMsg2)
+		err = dynDyn2.ConvertTo(outMsg2)
 		assert.NilError(t, err, "convert dyn 2 to out 2")
 		assert.Equal(t, expMsg2.Out1.Val, outMsg2.Out1.Val)
 		assert.Equal(t, expMsg2.Val, outMsg2.Val)
@@ -346,10 +395,15 @@ func TestSplitStage_Run(t *testing.T) {
 		out3 := <-output3
 		assert.NilError(t, out3.Err(), "err 3 at iter %d", i)
 		assert.Equal(t, exp3.Id(), out3.Id(), "id 3 at iter %d", i)
-		expMsg3, ok := exp3.Msg().(*pb.SplitInner2)
+		expDyn3, ok := exp3.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 3 at iter %d", i)
-		outMsg3, ok := out3.Msg().(*pb.SplitInner2)
+		expMsg3 := &pb.SplitInner2{}
+		err = expDyn3.ConvertTo(expMsg3)
+		assert.NilError(t, err, "convert dyn 3 to exp 3")
+		outDyn3, ok := out3.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 3 at iter %d", i)
+		outMsg3 := &pb.SplitInner2{}
+		err = outDyn3.ConvertTo(outMsg3)
 		assert.Equal(t, expMsg3.Val, outMsg3.Val)
 	}
 
@@ -361,10 +415,27 @@ func TestSplitStage_Run(t *testing.T) {
 	s.Close()
 }
 
-func testSplitMessage(val int32) *pb.SplitMessage {
-	return &pb.SplitMessage{
+func testSplitMessage(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.SplitMessage{
 		Out1: &pb.SplitInner1{Val: val},
 		Val:  val,
 		Out2: &pb.SplitInner2{Val: val},
 	}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create split 1message")
+	return msg
+}
+
+func testSplitInner1Message(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.SplitInner1{Val: val}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create split inner 1message")
+	return msg
+}
+
+func testSplitInner2Message(t *testing.T, val int32) rpc.DynMessage {
+	protoMsg := &pb.SplitInner2{Val: val}
+	msg, err := rpc.DynMessageFromProto(protoMsg)
+	assert.NilError(t, err, "create split inner 2 message")
+	return msg
 }

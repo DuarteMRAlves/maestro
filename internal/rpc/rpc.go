@@ -14,8 +14,8 @@ type RPC interface {
 	// remote server.
 	InvokePath() string
 	Service() Service
-	Input() Message
-	Output() Message
+	Input() MessageDesc
+	Output() MessageDesc
 	IsUnary() bool
 }
 
@@ -47,11 +47,11 @@ func (r *rpc) Service() Service {
 	return newServiceInternal(r.desc.GetService())
 }
 
-func (r *rpc) Input() Message {
+func (r *rpc) Input() MessageDesc {
 	return newMessageInternal(r.desc.GetInputType())
 }
 
-func (r *rpc) Output() Message {
+func (r *rpc) Output() MessageDesc {
 	return newMessageInternal(r.desc.GetOutputType())
 }
 

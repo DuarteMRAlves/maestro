@@ -1,34 +1,82 @@
 package rpc
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/util"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-// Message describes a grpc message
-type Message interface {
-	FullyQualifiedName() string
-	// Compatible verifies if two Messages are compatible, meaning fields with
-	// equal numbers have the same type.
-	Compatible(other Message) bool
-	// GetMessageField searches for a message field with the given name. It
-	// returns a Message with the given field and true as the second value. If
-	// no field with the given name exists, or the field has the wrong type, nil
-	// and false is returned.
-	GetMessageField(name string) (Message, bool)
-	// NewEmpty returns an empty *dynamic.Message with the same fields as this
-	// Message. The returned message can be used to call rpc methods that will
-	// fill the fields.
-	NewEmpty() *dynamic.Message
+// DynMessage wraps a grpc message while also allowing fields to be set.
+type DynMessage interface {
+	GrpcMsg() interface{}
+	SetField(name string, val interface{})
+	GetField(name string) (DynMessage, error)
 }
 
 type message struct {
+	inner *dynamic.Message
+}
+
+func DynMessageFromProto(msg proto.Message) (DynMessage, error) {
+	dyn, err := dynamic.AsDynamicMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+	return &message{inner: dyn}, nil
+}
+
+func (m *message) GrpcMsg() interface{} {
+	return m.inner
+}
+
+func (m *message) SetField(name string, val interface{}) {
+	m.inner.SetFieldByName(name, val)
+}
+
+func (m *message) GetField(name string) (DynMessage, error) {
+	f, err := m.inner.TryGetFieldByName(name)
+	if err != nil {
+		return nil, err
+	}
+	msg, ok := f.(proto.Message)
+	if !ok {
+		return nil, errdefs.InternalWithMsg("Field is not a message")
+	}
+	dyn, err := dynamic.AsDynamicMessage(msg)
+	if err != nil {
+		return nil, errdefs.InternalWithMsg(
+			"convert proto msg to dynamic: %s",
+			err,
+		)
+	}
+	return &message{inner: dyn}, nil
+}
+
+// MessageDesc describes a grpc message
+type MessageDesc interface {
+	FullyQualifiedName() string
+	// Compatible verifies if two Messages are compatible, meaning fields with
+	// equal numbers have the same type.
+	Compatible(other MessageDesc) bool
+	// GetMessageField searches for a message field with the given name. It
+	// returns a MessageDesc with the given field and true as the second value. If
+	// no field with the given name exists, or the field has the wrong type, nil
+	// and false is returned.
+	GetMessageField(name string) (MessageDesc, bool)
+	// NewEmpty returns an empty *dynamic.Message with the same fields as this
+	// MessageDesc. The returned message can be used to call rpc methods that will
+	// fill the fields.
+	NewEmpty() DynMessage
+}
+
+type messageDesc struct {
 	desc *desc.MessageDescriptor
 }
 
-func NewMessage(desc *desc.MessageDescriptor) (Message, error) {
+func NewMessage(desc *desc.MessageDescriptor) (MessageDesc, error) {
 	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
 		return nil, err
 	}
@@ -36,24 +84,24 @@ func NewMessage(desc *desc.MessageDescriptor) (Message, error) {
 	return s, nil
 }
 
-func newMessageInternal(desc *desc.MessageDescriptor) Message {
-	s := &message{desc: desc}
+func newMessageInternal(desc *desc.MessageDescriptor) MessageDesc {
+	s := &messageDesc{desc: desc}
 	return s
 }
 
-func (m *message) FullyQualifiedName() string {
+func (m *messageDesc) FullyQualifiedName() string {
 	return m.desc.GetFullyQualifiedName()
 }
 
-func (m *message) Compatible(other Message) bool {
-	otherMsg, ok := other.(*message)
+func (m *messageDesc) Compatible(other MessageDesc) bool {
+	otherMsg, ok := other.(*messageDesc)
 	if !ok {
 		return false
 	}
 	return m.cmpFields(otherMsg)
 }
 
-func (m *message) cmpFields(o *message) bool {
+func (m *messageDesc) cmpFields(o *messageDesc) bool {
 	for _, sField := range m.desc.GetFields() {
 		number := sField.GetNumber()
 		oField := o.desc.FindFieldByNumber(number)
@@ -86,7 +134,7 @@ func (m *message) cmpFields(o *message) bool {
 	return true
 }
 
-func (m *message) GetMessageField(name string) (Message, bool) {
+func (m *messageDesc) GetMessageField(name string) (MessageDesc, bool) {
 	field := m.desc.FindFieldByName(name)
 	if field == nil ||
 		field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
@@ -96,6 +144,6 @@ func (m *message) GetMessageField(name string) (Message, bool) {
 	return newMessageInternal(field.GetMessageType()), true
 }
 
-func (m *message) NewEmpty() *dynamic.Message {
-	return dynamic.NewMessage(m.desc)
+func (m *messageDesc) NewEmpty() DynMessage {
+	return &message{inner: dynamic.NewMessage(m.desc)}
 }

@@ -50,8 +50,8 @@ type MockRPC struct {
 	FQN      string
 	Invoke   string
 	Service_ Service
-	In       Message
-	Out      Message
+	In       MessageDesc
+	Out      MessageDesc
 	Unary    bool
 }
 
@@ -71,11 +71,11 @@ func (r *MockRPC) Service() Service {
 	return r.Service_
 }
 
-func (r *MockRPC) Input() Message {
+func (r *MockRPC) Input() MessageDesc {
 	return r.In
 }
 
-func (r *MockRPC) Output() Message {
+func (r *MockRPC) Output() MessageDesc {
 	return r.Out
 }
 
