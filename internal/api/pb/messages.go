@@ -86,3 +86,10 @@ func UnmarshalGetAssetRequest(
 	req.Name = api.AssetName(pbReq.Name)
 	req.Image = pbReq.Image
 }
+
+func UnmarshalStartExecutionRequest(
+	req *api.StartExecutionRequest,
+	pbReq *pb.StartExecutionRequest,
+) {
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
+}

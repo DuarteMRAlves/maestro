@@ -15,4 +15,6 @@ type InternalAPI interface {
 
 	CreateOrchestration(*CreateOrchestrationRequest) error
 	GetOrchestration(*GetOrchestrationRequest) ([]*Orchestration, error)
+
+	StartExecution(*StartExecutionRequest) error
 }

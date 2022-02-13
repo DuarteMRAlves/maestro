@@ -18,8 +18,8 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	storageManager    arch.Manager
-	flowManager       exec.Manager
+	archManager       arch.Manager
+	execManager       exec.Manager
 	reflectionManager rpc.Manager
 
 	grpcServer *grpc.Server
@@ -52,7 +52,7 @@ func (s *Server) CreateAsset(req *api.CreateAssetRequest) error {
 	logs.LogCreateAssetRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.storageManager.CreateAsset(txn, req)
+			return s.archManager.CreateAsset(txn, req)
 		},
 	)
 }
@@ -68,7 +68,7 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 	logs.LogGetAssetRequest(s.logger, req)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			assets, err = s.storageManager.GetMatchingAssets(txn, req)
+			assets, err = s.archManager.GetMatchingAssets(txn, req)
 			return err
 		},
 	)
@@ -82,7 +82,7 @@ func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error 
 	logs.LogCreateOrchestrationRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.storageManager.CreateOrchestration(txn, req)
+			return s.archManager.CreateOrchestration(txn, req)
 		},
 	)
 }
@@ -97,7 +97,7 @@ func (s *Server) GetOrchestration(
 	logs.LogGetOrchestrationRequest(s.logger, req)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			orchestrations, err = s.storageManager.GetMatchingOrchestration(
+			orchestrations, err = s.archManager.GetMatchingOrchestration(
 				txn,
 				req,
 			)
@@ -116,7 +116,7 @@ func (s *Server) CreateStage(req *api.CreateStageRequest) error {
 	logs.LogCreateStageRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.storageManager.CreateStage(txn, req)
+			return s.archManager.CreateStage(txn, req)
 		},
 	)
 }
@@ -129,7 +129,7 @@ func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 	logs.LogGetStageRequest(s.logger, req)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			stages, err = s.storageManager.GetMatchingStage(txn, req)
+			stages, err = s.archManager.GetMatchingStage(txn, req)
 			return err
 		},
 	)
@@ -145,7 +145,7 @@ func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
 	logs.LogCreateLinkRequest(s.logger, req)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.storageManager.CreateLink(txn, req)
+			return s.archManager.CreateLink(txn, req)
 		},
 	)
 }
@@ -158,7 +158,7 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 	logs.LogGetLinkRequest(s.logger, req)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			links, err = s.storageManager.GetMatchingLinks(txn, req)
+			links, err = s.archManager.GetMatchingLinks(txn, req)
 			return err
 		},
 	)
@@ -166,4 +166,13 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 		return nil, err
 	}
 	return links, nil
+}
+
+func (s *Server) StartExecution(req *api.StartExecutionRequest) error {
+	logs.LogStartExecutionRequest(s.logger, req)
+	return s.db.Update(
+		func(txn *badger.Txn) error {
+			return s.execManager.StartExecution(txn, req)
+		},
+	)
 }

@@ -103,11 +103,11 @@ func (b *Builder) initManagers(s *Server) error {
 	var err error
 	s.reflectionManager = b.reflectionManager
 	storageManagerCtx := arch.NewDefaultContext(s.db, s.reflectionManager)
-	s.storageManager, err = arch.NewManager(storageManagerCtx)
+	s.archManager, err = arch.NewManager(storageManagerCtx)
 	if err != nil {
 		return errdefs.PrependMsg(err, "init managers:")
 	}
-	s.flowManager = exec.NewManager(s.reflectionManager)
+	s.execManager = exec.NewManager(s.reflectionManager)
 	return nil
 }
 

@@ -123,3 +123,18 @@ func LogGetAssetRequest(logger *zap.Logger, req *api.GetAssetRequest) {
 	}
 	logger.Info("Get Asset.", logFields...)
 }
+
+func LogStartExecutionRequest(
+	logger *zap.Logger,
+	req *api.StartExecutionRequest,
+) {
+	var logFields []zap.Field
+	if req == nil {
+		logFields = []zap.Field{zap.String("request", "null")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("orchestration", string(req.Orchestration)),
+		}
+	}
+	logger.Info("Start Execution.", logFields...)
+}
