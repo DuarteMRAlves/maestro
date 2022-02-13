@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"io"
 )
 
@@ -11,14 +12,14 @@ import (
 // be synchronized.
 type State struct {
 	id  Id
-	msg interface{}
+	msg rpc.DynMessage
 	err error
 }
 
 // Id is a unique id that identifies a computation flow.
 type Id int
 
-func NewState(id Id, msg interface{}) *State {
+func NewState(id Id, msg rpc.DynMessage) *State {
 	return &State{
 		id:  id,
 		msg: msg,
@@ -37,7 +38,7 @@ func (s *State) Id() Id {
 	return s.id
 }
 
-func (s *State) Msg() interface{} {
+func (s *State) Msg() rpc.DynMessage {
 	return s.msg
 }
 
@@ -45,7 +46,7 @@ func (s *State) Err() error {
 	return s.err
 }
 
-func (s *State) Update(msg interface{}) {
+func (s *State) Update(msg rpc.DynMessage) {
 	s.msg = msg
 }
 

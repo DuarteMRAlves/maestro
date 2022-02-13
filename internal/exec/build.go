@@ -279,7 +279,7 @@ func (b *Builder) buildExecStages() error {
 // InputDesc stores the necessary information to handle the input of a stage.
 type InputDesc struct {
 	links []*Link
-	msg   rpc.Message
+	msg   rpc.MessageDesc
 }
 
 func NewInputDesc() *InputDesc {
@@ -288,7 +288,7 @@ func NewInputDesc() *InputDesc {
 	}
 }
 
-func (i *InputDesc) WithMessage(msg rpc.Message) *InputDesc {
+func (i *InputDesc) WithMessage(msg rpc.MessageDesc) *InputDesc {
 	i.msg = msg
 	return i
 }
