@@ -96,3 +96,12 @@ func copyEvent(dst *api.Event, src *api.Event) {
 	dst.Description = src.Description
 	dst.Timestamp = src.Timestamp
 }
+
+func (pb *PubSub) Close() {
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
+
+	for _, sub := range pb.subs {
+		close(sub)
+	}
+}
