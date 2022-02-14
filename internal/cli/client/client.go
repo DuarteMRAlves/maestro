@@ -21,6 +21,8 @@ type Client interface {
 		[]*pb.Orchestration,
 		error,
 	)
+
+	StartExecution(context.Context, *api.StartExecutionRequest) error
 }
 
 type client struct {

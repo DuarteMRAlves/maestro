@@ -15,6 +15,7 @@ type MockMaestroServer struct {
 	StageManagementServer         pb.StageManagementServer
 	LinkManagementServer          pb.LinkManagementServer
 	OrchestrationManagementServer pb.OrchestrationManagementServer
+	ExecutionManagementServer     pb.ExecutionManagementServer
 }
 
 func (m *MockMaestroServer) GrpcServer() *grpc.Server {
@@ -37,6 +38,10 @@ func (m *MockMaestroServer) GrpcServer() *grpc.Server {
 			s,
 			m.OrchestrationManagementServer,
 		)
+	}
+
+	if m.ExecutionManagementServer != nil {
+		pb.RegisterExecutionManagementServer(s, m.ExecutionManagementServer)
 	}
 
 	return s
@@ -202,6 +207,33 @@ func (s *MockAssetManagementServer) Get(
 	}
 	return fmt.Errorf(
 		"method GetAsset not configured but called with request %v",
+		req,
+	)
+}
+
+// MockExecutionManagementServer is a mocking of an execution management
+// server to be used during tests. By default, methods are not implemented and
+// raise an error.
+//
+// The server can be initialized with a specific function for each grpc method
+// that will be called.
+type MockExecutionManagementServer struct {
+	pb.UnimplementedExecutionManagementServer
+	StartExecutionFn func(
+		context.Context,
+		*pb.StartExecutionRequest,
+	) (*emptypb.Empty, error)
+}
+
+func (s *MockExecutionManagementServer) Start(
+	ctx context.Context,
+	req *pb.StartExecutionRequest,
+) (*emptypb.Empty, error) {
+	if s.StartExecutionFn != nil {
+		return s.StartExecutionFn(ctx, req)
+	}
+	return &emptypb.Empty{}, fmt.Errorf(
+		"method StartExecution not configured but called with req %v",
 		req,
 	)
 }
