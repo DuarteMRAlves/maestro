@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"google.golang.org/grpc"
 	"io"
@@ -24,6 +25,7 @@ type Stage interface {
 
 // RunCfg specifies the configuration that the Stage should use when running.
 type RunCfg struct {
+	pubSub *events.PubSub
 	// term is a channel that will be signaled if the Stage should stop.
 	term <-chan struct{}
 	// done is a channel that the Stage should close to signal is has finished.
