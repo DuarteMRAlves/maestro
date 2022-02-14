@@ -9,9 +9,16 @@ OS ?= $(HOST_OS)
 # Target architecture for compilation. Defaults to host architecture.
 ARCH ?= $(HOST_ARCH)
 
-$(info ==> Executing compilation for $(OS)/$(ARCH))
-
+# Architecture for the generated docker image
 DOCKER_ARCH ?= $(ARCH)
+
+# Timeout for the go tests
+TEST_TIMEOUT = 10s
+
+# Directory where to run the tests. Defaults to the internal pkg.
+TEST_DIR = ./internal/...
+
+TEST_FLAGS = --timeout $(TEST_TIMEOUT)
 
 default: help
 
@@ -21,8 +28,9 @@ help:
 	@echo "  make command [options]"
 	@echo
 	@echo "Commands:"
-	@echo "  go/build		builds maestro server binary"
-	@echo "  docker/build	builds maestro docker image"
+	@echo "  go/build        builds maestro server binary."
+	@echo "  go/test         runs automated tests."
+	@echo "  docker/build    builds maestro docker image."
 
 
 docker/build: go/build
@@ -33,7 +41,12 @@ docker/build: go/build
 go/build: grpc
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
 
+go/test: grpc
+	@echo
+	go test $(TEST_FLAGS) $(TEST_DIR)
+
 grpc:
+	@echo
 	@./scripts/genpb.sh
 
 clean:
