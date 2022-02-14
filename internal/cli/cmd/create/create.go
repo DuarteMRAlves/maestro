@@ -166,6 +166,14 @@ func (o *Options) run() error {
 			return err
 		}
 	}
+
+	for _, req := range orchestrations {
+		startReq := &api.StartExecutionRequest{Orchestration: req.Name}
+		if err = c.StartExecution(ctx, startReq); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

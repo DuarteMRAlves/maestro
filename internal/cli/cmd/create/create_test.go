@@ -29,6 +29,7 @@ func TestCreateWithServer(t *testing.T) {
 		validateStage         func(*pb.CreateStageRequest) bool
 		validateLink          func(*pb.CreateLinkRequest) bool
 		validateOrchestration func(*pb.CreateOrchestrationRequest) bool
+		validateExecution     func(request *pb.StartExecutionRequest) bool
 		expectedOut           string
 	}{
 		{
@@ -112,6 +113,19 @@ func TestCreateWithServer(t *testing.T) {
 				) || equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-2",
+					},
+					req,
+				)
+			},
+			validateExecution: func(req *pb.StartExecutionRequest) bool {
+				return equalStartExecutionRequest(
+					&pb.StartExecutionRequest{
+						Orchestration: "orchestration-1",
+					},
+					req,
+				) || equalStartExecutionRequest(
+					&pb.StartExecutionRequest{
+						Orchestration: "orchestration-2",
 					},
 					req,
 				)
@@ -232,6 +246,19 @@ func TestCreateWithServer(t *testing.T) {
 					req,
 				)
 			},
+			validateExecution: func(req *pb.StartExecutionRequest) bool {
+				return equalStartExecutionRequest(
+					&pb.StartExecutionRequest{
+						Orchestration: "orchestration-3",
+					},
+					req,
+				) || equalStartExecutionRequest(
+					&pb.StartExecutionRequest{
+						Orchestration: "orchestration-4",
+					},
+					req,
+				)
+			},
 			expectedOut: "",
 		},
 		{
@@ -292,6 +319,14 @@ func TestCreateWithServer(t *testing.T) {
 				return equalCreateOrchestrationRequest(
 					&pb.CreateOrchestrationRequest{
 						Name: "orchestration-2",
+					},
+					req,
+				)
+			},
+			validateExecution: func(req *pb.StartExecutionRequest) bool {
+				return equalStartExecutionRequest(
+					&pb.StartExecutionRequest{
+						Orchestration: "orchestration-2",
 					},
 					req,
 				)
@@ -357,6 +392,10 @@ func TestCreateWithServer(t *testing.T) {
 					createOrchestrationFn func(
 						context.Context,
 						*pb.CreateOrchestrationRequest,
+					) (*emptypb.Empty, error)
+					startExecutionFn func(
+						context.Context,
+						*pb.StartExecutionRequest,
 					) (*emptypb.Empty, error)
 				)
 
@@ -449,6 +488,21 @@ func TestCreateWithServer(t *testing.T) {
 					}
 				}
 
+				if test.validateExecution != nil {
+					startExecutionFn = func(
+						ctx context.Context,
+						req *pb.StartExecutionRequest,
+					) (*emptypb.Empty, error) {
+						if !test.validateExecution(req) {
+							return nil, fmt.Errorf(
+								"start execution validation failed with req %v",
+								req,
+							)
+						}
+						return &emptypb.Empty{}, nil
+					}
+				}
+
 				mockServer := ipb.MockMaestroServer{
 					AssetManagementServer: &ipb.MockAssetManagementServer{
 						CreateAssetFn: createAssetFn,
@@ -461,6 +515,9 @@ func TestCreateWithServer(t *testing.T) {
 					},
 					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
 						CreateOrchestrationFn: createOrchestrationFn,
+					},
+					ExecutionManagementServer: &ipb.MockExecutionManagementServer{
+						StartExecutionFn: startExecutionFn,
 					},
 				}
 				grpcServer := mockServer.GrpcServer()
@@ -580,4 +637,11 @@ func equalCreateOrchestrationRequest(
 	actual *pb.CreateOrchestrationRequest,
 ) bool {
 	return expected.Name == actual.Name
+}
+
+func equalStartExecutionRequest(
+	expected *pb.StartExecutionRequest,
+	actual *pb.StartExecutionRequest,
+) bool {
+	return expected.Orchestration == actual.Orchestration
 }
