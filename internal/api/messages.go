@@ -165,3 +165,9 @@ type StartExecutionRequest struct {
 	// Orchestration specifies the orchestration to start.
 	Orchestration OrchestrationName
 }
+
+// AttachExecutionRequest attaches to the execution of a given orchestration.
+type AttachExecutionRequest struct {
+	// Orchestration specifies the orchestration.
+	Orchestration OrchestrationName
+}

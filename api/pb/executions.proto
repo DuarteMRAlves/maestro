@@ -5,14 +5,28 @@ option go_package = "github.com/DuarteMRAlves/maestro/api/pb";
 package pb;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 // ExecutionManagement services handles operations related to executions.
 service ExecutionManagement {
   rpc Start(StartExecutionRequest) returns (google.protobuf.Empty);
+  rpc Attach(AttachExecutionRequest) returns (stream Event);
 }
 
 // StartExecutionRequest is a message that specifies an orchestration to be
 // executed.
 message StartExecutionRequest {
   string orchestration = 1;
+}
+
+// AttachExecutionRequest is a message that specifies the name of an
+// orchestration whose execution should be attached.
+message AttachExecutionRequest {
+  string orchestration = 1;
+}
+
+// Event is a report of an event that occurred in the maestro server.
+message Event {
+  string description = 1;
+  google.protobuf.Timestamp timestamp = 2;
 }

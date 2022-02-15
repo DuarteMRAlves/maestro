@@ -155,3 +155,12 @@ func TestStartExecutionRequest(t *testing.T) {
 	UnmarshalStartExecutionRequest(&unmarshalled, orig)
 	assert.Equal(t, orig.Orchestration, string(unmarshalled.Orchestration))
 }
+
+func TestAttachExecutionRequest(t *testing.T) {
+	var unmarshalled api.AttachExecutionRequest
+
+	orig := &pb.AttachExecutionRequest{Orchestration: "Orchestration"}
+
+	UnmarshalAttachExecutionRequest(&unmarshalled, orig)
+	assert.Equal(t, orig.Orchestration, string(unmarshalled.Orchestration))
+}

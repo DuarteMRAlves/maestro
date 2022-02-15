@@ -138,3 +138,18 @@ func LogStartExecutionRequest(
 	}
 	logger.Info("Start Execution.", logFields...)
 }
+
+func LogAttachExecutionRequest(
+	logger *zap.Logger,
+	req *api.AttachExecutionRequest,
+) {
+	var logFields []zap.Field
+	if req == nil {
+		logFields = []zap.Field{zap.String("request", "null")}
+	} else {
+		logFields = []zap.Field{
+			zap.String("orchestration", string(req.Orchestration)),
+		}
+	}
+	logger.Info("Start Execution.", logFields...)
+}
