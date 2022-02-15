@@ -9,9 +9,6 @@ OS ?= $(HOST_OS)
 # Target architecture for compilation. Defaults to host architecture.
 ARCH ?= $(HOST_ARCH)
 
-# Architecture for the generated docker image
-DOCKER_ARCH ?= $(ARCH)
-
 # Timeout for the go tests
 TEST_TIMEOUT = 10s
 
@@ -41,12 +38,11 @@ help:
 	@echo "  pb/clean        removes all generated .pb.go files."
 
 
-docker/build: go/build
-	docker build -t duartemralves/maestro:latest \
-		-f docker/Dockerfile \
-		--platform $(DOCKER_ARCH)  .
+.PHONY: docker/build
+docker/build:
+	docker build -t duartemralves/maestro:latest -f docker/Dockerfile --platform linux/amd64  .
 
-go/build: pb/api
+go/build: pb/api pb/test
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
 
 go/test: pb/api pb/test
@@ -64,7 +60,7 @@ pb/test:
 	cd ./tests/pb/ && protoc $(PROTOC_FLAGS) ./*.proto
 
 pb/clean:
-	rm -rf ./api/pb/**.pb.go ./test/pb/**.pb.go
+	rm -rf ./api/pb/**.pb.go ./tests/pb/**.pb.go
 
 clean: pb/clean
 	rm -rf target
