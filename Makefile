@@ -20,6 +20,8 @@ TEST_DIR = ./internal/...
 
 TEST_FLAGS = --timeout $(TEST_TIMEOUT)
 
+PROTOC_FLAGS = -I. --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative
+
 default: help
 
 .PHONY: help
@@ -30,7 +32,13 @@ help:
 	@echo "Commands:"
 	@echo "  go/build        builds maestro server binary."
 	@echo "  go/test         runs automated tests."
+	@echo
 	@echo "  docker/build    builds maestro docker image."
+	@echo
+	@echo "  pb              generates the all .pb.go files for this project."
+	@echo "  pb/api          generates the .pb.go files for the grpc api."
+	@echo "  pb/test         generates the .pb.go files for the grpc tests."
+	@echo "  pb/clean        removes all generated .pb.go files."
 
 
 docker/build: go/build
@@ -38,17 +46,26 @@ docker/build: go/build
 		-f docker/Dockerfile \
 		--platform $(DOCKER_ARCH)  .
 
-go/build: grpc
+go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
 
-go/test: grpc
-	@echo
+go/test: pb/api pb/test
 	go test $(TEST_FLAGS) $(TEST_DIR)
 
-grpc:
-	@echo
-	@./scripts/genpb.sh
+.PHONY: pb
+pb: pb/api pb/test
 
-clean:
-	rm -rf target api/pb/**.pb.go tests/pb/**.pb.go
+.PHONY: pb/api
+pb/api:
+	cd ./api/pb && protoc $(PROTOC_FLAGS) ./*.proto
+
+.PHONY: pb/test
+pb/test:
+	cd ./tests/pb/ && protoc $(PROTOC_FLAGS) ./*.proto
+
+pb/clean:
+	rm -rf ./api/pb/**.pb.go ./test/pb/**.pb.go
+
+clean: pb/clean
+	rm -rf target
 
