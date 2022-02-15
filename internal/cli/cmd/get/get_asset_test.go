@@ -151,10 +151,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := ipb.MockMaestroServer{
-					AssetManagementServer: &ipb.MockAssetManagementServer{
+					ArchitectureManagementServer: &ipb.MockArchitectureManagementServer{
 						GetAssetFn: func(
 							req *pb.GetAssetRequest,
-							stream pb.AssetManagement_GetServer,
+							stream pb.ArchitectureManagement_GetAssetServer,
 						) error {
 							if !test.validateQuery(req) {
 								return fmt.Errorf(

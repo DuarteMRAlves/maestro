@@ -11,11 +11,11 @@ func (c *client) GetAsset(
 	ctx context.Context,
 	req *pb.GetAssetRequest,
 ) ([]*pb.Asset, error) {
-	stub := pb.NewAssetManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, req)
+	stream, err := stub.GetAsset(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
@@ -38,11 +38,11 @@ func (c *client) GetStage(
 	req *pb.GetStageRequest,
 ) ([]*pb.Stage, error) {
 
-	stub := pb.NewStageManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, req)
+	stream, err := stub.GetStage(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
@@ -65,11 +65,11 @@ func (c *client) GetLink(
 	req *pb.GetLinkRequest,
 ) ([]*pb.Link, error) {
 
-	stub := pb.NewLinkManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, req)
+	stream, err := stub.GetLink(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}
@@ -92,11 +92,11 @@ func (c *client) GetOrchestration(
 	req *pb.GetOrchestrationRequest,
 ) ([]*pb.Orchestration, error) {
 
-	stub := pb.NewOrchestrationManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.Get(ctx, req)
+	stream, err := stub.GetOrchestration(ctx, req)
 	if err != nil {
 		return nil, ErrorFromGrpcError(err)
 	}

@@ -149,10 +149,10 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := ipb.MockMaestroServer{
-					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
+					ArchitectureManagementServer: &ipb.MockArchitectureManagementServer{
 						GetOrchestrationFn: func(
 							req *pb.GetOrchestrationRequest,
-							stream pb.OrchestrationManagement_GetServer,
+							stream pb.ArchitectureManagement_GetOrchestrationServer,
 						) error {
 							if !test.validateReq(req) {
 								return fmt.Errorf(

@@ -10,22 +10,16 @@ import (
 
 // RegisterServices registers all grpc services into a grpc server.
 func RegisterServices(s *grpc.Server, api api.InternalAPI) {
-	pb.RegisterAssetManagementServer(s, &assetsService{api: api})
-	pb.RegisterStageManagementServer(s, &stagesService{api: api})
-	pb.RegisterLinkManagementServer(s, &linksService{api: api})
-	pb.RegisterOrchestrationManagementServer(
-		s,
-		&orchestrationsService{api: api},
-	)
+	pb.RegisterArchitectureManagementServer(s, &architectureService{api: api})
 	pb.RegisterExecutionManagementServer(s, &executionsService{api: api})
 }
 
-type assetsService struct {
-	pb.UnimplementedAssetManagementServer
+type architectureService struct {
+	pb.UnimplementedArchitectureManagementServer
 	api api.InternalAPI
 }
 
-func (s *assetsService) Create(
+func (s *architectureService) CreateAsset(
 	_ context.Context,
 	pbReq *pb.CreateAssetRequest,
 ) (*emptypb.Empty, error) {
@@ -44,9 +38,9 @@ func (s *assetsService) Create(
 	return &emptypb.Empty{}, grpcErr
 }
 
-func (s *assetsService) Get(
+func (s *architectureService) GetAsset(
 	pbQuery *pb.GetAssetRequest,
-	stream pb.AssetManagement_GetServer,
+	stream pb.ArchitectureManagement_GetAssetServer,
 ) error {
 
 	var (
@@ -70,12 +64,7 @@ func (s *assetsService) Get(
 	return nil
 }
 
-type orchestrationsService struct {
-	pb.UnimplementedOrchestrationManagementServer
-	api api.InternalAPI
-}
-
-func (s *orchestrationsService) Create(
+func (s *architectureService) CreateOrchestration(
 	_ context.Context,
 	pbReq *pb.CreateOrchestrationRequest,
 ) (*emptypb.Empty, error) {
@@ -94,9 +83,9 @@ func (s *orchestrationsService) Create(
 	return &emptypb.Empty{}, grpcErr
 }
 
-func (s *orchestrationsService) Get(
+func (s *architectureService) GetOrchestration(
 	pbReq *pb.GetOrchestrationRequest,
-	stream pb.OrchestrationManagement_GetServer,
+	stream pb.ArchitectureManagement_GetOrchestrationServer,
 ) error {
 
 	var (
@@ -122,12 +111,7 @@ func (s *orchestrationsService) Get(
 	return nil
 }
 
-type stagesService struct {
-	pb.UnimplementedStageManagementServer
-	api api.InternalAPI
-}
-
-func (s *stagesService) Create(
+func (s *architectureService) CreateStage(
 	_ context.Context,
 	pbReq *pb.CreateStageRequest,
 ) (*emptypb.Empty, error) {
@@ -144,9 +128,9 @@ func (s *stagesService) Create(
 	return &emptypb.Empty{}, grpcErr
 }
 
-func (s *stagesService) Get(
+func (s *architectureService) GetStage(
 	pbReq *pb.GetStageRequest,
-	stream pb.StageManagement_GetServer,
+	stream pb.ArchitectureManagement_GetStageServer,
 ) error {
 
 	var (
@@ -169,12 +153,7 @@ func (s *stagesService) Get(
 	return nil
 }
 
-type linksService struct {
-	pb.UnimplementedLinkManagementServer
-	api api.InternalAPI
-}
-
-func (s *linksService) Create(
+func (s *architectureService) CreateLink(
 	_ context.Context,
 	pbReq *pb.CreateLinkRequest,
 ) (*emptypb.Empty, error) {
@@ -193,9 +172,9 @@ func (s *linksService) Create(
 	return &emptypb.Empty{}, grpcErr
 }
 
-func (s *linksService) Get(
+func (s *architectureService) GetLink(
 	pbReq *pb.GetLinkRequest,
-	stream pb.LinkManagement_GetServer,
+	stream pb.ArchitectureManagement_GetLinkServer,
 ) error {
 
 	var (
