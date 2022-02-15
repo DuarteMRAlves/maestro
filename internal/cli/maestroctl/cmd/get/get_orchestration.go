@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/cli/client"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/util"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
+	util2 "github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -40,17 +40,17 @@ func NewCmdGetOrchestration() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 		},
@@ -64,7 +64,7 @@ func NewCmdGetOrchestration() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
-	util.AddMaestroFlag(cmd, &o.maestro)
+	util2.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.phase, "phase", "", "phase to search")
 }

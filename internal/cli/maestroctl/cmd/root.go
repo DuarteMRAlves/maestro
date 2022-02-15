@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/create"
-	"github.com/DuarteMRAlves/maestro/internal/cli/cmd/get"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/create"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/get"
 	"github.com/spf13/cobra"
 )
 
