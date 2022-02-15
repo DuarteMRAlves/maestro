@@ -42,7 +42,7 @@ help:
 docker/build:
 	docker build -t duartemralves/maestro:latest -f docker/Dockerfile --platform linux/amd64  .
 
-go/build: pb/api pb/test
+go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
 
 go/test: pb/api pb/test

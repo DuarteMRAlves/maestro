@@ -1,21 +1,26 @@
 package exec
 
 import (
+	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"gotest.tools/v3/assert"
+	"net"
 	"reflect"
 	"testing"
 )
 
 func TestUnaryStage_RunAndEOF(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
-	server := util.StartTestServer(t, lis, true, true)
+	server := startTestServer(t, lis, true, true)
 	defer server.Stop()
 
 	rpc := testRpc(t)
@@ -70,7 +75,7 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 		err = dynRep.ConvertTo(rep)
 		assert.NilError(t, err, "convert dynamic to Reply")
 
-		util.AssertUnaryRequest(t, req, rep)
+		assertUnaryRequest(t, req, rep)
 	}
 	assert.Equal(t, 0, len(errs), "No errors")
 }
@@ -156,6 +161,74 @@ func replyMessage(t *testing.T) rpc.MessageDesc {
 	assert.NilError(t, err, "message Reply")
 
 	return msg
+}
+
+type testService struct {
+	pb.UnimplementedTestServiceServer
+	pb.UnimplementedExtraServiceServer
+}
+
+func (s *testService) Unary(
+	ctx context.Context,
+	request *pb.Request,
+) (*pb.Reply, error) {
+
+	if request.StringField == "error" {
+		return nil, fmt.Errorf("dummy error")
+	}
+	return replyFromRequest(request), nil
+}
+
+func startTestServer(
+	t *testing.T,
+	lis net.Listener,
+	registerTest bool,
+	registerExtra bool,
+) *grpc.Server {
+	testServer := grpc.NewServer()
+	if registerTest {
+		pb.RegisterTestServiceServer(testServer, &testService{})
+	}
+	if registerExtra {
+		pb.RegisterExtraServiceServer(testServer, &testService{})
+	}
+
+	reflection.Register(testServer)
+
+	go func() {
+		err := testServer.Serve(lis)
+		assert.NilError(t, err, "test server error")
+	}()
+	return testServer
+}
+
+func assertUnaryRequest(t *testing.T, req *pb.Request, rep *pb.Reply) {
+	expected := replyFromRequest(req)
+	opts := cmpopts.IgnoreUnexported(pb.Reply{}, pb.InnerMessage{})
+	assert.DeepEqual(t, expected, rep, opts)
+}
+
+func replyFromRequest(request *pb.Request) *pb.Reply {
+	doubleField := float64(len(request.StringField))
+	for _, val := range request.RepeatedField {
+		doubleField += float64(val)
+	}
+
+	innerMsg := &pb.InnerMessage{RepeatedString: []string{}}
+	for _, inner := range request.RepeatedInnerMsg {
+		repeatedString := ""
+		for _, str := range inner.RepeatedString {
+			repeatedString += str
+		}
+		innerMsg.RepeatedString = append(
+			innerMsg.RepeatedString,
+			repeatedString,
+		)
+	}
+	return &pb.Reply{
+		DoubleField: doubleField,
+		InnerMsg:    innerMsg,
+	}
 }
 
 func TestSourceStage_Run(t *testing.T) {

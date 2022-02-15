@@ -3,17 +3,18 @@ package rpc
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
+	"net"
 	"testing"
 	"time"
 )
 
 func TestReflectionClient_ListServices(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -53,7 +54,8 @@ func TestReflectionClient_ListServices(t *testing.T) {
 }
 
 func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
@@ -76,7 +78,8 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 }
 
 func TestReflectionClient_ResolveService_TestService(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -196,7 +199,8 @@ func assertInnerMessageType(t *testing.T, descriptor *desc.MessageDescriptor) {
 }
 
 func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -312,7 +316,8 @@ func assertExtraInnerMessageType(
 }
 
 func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
@@ -337,7 +342,8 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 }
 
 func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
