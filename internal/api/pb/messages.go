@@ -93,3 +93,10 @@ func UnmarshalStartExecutionRequest(
 ) {
 	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
 }
+
+func UnmarshalAttachExecutionRequest(
+	req *api.AttachExecutionRequest,
+	pbReq *pb.AttachExecutionRequest,
+) {
+	req.Orchestration = api.OrchestrationName(pbReq.Orchestration)
+}

@@ -16,6 +16,14 @@ type Manager interface {
 	// with the received name. If no Execution for that name exists, a new
 	// execution is created and started.
 	StartExecution(*badger.Txn, *api.StartExecutionRequest) error
+	// AttachExecution attaches to the Execution with the given Orchestration
+	// name. It returns a list of previous events and a channel where new events
+	// will be written.
+	AttachExecution(*api.AttachExecutionRequest) (
+		[]*api.Event,
+		<-chan *api.Event,
+		error,
+	)
 }
 
 type manager struct {
@@ -99,4 +107,29 @@ func (m *manager) setRunning(
 		}
 	}
 	return nil
+}
+
+func (m *manager) AttachExecution(req *api.AttachExecutionRequest) (
+	[]*api.Event,
+	<-chan *api.Event,
+	error,
+) {
+	var name api.OrchestrationName
+	name = req.Orchestration
+	if name == "" {
+		name = arch.DefaultOrchestrationName
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	e, exists := m.executions[name]
+	if !exists {
+		return nil, nil, errdefs.NotFoundWithMsg(
+			"execution '%s' not found",
+			name,
+		)
+	}
+	hist, ch := e.Subscribe()
+	return hist, ch, nil
 }

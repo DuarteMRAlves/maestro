@@ -239,3 +239,35 @@ func (s *executionsService) Start(
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *executionsService) Attach(
+	pbReq *pb.AttachExecutionRequest,
+	stream pb.ExecutionManagement_AttachServer,
+) error {
+	var (
+		req api.AttachExecutionRequest
+		err error
+	)
+	UnmarshalAttachExecutionRequest(&req, pbReq)
+	hist, future, err := s.api.AttachExecution(&req)
+	if err != nil {
+		return GrpcErrorFromError(err)
+	}
+	for _, event := range hist {
+		pbEvent := &pb.Event{}
+		MarshalEvent(pbEvent, event)
+		err = stream.Send(pbEvent)
+		if err != nil {
+			return err
+		}
+	}
+	for event := range future {
+		pbEvent := &pb.Event{}
+		MarshalEvent(pbEvent, event)
+		err = stream.Send(pbEvent)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
