@@ -3,11 +3,11 @@ package rpc
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
+	"net"
 	"testing"
 	"time"
 )
@@ -47,7 +47,8 @@ var (
 )
 
 func TestUnaryClient_Invoke(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
@@ -76,7 +77,8 @@ func TestUnaryClient_Invoke(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
@@ -100,7 +102,8 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
@@ -128,7 +131,8 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 }
 
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
-	lis := util.NewTestListener(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen")
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.Stop()

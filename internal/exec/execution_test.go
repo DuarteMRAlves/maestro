@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
 	"google.golang.org/grpc"
@@ -24,12 +23,14 @@ func TestExecution_Linear(t *testing.T) {
 		err error
 	)
 
-	sourceLis := util.NewTestListener(t)
+	sourceLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen source")
 	sourceAddr := sourceLis.Addr().String()
 	sourceServer := startLinearSource(t, sourceLis)
 	defer sourceServer.Stop()
 
-	transformLis := util.NewTestListener(t)
+	transformLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen transform")
 	transformAddr := transformLis.Addr().String()
 	transformServer := startLinearTransform(t, transformLis)
 	defer transformServer.Stop()
@@ -38,7 +39,8 @@ func TestExecution_Linear(t *testing.T) {
 	collect := make([]*pb.LinearMessage, 0, max)
 	done := make(chan struct{})
 
-	sinkLis := util.NewTestListener(t)
+	sinkLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen sink")
 	sinkAddr := sinkLis.Addr().String()
 	sinkServer := startLinearSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()
@@ -266,12 +268,14 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 		err error
 	)
 
-	sourceLis := util.NewTestListener(t)
+	sourceLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen source")
 	sourceAddr := sourceLis.Addr().String()
 	sourceServer := startSplitAndMergeSource(t, sourceLis)
 	defer sourceServer.Stop()
 
-	transformLis := util.NewTestListener(t)
+	transformLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen transform")
 	transformAddr := transformLis.Addr().String()
 	transformServer := startSplitAndMergeTransform(t, transformLis)
 	defer transformServer.Stop()
@@ -280,7 +284,8 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	collect := make([]*pb.SplitAndMergePair, 0, max)
 	done := make(chan struct{})
 
-	sinkLis := util.NewTestListener(t)
+	sinkLis, err := net.Listen("tcp", "localhost:0")
+	assert.NilError(t, err, "failed to listen sink")
 	sinkAddr := sinkLis.Addr().String()
 	sinkServer := startSplitAndMergeSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()

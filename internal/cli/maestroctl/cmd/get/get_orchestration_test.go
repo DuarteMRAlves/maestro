@@ -10,6 +10,7 @@ import (
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
+	"net"
 	"testing"
 )
 
@@ -143,7 +144,8 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				lis := util.NewTestListener(t)
+				lis, err := net.Listen("tcp", "localhost:0")
+				assert.NilError(t, err, "failed to listen")
 
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
@@ -180,7 +182,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 				cmd := NewCmdGetOrchestration()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err := cmd.Execute()
+				err = cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")

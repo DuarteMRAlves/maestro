@@ -7,12 +7,12 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
+	"net"
 	"regexp"
 	"testing"
 )
@@ -399,7 +399,8 @@ func TestCreateWithServer(t *testing.T) {
 					) (*emptypb.Empty, error)
 				)
 
-				lis := util.NewTestListener(t)
+				lis, err := net.Listen("tcp", "localhost:0")
+				assert.NilError(t, err, "failed to listen")
 
 				addr := lis.Addr().String()
 				test.args = append(test.args, "--maestro", addr)
@@ -525,7 +526,7 @@ func TestCreateWithServer(t *testing.T) {
 				cmd := NewCmdCreate()
 				cmd.SetOut(b)
 				cmd.SetArgs(test.args)
-				err := cmd.Execute()
+				err = cmd.Execute()
 				assert.NilError(t, err, "execute error")
 				out, err := ioutil.ReadAll(b)
 				assert.NilError(t, err, "read output error")
