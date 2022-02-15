@@ -17,5 +17,5 @@ type InternalAPI interface {
 	GetOrchestration(*GetOrchestrationRequest) ([]*Orchestration, error)
 
 	StartExecution(*StartExecutionRequest) error
-	AttachExecution(*AttachExecutionRequest) ([]*Event, <-chan *Event, error)
+	AttachExecution(*AttachExecutionRequest) (*Subscription, error)
 }

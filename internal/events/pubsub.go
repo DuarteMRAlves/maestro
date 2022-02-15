@@ -2,6 +2,7 @@ package events
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"sync"
 	"time"
 )
@@ -22,25 +23,27 @@ func DefaultPubSubContext() PubSubContext {
 // PubSub handles the distribution of events for multiple subscribers with
 // multiple publishers.
 type PubSub struct {
-	ctx PubSubContext
+	ctx   PubSubContext
+	token api.SubscriptionToken
 	// hist stores past events such that new subscribers can retrieve them.
 	hist []*api.Event
 	// subs are the channels used to send messages to the subscribers.
-	subs []chan<- *api.Event
+	subs map[api.SubscriptionToken]chan<- *api.Event
 
 	mu sync.Mutex
 }
 
 func NewPubSub(ctx PubSubContext) *PubSub {
 	return &PubSub{
-		ctx:  ctx,
-		hist: make([]*api.Event, 0),
-		subs: make([]chan<- *api.Event, 0),
-		mu:   sync.Mutex{},
+		ctx:   ctx,
+		token: 0,
+		hist:  make([]*api.Event, 0),
+		subs:  make(map[api.SubscriptionToken]chan<- *api.Event, 0),
+		mu:    sync.Mutex{},
 	}
 }
 
-func (pb *PubSub) RegisterSub() ([]*api.Event, <-chan *api.Event) {
+func (pb *PubSub) Subscribe() *api.Subscription {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
@@ -51,10 +54,30 @@ func (pb *PubSub) RegisterSub() ([]*api.Event, <-chan *api.Event) {
 		hist = append(hist, event)
 	}
 
-	sub := make(chan *api.Event, pb.ctx.BuffSize)
-	pb.subs = append(pb.subs, sub)
+	token := pb.token
+	pb.token++
 
-	return hist, sub
+	sub := make(chan *api.Event, pb.ctx.BuffSize)
+	pb.subs[token] = sub
+
+	return &api.Subscription{
+		Token:  token,
+		Hist:   hist,
+		Future: sub,
+	}
+}
+
+func (pb *PubSub) Unsubscribe(token api.SubscriptionToken) error {
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
+
+	future, exists := pb.subs[token]
+	if !exists {
+		return errdefs.NotFoundWithMsg("Token not found: %d", token)
+	}
+	close(future)
+	delete(pb.subs, token)
+	return nil
 }
 
 func (pb *PubSub) Publish(description string) {

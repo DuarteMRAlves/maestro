@@ -17,13 +17,10 @@ type Manager interface {
 	// execution is created and started.
 	StartExecution(*badger.Txn, *api.StartExecutionRequest) error
 	// AttachExecution attaches to the Execution with the given Orchestration
-	// name. It returns a list of previous events and a channel where new events
-	// will be written.
-	AttachExecution(*api.AttachExecutionRequest) (
-		[]*api.Event,
-		<-chan *api.Event,
-		error,
-	)
+	// name. It returns a subscription with list of previous events and a
+	// channel where new events will be written. The subscription also provides
+	// a token that can be used to unsubscribe.
+	AttachExecution(*api.AttachExecutionRequest) (*api.Subscription, error)
 }
 
 type manager struct {
@@ -110,8 +107,7 @@ func (m *manager) setRunning(
 }
 
 func (m *manager) AttachExecution(req *api.AttachExecutionRequest) (
-	[]*api.Event,
-	<-chan *api.Event,
+	*api.Subscription,
 	error,
 ) {
 	var name api.OrchestrationName
@@ -125,11 +121,11 @@ func (m *manager) AttachExecution(req *api.AttachExecutionRequest) (
 
 	e, exists := m.executions[name]
 	if !exists {
-		return nil, nil, errdefs.NotFoundWithMsg(
+		return nil, errdefs.NotFoundWithMsg(
 			"execution '%s' not found",
 			name,
 		)
 	}
-	hist, ch := e.Subscribe()
-	return hist, ch, nil
+	sub := e.Subscribe()
+	return sub, nil
 }

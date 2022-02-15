@@ -178,8 +178,7 @@ func (s *Server) StartExecution(req *api.StartExecutionRequest) error {
 }
 
 func (s *Server) AttachExecution(req *api.AttachExecutionRequest) (
-	[]*api.Event,
-	<-chan *api.Event,
+	*api.Subscription,
 	error,
 ) {
 	logs.LogAttachExecutionRequest(s.logger, req)

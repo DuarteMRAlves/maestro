@@ -228,11 +228,11 @@ func (s *executionsService) Attach(
 		err error
 	)
 	UnmarshalAttachExecutionRequest(&req, pbReq)
-	hist, future, err := s.api.AttachExecution(&req)
+	sub, err := s.api.AttachExecution(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
-	for _, event := range hist {
+	for _, event := range sub.Hist {
 		pbEvent := &pb.Event{}
 		MarshalEvent(pbEvent, event)
 		err = stream.Send(pbEvent)
@@ -240,7 +240,7 @@ func (s *executionsService) Attach(
 			return err
 		}
 	}
-	for event := range future {
+	for event := range sub.Future {
 		pbEvent := &pb.Event{}
 		MarshalEvent(pbEvent, event)
 		err = stream.Send(pbEvent)
