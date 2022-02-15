@@ -387,10 +387,10 @@ func TestGetLink_CorrectDisplay(t *testing.T) {
 				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := ipb.MockMaestroServer{
-					LinkManagementServer: &ipb.MockLinkManagementServer{
+					ArchitectureManagementServer: &ipb.MockArchitectureManagementServer{
 						GetLinkFn: func(
 							req *pb.GetLinkRequest,
-							stream pb.LinkManagement_GetServer,
+							stream pb.ArchitectureManagement_GetLinkServer,
 						) error {
 							if !test.validateReq(req) {
 								return fmt.Errorf(

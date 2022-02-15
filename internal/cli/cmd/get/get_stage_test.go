@@ -444,10 +444,10 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 				test.args = append(test.args, "--maestro", addr)
 
 				mockServer := ipb.MockMaestroServer{
-					StageManagementServer: &ipb.MockStageManagementServer{
+					ArchitectureManagementServer: &ipb.MockArchitectureManagementServer{
 						GetStageFn: func(
 							req *pb.GetStageRequest,
-							stream pb.StageManagement_GetServer,
+							stream pb.ArchitectureManagement_GetStageServer,
 						) error {
 							if !test.validateReq(req) {
 								return fmt.Errorf(

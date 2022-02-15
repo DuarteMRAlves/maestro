@@ -504,17 +504,11 @@ func TestCreateWithServer(t *testing.T) {
 				}
 
 				mockServer := ipb.MockMaestroServer{
-					AssetManagementServer: &ipb.MockAssetManagementServer{
-						CreateAssetFn: createAssetFn,
-					},
-					StageManagementServer: &ipb.MockStageManagementServer{
-						CreateStageFn: createStageFn,
-					},
-					LinkManagementServer: &ipb.MockLinkManagementServer{
-						CreateLinkFn: createLinkFn,
-					},
-					OrchestrationManagementServer: &ipb.MockOrchestrationManagementServer{
+					ArchitectureManagementServer: &ipb.MockArchitectureManagementServer{
+						CreateAssetFn:         createAssetFn,
 						CreateOrchestrationFn: createOrchestrationFn,
+						CreateStageFn:         createStageFn,
+						CreateLinkFn:          createLinkFn,
 					},
 					ExecutionManagementServer: &ipb.MockExecutionManagementServer{
 						StartExecutionFn: startExecutionFn,

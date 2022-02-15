@@ -15,9 +15,9 @@ func (c *client) CreateAsset(
 		Image: req.Image,
 	}
 
-	stub := pb.NewAssetManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, a)
+	_, err := stub.CreateAsset(ctx, a)
 
 	return ErrorFromGrpcError(err)
 }
@@ -36,9 +36,9 @@ func (c *client) CreateStage(
 		Port:    req.Port,
 	}
 
-	stub := pb.NewStageManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, pbReq)
+	_, err := stub.CreateStage(ctx, pbReq)
 
 	return ErrorFromGrpcError(err)
 }
@@ -55,9 +55,9 @@ func (c *client) CreateLink(
 		TargetField: link.TargetField,
 	}
 
-	stub := pb.NewLinkManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, l)
+	_, err := stub.CreateLink(ctx, l)
 
 	return ErrorFromGrpcError(err)
 }
@@ -70,9 +70,9 @@ func (c *client) CreateOrchestration(
 		Name: string(req.Name),
 	}
 
-	stub := pb.NewOrchestrationManagementClient(c.conn)
+	stub := pb.NewArchitectureManagementClient(c.conn)
 
-	_, err := stub.Create(ctx, pbReq)
+	_, err := stub.CreateOrchestration(ctx, pbReq)
 
 	return ErrorFromGrpcError(err)
 }
