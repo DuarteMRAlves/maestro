@@ -13,10 +13,10 @@ func TestPubSub_Publish(t *testing.T) {
 	prevTimestamp := time.Now()
 
 	pubSub := NewPubSub(DefaultPubSubContext())
-	hist1, sub1 := pubSub.RegisterSub()
-	assert.Equal(t, 0, len(hist1))
-	hist2, sub2 := pubSub.RegisterSub()
-	assert.Equal(t, 0, len(hist2))
+	sub1 := pubSub.Subscribe()
+	assert.Equal(t, 0, len(sub1.Hist))
+	sub2 := pubSub.Subscribe()
+	assert.Equal(t, 0, len(sub2.Hist))
 
 	go func() {
 		for i := 0; i < numEvents; i++ {
@@ -26,8 +26,8 @@ func TestPubSub_Publish(t *testing.T) {
 
 	for i := 0; i < numEvents; i++ {
 		expected := fmt.Sprintf("Event-%d", i+1)
-		event1 := <-sub1
-		event2 := <-sub2
+		event1 := <-sub1.Future
+		event2 := <-sub2.Future
 
 		assert.Equal(t, expected, event1.Description)
 		assert.Equal(t, expected, event2.Description)
@@ -45,8 +45,8 @@ func TestPubSub_Publish_History(t *testing.T) {
 	firstTimestamp := time.Now()
 
 	pubSub := NewPubSub(DefaultPubSubContext())
-	hist1, sub1 := pubSub.RegisterSub()
-	assert.Equal(t, 0, len(hist1))
+	sub1 := pubSub.Subscribe()
+	assert.Equal(t, 0, len(sub1.Hist))
 
 	go func() {
 		for i := 0; i < firstEvents; i++ {
@@ -58,7 +58,7 @@ func TestPubSub_Publish_History(t *testing.T) {
 
 	for i := 0; i < firstEvents; i++ {
 		expected := fmt.Sprintf("Event-First-%d", i+1)
-		event1 := <-sub1
+		event1 := <-sub1.Future
 
 		assert.Equal(t, expected, event1.Description)
 
@@ -68,10 +68,10 @@ func TestPubSub_Publish_History(t *testing.T) {
 		collected = append(collected, event1)
 	}
 
-	hist2, sub2 := pubSub.RegisterSub()
-	assert.Equal(t, firstEvents, len(hist2))
+	sub2 := pubSub.Subscribe()
+	assert.Equal(t, firstEvents, len(sub2.Hist))
 	for i := 0; i < firstEvents; i++ {
-		hist := hist2[i]
+		hist := sub2.Hist[i]
 		coll := collected[i]
 
 		assert.Equal(t, coll.Description, hist.Description)
@@ -89,8 +89,8 @@ func TestPubSub_Publish_History(t *testing.T) {
 
 	for i := 0; i < secondEvents; i++ {
 		expected := fmt.Sprintf("Second-Event-%d", i+1)
-		event1 := <-sub1
-		event2 := <-sub2
+		event1 := <-sub1.Future
+		event2 := <-sub2.Future
 
 		assert.Equal(t, expected, event1.Description)
 		assert.Equal(t, expected, event2.Description)
@@ -101,4 +101,62 @@ func TestPubSub_Publish_History(t *testing.T) {
 	}
 
 	pubSub.Close()
+}
+
+func TestPubSub_Unsubscribe(t *testing.T) {
+	firstEvents := 20
+	firstTimestamp := time.Now()
+
+	pubSub := NewPubSub(DefaultPubSubContext())
+	defer pubSub.Close()
+
+	sub1 := pubSub.Subscribe()
+	assert.Equal(t, 0, len(sub1.Hist))
+	sub2 := pubSub.Subscribe()
+	assert.Equal(t, 0, len(sub2.Hist))
+
+	go func() {
+		for i := 0; i < firstEvents; i++ {
+			pubSub.Publish(fmt.Sprintf("Event-First-%d", i+1))
+		}
+	}()
+
+	for i := 0; i < firstEvents; i++ {
+		expected := fmt.Sprintf("Event-First-%d", i+1)
+		event1 := <-sub1.Future
+		event2 := <-sub2.Future
+
+		assert.Equal(t, expected, event1.Description)
+		assert.Equal(t, expected, event2.Description)
+
+		assert.Equal(t, event1.Timestamp, event2.Timestamp)
+		assert.Assert(t, firstTimestamp.Before(event1.Timestamp))
+		firstTimestamp = event1.Timestamp
+	}
+
+	err := pubSub.Unsubscribe(sub1.Token)
+	assert.NilError(t, err, "unsubscribe error")
+
+	event1, open := <-sub1.Future
+	assert.Assert(t, !open, "sub1 future is closed")
+	assert.Assert(t, event1 == nil, "event is nil after closed")
+
+	secondEvents := 30
+	secondTimestamp := time.Now()
+
+	go func() {
+		for i := 0; i < secondEvents; i++ {
+			pubSub.Publish(fmt.Sprintf("Second-Event-%d", i+1))
+		}
+	}()
+
+	for i := 0; i < secondEvents; i++ {
+		expected := fmt.Sprintf("Second-Event-%d", i+1)
+		event2 := <-sub2.Future
+
+		assert.Equal(t, expected, event2.Description)
+
+		assert.Assert(t, secondTimestamp.Before(event2.Timestamp))
+		secondTimestamp = event2.Timestamp
+	}
 }

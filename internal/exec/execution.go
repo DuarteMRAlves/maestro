@@ -56,6 +56,6 @@ func (e *Execution) Stop() {
 	)
 }
 
-func (e *Execution) Subscribe() ([]*api.Event, <-chan *api.Event) {
-	return e.pubSub.RegisterSub()
+func (e *Execution) Subscribe() *api.Subscription {
+	return e.pubSub.Subscribe()
 }
