@@ -36,7 +36,7 @@ func TestCreateWithServer(t *testing.T) {
 			name: "multiple resources in a single file",
 			args: []string{
 				"-f",
-				"../../../../tests/resources/create/resources.yml",
+				"../../../../../tests/resources/create/resources.yml",
 			},
 			validateAsset: func(req *pb.CreateAssetRequest) bool {
 				return equalCreateAssetRequest(
@@ -136,13 +136,13 @@ func TestCreateWithServer(t *testing.T) {
 			name: "multiple resources in multiple files",
 			args: []string{
 				"-f",
-				"../../../../tests/resources/create/orchestrations.yml",
+				"../../../../../tests/resources/create/orchestrations.yml",
 				"-f",
-				"../../../../tests/resources/create/stages.yml",
+				"../../../../../tests/resources/create/stages.yml",
 				"-f",
-				"../../../../tests/resources/create/links.yml",
+				"../../../../../tests/resources/create/links.yml",
 				"-f",
-				"../../../../tests/resources/create/assets.yml",
+				"../../../../../tests/resources/create/assets.yml",
 			},
 			validateAsset: func(req *pb.CreateAssetRequest) bool {
 				return equalCreateAssetRequest(
@@ -265,7 +265,7 @@ func TestCreateWithServer(t *testing.T) {
 			name: "filter resources",
 			args: []string{
 				"-f",
-				"../../../../tests/resources/create/resources.yml",
+				"../../../../../tests/resources/create/resources.yml",
 				"asset-2",
 				"stage-1",
 				"stage-2",
@@ -337,7 +337,7 @@ func TestCreateWithServer(t *testing.T) {
 			name: "asset not found",
 			args: []string{
 				"-f",
-				"../../../../tests/resources/create/asset_not_found.yml",
+				"../../../../../tests/resources/create/asset_not_found.yml",
 			},
 			validateStage: func(req *pb.CreateStageRequest) bool {
 				return equalCreateStageRequest(
@@ -356,7 +356,7 @@ func TestCreateWithServer(t *testing.T) {
 			name: "stage not found",
 			args: []string{
 				"-f",
-				"../../../../tests/resources/create/stage_not_found.yml",
+				"../../../../../tests/resources/create/stage_not_found.yml",
 			},
 			validateLink: func(req *pb.CreateLinkRequest) bool {
 				return equalCreateLinkRequest(
@@ -557,7 +557,7 @@ func TestCreateWithoutServer(t *testing.T) {
 			"invalid kind",
 			[]string{
 				"-f",
-				"../../../../tests/resources/create/invalid_kind.yml",
+				"../../../../../tests/resources/create/invalid_kind.yml",
 			},
 			"invalid argument: unknown kind: 'invalid-kind'",
 		},
@@ -565,7 +565,7 @@ func TestCreateWithoutServer(t *testing.T) {
 			"invalid specs",
 			[]string{
 				"-f",
-				"../../../../tests/resources/create/invalid_specs.yml",
+				"../../../../../tests/resources/create/invalid_specs.yml",
 			},
 			"invalid argument: unknown spec fields: invalid_spec_1,invalid_spec_2",
 		},
