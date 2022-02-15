@@ -20,9 +20,6 @@ jobs:
       - name: Setup | Checkout repository
         uses: actions/checkout@v2
 
-      - name: Setup | Generate Grpc
-        run: chmod +x ./scripts/genpb.sh
-
       - name: Build | Format
         uses: ./.github/actions/gofmt-action
 
