@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 // ExecutionManagement services handles operations related to executions.
 service ExecutionManagement {
   rpc Start(StartExecutionRequest) returns (google.protobuf.Empty);
-  rpc Attach(AttachExecutionRequest) returns (stream Event);
+  rpc Attach(stream AttachExecutionRequest) returns (stream Event);
 }
 
 // StartExecutionRequest is a message that specifies an orchestration to be
@@ -20,7 +20,10 @@ message StartExecutionRequest {
 }
 
 // AttachExecutionRequest is a message that specifies the name of an
-// orchestration whose execution should be attached.
+// orchestration whose execution should be attached. The name should be
+// specified the first time the Attach method is called. The second message
+// signals the client does not want to receive more events and shuts down the
+// stream. The second message does not need orchestration to be specified.
 message AttachExecutionRequest {
   string orchestration = 1;
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
 )
 
 // RegisterServices registers all grpc services into a grpc server.
@@ -219,34 +220,89 @@ func (s *executionsService) Start(
 	return &emptypb.Empty{}, nil
 }
 
-func (s *executionsService) Attach(
-	pbReq *pb.AttachExecutionRequest,
-	stream pb.ExecutionManagement_AttachServer,
-) error {
-	var (
-		req api.AttachExecutionRequest
-		err error
-	)
-	UnmarshalAttachExecutionRequest(&req, pbReq)
-	sub, err := s.api.AttachExecution(&req)
-	if err != nil {
-		return GrpcErrorFromError(err)
-	}
-	for _, event := range sub.Hist {
-		pbEvent := &pb.Event{}
-		MarshalEvent(pbEvent, event)
-		err = stream.Send(pbEvent)
-		if err != nil {
-			return err
+func (s *executionsService) Attach(stream pb.ExecutionManagement_AttachServer) error {
+	received := make(chan *api.AttachExecutionRequest)
+	errs1 := make(chan error)
+	errs2 := make(chan error)
+	errs := make(chan error)
+	go func() {
+		for {
+			pbReq, err := stream.Recv()
+			if err != nil {
+				if err != io.EOF {
+					errs1 <- err
+				}
+				close(received)
+				close(errs1)
+				return
+			}
+			req := &api.AttachExecutionRequest{}
+			UnmarshalAttachExecutionRequest(req, pbReq)
+			received <- req
 		}
-	}
-	for event := range sub.Future {
-		pbEvent := &pb.Event{}
-		MarshalEvent(pbEvent, event)
-		err = stream.Send(pbEvent)
-		if err != nil {
-			return err
+	}()
+	go func() {
+		req, open := <-received
+		if !open {
+			close(errs2)
+			return
 		}
+		sub, err := s.api.AttachExecution(req)
+		if err != nil {
+			errs2 <- GrpcErrorFromError(err)
+			close(errs2)
+			return
+		}
+		for _, event := range sub.Hist {
+			pbEvent := &pb.Event{}
+			MarshalEvent(pbEvent, event)
+			err = stream.Send(pbEvent)
+			if err != nil {
+				errs2 <- err
+				close(errs2)
+				return
+			}
+		}
+		for {
+			select {
+			case <-received:
+				// TODO: Unsubscribe
+				close(errs2)
+				return
+			case event := <-sub.Future:
+				pbEvent := &pb.Event{}
+				MarshalEvent(pbEvent, event)
+				err = stream.Send(pbEvent)
+				if err != nil {
+					errs2 <- err
+					close(errs2)
+					return
+				}
+			}
+		}
+	}()
+	go func() {
+		defer close(errs)
+		for errs1 != nil && errs2 != nil {
+			select {
+			case err, open := <-errs1:
+				if !open {
+					errs1 = nil
+					continue
+				}
+				errs <- err
+			case err, open := <-errs2:
+				if !open {
+					errs2 = nil
+					continue
+				}
+				errs <- err
+			}
+		}
+	}()
+	err, open := <-errs
+	if !open {
+		return nil
 	}
-	return nil
+	return err
 }
