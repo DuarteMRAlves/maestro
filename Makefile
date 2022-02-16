@@ -10,12 +10,12 @@ OS ?= $(HOST_OS)
 ARCH ?= $(HOST_ARCH)
 
 # Timeout for the go tests
-TEST_TIMEOUT = 10s
+TEST_TIMEOUT = 20s
 
 # Directory where to run the tests. Defaults to the internal pkg.
 TEST_DIR = ./internal/...
 
-TEST_FLAGS = --timeout $(TEST_TIMEOUT)
+TEST_FLAGS = --timeout $(TEST_TIMEOUT) --shuffle on
 
 PROTOC_FLAGS = -I. --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative
 

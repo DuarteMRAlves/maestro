@@ -10,7 +10,7 @@ type Execution struct {
 	orchestration *api.Orchestration
 
 	stages *StageMap
-	pubSub *events.PubSub
+	pubSub events.PubSub
 
 	term chan struct{}
 	errs chan error
