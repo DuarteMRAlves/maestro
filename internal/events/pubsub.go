@@ -7,6 +7,22 @@ import (
 	"time"
 )
 
+// PubSub handles the distribution of events for multiple subscribers with
+// multiple publishers.
+type PubSub interface {
+	// Subscribe returns a new subscription with past events and a channel to
+	// listen to new events.
+	Subscribe() *api.Subscription
+	// Unsubscribe stops sending new events for a subscription, closing the
+	// respective channel.
+	Unsubscribe(api.SubscriptionToken) error
+	// Publish publishes a new event with the received description and the
+	// current timestamp.
+	Publish(string)
+	// Close shuts down the PubSub system, closing all channels.
+	Close()
+}
+
 // PubSubContext specifies configurations for PubSub.
 type PubSubContext struct {
 	// Timeout is the timeout that the PubSub system waits when sending a
@@ -22,7 +38,7 @@ func DefaultPubSubContext() PubSubContext {
 
 // PubSub handles the distribution of events for multiple subscribers with
 // multiple publishers.
-type PubSub struct {
+type pubSub struct {
 	ctx   PubSubContext
 	token api.SubscriptionToken
 	// hist stores past events such that new subscribers can retrieve them.
@@ -33,17 +49,16 @@ type PubSub struct {
 	mu sync.Mutex
 }
 
-func NewPubSub(ctx PubSubContext) *PubSub {
-	return &PubSub{
+func NewPubSub(ctx PubSubContext) PubSub {
+	return &pubSub{
 		ctx:   ctx,
 		token: 0,
 		hist:  make([]*api.Event, 0),
 		subs:  make(map[api.SubscriptionToken]chan<- *api.Event, 0),
-		mu:    sync.Mutex{},
 	}
 }
 
-func (pb *PubSub) Subscribe() *api.Subscription {
+func (pb *pubSub) Subscribe() *api.Subscription {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
@@ -67,7 +82,7 @@ func (pb *PubSub) Subscribe() *api.Subscription {
 	}
 }
 
-func (pb *PubSub) Unsubscribe(token api.SubscriptionToken) error {
+func (pb *pubSub) Unsubscribe(token api.SubscriptionToken) error {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
@@ -80,7 +95,7 @@ func (pb *PubSub) Unsubscribe(token api.SubscriptionToken) error {
 	return nil
 }
 
-func (pb *PubSub) Publish(description string) {
+func (pb *pubSub) Publish(description string) {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
@@ -98,7 +113,7 @@ func (pb *PubSub) Publish(description string) {
 	}
 }
 
-func (pb *PubSub) sendEvent(sub chan<- *api.Event, event *api.Event) {
+func (pb *pubSub) sendEvent(sub chan<- *api.Event, event *api.Event) {
 	if pb.ctx.Timeout > 0 {
 		timer := time.NewTimer(pb.ctx.Timeout)
 		defer timer.Stop()
@@ -120,7 +135,7 @@ func copyEvent(dst *api.Event, src *api.Event) {
 	dst.Timestamp = src.Timestamp
 }
 
-func (pb *PubSub) Close() {
+func (pb *pubSub) Close() {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 

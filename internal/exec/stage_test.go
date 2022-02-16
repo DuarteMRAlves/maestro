@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -44,9 +45,10 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	errs := make(chan error)
 	done := make(chan struct{})
 	runCfg := &RunCfg{
-		term: term,
-		errs: errs,
-		done: done,
+		pubSub: &events.MockPubSub{},
+		term:   term,
+		errs:   errs,
+		done:   done,
 	}
 	defer close(term)
 	defer close(errs)
@@ -253,7 +255,14 @@ func TestSourceStage_Run(t *testing.T) {
 	done := make(chan struct{})
 	errs := make(chan error)
 
-	go st.Run(&RunCfg{term: term, done: done, errs: errs})
+	go st.Run(
+		&RunCfg{
+			pubSub: &events.MockPubSub{},
+			term:   term,
+			done:   done,
+			errs:   errs,
+		},
+	)
 
 	for i := 1; i < 10; i++ {
 		state = <-ch
@@ -324,7 +333,14 @@ func TestMergeStage_Run(t *testing.T) {
 		input3 <- NewState(6, testMergeInner3Message(t, 6))
 	}()
 
-	go s.Run(&RunCfg{term: term, done: done, errs: errs})
+	go s.Run(
+		&RunCfg{
+			pubSub: &events.MockPubSub{},
+			term:   term,
+			done:   done,
+			errs:   errs,
+		},
+	)
 
 	for i, exp := range expected {
 		out := <-output
@@ -428,7 +444,14 @@ func TestSplitStage_Run(t *testing.T) {
 		input <- NewState(Id(5), testSplitMessage(t, 5))
 	}()
 
-	go s.Run(&RunCfg{term: term, done: done, errs: errs})
+	go s.Run(
+		&RunCfg{
+			pubSub: &events.MockPubSub{},
+			term:   term,
+			done:   done,
+			errs:   errs,
+		},
+	)
 
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]

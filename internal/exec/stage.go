@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
@@ -25,7 +26,7 @@ type Stage interface {
 
 // RunCfg specifies the configuration that the Stage should use when running.
 type RunCfg struct {
-	pubSub *events.PubSub
+	pubSub events.PubSub
 	// term is a channel that will be signaled if the Stage should stop.
 	term <-chan struct{}
 	// done is a channel that the Stage should close to signal is has finished.
@@ -82,21 +83,29 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 		in, out  *State
 		req, rep rpc.DynMessage
 		err      error
+		desc     string
 	)
-
+	desc = fmt.Sprintf("Stage %s: Started", s.rpc.InvokePath())
+	cfg.pubSub.Publish(desc)
 	for {
 		select {
 		case in = <-s.input:
 		case <-cfg.term:
+			desc = fmt.Sprintf("Stage  %s: Term signal.", s.rpc.InvokePath())
+			cfg.pubSub.Publish(desc)
 			close(cfg.done)
 			return
 		}
 		if in.Err() == io.EOF {
+			desc = fmt.Sprintf("Stage %s: Input exausted.", s.rpc.InvokePath())
+			cfg.pubSub.Publish(desc)
 			close(cfg.done)
 			return
 		}
 		if in.Err() != nil {
 			cfg.errs <- in.Err()
+			desc = fmt.Sprintf("Stage  %s: %s.", s.rpc.InvokePath(), err)
+			cfg.pubSub.Publish(desc)
 			continue
 		}
 		req = in.Msg()
@@ -105,6 +114,8 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 		err = s.invoke(req.GrpcMsg(), rep.GrpcMsg())
 		if err != nil {
 			cfg.errs <- err
+			desc = fmt.Sprintf("Stage  %s: %s.", s.rpc.InvokePath(), err)
+			cfg.pubSub.Publish(desc)
 			continue
 		}
 
@@ -113,6 +124,8 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 		select {
 		case s.output <- out:
 		case <-cfg.term:
+			desc = fmt.Sprintf("Stage  %s: Term signal.", s.rpc.InvokePath())
+			cfg.pubSub.Publish(desc)
 			close(cfg.done)
 			return
 		}
