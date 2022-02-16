@@ -4,7 +4,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -15,8 +14,8 @@ func validateCreateOrchestrationConfig(
 	txn *badger.Txn,
 	req *api.CreateOrchestrationRequest,
 ) error {
-	if ok, err := util.ArgNotNil(req, "req"); !ok {
-		return err
+	if req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidOrchestrationName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
@@ -37,8 +36,8 @@ func (m *manager) validateCreateStageRequest(
 	txn *badger.Txn,
 	req *api.CreateStageRequest,
 ) error {
-	if ok, err := util.ArgNotNil(req, "req"); !ok {
-		return err
+	if req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidStageName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
@@ -86,8 +85,8 @@ func (m *manager) validateCreateLinkConfig(
 	txn *badger.Txn,
 	req *api.CreateLinkRequest,
 ) error {
-	if ok, err := util.ArgNotNil(req, "req"); !ok {
-		return err
+	if req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidLinkName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
@@ -146,8 +145,8 @@ func (m *manager) validateCreateAssetRequest(
 	txn *badger.Txn,
 	req *api.CreateAssetRequest,
 ) error {
-	if ok, err := util.ArgNotNil(req, "req"); !ok {
-		return errdefs.InvalidArgumentWithError(err)
+	if req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidAssetName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg(

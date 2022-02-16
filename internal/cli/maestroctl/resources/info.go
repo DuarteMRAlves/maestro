@@ -2,7 +2,6 @@ package resources
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"reflect"
 	"strings"
 )
@@ -10,13 +9,8 @@ import (
 // validateInfo verifies if all the restrictions specified by the info tags are
 // complied
 func validateInfo(v interface{}) error {
-	var (
-		ok  bool
-		err error
-	)
-
-	if ok, err = util.ArgNotNil(v, "dst"); !ok {
-		return err
+	if isNil(v) {
+		return errdefs.InvalidArgumentWithMsg("'v' is nil")
 	}
 	value := reflect.ValueOf(v)
 	switch value.Kind() {
@@ -45,6 +39,17 @@ func validateInfo(v interface{}) error {
 		}
 	}
 	return nil
+}
+
+func isNil(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(v).IsNil()
+	}
+	return false
 }
 
 func validateField(

@@ -3,10 +3,10 @@ package server
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/arch"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -32,8 +32,8 @@ type Server struct {
 }
 
 func (s *Server) ServeGrpc(lis net.Listener) error {
-	if ok, err := util.Status(s.grpcServer != nil, grpcNotConfigured); !ok {
-		return err
+	if s.grpcServer != nil {
+		return errdefs.FailedPreconditionWithMsg(grpcNotConfigured)
 	}
 	return s.grpcServer.Serve(lis)
 }

@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -24,8 +24,8 @@ type rpc struct {
 }
 
 func newRPC(desc *desc.MethodDescriptor) (RPC, error) {
-	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
-		return nil, err
+	if desc == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'desc' is nil")
 	}
 	r := &rpc{desc: desc}
 	return r, nil

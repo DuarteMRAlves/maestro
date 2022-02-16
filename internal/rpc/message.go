@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
@@ -77,8 +76,8 @@ type messageDesc struct {
 }
 
 func NewMessage(desc *desc.MessageDescriptor) (MessageDesc, error) {
-	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
-		return nil, err
+	if desc == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'desc' is nil")
 	}
 	s := newMessageInternal(desc)
 	return s, nil

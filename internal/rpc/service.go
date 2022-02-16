@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/util"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -17,8 +17,8 @@ type service struct {
 }
 
 func newService(desc *desc.ServiceDescriptor) (Service, error) {
-	if ok, err := util.ArgNotNil(desc, "desc"); !ok {
-		return nil, err
+	if desc == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'desc' is nil")
 	}
 	s := newServiceInternal(desc)
 	return s, nil
