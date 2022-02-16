@@ -4,21 +4,20 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
 // MarshalAsset returns a new protobuf representations of the received asset.
 func MarshalAsset(a *api.Asset) (*pb.Asset, error) {
-	if ok, err := util.ArgNotNil(a, "a"); !ok {
-		return nil, err
+	if a == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'a' is nil")
 	}
 	return &pb.Asset{Name: string(a.Name), Image: a.Image}, nil
 }
 
 // UnmarshalAsset returns a new asset from its protobuf representation.
 func UnmarshalAsset(p *pb.Asset) (*api.Asset, error) {
-	if ok, err := util.ArgNotNil(p, "p"); !ok {
-		return nil, err
+	if p == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'p' is nil")
 	}
 	return &api.Asset{
 		Name:  api.AssetName(p.Name),
@@ -31,8 +30,8 @@ func MarshalOrchestration(o *api.Orchestration) (
 	*pb.Orchestration,
 	error,
 ) {
-	if ok, err := util.ArgNotNil(o, "o"); !ok {
-		return nil, err
+	if o == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'o' is nil")
 	}
 	links := make([]string, 0, len(o.Links))
 	for _, l := range o.Links {
@@ -52,8 +51,8 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 	*api.Orchestration,
 	error,
 ) {
-	if ok, err := util.ArgNotNil(p, "p"); !ok {
-		return nil, err
+	if p == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'p' is nil")
 	}
 
 	links := make([]api.LinkName, 0, len(p.Links))
@@ -71,8 +70,8 @@ func UnmarshalOrchestration(p *pb.Orchestration) (
 // MarshalStage creates a protobuf message representing the Stage from the Stage
 // structure.
 func MarshalStage(s *api.Stage) (*pb.Stage, error) {
-	if ok, err := util.ArgNotNil(s, "s"); !ok {
-		return nil, err
+	if s == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'s' is nil")
 	}
 	pbStage := &pb.Stage{
 		Name:    string(s.Name),
@@ -88,8 +87,8 @@ func MarshalStage(s *api.Stage) (*pb.Stage, error) {
 // UnmarshalStage creates a Stage struct from a protobuf message representing
 // the stage.
 func UnmarshalStage(p *pb.Stage) (*api.Stage, error) {
-	if ok, err := util.ArgNotNil(p, "p"); !ok {
-		return nil, errdefs.InvalidArgumentWithError(err)
+	if p == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'p' is nil")
 	}
 	return &api.Stage{
 		Name:    api.StageName(p.Name),
@@ -103,8 +102,8 @@ func UnmarshalStage(p *pb.Stage) (*api.Stage, error) {
 
 // MarshalLink returns a protobuf message for the given link.
 func MarshalLink(l *api.Link) (*pb.Link, error) {
-	if ok, err := util.ArgNotNil(l, "l"); !ok {
-		return nil, err
+	if l == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'l' is nil")
 	}
 	pbLink := &pb.Link{
 		Name:        string(l.Name),
@@ -118,8 +117,8 @@ func MarshalLink(l *api.Link) (*pb.Link, error) {
 
 // UnmarshalLink returns the link represented by the given protobuf message.
 func UnmarshalLink(p *pb.Link) (*api.Link, error) {
-	if ok, err := util.ArgNotNil(p, "p"); !ok {
-		return nil, err
+	if p == nil {
+		return nil, errdefs.InvalidArgumentWithMsg("'p' is nil")
 	}
 	return &api.Link{
 		Name:        api.LinkName(p.Name),

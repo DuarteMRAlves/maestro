@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 )
 
 // CreateStageContext offers a context for the creation of a stage.
@@ -31,8 +30,8 @@ func newCreateStageContext(
 
 func (c *CreateStageContext) validateAndComplete() error {
 	var orchestrationName api.OrchestrationName
-	if ok, err := util.ArgNotNil(c.req, "req"); !ok {
-		return err
+	if c.req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidStageName(c.req.Name) {
 		return errdefs.InvalidArgumentWithMsg(
@@ -144,8 +143,8 @@ func newCreateLinkContext(
 
 func (c *CreateLinkContext) validateAndComplete() error {
 	var orchestrationName api.OrchestrationName
-	if ok, err := util.ArgNotNil(c.req, "req"); !ok {
-		return err
+	if c.req == nil {
+		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
 	if !IsValidLinkName(c.req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", c.req.Name)
