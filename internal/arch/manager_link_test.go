@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -21,15 +20,15 @@ func TestManager_CreateLink(t *testing.T) {
 		{
 			name: "required parameters",
 			req: &api.CreateLinkRequest{
-				Name:        util.LinkNameForNum(0),
-				SourceStage: util.LinkSourceStageForNum(0),
-				TargetStage: util.LinkTargetStageForNum(0),
+				Name:        api.LinkName("link-0"),
+				SourceStage: api.StageName("stage-0"),
+				TargetStage: api.StageName("stage-1"),
 			},
 			expected: &api.Link{
-				Name:          util.LinkNameForNum(0),
-				SourceStage:   util.LinkSourceStageForNum(0),
+				Name:          api.LinkName("link-0"),
+				SourceStage:   api.StageName("stage-0"),
 				SourceField:   "",
-				TargetStage:   util.LinkTargetStageForNum(0),
+				TargetStage:   api.StageName("stage-1"),
 				TargetField:   "",
 				Orchestration: DefaultOrchestrationName,
 			},
@@ -37,20 +36,20 @@ func TestManager_CreateLink(t *testing.T) {
 		{
 			name: "all parameters",
 			req: &api.CreateLinkRequest{
-				Name:          util.LinkNameForNum(0),
-				SourceStage:   util.LinkSourceStageForNum(0),
-				SourceField:   util.LinkSourceFieldForNum(0),
-				TargetStage:   util.LinkTargetStageForNum(0),
-				TargetField:   util.LinkTargetFieldForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				Name:          api.LinkName("link-0"),
+				SourceStage:   api.StageName("stage-0"),
+				SourceField:   "source-field-0",
+				TargetStage:   api.StageName("stage-1"),
+				TargetField:   "target-field-0",
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Link{
-				Name:          util.LinkNameForNum(0),
-				SourceStage:   util.LinkSourceStageForNum(0),
-				SourceField:   util.LinkSourceFieldForNum(0),
-				TargetStage:   util.LinkTargetStageForNum(0),
-				TargetField:   util.LinkTargetFieldForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				Name:          api.LinkName("link-0"),
+				SourceStage:   api.StageName("stage-0"),
+				SourceField:   "source-field-0",
+				TargetStage:   api.StageName("stage-1"),
+				TargetField:   "target-field-0",
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 		},
 	}
@@ -87,12 +86,12 @@ func testCreateLink(
 				orchestrationName = req.Orchestration
 			}
 			helper := kv.NewTxnHelper(txn)
-			o := &api.Orchestration{Name: util.OrchestrationNameForNum(0)}
+			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
 				return err
 			}
 			s := &api.Stage{
-				Name:          util.LinkSourceStageForNum(0),
+				Name:          api.StageName("stage-0"),
 				Phase:         api.StagePending,
 				Orchestration: orchestrationName,
 			}
@@ -100,7 +99,7 @@ func testCreateLink(
 				return err
 			}
 			t := &api.Stage{
-				Name:          util.LinkTargetStageForNum(0),
+				Name:          api.StageName("stage-1"),
 				Phase:         api.StagePending,
 				Orchestration: orchestrationName,
 			}
@@ -195,8 +194,8 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
 				SourceStage:   "",
-				TargetStage:   util.LinkTargetStageForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				TargetStage:   api.StageName("stage-1"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "empty source stage name",
@@ -205,9 +204,9 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			name: "empty target name",
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
-				SourceStage:   util.LinkSourceStageForNum(0),
+				SourceStage:   api.StageName("stage-0"),
 				TargetStage:   "",
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "empty target stage name",
@@ -217,8 +216,8 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
 				SourceStage:   "unknown",
-				TargetStage:   util.LinkTargetStageForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				TargetStage:   api.StageName("stage-1"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg:  "source stage 'unknown' not found",
@@ -227,9 +226,9 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			name: "target stage not found",
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
-				SourceStage:   util.LinkSourceStageForNum(0),
+				SourceStage:   api.StageName("stage-0"),
 				TargetStage:   "unknown",
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg:  "target stage 'unknown' not found",
@@ -239,14 +238,14 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
 				SourceStage:   "stage-different",
-				TargetStage:   util.LinkTargetStageForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				TargetStage:   api.StageName("stage-1"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsFailedPrecondition,
 			expectedErrMsg: fmt.Sprintf(
 				"orchestration for link '%s' is '%s' but source stage is registered in '%s'.",
 				"some-link",
-				util.OrchestrationNameForNum(0),
+				api.OrchestrationName("orchestration-0"),
 				"different-orchestration",
 			),
 		},
@@ -254,15 +253,15 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			name: "target stage different orchestration",
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
-				SourceStage:   util.LinkSourceStageForNum(0),
+				SourceStage:   api.StageName("stage-0"),
 				TargetStage:   "stage-different",
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsFailedPrecondition,
 			expectedErrMsg: fmt.Sprintf(
 				"orchestration for link '%s' is '%s' but target stage is registered in '%s'.",
 				"some-link",
-				util.OrchestrationNameForNum(0),
+				api.OrchestrationName("orchestration-0"),
 				"different-orchestration",
 			),
 		},
@@ -271,8 +270,8 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
 				SourceStage:   "not-pending",
-				TargetStage:   util.LinkTargetStageForNum(0),
-				Orchestration: util.OrchestrationNameForNum(0),
+				TargetStage:   api.StageName("stage-1"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsFailedPrecondition,
 			expectedErrMsg: fmt.Sprintf(
@@ -284,9 +283,9 @@ func TestManager_CreateLink_Error(t *testing.T) {
 			name: "target stage not pending",
 			req: &api.CreateLinkRequest{
 				Name:          "some-link",
-				SourceStage:   util.LinkSourceStageForNum(0),
+				SourceStage:   api.StageName("stage-0"),
 				TargetStage:   "not-pending",
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			assertErrTypeFn: errdefs.IsFailedPrecondition,
 			expectedErrMsg: fmt.Sprintf(
@@ -329,24 +328,24 @@ func testCreateLinkError(
 		func(txn *badger.Txn) error {
 			helper := kv.NewTxnHelper(txn)
 
-			o := &api.Orchestration{Name: util.OrchestrationNameForNum(0)}
+			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
 				return err
 			}
 
 			s := &api.Stage{
-				Name:          util.LinkSourceStageForNum(0),
+				Name:          api.StageName("stage-0"),
 				Phase:         api.StagePending,
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			}
 			if err := helper.SaveStage(s); err != nil {
 				return err
 			}
 
 			t := &api.Stage{
-				Name:          util.LinkTargetStageForNum(0),
+				Name:          api.StageName("stage-1"),
 				Phase:         api.StagePending,
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			}
 			if err := helper.SaveStage(t); err != nil {
 				return err
@@ -363,7 +362,7 @@ func testCreateLinkError(
 			notPending := &api.Stage{
 				Name:          "not-pending",
 				Phase:         api.StageSucceeded,
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			}
 			if err := helper.SaveStage(notPending); err != nil {
 				return err
@@ -413,19 +412,19 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 			stored: []*api.Link{
 				testLink(0),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(0)},
+			expected: []api.LinkName{api.LinkName("link-0")},
 		},
 		{
 			name: "one element stored, matching name req",
-			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(0)},
+			req:  &api.GetLinkRequest{Name: api.LinkName("link-0")},
 			stored: []*api.Link{
 				testLink(0),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(0)},
+			expected: []api.LinkName{api.LinkName("link-0")},
 		},
 		{
 			name: "one element stored, non-matching name req",
-			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(1)},
+			req:  &api.GetLinkRequest{Name: api.LinkName("link-1")},
 			stored: []*api.Link{
 				testLink(2),
 			},
@@ -440,24 +439,24 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 				testLink(3),
 			},
 			expected: []api.LinkName{
-				util.LinkNameForNum(1),
-				util.LinkNameForNum(3),
-				util.LinkNameForNum(5),
+				api.LinkName("link-1"),
+				api.LinkName("link-3"),
+				api.LinkName("link-5"),
 			},
 		},
 		{
 			name: "multiple elements stored, matching name req",
-			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(2)},
+			req:  &api.GetLinkRequest{Name: api.LinkName("link-2")},
 			stored: []*api.Link{
 				testLink(3),
 				testLink(1),
 				testLink(2),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(2)},
+			expected: []api.LinkName{api.LinkName("link-2")},
 		},
 		{
 			name: "multiple elements stored, non-matching name req",
-			req:  &api.GetLinkRequest{Name: util.LinkNameForNum(2)},
+			req:  &api.GetLinkRequest{Name: api.LinkName("link-2")},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(3),
@@ -467,17 +466,17 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		},
 		{
 			name: "multiple elements stored, matching source stage req",
-			req:  &api.GetLinkRequest{SourceStage: util.LinkSourceStageForNum(4)},
+			req:  &api.GetLinkRequest{SourceStage: api.StageName("stage-4")},
 			stored: []*api.Link{
 				testLink(3),
 				testLink(4),
 				testLink(2),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(4)},
+			expected: []api.LinkName{api.LinkName("link-4")},
 		},
 		{
 			name: "multiple elements stored, non-matching source stage req",
-			req:  &api.GetLinkRequest{SourceStage: util.LinkSourceStageForNum(4)},
+			req:  &api.GetLinkRequest{SourceStage: api.StageName("stage-4")},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(3),
@@ -487,17 +486,17 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		},
 		{
 			name: "multiple elements stored, matching source field req",
-			req:  &api.GetLinkRequest{SourceField: util.LinkSourceFieldForNum(1)},
+			req:  &api.GetLinkRequest{SourceField: "source-field-1"},
 			stored: []*api.Link{
 				testLink(1),
 				testLink(4),
 				testLink(2),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(1)},
+			expected: []api.LinkName{api.LinkName("link-1")},
 		},
 		{
 			name: "multiple elements stored, non-matching source field req",
-			req:  &api.GetLinkRequest{SourceField: util.LinkSourceFieldForNum(1)},
+			req:  &api.GetLinkRequest{SourceField: "source-field-1"},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(3),
@@ -507,17 +506,17 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		},
 		{
 			name: "multiple elements stored, matching target stage req",
-			req:  &api.GetLinkRequest{TargetStage: util.LinkTargetStageForNum(3)},
+			req:  &api.GetLinkRequest{TargetStage: api.StageName("stage-4")},
 			stored: []*api.Link{
 				testLink(3),
 				testLink(4),
 				testLink(2),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(3)},
+			expected: []api.LinkName{api.LinkName("link-3")},
 		},
 		{
 			name: "multiple elements stored, non-matching target stage req",
-			req:  &api.GetLinkRequest{TargetStage: util.LinkTargetStageForNum(3)},
+			req:  &api.GetLinkRequest{TargetStage: api.StageName("stage-4")},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(4),
@@ -527,17 +526,17 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		},
 		{
 			name: "multiple elements stored, matching target field req",
-			req:  &api.GetLinkRequest{TargetField: util.LinkTargetFieldForNum(3)},
+			req:  &api.GetLinkRequest{TargetField: "target-field-3"},
 			stored: []*api.Link{
 				testLink(1),
 				testLink(3),
 				testLink(2),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(3)},
+			expected: []api.LinkName{api.LinkName("link-3")},
 		},
 		{
 			name: "multiple elements stored, non-matching target field req",
-			req:  &api.GetLinkRequest{TargetField: util.LinkTargetFieldForNum(3)},
+			req:  &api.GetLinkRequest{TargetField: "target-field-3"},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(1),
@@ -548,19 +547,19 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		{
 			name: "multiple elements stored, matching orchestration req",
 			req: &api.GetLinkRequest{
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			stored: []*api.Link{
 				testLink(0),
 				testLink(3),
 				testLink(1),
 			},
-			expected: []api.LinkName{util.LinkNameForNum(0)},
+			expected: []api.LinkName{api.LinkName("link-0")},
 		},
 		{
 			name: "multiple elements stored, non-matching orchestration req",
 			req: &api.GetLinkRequest{
-				Orchestration: util.OrchestrationNameForNum(2),
+				Orchestration: api.OrchestrationName("orchestration-2"),
 			},
 			stored: []*api.Link{
 				testLink(0),
@@ -627,12 +626,17 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 
 func testLink(num int) *api.Link {
 	return &api.Link{
-		Name:          util.LinkNameForNum(num),
-		SourceStage:   util.LinkSourceStageForNum(num),
-		SourceField:   util.LinkSourceFieldForNum(num),
-		TargetStage:   util.LinkTargetStageForNum(num),
-		TargetField:   util.LinkTargetFieldForNum(num),
-		Orchestration: util.OrchestrationNameForNum(num),
+		Name:        api.LinkName(fmt.Sprintf("link-%d", num)),
+		SourceStage: api.StageName(fmt.Sprintf("stage-%d", num)),
+		SourceField: fmt.Sprintf("source-field-%d", num),
+		TargetStage: api.StageName(fmt.Sprintf("stage-%d", num+1)),
+		TargetField: fmt.Sprintf("target-field-%d", num),
+		Orchestration: api.OrchestrationName(
+			fmt.Sprintf(
+				"orchestration-%d",
+				num,
+			),
+		),
 	}
 }
 

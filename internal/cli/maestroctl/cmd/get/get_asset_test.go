@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -44,13 +43,13 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  util.AssetNameForNumStr(0),
-					Image: util.AssetImageForNum(0),
+					Name:  "asset-0",
+					Image: "image-0",
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{util.AssetNameForNumStr(0), util.AssetImageForNum(0)},
+				{"asset-0", "image-0"},
 			},
 		},
 		{
@@ -61,66 +60,66 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  util.AssetNameForNumStr(2),
-					Image: util.AssetImageForNum(2),
+					Name:  "asset-2",
+					Image: "image-2",
 				},
 				{
-					Name:  util.AssetNameForNumStr(1),
-					Image: util.AssetImageForNum(1),
+					Name:  "asset-1",
+					Image: "image-1",
 				},
 				{
-					Name:  util.AssetNameForNumStr(0),
-					Image: util.AssetImageForNum(0),
+					Name:  "asset-0",
+					Image: "image-0",
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{util.AssetNameForNumStr(0), util.AssetImageForNum(0)},
-				{util.AssetNameForNumStr(1), util.AssetImageForNum(1)},
-				{util.AssetNameForNumStr(2), util.AssetImageForNum(2)},
+				{"asset-0", "image-0"},
+				{"asset-1", "image-1"},
+				{"asset-2", "image-2"},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{util.AssetNameForNumStr(1)},
+			args: []string{"asset-1"},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
-				return req.Name == util.AssetNameForNumStr(1) &&
+				return req.Name == "asset-1" &&
 					req.Image == ""
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  util.AssetNameForNumStr(1),
-					Image: util.AssetImageForNum(1),
+					Name:  "asset-1",
+					Image: "image-1",
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{util.AssetNameForNumStr(1), util.AssetImageForNum(1)},
+				{"asset-1", "image-1"},
 			},
 		},
 		{
 			name: "filter by image",
-			args: []string{"--image", util.AssetImageForNum(2)},
+			args: []string{"--image", "image-2"},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
 				return req.Name == "" &&
-					req.Image == util.AssetImageForNum(2)
+					req.Image == "image-2"
 			},
 			responses: []*pb.Asset{
 				{
-					Name:  util.AssetNameForNumStr(2),
-					Image: util.AssetImageForNum(2),
+					Name:  "asset-2",
+					Image: "image-2",
 				},
 			},
 			output: [][]string{
 				{NameText, ImageText},
-				{util.AssetNameForNumStr(2), util.AssetImageForNum(2)},
+				{"asset-2", "image-2"},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{util.AssetNameForNumStr(3)},
+			args: []string{"asset-3"},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
-				return req.Name == util.AssetNameForNumStr(3) &&
+				return req.Name == "asset-3" &&
 					req.Image == ""
 			},
 			responses: []*pb.Asset{},
@@ -130,10 +129,10 @@ func TestGetAsset_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such image",
-			args: []string{"--image", util.AssetImageForNum(4)},
+			args: []string{"--image", "image-4"},
 			validateQuery: func(req *pb.GetAssetRequest) bool {
 				return req.Name == "" &&
-					req.Image == util.AssetImageForNum(4)
+					req.Image == "image-4"
 			},
 			responses: []*pb.Asset{},
 			output: [][]string{

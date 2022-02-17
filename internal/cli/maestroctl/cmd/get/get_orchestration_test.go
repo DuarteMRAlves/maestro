@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -49,10 +48,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			},
 			output: [][]string{
 				{NameText, PhaseText},
-				{
-					util.OrchestrationNameForNumStr(0),
-					string(api.OrchestrationSucceeded),
-				},
+				{"orchestration-0", string(api.OrchestrationSucceeded)},
 			},
 		},
 		{
@@ -69,25 +65,16 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			},
 			output: [][]string{
 				{NameText, PhaseText},
-				{
-					util.OrchestrationNameForNumStr(0),
-					string(api.OrchestrationFailed),
-				},
-				{
-					util.OrchestrationNameForNumStr(1),
-					string(api.OrchestrationRunning),
-				},
-				{
-					util.OrchestrationNameForNumStr(2),
-					string(api.OrchestrationPending),
-				},
+				{"orchestration-0", string(api.OrchestrationFailed)},
+				{"orchestration-1", string(api.OrchestrationRunning)},
+				{"orchestration-2", string(api.OrchestrationPending)},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{util.OrchestrationNameForNumStr(2)},
+			args: []string{"orchestration-2"},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == util.OrchestrationNameForNumStr(2) &&
+				return req.Name == "orchestration-2" &&
 					req.Phase == ""
 			},
 			responses: []*pb.Orchestration{
@@ -96,17 +83,16 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			output: [][]string{
 				{NameText, PhaseText},
 				{
-					util.OrchestrationNameForNumStr(2),
+					"orchestration-2",
 					string(api.OrchestrationSucceeded),
 				},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{util.OrchestrationNameForNumStr(3)},
+			args: []string{"orchestration-3"},
 			validateReq: func(req *pb.GetOrchestrationRequest) bool {
-				return req.Name == util.OrchestrationNameForNumStr(3) &&
-					req.Phase == ""
+				return req.Name == "orchestration-3" && req.Phase == ""
 			},
 			responses: []*pb.Orchestration{},
 			output:    [][]string{{NameText, PhaseText}},
@@ -123,10 +109,7 @@ func TestGetOrchestration_CorrectDisplay(t *testing.T) {
 			},
 			output: [][]string{
 				{NameText, PhaseText},
-				{
-					util.OrchestrationNameForNumStr(1),
-					string(api.OrchestrationPending),
-				},
+				{"orchestration-1", string(api.OrchestrationPending)},
 			},
 		},
 		{
@@ -204,7 +187,7 @@ func newPbOrchestration(
 	phase api.OrchestrationPhase,
 ) *pb.Orchestration {
 	return &pb.Orchestration{
-		Name:  util.OrchestrationNameForNumStr(num),
+		Name:  fmt.Sprintf("orchestration-%d", num),
 		Phase: string(phase),
 		Links: nil,
 	}
