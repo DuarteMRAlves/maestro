@@ -27,7 +27,7 @@ help:
 	@echo "  make command [options]"
 	@echo
 	@echo "Commands:"
-	@echo "  go/build        builds maestro server binary."
+	@echo "  go/build        builds all project binaries."
 	@echo "  go/test         runs automated tests."
 	@echo
 	@echo "  docker/build    builds maestro docker image."
@@ -44,6 +44,7 @@ docker/build:
 
 go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
+	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestroctl ./cmd/maestroctl/maestroctl.go
 
 go/test: pb/api pb/test
 	go test $(TEST_FLAGS) $(TEST_DIR)
