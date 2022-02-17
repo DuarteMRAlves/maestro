@@ -32,7 +32,7 @@ type Server struct {
 }
 
 func (s *Server) ServeGrpc(lis net.Listener) error {
-	if s.grpcServer != nil {
+	if s.grpcServer == nil {
 		return errdefs.FailedPreconditionWithMsg(grpcNotConfigured)
 	}
 	return s.grpcServer.Serve(lis)
