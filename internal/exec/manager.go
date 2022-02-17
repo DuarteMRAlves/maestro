@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -28,12 +29,15 @@ type manager struct {
 	executions map[api.OrchestrationName]*Execution
 
 	reflectionManager rpc.Manager
+
+	logger *zap.Logger
 }
 
-func NewManager(reflectionManager rpc.Manager) Manager {
+func NewManager(reflectionManager rpc.Manager, logger *zap.Logger) Manager {
 	return &manager{
 		executions:        map[api.OrchestrationName]*Execution{},
 		reflectionManager: reflectionManager,
+		logger:            logger,
 	}
 }
 

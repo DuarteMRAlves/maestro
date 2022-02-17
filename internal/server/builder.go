@@ -107,7 +107,7 @@ func (b *Builder) initManagers(s *Server) error {
 	if err != nil {
 		return errdefs.PrependMsg(err, "init managers:")
 	}
-	s.execManager = exec.NewManager(s.reflectionManager)
+	s.execManager = exec.NewManager(s.reflectionManager, b.logger)
 	return nil
 }
 
