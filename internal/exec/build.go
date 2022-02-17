@@ -8,6 +8,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
 )
@@ -16,6 +17,7 @@ import (
 type Builder struct {
 	orchestration *api.Orchestration
 	stageMap      *StageMap
+	logger        *zap.Logger
 
 	orchestrationName api.OrchestrationName
 	stages            map[api.StageName]*api.Stage
@@ -41,8 +43,16 @@ func (b *Builder) withOrchestration(name api.OrchestrationName) *Builder {
 	return b
 }
 
+func (b *Builder) withLogger(logger *zap.Logger) *Builder {
+	b.logger = logger
+	return b
+}
+
 func (b *Builder) build() (*Execution, error) {
 	var err error
+	if b.logger == nil {
+		return nil, errdefs.FailedPreconditionWithMsg("logger not specified")
+	}
 	b.orchestration = &api.Orchestration{}
 	err = b.txnHelper.LoadOrchestration(b.orchestration, b.orchestrationName)
 	if err != nil {
@@ -72,6 +82,7 @@ func (b *Builder) build() (*Execution, error) {
 		orchestration: b.orchestration,
 		stages:        b.stageMap,
 		pubSub:        events.NewPubSub(events.DefaultPubSubContext()),
+		logger:        b.logger,
 	}
 	return e, nil
 }

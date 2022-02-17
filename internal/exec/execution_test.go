@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/tests/pb"
 	"github.com/dgraph-io/badger/v3"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -22,6 +23,9 @@ func TestExecution_Linear(t *testing.T) {
 		e   *Execution
 		err error
 	)
+
+	logger, err := zap.NewDevelopment(zap.IncreaseLevel(zap.WarnLevel))
+	assert.NilError(t, err, "init logger")
 
 	sourceLis, err := net.Listen("tcp", "localhost:0")
 	assert.NilError(t, err, "failed to listen source")
@@ -56,7 +60,7 @@ func TestExecution_Linear(t *testing.T) {
 	err = db.View(
 		func(txn *badger.Txn) error {
 			builder := newBuilder(txn, rpcManager)
-			e, err = builder.withOrchestration("default").build()
+			e, err = builder.withOrchestration("default").withLogger(logger).build()
 			return err
 		},
 	)
@@ -268,6 +272,9 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 		err error
 	)
 
+	logger, err := zap.NewDevelopment(zap.IncreaseLevel(zap.WarnLevel))
+	assert.NilError(t, err, "init logger")
+
 	sourceLis, err := net.Listen("tcp", "localhost:0")
 	assert.NilError(t, err, "failed to listen source")
 	sourceAddr := sourceLis.Addr().String()
@@ -301,7 +308,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	err = db.View(
 		func(txn *badger.Txn) error {
 			builder := newBuilder(txn, rpcManager)
-			e, err = builder.withOrchestration("default").build()
+			e, err = builder.withOrchestration("default").withLogger(logger).build()
 			return err
 		},
 	)
