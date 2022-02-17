@@ -151,5 +151,5 @@ func LogAttachExecutionRequest(
 			zap.String("orchestration", string(req.Orchestration)),
 		}
 	}
-	logger.Info("Start Execution.", logFields...)
+	logger.Info("Attach Execution.", logFields...)
 }

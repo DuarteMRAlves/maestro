@@ -49,7 +49,7 @@ func NewCmdRoot() *cobra.Command {
 			}
 
 			if err := s.ServeGrpc(lis); err != nil {
-				sugar.Fatal("Failed to serve.", "err", err)
+				sugar.Fatalf("Failed to serve: %s", err)
 			}
 		},
 	}
