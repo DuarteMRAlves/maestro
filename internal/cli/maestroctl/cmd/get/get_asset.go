@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
-	util2 "github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -38,17 +37,17 @@ func NewCmdGetAsset() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 		},
@@ -62,7 +61,7 @@ func NewCmdGetAsset() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *AssetOpts) addFlags(cmd *cobra.Command) {
-	util2.AddMaestroFlag(cmd, &o.maestro)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.image, "image", "", "image name to search")
 }
@@ -96,14 +95,25 @@ func (o *AssetOpts) run() error {
 	}
 	defer conn.Close()
 
-	c := client.New(conn)
+	stub := pb.NewArchitectureManagementClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	assets, err := c.GetAsset(ctx, req)
+	stream, err := stub.GetAsset(ctx, req)
 	if err != nil {
-		return err
+		return util.ErrorFromGrpcError(err)
+	}
+	assets := make([]*pb.Asset, 0)
+	for {
+		a, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return util.ErrorFromGrpcError(err)
+		}
+		assets = append(assets, a)
 	}
 	return o.displayAssets(assets)
 }

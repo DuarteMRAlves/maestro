@@ -3,8 +3,8 @@ package create
 import (
 	"context"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -138,7 +138,8 @@ func (o *Options) run() error {
 	}
 	defer conn.Close()
 
-	c := client.New(conn)
+	archStub := pb.NewArchitectureManagementClient(conn)
+	execStub := pb.NewExecutionManagementClient(conn)
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -147,30 +148,53 @@ func (o *Options) run() error {
 	defer cancel()
 
 	for _, req := range assets {
-		if err := c.CreateAsset(ctx, req); err != nil {
-			return err
+		a := &pb.CreateAssetRequest{
+			Name:  string(req.Name),
+			Image: req.Image,
+		}
+		if _, err = archStub.CreateAsset(ctx, a); err != nil {
+			return util.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range orchestrations {
-		if err := c.CreateOrchestration(ctx, req); err != nil {
-			return err
+		pbReq := &pb.CreateOrchestrationRequest{
+			Name: string(req.Name),
+		}
+		if _, err = archStub.CreateOrchestration(ctx, pbReq); err != nil {
+			return util.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range stages {
-		if err := c.CreateStage(ctx, req); err != nil {
-			return err
+		pbReq := &pb.CreateStageRequest{
+			Name:    string(req.Name),
+			Asset:   string(req.Asset),
+			Service: req.Service,
+			Rpc:     req.Rpc,
+			Address: req.Address,
+			Host:    req.Host,
+			Port:    req.Port,
+		}
+		if _, err = archStub.CreateStage(ctx, pbReq); err != nil {
+			return util.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range links {
-		if err := c.CreateLink(ctx, req); err != nil {
-			return err
+		l := &pb.CreateLinkRequest{
+			Name:        string(req.Name),
+			SourceStage: string(req.SourceStage),
+			SourceField: req.SourceField,
+			TargetStage: string(req.TargetStage),
+			TargetField: req.TargetField,
+		}
+		if _, err = archStub.CreateLink(ctx, l); err != nil {
+			return util.ErrorFromGrpcError(err)
 		}
 	}
 
 	for _, req := range orchestrations {
-		startReq := &api.StartExecutionRequest{Orchestration: req.Name}
-		if err = c.StartExecution(ctx, startReq); err != nil {
-			return err
+		startReq := &pb.StartExecutionRequest{Orchestration: string(req.Name)}
+		if _, err = execStub.Start(ctx, startReq); err != nil {
+			return util.ErrorFromGrpcError(err)
 		}
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
 	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
@@ -91,16 +90,16 @@ func (o *Options) run() error {
 	stub := pb.NewExecutionManagementClient(conn)
 	stream, err := stub.Attach(context.Background())
 	if err != nil {
-		return client.ErrorFromGrpcError(err)
+		return util.ErrorFromGrpcError(err)
 	}
 	err = stream.Send(&pb.AttachExecutionRequest{Orchestration: o.name})
 	if err != nil {
-		return client.ErrorFromGrpcError(err)
+		return util.ErrorFromGrpcError(err)
 	}
 	for {
 		event, err := stream.Recv()
 		if err != nil {
-			return client.ErrorFromGrpcError(err)
+			return util.ErrorFromGrpcError(err)
 		}
 		_, err = fmt.Fprintf(
 			o.outWriter,
