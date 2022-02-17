@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -162,23 +161,23 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 			name:     "one element stored, nil req",
 			req:      nil,
 			stored:   []int{0},
-			expected: []api.AssetName{util.AssetNameForNum(0)},
+			expected: []api.AssetName{api.AssetName("asset-0")},
 		},
 		{
 			name:   "multiple elements stored, nil req",
 			req:    nil,
 			stored: []int{0, 1, 2},
 			expected: []api.AssetName{
-				util.AssetNameForNum(0),
-				util.AssetNameForNum(1),
-				util.AssetNameForNum(2),
+				api.AssetName("asset-0"),
+				api.AssetName("asset-1"),
+				api.AssetName("asset-2"),
 			},
 		},
 		{
 			name:     "multiple elements stored, matching name req",
-			req:      &api.GetAssetRequest{Name: util.AssetNameForNum(2)},
+			req:      &api.GetAssetRequest{Name: api.AssetName("asset-2")},
 			stored:   []int{0, 1, 2},
-			expected: []api.AssetName{util.AssetNameForNum(2)},
+			expected: []api.AssetName{api.AssetName("asset-2")},
 		},
 		{
 			name:     "multiple elements stored, non-matching name req",
@@ -188,9 +187,9 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 		},
 		{
 			name:     "multiple elements stored, matching image req",
-			req:      &api.GetAssetRequest{Image: util.AssetImageForNum(2)},
+			req:      &api.GetAssetRequest{Image: "image-2"},
 			stored:   []int{0, 1, 2},
-			expected: []api.AssetName{util.AssetNameForNum(2)},
+			expected: []api.AssetName{api.AssetName("asset-2")},
 		},
 		{
 			req:      &api.GetAssetRequest{Image: "unknown-image"},
@@ -252,7 +251,7 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 
 func assetForNum(num int) *api.CreateAssetRequest {
 	return &api.CreateAssetRequest{
-		Name:  util.AssetNameForNum(num),
-		Image: util.AssetImageForNum(num),
+		Name:  api.AssetName(fmt.Sprintf("asset-%d", num)),
+		Image: fmt.Sprintf("image-%d", num),
 	}
 }

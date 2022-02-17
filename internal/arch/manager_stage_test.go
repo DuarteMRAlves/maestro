@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -80,8 +79,8 @@ func TestManager_CreateStage(t *testing.T) {
 				Address:       "Address",
 				Host:          "",
 				Port:          0,
-				Orchestration: util.OrchestrationNameForNum(0),
-				Asset:         util.AssetNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
+				Asset:         api.AssetName("asset-0"),
 			},
 			expected: &api.Stage{
 				Name:          name,
@@ -89,8 +88,8 @@ func TestManager_CreateStage(t *testing.T) {
 				Service:       "Service",
 				Rpc:           "Rpc",
 				Address:       "Address",
-				Orchestration: util.OrchestrationNameForNum(0),
-				Asset:         util.AssetNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
+				Asset:         api.AssetName("asset-0"),
 			},
 		},
 	}
@@ -123,11 +122,11 @@ func testCreateStage(
 	err = db.Update(
 		func(txn *badger.Txn) error {
 			helper := kv.NewTxnHelper(txn)
-			a := &api.Asset{Name: util.AssetNameForNum(0)}
+			a := &api.Asset{Name: api.AssetName("asset-0")}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
 			}
-			o := &api.Orchestration{Name: util.OrchestrationNameForNum(0)}
+			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
 				return err
 			}
@@ -281,11 +280,11 @@ func testCreateStageError(
 	err = db.Update(
 		func(txn *badger.Txn) error {
 			helper := kv.NewTxnHelper(txn)
-			a := &api.Asset{Name: util.AssetNameForNum(0)}
+			a := &api.Asset{Name: api.AssetName("asset-0")}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
 			}
-			o := &api.Stage{Name: util.StageNameForNum(0)}
+			o := &api.Stage{Name: api.StageName("stage-0")}
 			if err := helper.SaveStage(o); err != nil {
 				return err
 			}
@@ -333,19 +332,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 			stored: []*api.Stage{
 				testStage(0, api.StageSucceeded),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "one element stored, matching name req",
-			req:  &api.GetStageRequest{Name: util.StageNameForNum(0)},
+			req:  &api.GetStageRequest{Name: api.StageName("stage-0")},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "one element stored, non-matching name req",
-			req:  &api.GetStageRequest{Name: util.StageNameForNum(1)},
+			req:  &api.GetStageRequest{Name: api.StageName("stage-1")},
 			stored: []*api.Stage{
 				testStage(2, api.StagePending),
 			},
@@ -360,24 +359,24 @@ func TestManager_GetMatchingStages(t *testing.T) {
 				testStage(3, api.StageFailed),
 			},
 			expected: []api.StageName{
-				util.StageNameForNum(1),
-				util.StageNameForNum(3),
-				util.StageNameForNum(5),
+				api.StageName("stage-1"),
+				api.StageName("stage-3"),
+				api.StageName("stage-5"),
 			},
 		},
 		{
 			name: "multiple elements stored, matching name req",
-			req:  &api.GetStageRequest{Name: util.StageNameForNum(2)},
+			req:  &api.GetStageRequest{Name: api.StageName("stage-2")},
 			stored: []*api.Stage{
 				testStage(3, api.StageRunning),
 				testStage(1, api.StagePending),
 				testStage(2, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(2)},
+			expected: []api.StageName{api.StageName("stage-2")},
 		},
 		{
 			name: "multiple elements stored, non-matching name req",
-			req:  &api.GetStageRequest{Name: util.StageNameForNum(2)},
+			req:  &api.GetStageRequest{Name: api.StageName("stage-2")},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
 				testStage(3, api.StagePending),
@@ -395,7 +394,7 @@ func TestManager_GetMatchingStages(t *testing.T) {
 				testStage(3, api.StagePending),
 				testStage(0, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "multiple elements stored, non-matching phase req",
@@ -412,19 +411,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		{
 			name: "multiple elements stored, matching service req",
 			req: &api.GetStageRequest{
-				Service: util.StageServiceForNum(2),
+				Service: "service-2",
 			},
 			stored: []*api.Stage{
 				testStage(1, api.StageRunning),
 				testStage(3, api.StagePending),
 				testStage(2, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(2)},
+			expected: []api.StageName{api.StageName("stage-2")},
 		},
 		{
 			name: "multiple elements stored, non-matching service req",
 			req: &api.GetStageRequest{
-				Service: util.StageServiceForNum(4),
+				Service: "service-4",
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
@@ -436,19 +435,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		{
 			name: "multiple elements stored, matching rpc req",
 			req: &api.GetStageRequest{
-				Rpc: util.StageRpcForNum(0),
+				Rpc: "rpc-0",
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StageRunning),
 				testStage(3, api.StagePending),
 				testStage(2, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "multiple elements stored, non-matching rpc req",
 			req: &api.GetStageRequest{
-				Rpc: util.StageRpcForNum(2),
+				Rpc: "rpc-2",
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
@@ -460,19 +459,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		{
 			name: "multiple elements stored, matching address req",
 			req: &api.GetStageRequest{
-				Address: util.StageAddressForNum(1),
+				Address: "address-1",
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StageRunning),
 				testStage(3, api.StagePending),
 				testStage(1, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(1)},
+			expected: []api.StageName{api.StageName("stage-1")},
 		},
 		{
 			name: "multiple elements stored, non-matching address req",
 			req: &api.GetStageRequest{
-				Address: util.StageAddressForNum(1),
+				Address: "address-1",
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
@@ -484,19 +483,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		{
 			name: "multiple elements stored, matching orchestration req",
 			req: &api.GetStageRequest{
-				Orchestration: util.OrchestrationNameForNum(0),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StageRunning),
 				testStage(3, api.StagePending),
 				testStage(1, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "multiple elements stored, non-matching orchestration req",
 			req: &api.GetStageRequest{
-				Orchestration: util.OrchestrationNameForNum(2),
+				Orchestration: api.OrchestrationName("orchestration-2"),
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
@@ -508,19 +507,19 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		{
 			name: "multiple elements stored, matching asset req",
 			req: &api.GetStageRequest{
-				Asset: util.AssetNameForNum(0),
+				Asset: api.AssetName("asset-0"),
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StageRunning),
 				testStage(3, api.StagePending),
 				testStage(1, api.StageFailed),
 			},
-			expected: []api.StageName{util.StageNameForNum(0)},
+			expected: []api.StageName{api.StageName("stage-0")},
 		},
 		{
 			name: "multiple elements stored, non-matching asset req",
 			req: &api.GetStageRequest{
-				Asset: util.AssetNameForNum(2),
+				Asset: api.AssetName("asset-2"),
 			},
 			stored: []*api.Stage{
 				testStage(0, api.StagePending),
@@ -587,13 +586,18 @@ func TestManager_GetMatchingStages(t *testing.T) {
 
 func testStage(num int, phase api.StagePhase) *api.Stage {
 	return &api.Stage{
-		Name:          util.StageNameForNum(num),
-		Phase:         phase,
-		Service:       util.StageServiceForNum(num),
-		Rpc:           util.StageRpcForNum(num),
-		Address:       util.StageAddressForNum(num),
-		Orchestration: util.OrchestrationNameForNum(num),
-		Asset:         util.AssetNameForNum(num),
+		Name:    api.StageName(fmt.Sprintf("stage-%d", num)),
+		Phase:   phase,
+		Service: fmt.Sprintf("service-%d", num),
+		Rpc:     fmt.Sprintf("rpc-%d", num),
+		Address: fmt.Sprintf("address-%d", num),
+		Orchestration: api.OrchestrationName(
+			fmt.Sprintf(
+				"orchestration-%d",
+				num,
+			),
+		),
+		Asset: api.AssetName(fmt.Sprintf("asset-%d", num)),
 	}
 }
 

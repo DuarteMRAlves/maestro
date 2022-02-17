@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	ipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/util"
 	"github.com/pterm/pterm"
 	"gotest.tools/v3/assert"
 	"io/ioutil"
@@ -71,12 +70,12 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(0),
+					"stage-0",
 					string(api.StageRunning),
-					util.AssetNameForNumStr(0),
-					util.StageServiceForNum(0),
-					util.StageRpcForNum(0),
-					util.StageAddressForNum(0),
+					"asset-0",
+					"service-0",
+					"rpc-0",
+					"address-0",
 				},
 			},
 		},
@@ -106,36 +105,36 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(0),
+					"stage-0",
 					string(api.StagePending),
-					util.AssetNameForNumStr(0),
-					util.StageServiceForNum(0),
-					util.StageRpcForNum(0),
-					util.StageAddressForNum(0),
+					"asset-0",
+					"service-0",
+					"rpc-0",
+					"address-0",
 				},
 				{
-					util.StageNameForNumStr(1),
+					"stage-1",
 					string(api.StageFailed),
-					util.AssetNameForNumStr(1),
-					util.StageServiceForNum(1),
-					util.StageRpcForNum(1),
-					util.StageAddressForNum(1),
+					"asset-1",
+					"service-1",
+					"rpc-1",
+					"address-1",
 				},
 				{
-					util.StageNameForNumStr(2),
+					"stage-2",
 					string(api.StageRunning),
-					util.AssetNameForNumStr(2),
-					util.StageServiceForNum(2),
-					util.StageRpcForNum(2),
-					util.StageAddressForNum(2),
+					"asset-2",
+					"service-2",
+					"rpc-2",
+					"address-2",
 				},
 			},
 		},
 		{
 			name: "filter by name",
-			args: []string{util.StageNameForNumStr(2)},
+			args: []string{"stage-2"},
 			validateReq: func(req *pb.GetStageRequest) bool {
-				return req.Name == util.StageNameForNumStr(2) &&
+				return req.Name == "stage-2" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
 					req.Service == "" &&
@@ -155,12 +154,12 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(2),
+					"stage-2",
 					string(api.StageSucceeded),
-					util.AssetNameForNumStr(2),
-					util.StageServiceForNum(2),
-					util.StageRpcForNum(2),
-					util.StageAddressForNum(2),
+					"asset-2",
+					"service-2",
+					"rpc-2",
+					"address-2",
 				},
 			},
 		},
@@ -188,22 +187,22 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(1),
+					"stage-1",
 					string(api.StageRunning),
-					util.AssetNameForNumStr(1),
-					util.StageServiceForNum(1),
-					util.StageRpcForNum(1),
-					util.StageAddressForNum(1),
+					"asset-1",
+					"service-1",
+					"rpc-1",
+					"address-1",
 				},
 			},
 		},
 		{
 			name: "filter by asset",
-			args: []string{"--asset", util.AssetNameForNumStr(2)},
+			args: []string{"--asset", "asset-2"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
-					req.Asset == util.AssetNameForNumStr(2) &&
+					req.Asset == "asset-2" &&
 					req.Service == "" &&
 					req.Rpc == "" &&
 					req.Address == ""
@@ -221,23 +220,23 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(2),
+					"stage-2",
 					string(api.StagePending),
-					util.AssetNameForNumStr(2),
-					util.StageServiceForNum(2),
-					util.StageRpcForNum(2),
-					util.StageAddressForNum(2),
+					"asset-2",
+					"service-2",
+					"rpc-2",
+					"address-2",
 				},
 			},
 		},
 		{
 			name: "filter by service",
-			args: []string{"--service", util.StageServiceForNum(0)},
+			args: []string{"--service", "service-0"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
-					req.Service == util.StageServiceForNum(0) &&
+					req.Service == "service-0" &&
 					req.Rpc == "" &&
 					req.Address == ""
 			},
@@ -254,24 +253,24 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(0),
+					"stage-0",
 					string(api.StageRunning),
-					util.AssetNameForNumStr(0),
-					util.StageServiceForNum(0),
-					util.StageRpcForNum(0),
-					util.StageAddressForNum(0),
+					"asset-0",
+					"service-0",
+					"rpc-0",
+					"address-0",
 				},
 			},
 		},
 		{
 			name: "filter by rpc",
-			args: []string{"--rpc", util.StageRpcForNum(1)},
+			args: []string{"--rpc", "rpc-1"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
 					req.Service == "" &&
-					req.Rpc == util.StageRpcForNum(1) &&
+					req.Rpc == "rpc-1" &&
 					req.Address == ""
 			},
 			responses: []*pb.Stage{
@@ -287,20 +286,20 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 					AddressText,
 				},
 				{
-					util.StageNameForNumStr(1),
+					"stage-1",
 					string(api.StagePending),
-					util.AssetNameForNumStr(1),
-					util.StageServiceForNum(1),
-					util.StageRpcForNum(1),
-					util.StageAddressForNum(1),
+					"asset-1",
+					"service-1",
+					"rpc-1",
+					"address-1",
 				},
 			},
 		},
 		{
 			name: "no such name",
-			args: []string{util.StageNameForNumStr(3)},
+			args: []string{"stage-3"},
 			validateReq: func(req *pb.GetStageRequest) bool {
-				return req.Name == util.StageNameForNumStr(3) &&
+				return req.Name == "stage-3" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
 					req.Service == "" &&
@@ -344,11 +343,11 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such asset",
-			args: []string{"--asset", util.AssetNameForNumStr(3)},
+			args: []string{"--asset", "asset-3"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
-					req.Asset == util.AssetNameForNumStr(3) &&
+					req.Asset == "asset-3" &&
 					req.Service == "" &&
 					req.Rpc == "" &&
 					req.Address == ""
@@ -367,12 +366,12 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such service",
-			args: []string{"--service", util.StageServiceForNum(4)},
+			args: []string{"--service", "service-4"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
-					req.Service == util.StageServiceForNum(4) &&
+					req.Service == "service-4" &&
 					req.Rpc == "" &&
 					req.Address == ""
 			},
@@ -390,13 +389,13 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such rpc",
-			args: []string{"--rpc", util.StageRpcForNum(5)},
+			args: []string{"--rpc", "rpc-5"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
 					req.Service == "" &&
-					req.Rpc == util.StageRpcForNum(5) &&
+					req.Rpc == "rpc-5" &&
 					req.Address == ""
 			},
 			responses: []*pb.Stage{},
@@ -413,14 +412,14 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 		},
 		{
 			name: "no such address",
-			args: []string{"--address", util.StageAddressForNum(6)},
+			args: []string{"--address", "address-6"},
 			validateReq: func(req *pb.GetStageRequest) bool {
 				return req.Name == "" &&
 					req.Phase == "" &&
 					req.Asset == "" &&
 					req.Service == "" &&
 					req.Rpc == "" &&
-					req.Address == util.StageAddressForNum(6)
+					req.Address == "address-6"
 			},
 			responses: []*pb.Stage{},
 			output: [][]string{
@@ -496,11 +495,11 @@ func TestGetStage_CorrectDisplay(t *testing.T) {
 
 func pbStageForNum(num int, phase api.StagePhase) *pb.Stage {
 	return &pb.Stage{
-		Name:    util.StageNameForNumStr(num),
+		Name:    fmt.Sprintf("stage-%d", num),
 		Phase:   string(phase),
-		Asset:   util.AssetNameForNumStr(num),
-		Service: util.StageServiceForNum(num),
-		Rpc:     util.StageRpcForNum(num),
-		Address: util.StageAddressForNum(num),
+		Asset:   fmt.Sprintf("asset-%d", num),
+		Service: fmt.Sprintf("service-%d", num),
+		Rpc:     fmt.Sprintf("rpc-%d", num),
+		Address: fmt.Sprintf("address-%d", num),
 	}
 }
