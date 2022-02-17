@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -20,12 +21,11 @@ func NewCmdRoot() *cobra.Command {
 		Use:   "maestro",
 		Short: "maestro is a server to orchestrate grpc services into pipelines.",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger, err := zap.NewProduction()
+			logger, err := logs.DefaultProductionLogger()
 			// Should never happen
 			if err != nil {
 				panic(err)
 			}
-			sugar := logger.Sugar()
 
 			db, err := kv.NewDb()
 			// Should never happen
@@ -35,9 +35,9 @@ func NewCmdRoot() *cobra.Command {
 
 			lis, err := net.Listen("tcp", o.addr)
 			if err != nil {
-				sugar.Fatal("Failed to listen.", "err", err)
+				logger.Fatal("Listen.", zap.Error(err))
 			}
-			sugar.Infof("Server listening at: %v", lis.Addr())
+			logger.Info("Listen.", zap.String("address", lis.Addr().String()))
 
 			s, err := server.NewBuilder().
 				WithGrpc().
@@ -45,11 +45,11 @@ func NewCmdRoot() *cobra.Command {
 				WithDb(db).
 				Build()
 			if err != nil {
-				sugar.Fatalf("build server: %v", err)
+				logger.Fatal("Build", zap.Error(err))
 			}
 
 			if err := s.ServeGrpc(lis); err != nil {
-				sugar.Fatalf("Failed to serve: %s", err)
+				logger.Fatal("Serve", zap.Error(err))
 			}
 		},
 	}
