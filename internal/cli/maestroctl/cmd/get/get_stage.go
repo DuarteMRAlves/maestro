@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
-	util2 "github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -42,17 +41,17 @@ func NewCmdGetStage() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 		},
@@ -66,7 +65,7 @@ func NewCmdGetStage() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *StageOpts) addFlags(cmd *cobra.Command) {
-	util2.AddMaestroFlag(cmd, &o.maestro)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.phase, "phase", "", "phase to search")
 	cmd.Flags().StringVar(&o.asset, "asset", "", "asset name to search")
@@ -121,15 +120,26 @@ func (o *StageOpts) run() error {
 	}
 	defer conn.Close()
 
-	c := client.New(conn)
+	stub := pb.NewArchitectureManagementClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-
-	stages, err := c.GetStage(ctx, req)
+	stream, err := stub.GetStage(ctx, req)
 	if err != nil {
-		return err
+		return util.ErrorFromGrpcError(err)
 	}
+	stages := make([]*pb.Stage, 0)
+	for {
+		s, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return util.ErrorFromGrpcError(err)
+		}
+		stages = append(stages, s)
+	}
+
 	return o.displayStages(stages)
 }
 

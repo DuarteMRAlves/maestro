@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/client"
-	util2 "github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
+	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -40,17 +39,17 @@ func NewCmdGetLink() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
+				util.WriteOut(cmd, util.DisplayMsgFromError(err))
 				return
 			}
 		},
@@ -64,7 +63,7 @@ func NewCmdGetLink() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *LinkOpts) addFlags(cmd *cobra.Command) {
-	util2.AddMaestroFlag(cmd, &o.maestro)
+	util.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(
 		&o.sourceStage,
@@ -124,14 +123,24 @@ func (o *LinkOpts) run() error {
 	}
 	defer conn.Close()
 
-	c := client.New(conn)
+	stub := pb.NewArchitectureManagementClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-
-	links, err := c.GetLink(ctx, req)
+	stream, err := stub.GetLink(ctx, req)
 	if err != nil {
-		return err
+		return util.ErrorFromGrpcError(err)
+	}
+	links := make([]*pb.Link, 0)
+	for {
+		l, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return util.ErrorFromGrpcError(err)
+		}
+		links = append(links, l)
 	}
 	return o.displayLinks(links)
 }
