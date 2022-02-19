@@ -139,7 +139,6 @@ func (o *Options) run() error {
 	defer conn.Close()
 
 	archStub := pb.NewArchitectureManagementClient(conn)
-	execStub := pb.NewExecutionManagementClient(conn)
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -187,13 +186,6 @@ func (o *Options) run() error {
 			TargetField: req.TargetField,
 		}
 		if _, err = archStub.CreateLink(ctx, l); err != nil {
-			return util.ErrorFromGrpcError(err)
-		}
-	}
-
-	for _, req := range orchestrations {
-		startReq := &pb.StartExecutionRequest{Orchestration: string(req.Name)}
-		if _, err = execStub.Start(ctx, startReq); err != nil {
 			return util.ErrorFromGrpcError(err)
 		}
 	}
