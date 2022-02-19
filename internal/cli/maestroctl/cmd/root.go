@@ -8,13 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const shortDescription = "maestroctl is a command line interface to " +
-	"communicate with maestro"
-
 func NewCmdRoot() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "maestroctl",
-		Short: shortDescription,
+		Short: "maestroctl controls the Maestro server",
+		Long:  "maestroctl is a command line interface to control a Maestro server.",
 	}
 
 	// Subcommands

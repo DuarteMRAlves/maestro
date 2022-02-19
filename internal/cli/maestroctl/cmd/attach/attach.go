@@ -28,8 +28,12 @@ func NewCmdAttach() *cobra.Command {
 	o := &Options{}
 
 	cmd := &cobra.Command{
-		Use:   "attach",
-		Short: "attach to a running execution",
+		Use:                   "attach [EXECUTION] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Attach to a running execution",
+		Long: `Attach to the output of a running execution.
+
+If no execution is specified, the default one is used.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			err = o.complete(cmd, args)

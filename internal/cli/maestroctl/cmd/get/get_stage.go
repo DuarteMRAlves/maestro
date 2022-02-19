@@ -34,8 +34,15 @@ func NewCmdGetStage() *cobra.Command {
 	o := &StageOpts{}
 
 	cmd := &cobra.Command{
-		Use:     "stage",
-		Short:   "list one or more stages",
+		Use:                   "stage [NAME] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Display stages",
+		Long: `Display relevant information related to stages.
+
+The displayed stages can be filtered by specifying flags. When a flag is specified, 
+only the stages with the flag value are displayed.
+
+If a name is provided, only that stage is displayed.`,
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"stages"},
 		Run: func(cmd *cobra.Command, args []string) {

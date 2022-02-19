@@ -4,8 +4,9 @@ import "github.com/spf13/cobra"
 
 func NewCmdGet() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get",
-		Short: "list one or more resources of a given type",
+		Use:   "get [COMMAND]",
+		Short: "Display one or more resources",
+		Long:  "Display relevant information related to one or more resources.",
 	}
 
 	// Subcommands

@@ -32,8 +32,10 @@ func NewCmdCreate() *cobra.Command {
 	o := &Options{}
 
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "create resources of a given type",
+		Use:                   "create -f FILENAME ... [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Create resources from files",
+		Long:                  "Create resources from files in yaml format.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			err = o.complete(cmd, args)
