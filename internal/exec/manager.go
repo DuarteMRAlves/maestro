@@ -65,6 +65,7 @@ func (m *manager) StartExecution(
 
 	m.executions[name], err = newBuilder(txn, m.reflectionManager).
 		withOrchestration(name).
+		withLogger(m.logger).
 		build()
 	if err != nil {
 		return err
