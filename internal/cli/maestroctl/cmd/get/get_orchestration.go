@@ -32,8 +32,15 @@ func NewCmdGetOrchestration() *cobra.Command {
 	o := &OrchestrationOpts{}
 
 	cmd := &cobra.Command{
-		Use:     "orchestration",
-		Short:   "list one or more orchestrations",
+		Use:                   "orchestration [NAME] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Display orchestrations",
+		Long: `Display relevant information related to orchestrations.
+
+The displayed orchestrations can be filtered by specifying flags. When a flag is specified, 
+only the orchestrations with the flag value are displayed.
+
+If a name is provided, only that orchestration is displayed.`,
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"orchestrations"},
 		Run: func(cmd *cobra.Command, args []string) {

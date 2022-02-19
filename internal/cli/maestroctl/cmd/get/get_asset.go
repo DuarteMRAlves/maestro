@@ -30,8 +30,15 @@ func NewCmdGetAsset() *cobra.Command {
 	o := &AssetOpts{}
 
 	cmd := &cobra.Command{
-		Use:     "asset",
-		Short:   "list one or more Assets",
+		Use:                   "asset [NAME] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Display assets",
+		Long: `Display relevant information related to assets.
+
+The displayed assets can be filtered by specifying flags. When a flag is specified, 
+only the assets with the flag value are displayed.
+
+If a name is provided, only that asset is displayed.`,
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"assets"},
 		Run: func(cmd *cobra.Command, args []string) {

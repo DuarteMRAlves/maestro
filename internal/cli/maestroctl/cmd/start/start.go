@@ -28,9 +28,12 @@ func NewCmdStart() *cobra.Command {
 	o := &Options{}
 
 	cmd := &cobra.Command{
-		Use: "start [NAME...]",
-		Short: "Starts the executions for the given orchestrations. " +
-			"If no name is provided the default orchestration is started",
+		Use:                   "start [ORCHESTRATION...] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Start executions for orchestrations",
+		Long: `Start executions for the received orchestrations.
+
+If no orchestration is provided the default one is started.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			err = o.complete(cmd, args)

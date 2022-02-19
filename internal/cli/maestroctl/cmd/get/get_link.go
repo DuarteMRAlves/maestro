@@ -32,8 +32,15 @@ func NewCmdGetLink() *cobra.Command {
 	o := &LinkOpts{}
 
 	cmd := &cobra.Command{
-		Use:     "link",
-		Short:   "list one or more links",
+		Use:                   "link [NAME] [FLAGS]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Display links",
+		Long: `Display relevant information related to links.
+
+The displayed links can be filtered by specifying flags. When a flag is specified, 
+only the links with the flag value are displayed.
+
+If a name is provided, only that link is displayed.`,
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"links"},
 		Run: func(cmd *cobra.Command, args []string) {
