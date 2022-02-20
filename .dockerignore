@@ -1,6 +1,6 @@
 # Test files and dependencies
 ./**/*_test.go
-./tests
+./test
 
 ./docker
 ./target

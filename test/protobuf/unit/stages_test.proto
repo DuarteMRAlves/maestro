@@ -1,9 +1,9 @@
 // This file defines messages to be used in tests for exec stages.
 syntax = "proto3";
 
-option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
 
-package pb;
+package unit;
 
 // MergeMessage defines a message to test the merge stage.
 message MergeMessage {

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
 
-package pb;
+package unit;
 
 service TestService {
   rpc Unary(Request) returns (Reply);

@@ -3,7 +3,7 @@ package rpc
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/tests/pb"
+	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"gotest.tools/v3/assert"
@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	correctRequest = &pb.Request{
+	correctRequest = &unit.Request{
 		StringField:   "some-string",
 		RepeatedField: []int64{1, 2, 3, 4},
-		RepeatedInnerMsg: []*pb.InnerMessage{
+		RepeatedInnerMsg: []*unit.InnerMessage{
 			{
 				RepeatedString: []string{
 					"hello",
@@ -32,12 +32,12 @@ var (
 		},
 	}
 
-	errorRequest = &pb.Request{StringField: "error"}
+	errorRequest = &unit.Request{StringField: "error"}
 
-	expectedReply = &pb.Reply{
+	expectedReply = &unit.Reply{
 		// Value equal to len(StringField) + sum(RepeatedField)
 		DoubleField: 21,
-		InnerMsg: &pb.InnerMessage{
+		InnerMsg: &unit.InnerMessage{
 			RepeatedString: []string{
 				"helloworld",
 				"othermessage",
@@ -62,9 +62,9 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("pb.TestService/Unary", conn)
+	client := NewUnary("unit.TestService/Unary", conn)
 
-	reply := &pb.Reply{}
+	reply := &unit.Reply{}
 	err = client.Invoke(ctx, correctRequest, reply)
 	assert.NilError(t, err, "invoke error not nil")
 
@@ -72,7 +72,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		t,
 		expectedReply,
 		reply,
-		cmpopts.IgnoreUnexported(pb.Reply{}, pb.InnerMessage{}),
+		cmpopts.IgnoreUnexported(unit.Reply{}, unit.InnerMessage{}),
 	)
 }
 
@@ -92,9 +92,9 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("pb.TestService/Unary", conn)
+	client := NewUnary("unit.TestService/Unary", conn)
 
-	reply := &pb.Reply{}
+	reply := &unit.Reply{}
 	err = client.Invoke(ctx, errorRequest, reply)
 
 	assert.Assert(t, errdefs.IsUnknown(err), "error is not unknown")
@@ -117,9 +117,9 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("pb.ExtraService/ExtraMethod", conn)
+	client := NewUnary("unit.ExtraService/ExtraMethod", conn)
 
-	reply := &pb.Reply{}
+	reply := &unit.Reply{}
 	err = client.Invoke(ctx, errorRequest, reply)
 
 	assert.Assert(
@@ -146,9 +146,9 @@ func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("pb.TestService/NoSuchMethod", conn)
+	client := NewUnary("unit.TestService/NoSuchMethod", conn)
 
-	reply := &pb.Reply{}
+	reply := &unit.Reply{}
 	err = client.Invoke(ctx, errorRequest, reply)
 
 	assert.Assert(
