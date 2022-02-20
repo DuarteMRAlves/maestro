@@ -34,8 +34,8 @@ func TestReflectionClient_ListServices(t *testing.T) {
 
 	assert.Equal(t, 2, len(services), "number of services")
 	counts := map[string]int{
-		"pb.TestService":  0,
-		"pb.ExtraService": 0,
+		"unit.TestService":  0,
+		"unit.ExtraService": 0,
 	}
 	for _, s := range services {
 		_, serviceExists := counts[s]
@@ -93,7 +93,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := "pb.TestService"
+	serviceName := "unit.TestService"
 	c, ok := NewReflectionClient(ctx, conn).(*reflectionClient)
 	assert.Assert(t, ok, "client type assertion")
 	descriptor, err := c.resolveServiceDesc(serviceName)
@@ -214,7 +214,7 @@ func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := "pb.ExtraService"
+	serviceName := "unit.ExtraService"
 	c, ok := NewReflectionClient(ctx, conn).(*reflectionClient)
 	assert.Assert(t, ok, "client type assertion")
 	descriptor, err := c.resolveServiceDesc(serviceName)

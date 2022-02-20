@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
-	"github.com/DuarteMRAlves/maestro/tests/pb"
+	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -67,13 +67,13 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 
 		dynReq, ok := in.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "request type assertion")
-		req := &pb.Request{}
+		req := &unit.Request{}
 		err = dynReq.ConvertTo(req)
 		assert.NilError(t, err, "convert dynamic to Request")
 
 		dynRep, ok := out.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "reply type assertion")
-		rep := &pb.Reply{}
+		rep := &unit.Reply{}
 		err = dynRep.ConvertTo(rep)
 		assert.NilError(t, err, "convert dynamic to Reply")
 
@@ -98,8 +98,8 @@ func collectState(output <-chan *State) []*State {
 func testRpc(t *testing.T) *rpc.MockRPC {
 	return &rpc.MockRPC{
 		Name_:  "Unary",
-		FQN:    "pb.TestService/Unary",
-		Invoke: "pb.TestService/Unary",
+		FQN:    "unit.TestService/Unary",
+		Invoke: "unit.TestService/Unary",
 		In:     requestMessage(t),
 		Out:    replyMessage(t),
 		Unary:  true,
@@ -108,10 +108,10 @@ func testRpc(t *testing.T) *rpc.MockRPC {
 
 func testRequests(t *testing.T) []rpc.DynMessage {
 	msg1, err := rpc.DynMessageFromProto(
-		&pb.Request{
+		&unit.Request{
 			StringField:   "string-1",
 			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
+			RepeatedInnerMsg: []*unit.InnerMessage{
 				{
 					RepeatedString: []string{"hello", "world", "1"},
 				},
@@ -123,10 +123,10 @@ func testRequests(t *testing.T) []rpc.DynMessage {
 	)
 	assert.NilError(t, err, "create message 1")
 	msg2, err := rpc.DynMessageFromProto(
-		&pb.Request{
+		&unit.Request{
 			StringField:   "string-2",
 			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*pb.InnerMessage{
+			RepeatedInnerMsg: []*unit.InnerMessage{
 				{
 					RepeatedString: []string{"hello", "world", "2"},
 				},
@@ -142,7 +142,7 @@ func testRequests(t *testing.T) []rpc.DynMessage {
 }
 
 func requestMessage(t *testing.T) rpc.MessageDesc {
-	reqType := reflect.TypeOf(pb.Request{})
+	reqType := reflect.TypeOf(unit.Request{})
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
 	assert.NilError(t, err, "load desc Request")
@@ -154,7 +154,7 @@ func requestMessage(t *testing.T) rpc.MessageDesc {
 }
 
 func replyMessage(t *testing.T) rpc.MessageDesc {
-	repType := reflect.TypeOf(pb.Reply{})
+	repType := reflect.TypeOf(unit.Reply{})
 
 	repDesc, err := desc.LoadMessageDescriptorForType(repType)
 	assert.NilError(t, err, "load desc Reply")
@@ -166,14 +166,14 @@ func replyMessage(t *testing.T) rpc.MessageDesc {
 }
 
 type testService struct {
-	pb.UnimplementedTestServiceServer
-	pb.UnimplementedExtraServiceServer
+	unit.UnimplementedTestServiceServer
+	unit.UnimplementedExtraServiceServer
 }
 
 func (s *testService) Unary(
 	ctx context.Context,
-	request *pb.Request,
-) (*pb.Reply, error) {
+	request *unit.Request,
+) (*unit.Reply, error) {
 
 	if request.StringField == "error" {
 		return nil, fmt.Errorf("dummy error")
@@ -189,10 +189,10 @@ func startTestServer(
 ) *grpc.Server {
 	testServer := grpc.NewServer()
 	if registerTest {
-		pb.RegisterTestServiceServer(testServer, &testService{})
+		unit.RegisterTestServiceServer(testServer, &testService{})
 	}
 	if registerExtra {
-		pb.RegisterExtraServiceServer(testServer, &testService{})
+		unit.RegisterExtraServiceServer(testServer, &testService{})
 	}
 
 	reflection.Register(testServer)
@@ -204,19 +204,19 @@ func startTestServer(
 	return testServer
 }
 
-func assertUnaryRequest(t *testing.T, req *pb.Request, rep *pb.Reply) {
+func assertUnaryRequest(t *testing.T, req *unit.Request, rep *unit.Reply) {
 	expected := replyFromRequest(req)
-	opts := cmpopts.IgnoreUnexported(pb.Reply{}, pb.InnerMessage{})
+	opts := cmpopts.IgnoreUnexported(unit.Reply{}, unit.InnerMessage{})
 	assert.DeepEqual(t, expected, rep, opts)
 }
 
-func replyFromRequest(request *pb.Request) *pb.Reply {
+func replyFromRequest(request *unit.Request) *unit.Reply {
 	doubleField := float64(len(request.StringField))
 	for _, val := range request.RepeatedField {
 		doubleField += float64(val)
 	}
 
-	innerMsg := &pb.InnerMessage{RepeatedString: []string{}}
+	innerMsg := &unit.InnerMessage{RepeatedString: []string{}}
 	for _, inner := range request.RepeatedInnerMsg {
 		repeatedString := ""
 		for _, str := range inner.RepeatedString {
@@ -227,7 +227,7 @@ func replyFromRequest(request *pb.Request) *pb.Reply {
 			repeatedString,
 		)
 	}
-	return &pb.Reply{
+	return &unit.Reply{
 		DoubleField: doubleField,
 		InnerMsg:    innerMsg,
 	}
@@ -239,7 +239,7 @@ func TestSourceStage_Run(t *testing.T) {
 		err   error
 	)
 
-	reqType := reflect.TypeOf(pb.Request{})
+	reqType := reflect.TypeOf(unit.Request{})
 
 	reqDesc, err := desc.LoadMessageDescriptorForType(reqType)
 	assert.NilError(t, err, "load desc Request")
@@ -295,7 +295,7 @@ func TestMergeStage_Run(t *testing.T) {
 
 	output := make(chan *State)
 
-	outType := reflect.TypeOf(pb.MergeMessage{})
+	outType := reflect.TypeOf(unit.MergeMessage{})
 	outDesc, err := desc.LoadMessageDescriptorForType(outType)
 	assert.NilError(t, err, "load desc MergeMessage")
 	msg, err := rpc.NewMessage(outDesc)
@@ -347,13 +347,13 @@ func TestMergeStage_Run(t *testing.T) {
 		assert.NilError(t, out.Err(), "out err at iter %d", i)
 		assert.Equal(t, exp.id, out.Id(), "id at iter %d", i)
 		expDyn, ok := exp.Msg().GrpcMsg().(*dynamic.Message)
-		expMsg := &pb.MergeMessage{}
+		expMsg := &unit.MergeMessage{}
 		err = expDyn.ConvertTo(expMsg)
 		assert.NilError(t, err, "convert dyn to exp")
 		assert.Assert(t, ok, "cast for exp at iter %d", i)
 		dynMsg, ok := out.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out at iter %d", i)
-		outMsg := &pb.MergeMessage{}
+		outMsg := &unit.MergeMessage{}
 		err = dynMsg.ConvertTo(outMsg)
 		assert.NilError(t, err, "convert dyn to out")
 		assert.Equal(t, expMsg.In1.Val, outMsg.In1.Val)
@@ -373,10 +373,10 @@ func TestMergeStage_Run(t *testing.T) {
 }
 
 func testMergeMessage(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.MergeMessage{
-		In1: &pb.MergeInner1{Val: val},
-		In2: &pb.MergeInner2{Val: val},
-		In3: &pb.MergeInner3{Val: val},
+	protoMsg := &unit.MergeMessage{
+		In1: &unit.MergeInner1{Val: val},
+		In2: &unit.MergeInner2{Val: val},
+		In3: &unit.MergeInner3{Val: val},
 	}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create merge message")
@@ -384,21 +384,21 @@ func testMergeMessage(t *testing.T, val int32) rpc.DynMessage {
 }
 
 func testMergeInner1Message(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.MergeInner1{Val: val}
+	protoMsg := &unit.MergeInner1{Val: val}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create merge inner 1message")
 	return msg
 }
 
 func testMergeInner2Message(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.MergeInner2{Val: val}
+	protoMsg := &unit.MergeInner2{Val: val}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create merge inner 2 message")
 	return msg
 }
 
 func testMergeInner3Message(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.MergeInner3{Val: val}
+	protoMsg := &unit.MergeInner3{Val: val}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create merge inner 3 message")
 	return msg
@@ -460,12 +460,12 @@ func TestSplitStage_Run(t *testing.T) {
 		assert.Equal(t, exp1.Id(), out1.Id(), "id 1 at iter %d", i)
 		expDyn1, ok := exp1.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
-		expMsg1 := &pb.SplitInner1{}
+		expMsg1 := &unit.SplitInner1{}
 		err = expDyn1.ConvertTo(expMsg1)
 		assert.NilError(t, err, "convert dyn 1 to exp 1")
 		outDyn1, ok := out1.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
-		outMsg1 := &pb.SplitInner1{}
+		outMsg1 := &unit.SplitInner1{}
 		err = outDyn1.ConvertTo(outMsg1)
 		assert.Equal(t, expMsg1.Val, outMsg1.Val)
 
@@ -475,12 +475,12 @@ func TestSplitStage_Run(t *testing.T) {
 		assert.Equal(t, exp2.Id(), out2.Id(), "id 2 at iter %d", i)
 		expDyn2, ok := exp2.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 2 at iter %d", i)
-		expMsg2 := &pb.SplitMessage{}
+		expMsg2 := &unit.SplitMessage{}
 		err = expDyn2.ConvertTo(expMsg2)
 		assert.NilError(t, err, "convert dyn 2 to exp 2")
 		dynDyn2, ok := out2.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 2 at iter %d", i)
-		outMsg2 := &pb.SplitMessage{}
+		outMsg2 := &unit.SplitMessage{}
 		err = dynDyn2.ConvertTo(outMsg2)
 		assert.NilError(t, err, "convert dyn 2 to out 2")
 		assert.Equal(t, expMsg2.Out1.Val, outMsg2.Out1.Val)
@@ -493,12 +493,12 @@ func TestSplitStage_Run(t *testing.T) {
 		assert.Equal(t, exp3.Id(), out3.Id(), "id 3 at iter %d", i)
 		expDyn3, ok := exp3.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 3 at iter %d", i)
-		expMsg3 := &pb.SplitInner2{}
+		expMsg3 := &unit.SplitInner2{}
 		err = expDyn3.ConvertTo(expMsg3)
 		assert.NilError(t, err, "convert dyn 3 to exp 3")
 		outDyn3, ok := out3.Msg().GrpcMsg().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 3 at iter %d", i)
-		outMsg3 := &pb.SplitInner2{}
+		outMsg3 := &unit.SplitInner2{}
 		err = outDyn3.ConvertTo(outMsg3)
 		assert.Equal(t, expMsg3.Val, outMsg3.Val)
 	}
@@ -512,10 +512,10 @@ func TestSplitStage_Run(t *testing.T) {
 }
 
 func testSplitMessage(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.SplitMessage{
-		Out1: &pb.SplitInner1{Val: val},
+	protoMsg := &unit.SplitMessage{
+		Out1: &unit.SplitInner1{Val: val},
 		Val:  val,
-		Out2: &pb.SplitInner2{Val: val},
+		Out2: &unit.SplitInner2{Val: val},
 	}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create split 1message")
@@ -523,14 +523,14 @@ func testSplitMessage(t *testing.T, val int32) rpc.DynMessage {
 }
 
 func testSplitInner1Message(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.SplitInner1{Val: val}
+	protoMsg := &unit.SplitInner1{Val: val}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create split inner 1message")
 	return msg
 }
 
 func testSplitInner2Message(t *testing.T, val int32) rpc.DynMessage {
-	protoMsg := &pb.SplitInner2{Val: val}
+	protoMsg := &unit.SplitInner2{Val: val}
 	msg, err := rpc.DynMessageFromProto(protoMsg)
 	assert.NilError(t, err, "create split inner 2 message")
 	return msg

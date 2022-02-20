@@ -56,7 +56,7 @@ go/test/unit: pb/api pb/test
 
 .PHONE: go/go/test/e2e
 go/test/e2e: pb/api pb/test
-	go test ./tests/e2e
+	go test ./test/e2e
 
 .PHONY: pb
 pb: pb/api pb/test
@@ -67,10 +67,10 @@ pb/api:
 
 .PHONY: pb/test
 pb/test:
-	cd ./tests/pb/ && protoc $(PROTOC_FLAGS) ./*.proto
+	cd ./test/protobuf/unit && protoc $(PROTOC_FLAGS) ./*.proto
 
 pb/clean:
-	rm -rf ./api/pb/**.pb.go ./tests/pb/**.pb.go
+	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go
 
 clean: pb/clean
 	rm -rf target

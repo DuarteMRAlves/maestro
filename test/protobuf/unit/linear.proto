@@ -1,11 +1,11 @@
 // This file provides the definitions for a linear orchestration.
 syntax = "proto3";
 
-option go_package = "github.com/DuarteMRAlves/maestro/test/pb";
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
 
 import "google/protobuf/empty.proto";
 
-package pb;
+package unit;
 
 service LinearSource {
   rpc Process(google.protobuf.Empty) returns (LinearMessage);
