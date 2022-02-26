@@ -16,28 +16,24 @@ ENV PATH="${PATH}:/opt/protoc/bin"
 
 WORKDIR ${WORKSPACE}
 
+COPY go.mod ./
+COPY go.sum ./
+
+RUN go mod download
+
 COPY ./ ./
 
 RUN make go/build
 
-FROM golang:${GO}-bullseye
+FROM gcr.io/distroless/base-debian11
 ARG WORKSPACE
 
-ARG USER=maestro
-ARG GROUP=maestro-group
+WORKDIR /
 
-# Create non-privileged user to run
-RUN addgroup --system ${GROUP} && \
-    adduser --system --no-create-home --ingroup ${GROUP} ${USER} && \
-    mkdir ${WORKSPACE} && \
-    chown -R ${USER}:${GROUP} ${WORKSPACE}
-
-WORKDIR ${WORKSPACE}
-
-COPY --from=builder --chown=${USER}:${GROUP} ${WORKSPACE}/target/maestro maestro
-
-RUN chmod +x maestro
+COPY --from=builder --chown=nonroot:nonroot ${WORKSPACE}/target/maestro /maestro
 
 EXPOSE 50051
 
-CMD ./maestro
+USER nonroot:nonroot
+
+CMD ["/maestro"]
