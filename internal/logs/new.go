@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-func DefaultProductionLogger() (*zap.Logger, error) {
+func DefaultProductionLogger(lvl zap.AtomicLevel) (*zap.Logger, error) {
 	cfg := zap.NewProductionConfig()
+	cfg.Level = lvl
 	cfg.Encoding = "console"
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	cfg.EncoderConfig.TimeKey = "time"

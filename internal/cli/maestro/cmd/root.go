@@ -10,6 +10,8 @@ import (
 )
 
 type Options struct {
+	// logLvl specifies the level at which the server should log.
+	logLvl string
 	// address to listen
 	addr string
 }
@@ -21,11 +23,24 @@ func NewCmdRoot() *cobra.Command {
 		Use:   "maestro",
 		Short: "maestro is a server to orchestrate grpc services into pipelines.",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger, err := logs.DefaultProductionLogger()
+			// save err for later log if necessary
+			lvl, logErr := o.getZapLevel()
+
+			logger, err := logs.DefaultProductionLogger(lvl)
 			// Should never happen
 			if err != nil {
 				panic(err)
 			}
+			if logErr != nil {
+				logger.Warn(
+					"Invalid log level.",
+					zap.String("received", o.logLvl),
+				)
+			}
+			logger.Info(
+				"Server logging level.",
+				zap.String("value", lvl.String()),
+			)
 
 			db, err := kv.NewDb()
 			// Should never happen
@@ -60,5 +75,17 @@ func NewCmdRoot() *cobra.Command {
 }
 
 func (o *Options) addFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&o.addr, "addr", "0.0.0.0:50051", "address to listen")
+	cmd.Flags().StringVar(&o.logLvl, "log", "info", "Zap logging level.")
+	cmd.Flags().StringVar(&o.addr, "addr", "0.0.0.0:50051", "Address to listen")
+}
+
+func (o *Options) getZapLevel() (zap.AtomicLevel, error) {
+	if o.logLvl == "" {
+		o.logLvl = "info"
+	}
+	lvl, err := zap.ParseAtomicLevel(o.logLvl)
+	if err != nil {
+		return zap.NewAtomicLevelAt(zap.InfoLevel), err
+	}
+	return lvl, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/server"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -201,7 +202,7 @@ func startLinearSink(
 }
 
 func buildMaestro(t *testing.T) *server.Server {
-	logger, err := logs.DefaultProductionLogger()
+	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.WarnLevel))
 	assert.NilError(t, err, "init logger")
 
 	db, err := kv.NewDb()
