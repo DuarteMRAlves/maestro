@@ -8,8 +8,10 @@ import (
 
 func DefaultProductionLogger() (*zap.Logger, error) {
 	cfg := zap.NewProductionConfig()
+	cfg.Encoding = "console"
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	cfg.EncoderConfig.TimeKey = "time"
-	cfg.EncoderConfig.CallerKey = ""
+	cfg.EncoderConfig.CallerKey = "caller"
 	cfg.EncoderConfig.EncodeTime = timeEncoder
 	return cfg.Build()
 }
