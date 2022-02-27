@@ -49,7 +49,8 @@ func (s *Server) StopGrpc() {
 // CreateAsset creates a new asset with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateAsset(req *api.CreateAssetRequest) error {
-	logs.LogCreateAssetRequest(s.logger, req)
+	fields := logs.FieldsForCreateAssetRequest(req)
+	s.logger.Info("Create Asset.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
 			return s.archManager.CreateAsset(txn, req)
@@ -65,7 +66,8 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 		assets []*api.Asset
 		err    error
 	)
-	logs.LogGetAssetRequest(s.logger, req)
+	fields := logs.FieldsForGetAssetRequest(req)
+	s.logger.Info("Get Asset.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
 			assets, err = s.archManager.GetMatchingAssets(txn, req)
@@ -79,7 +81,8 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 }
 
 func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error {
-	logs.LogCreateOrchestrationRequest(s.logger, req)
+	fields := logs.FieldsForCreateOrchestrationRequest(req)
+	s.logger.Info("Create Orchestration.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
 			return s.archManager.CreateOrchestration(txn, req)
@@ -94,7 +97,8 @@ func (s *Server) GetOrchestration(
 		orchestrations []*api.Orchestration
 		err            error
 	)
-	logs.LogGetOrchestrationRequest(s.logger, req)
+	fields := logs.FieldsForGetOrchestrationRequest(req)
+	s.logger.Info("Get Orchestration.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
 			orchestrations, err = s.archManager.GetMatchingOrchestration(
@@ -113,7 +117,8 @@ func (s *Server) GetOrchestration(
 // CreateStage creates a new stage with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateStage(req *api.CreateStageRequest) error {
-	logs.LogCreateStageRequest(s.logger, req)
+	fields := logs.FieldsForCreateStageRequest(req)
+	s.logger.Info("Create Stage.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
 			return s.archManager.CreateStage(txn, req)
@@ -126,7 +131,8 @@ func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 		stages []*api.Stage
 		err    error
 	)
-	logs.LogGetStageRequest(s.logger, req)
+	fields := logs.FieldsForGetStageRequest(req)
+	s.logger.Info("Get Stage.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
 			stages, err = s.archManager.GetMatchingStage(txn, req)
@@ -142,7 +148,8 @@ func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 // CreateLink creates a new link with the specified config.
 // It returns an error if the asset can not be created and nil otherwise.
 func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
-	logs.LogCreateLinkRequest(s.logger, req)
+	fields := logs.FieldsForCreateLinkRequest(req)
+	s.logger.Info("Create Link.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
 			return s.archManager.CreateLink(txn, req)
@@ -155,7 +162,8 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 		links []*api.Link
 		err   error
 	)
-	logs.LogGetLinkRequest(s.logger, req)
+	fields := logs.FieldsForGetLinkRequest(req)
+	s.logger.Info("Get Link.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
 			links, err = s.archManager.GetMatchingLinks(txn, req)
@@ -169,7 +177,8 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 }
 
 func (s *Server) StartExecution(req *api.StartExecutionRequest) error {
-	logs.LogStartExecutionRequest(s.logger, req)
+	fields := logs.FieldsForStartExecutionRequest(req)
+	s.logger.Info("Start Execution.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
 			return s.execManager.StartExecution(txn, req)
@@ -181,6 +190,7 @@ func (s *Server) AttachExecution(req *api.AttachExecutionRequest) (
 	*api.Subscription,
 	error,
 ) {
-	logs.LogAttachExecutionRequest(s.logger, req)
+	fields := logs.FieldsForAttachExecutionRequest(req)
+	s.logger.Info("Attach Execution.", fields...)
 	return s.execManager.AttachExecution(req)
 }
