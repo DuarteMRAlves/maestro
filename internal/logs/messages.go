@@ -5,151 +5,203 @@ import (
 	"go.uber.org/zap"
 )
 
-func LogCreateOrchestrationRequest(
-	logger *zap.Logger,
+func FieldsForCreateOrchestrationRequest(
 	req *api.CreateOrchestrationRequest,
-) {
-	var logFields []zap.Field
+) []zap.Field {
 	if req == nil {
-		logFields = []zap.Field{zap.String("req", "nil")}
-	} else {
-		logFields = []zap.Field{zap.String("name", string(req.Name))}
+		return []zap.Field{zap.String("req", "nil")}
 	}
-	logger.Info("Create Orchestration.", logFields...)
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	return fields
 }
 
-func LogGetOrchestrationRequest(
-	logger *zap.Logger,
+func FieldsForGetOrchestrationRequest(
 	req *api.GetOrchestrationRequest,
-) {
-	var logFields []zap.Field
+) []zap.Field {
 	if req == nil {
-		logFields = []zap.Field{zap.String("req", "nil")}
-	} else {
-		logFields = []zap.Field{zap.String("name", string(req.Name))}
+		return []zap.Field{zap.String("req", "nil")}
 	}
-	logger.Info("Get Orchestration.", logFields...)
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	return fields
 }
 
-func LogCreateStageRequest(logger *zap.Logger, req *api.CreateStageRequest) {
-	var logFields []zap.Field
+func FieldsForCreateStageRequest(req *api.CreateStageRequest) []zap.Field {
 	if req == nil {
-		logFields = []zap.Field{zap.String("req", "nil")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("asset", string(req.Asset)),
-			zap.String("service", req.Service),
-			zap.String("rpc", req.Rpc),
-			zap.String("address", req.Address),
-			zap.String("host", req.Host),
-			zap.Int32("port", req.Port),
-		}
+		return []zap.Field{zap.String("req", "nil")}
 	}
-	logger.Info("Create Stage.", logFields...)
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	if req.Asset != "" {
+		fields = append(fields, zap.String("asset", string(req.Asset)))
+	}
+	if req.Service != "" {
+		fields = append(fields, zap.String("service", req.Service))
+	}
+	if req.Rpc != "" {
+		fields = append(fields, zap.String("rpc", req.Rpc))
+	}
+	if req.Address != "" {
+		fields = append(fields, zap.String("address", req.Address))
+	}
+	if req.Host != "" {
+		fields = append(fields, zap.String("host", req.Host))
+	}
+	if req.Port != 0 {
+		fields = append(fields, zap.Int32("port", req.Port))
+	}
+	return fields
 }
 
-func LogGetStageRequest(logger *zap.Logger, req *api.GetStageRequest) {
-	var logFields []zap.Field
+func FieldsForGetStageRequest(req *api.GetStageRequest) []zap.Field {
 	if req == nil {
-		logFields = []zap.Field{zap.String("req", "nil")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("phase", string(req.Phase)),
-			zap.String("asset", string(req.Asset)),
-			zap.String("service", req.Service),
-			zap.String("rpc", req.Rpc),
-			zap.String("address", req.Address),
-		}
+		return []zap.Field{zap.String("req", "nil")}
 	}
-	logger.Info("Get Stage.", logFields...)
-}
-
-func LogCreateLinkRequest(logger *zap.Logger, req *api.CreateLinkRequest) {
-	var logFields []zap.Field
-	if req == nil {
-		logFields = []zap.Field{zap.String("req", "null")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("source-stage", string(req.SourceStage)),
-			zap.String("source-field", req.SourceField),
-			zap.String("target-stage", string(req.TargetStage)),
-			zap.String("target-field", req.TargetField),
-		}
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
 	}
-	logger.Info("Create Link.", logFields...)
-}
-
-func LogGetLinkRequest(logger *zap.Logger, req *api.GetLinkRequest) {
-	var logFields []zap.Field
-	if req == nil {
-		logFields = []zap.Field{zap.String("req", "null")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("source-stage", string(req.SourceStage)),
-			zap.String("source-field", req.SourceField),
-			zap.String("target-stage", string(req.TargetStage)),
-			zap.String("target-field", req.TargetField),
-		}
+	if req.Phase != "" {
+		fields = append(fields, zap.String("phase", string(req.Phase)))
 	}
-	logger.Info("Get Link.", logFields...)
-}
-
-func LogCreateAssetRequest(logger *zap.Logger, req *api.CreateAssetRequest) {
-	var logFields []zap.Field
-	if req == nil {
-		logFields = []zap.Field{zap.String("request", "null")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("image", req.Image),
-		}
+	if req.Asset != "" {
+		fields = append(fields, zap.String("asset", string(req.Asset)))
 	}
-	logger.Info("Create Asset.", logFields...)
-}
-
-func LogGetAssetRequest(logger *zap.Logger, req *api.GetAssetRequest) {
-	var logFields []zap.Field
-	if req == nil {
-		logFields = []zap.Field{zap.String("request", "null")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("name", string(req.Name)),
-			zap.String("image", req.Image),
-		}
+	if req.Service != "" {
+		fields = append(fields, zap.String("service", req.Service))
 	}
-	logger.Info("Get Asset.", logFields...)
-}
-
-func LogStartExecutionRequest(
-	logger *zap.Logger,
-	req *api.StartExecutionRequest,
-) {
-	var logFields []zap.Field
-	if req == nil {
-		logFields = []zap.Field{zap.String("request", "null")}
-	} else {
-		logFields = []zap.Field{
+	if req.Rpc != "" {
+		fields = append(fields, zap.String("rpc", req.Rpc))
+	}
+	if req.Orchestration != "" {
+		fields = append(
+			fields,
 			zap.String("orchestration", string(req.Orchestration)),
-		}
+		)
 	}
-	logger.Info("Start Execution.", logFields...)
+	if req.Address != "" {
+		fields = append(fields, zap.String("address", req.Address))
+	}
+	return fields
 }
 
-func LogAttachExecutionRequest(
-	logger *zap.Logger,
-	req *api.AttachExecutionRequest,
-) {
-	var logFields []zap.Field
+func FieldsForCreateLinkRequest(req *api.CreateLinkRequest) []zap.Field {
 	if req == nil {
-		logFields = []zap.Field{zap.String("request", "null")}
-	} else {
-		logFields = []zap.Field{
-			zap.String("orchestration", string(req.Orchestration)),
-		}
+		return []zap.Field{zap.String("req", "nil")}
 	}
-	logger.Info("Attach Execution.", logFields...)
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	if req.SourceStage != "" {
+		fields = append(
+			fields,
+			zap.String("source-stage", string(req.SourceStage)),
+		)
+	}
+	if req.SourceField != "" {
+		fields = append(fields, zap.String("source-field", req.SourceField))
+	}
+	if req.TargetStage != "" {
+		fields = append(
+			fields,
+			zap.String("target-stage", string(req.TargetStage)),
+		)
+	}
+	if req.TargetField != "" {
+		fields = append(fields, zap.String("target-field", req.TargetField))
+	}
+	return fields
+}
+
+func FieldsForGetLinkRequest(req *api.GetLinkRequest) []zap.Field {
+	if req == nil {
+		return []zap.Field{zap.String("req", "nil")}
+	}
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	if req.SourceStage != "" {
+		fields = append(
+			fields,
+			zap.String("source-stage", string(req.SourceStage)),
+		)
+	}
+	if req.SourceField != "" {
+		fields = append(fields, zap.String("source-field", req.SourceField))
+	}
+	if req.TargetStage != "" {
+		fields = append(
+			fields,
+			zap.String("target-stage", string(req.TargetStage)),
+		)
+	}
+	if req.TargetField != "" {
+		fields = append(fields, zap.String("target-field", req.TargetField))
+	}
+	return fields
+}
+
+func FieldsForCreateAssetRequest(req *api.CreateAssetRequest) []zap.Field {
+	if req == nil {
+		return []zap.Field{zap.String("req", "nil")}
+	}
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	if req.Image != "" {
+		fields = append(fields, zap.String("image", req.Image))
+	}
+	return fields
+}
+
+func FieldsForGetAssetRequest(req *api.GetAssetRequest) []zap.Field {
+	if req == nil {
+		return []zap.Field{zap.String("req", "nil")}
+	}
+	fields := make([]zap.Field, 0)
+	if req.Name != "" {
+		fields = append(fields, zap.String("name", string(req.Name)))
+	}
+	if req.Image != "" {
+		fields = append(fields, zap.String("image", req.Image))
+	}
+	return fields
+}
+
+func FieldsForStartExecutionRequest(req *api.StartExecutionRequest) []zap.Field {
+	if req == nil {
+		return []zap.Field{zap.String("req", "nil")}
+	}
+	fields := make([]zap.Field, 0)
+	if req.Orchestration != "" {
+		fields = append(
+			fields,
+			zap.String("orchestration", string(req.Orchestration)),
+		)
+	}
+	return fields
+}
+
+func FieldsForAttachExecutionRequest(req *api.AttachExecutionRequest) []zap.Field {
+	if req == nil {
+		return []zap.Field{zap.String("req", "nil")}
+	}
+	fields := make([]zap.Field, 0)
+	if req.Orchestration != "" {
+		fields = append(
+			fields,
+			zap.String("orchestration", string(req.Orchestration)),
+		)
+	}
+	return fields
 }
