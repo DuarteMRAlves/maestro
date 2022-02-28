@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+type GenToken func() api.SubscriptionToken
+type CreateChan func() chan *api.Event
+type SendEvent func(chan<- *api.Event, *api.Event)
+
 // PubSub handles the distribution of events for multiple subscribers with
 // multiple publishers.
 type PubSub interface {
@@ -39,8 +43,9 @@ func DefaultPubSubContext() PubSubContext {
 // PubSub handles the distribution of events for multiple subscribers with
 // multiple publishers.
 type pubSub struct {
-	ctx   PubSubContext
-	token api.SubscriptionToken
+	genToken   GenToken
+	createChan CreateChan
+	sendEvent  SendEvent
 	// hist stores past events such that new subscribers can retrieve them.
 	hist []*api.Event
 	// subs are the channels used to send messages to the subscribers.
@@ -50,11 +55,22 @@ type pubSub struct {
 }
 
 func NewPubSub(ctx PubSubContext) PubSub {
+	var sendEvent SendEvent
+
+	createChan := func() chan *api.Event {
+		return make(chan *api.Event, ctx.BuffSize)
+	}
+	if ctx.Timeout > 0 {
+		sendEvent = SendWithTimeout(ctx.Timeout)
+	} else {
+		sendEvent = SendWithoutTimeout()
+	}
 	return &pubSub{
-		ctx:   ctx,
-		token: 0,
-		hist:  make([]*api.Event, 0),
-		subs:  make(map[api.SubscriptionToken]chan<- *api.Event, 0),
+		genToken:   IncrementalGenToken(0),
+		createChan: createChan,
+		sendEvent:  sendEvent,
+		hist:       make([]*api.Event, 0),
+		subs:       make(map[api.SubscriptionToken]chan<- *api.Event, 0),
 	}
 }
 
@@ -69,10 +85,8 @@ func (pb *pubSub) Subscribe() *api.Subscription {
 		hist = append(hist, event)
 	}
 
-	token := pb.token
-	pb.token++
-
-	sub := make(chan *api.Event, pb.ctx.BuffSize)
+	token := pb.genToken()
+	sub := pb.createChan()
 	pb.subs[token] = sub
 
 	return &api.Subscription{
@@ -113,15 +127,19 @@ func (pb *pubSub) Publish(description string) {
 	}
 }
 
-func (pb *pubSub) sendEvent(sub chan<- *api.Event, event *api.Event) {
-	if pb.ctx.Timeout > 0 {
-		timer := time.NewTimer(pb.ctx.Timeout)
+func SendWithTimeout(timeout time.Duration) SendEvent {
+	return func(sub chan<- *api.Event, event *api.Event) {
+		timer := time.NewTimer(timeout)
 		defer timer.Stop()
 		select {
 		case sub <- event:
 		case <-timer.C:
 		}
-	} else {
+	}
+}
+
+func SendWithoutTimeout() SendEvent {
+	return func(sub chan<- *api.Event, event *api.Event) {
 		select {
 		case sub <- event:
 		default:
@@ -142,4 +160,19 @@ func (pb *pubSub) Close() {
 	for _, sub := range pb.subs {
 		close(sub)
 	}
+}
+
+func IncrementalGenToken(start api.SubscriptionToken) GenToken {
+	c := tokenCounter{curr: start}
+	return c.Next
+}
+
+type tokenCounter struct {
+	curr api.SubscriptionToken
+}
+
+func (c *tokenCounter) Next() api.SubscriptionToken {
+	t := c.curr
+	c.curr++
+	return t
 }
