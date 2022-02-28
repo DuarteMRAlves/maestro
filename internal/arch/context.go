@@ -29,7 +29,6 @@ func newCreateStageContext(
 }
 
 func (c *CreateStageContext) validateAndComplete() error {
-	var orchestrationName api.OrchestrationName
 	if c.req == nil {
 		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
@@ -45,18 +44,14 @@ func (c *CreateStageContext) validateAndComplete() error {
 			c.req.Name,
 		)
 	}
-	orchestrationName = c.req.Orchestration
-	if orchestrationName == "" {
-		orchestrationName = DefaultOrchestrationName
-	}
-	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
+	if !c.txnHelper.ContainsOrchestration(c.req.Orchestration) {
 		return errdefs.NotFoundWithMsg(
 			"orchestration '%v' not found",
-			orchestrationName,
+			c.req.Orchestration,
 		)
 	}
 	c.orchestration = &api.Orchestration{}
-	err := c.txnHelper.LoadOrchestration(c.orchestration, orchestrationName)
+	err := c.txnHelper.LoadOrchestration(c.orchestration, c.req.Orchestration)
 	if err != nil {
 		return errdefs.PrependMsg(err, "Unable to load orchestration")
 	}
@@ -142,7 +137,6 @@ func newCreateLinkContext(
 }
 
 func (c *CreateLinkContext) validateAndComplete() error {
-	var orchestrationName api.OrchestrationName
 	if c.req == nil {
 		return errdefs.InvalidArgumentWithMsg("'req' is nil")
 	}
@@ -155,18 +149,14 @@ func (c *CreateLinkContext) validateAndComplete() error {
 			c.req.Name,
 		)
 	}
-	orchestrationName = c.req.Orchestration
-	if orchestrationName == "" {
-		orchestrationName = DefaultOrchestrationName
-	}
-	if !c.txnHelper.ContainsOrchestration(orchestrationName) {
+	if !c.txnHelper.ContainsOrchestration(c.req.Orchestration) {
 		return errdefs.NotFoundWithMsg(
 			"orchestration '%v' not found",
-			orchestrationName,
+			c.req.Orchestration,
 		)
 	}
 	c.orchestration = &api.Orchestration{}
-	err := c.txnHelper.LoadOrchestration(c.orchestration, orchestrationName)
+	err := c.txnHelper.LoadOrchestration(c.orchestration, c.req.Orchestration)
 	if err != nil {
 		return errdefs.PrependMsg(err, "load orchestration")
 	}
@@ -196,19 +186,19 @@ func (c *CreateLinkContext) validateAndComplete() error {
 	if err := c.txnHelper.LoadStage(c.target, c.req.TargetStage); err != nil {
 		return errdefs.PrependMsg(err, "load source stage")
 	}
-	if c.source.Orchestration != orchestrationName {
+	if c.source.Orchestration != c.req.Orchestration {
 		return errdefs.FailedPreconditionWithMsg(
 			"orchestration for link '%s' is '%s' but source stage is registered in '%s'.",
 			c.req.Name,
-			orchestrationName,
+			c.req.Orchestration,
 			c.source.Orchestration,
 		)
 	}
-	if c.target.Orchestration != orchestrationName {
+	if c.target.Orchestration != c.req.Orchestration {
 		return errdefs.FailedPreconditionWithMsg(
 			"orchestration for link '%s' is '%s' but target stage is registered in '%s'.",
 			c.req.Name,
-			orchestrationName,
+			c.req.Orchestration,
 			c.target.Orchestration,
 		)
 	}
