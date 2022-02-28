@@ -93,6 +93,18 @@ func (b *Builder) initManagers(s *Server) {
 
 func activateGrpc(s *Server, b *Builder) {
 	grpcServer := grpc.NewServer(b.grpcOpts...)
-	apipb.RegisterServices(grpcServer, s)
+	m := apipb.ServerManagement{
+		CreateAsset:         s.CreateAsset,
+		GetAssets:           s.GetAsset,
+		CreateOrchestration: s.CreateOrchestration,
+		GetOrchestrations:   s.GetOrchestration,
+		CreateStage:         s.CreateStage,
+		GetStages:           s.GetStage,
+		CreateLink:          s.CreateLink,
+		GetLinks:            s.GetLink,
+		StartExecution:      s.StartExecution,
+		AttachExecution:     s.AttachExecution,
+	}
+	apipb.RegisterServices(grpcServer, m)
 	s.grpcServer = grpcServer
 }

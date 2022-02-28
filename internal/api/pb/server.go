@@ -9,15 +9,78 @@ import (
 	"io"
 )
 
+type CreateAsset func(*api.CreateAssetRequest) error
+type GetAssets func(*api.GetAssetRequest) ([]*api.Asset, error)
+
+type CreateStage func(*api.CreateStageRequest) error
+type GetStages func(*api.GetStageRequest) ([]*api.Stage, error)
+
+type CreateLink func(*api.CreateLinkRequest) error
+type GetLinks func(*api.GetLinkRequest) ([]*api.Link, error)
+
+type CreateOrchestration func(*api.CreateOrchestrationRequest) error
+type GetOrchestrations func(*api.GetOrchestrationRequest) (
+	[]*api.Orchestration,
+	error,
+)
+
+type StartExecution func(*api.StartExecutionRequest) error
+type AttachExecution func(*api.AttachExecutionRequest) (
+	*api.Subscription,
+	error,
+)
+
+type ServerManagement struct {
+	CreateAsset CreateAsset
+	GetAssets   GetAssets
+
+	CreateOrchestration CreateOrchestration
+	GetOrchestrations   GetOrchestrations
+
+	CreateStage CreateStage
+	GetStages   GetStages
+
+	CreateLink CreateLink
+	GetLinks   GetLinks
+
+	StartExecution  StartExecution
+	AttachExecution AttachExecution
+}
+
 // RegisterServices registers all grpc services into a grpc server.
-func RegisterServices(s *grpc.Server, api api.InternalAPI) {
-	pb.RegisterArchitectureManagementServer(s, &architectureService{api: api})
-	pb.RegisterExecutionManagementServer(s, &executionsService{api: api})
+func RegisterServices(s *grpc.Server, m ServerManagement) {
+	archServ := &architectureService{
+		createAsset:         m.CreateAsset,
+		getAssets:           m.GetAssets,
+		createOrchestration: m.CreateOrchestration,
+		getOrchestrations:   m.GetOrchestrations,
+		createStage:         m.CreateStage,
+		getStages:           m.GetStages,
+		createLink:          m.CreateLink,
+		getLinks:            m.GetLinks,
+	}
+	pb.RegisterArchitectureManagementServer(s, archServ)
+	execServ := &executionsService{
+		startExecution:  m.StartExecution,
+		attachExecution: m.AttachExecution,
+	}
+	pb.RegisterExecutionManagementServer(s, execServ)
 }
 
 type architectureService struct {
 	pb.UnimplementedArchitectureManagementServer
-	api api.InternalAPI
+
+	createAsset CreateAsset
+	getAssets   GetAssets
+
+	createOrchestration CreateOrchestration
+	getOrchestrations   GetOrchestrations
+
+	createStage CreateStage
+	getStages   GetStages
+
+	createLink CreateLink
+	getLinks   GetLinks
 }
 
 func (s *architectureService) CreateAsset(
@@ -32,7 +95,7 @@ func (s *architectureService) CreateAsset(
 	var grpcErr error = nil
 
 	UnmarshalCreateAssetRequest(&req, pbReq)
-	err = s.api.CreateAsset(&req)
+	err = s.createAsset(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -51,7 +114,7 @@ func (s *architectureService) GetAsset(
 
 	UnmarshalGetAssetRequest(&query, pbQuery)
 
-	assets, err := s.api.GetAsset(&query)
+	assets, err := s.getAssets(&query)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
@@ -77,7 +140,7 @@ func (s *architectureService) CreateOrchestration(
 	)
 
 	UnmarshalCreateOrchestrationRequest(&req, pbReq)
-	err = s.api.CreateOrchestration(&req)
+	err = s.createOrchestration(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -95,7 +158,7 @@ func (s *architectureService) GetOrchestration(
 	)
 
 	UnmarshalGetOrchestrationRequest(&req, pbReq)
-	orchestrations, err := s.api.GetOrchestration(&req)
+	orchestrations, err := s.getOrchestrations(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
@@ -122,7 +185,7 @@ func (s *architectureService) CreateStage(
 	var grpcErr error = nil
 
 	UnmarshalCreateStageRequest(&req, pbReq)
-	err = s.api.CreateStage(&req)
+	err = s.createStage(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -140,7 +203,7 @@ func (s *architectureService) GetStage(
 	)
 
 	UnmarshalGetStageRequest(&req, pbReq)
-	stages, err := s.api.GetStage(&req)
+	stages, err := s.getStages(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
@@ -166,7 +229,7 @@ func (s *architectureService) CreateLink(
 	)
 
 	UnmarshalCreateLinkRequest(&req, pbReq)
-	err = s.api.CreateLink(&req)
+	err = s.createLink(&req)
 	if err != nil {
 		grpcErr = GrpcErrorFromError(err)
 	}
@@ -184,7 +247,7 @@ func (s *architectureService) GetLink(
 	)
 
 	UnmarshalGetLinkRequest(&req, pbReq)
-	links, err := s.api.GetLink(&req)
+	links, err := s.getLinks(&req)
 	if err != nil {
 		return GrpcErrorFromError(err)
 	}
@@ -200,7 +263,9 @@ func (s *architectureService) GetLink(
 
 type executionsService struct {
 	pb.UnimplementedExecutionManagementServer
-	api api.InternalAPI
+
+	startExecution  StartExecution
+	attachExecution AttachExecution
 }
 
 func (s *executionsService) Start(
@@ -213,7 +278,7 @@ func (s *executionsService) Start(
 	)
 
 	UnmarshalStartExecutionRequest(&req, pbReq)
-	err = s.api.StartExecution(&req)
+	err = s.startExecution(&req)
 	if err != nil {
 		return nil, GrpcErrorFromError(err)
 	}
@@ -247,7 +312,7 @@ func (s *executionsService) Attach(stream pb.ExecutionManagement_AttachServer) e
 			close(errs2)
 			return
 		}
-		sub, err := s.api.AttachExecution(req)
+		sub, err := s.attachExecution(req)
 		if err != nil {
 			errs2 <- GrpcErrorFromError(err)
 			close(errs2)
