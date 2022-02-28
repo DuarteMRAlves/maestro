@@ -78,10 +78,6 @@ func testCreateLink(
 
 	err := db.Update(
 		func(txn *badger.Txn) error {
-			orchestrationName := DefaultOrchestrationName
-			if req.Orchestration != "" {
-				orchestrationName = req.Orchestration
-			}
 			helper := kv.NewTxnHelper(txn)
 			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
@@ -90,7 +86,7 @@ func testCreateLink(
 			s := &api.Stage{
 				Name:          api.StageName("stage-0"),
 				Phase:         api.StagePending,
-				Orchestration: orchestrationName,
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			}
 			if err := helper.SaveStage(s); err != nil {
 				return err
@@ -98,7 +94,7 @@ func testCreateLink(
 			t := &api.Stage{
 				Name:          api.StageName("stage-1"),
 				Phase:         api.StagePending,
-				Orchestration: orchestrationName,
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			}
 			if err := helper.SaveStage(t); err != nil {
 				return err

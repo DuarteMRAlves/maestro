@@ -2,7 +2,6 @@ package exec
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
@@ -41,38 +40,30 @@ func (m *manager) StartExecution(
 	txn *badger.Txn,
 	req *api.StartExecutionRequest,
 ) error {
-	var (
-		name api.OrchestrationName
-		err  error
-	)
-	name = req.Orchestration
-	if name == "" {
-		name = arch.DefaultOrchestrationName
-	}
-
+	var err error
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	_, exists := m.executions[name]
+	_, exists := m.executions[req.Orchestration]
 	// Already exists, do nothing.
 	if exists {
 		return nil
 	}
 
-	m.executions[name], err = newBuilder(txn).
-		withOrchestration(name).
+	m.executions[req.Orchestration], err = newBuilder(txn).
+		withOrchestration(req.Orchestration).
 		withLogger(m.logger).
 		build()
 	if err != nil {
 		return err
 	}
 
-	err = m.setRunning(txn, name)
+	err = m.setRunning(txn, req.Orchestration)
 	if err != nil {
 		return err
 	}
 
-	m.executions[name].Start()
+	m.executions[req.Orchestration].Start()
 	return nil
 }
 
@@ -111,20 +102,14 @@ func (m *manager) AttachExecution(req *api.AttachExecutionRequest) (
 	*api.Subscription,
 	error,
 ) {
-	var name api.OrchestrationName
-	name = req.Orchestration
-	if name == "" {
-		name = arch.DefaultOrchestrationName
-	}
-
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	e, exists := m.executions[name]
+	e, exists := m.executions[req.Orchestration]
 	if !exists {
 		return nil, errdefs.NotFoundWithMsg(
 			"execution '%s' not found",
-			name,
+			req.Orchestration,
 		)
 	}
 	sub := e.Subscribe()
