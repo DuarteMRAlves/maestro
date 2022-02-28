@@ -84,7 +84,7 @@ func runStartCmd(t *testing.T, maestroAddr string) {
 	buffer := bytes.NewBufferString("")
 
 	startCmd := start.NewCmdStart()
-	startCmd.SetArgs([]string{"--maestro", maestroAddr})
+	startCmd.SetArgs([]string{"LinearOrchestration", "--maestro", maestroAddr})
 	startCmd.SetOut(buffer)
 	err := startCmd.Execute()
 	assert.NilError(t, err, "execute start error")
@@ -202,7 +202,7 @@ func startLinearSink(
 }
 
 func buildMaestro(t *testing.T) *server.Server {
-	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.WarnLevel))
+	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.InfoLevel))
 	assert.NilError(t, err, "init logger")
 
 	db, err := kv.NewDb()

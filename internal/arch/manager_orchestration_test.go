@@ -19,12 +19,10 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewTestContext(db))
-	assert.NilError(t, err, "manager creation")
-
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateOrchestration(txn, req)
+			createOrchestration := CreateOrchestrationWithTxn(txn)
+			return createOrchestration(req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -200,13 +198,13 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var received []*api.Orchestration
+				var (
+					err      error
+					received []*api.Orchestration
+				)
 
 				db := kv.NewTestDb(t)
 				defer db.Close()
-
-				m, err := NewManager(NewTestContext(db))
-				assert.NilError(t, err, "manager creation")
 
 				for _, o := range test.stored {
 					err = db.Update(
@@ -219,10 +217,8 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						received, err = m.GetMatchingOrchestration(
-							txn,
-							test.req,
-						)
+						getOrchestration := GetOrchestrationsWithTxn(txn)
+						received, err = getOrchestration(test.req)
 						return err
 					},
 				)

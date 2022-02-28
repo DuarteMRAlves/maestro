@@ -17,7 +17,6 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	archManager arch.Manager
 	execManager exec.Manager
 
 	grpcServer *grpc.Server
@@ -51,7 +50,8 @@ func (s *Server) CreateAsset(req *api.CreateAssetRequest) error {
 	s.logger.Info("Create Asset.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.archManager.CreateAsset(txn, req)
+			createAsset := arch.CreateAssetWithTxn(txn)
+			return createAsset(req)
 		},
 	)
 }
@@ -68,7 +68,8 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 	s.logger.Info("Get Asset.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			assets, err = s.archManager.GetMatchingAssets(txn, req)
+			getAssets := arch.GetAssetsWithTxn(txn)
+			assets, err = getAssets(req)
 			return err
 		},
 	)
@@ -83,7 +84,8 @@ func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error 
 	s.logger.Info("Create Orchestration.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.archManager.CreateOrchestration(txn, req)
+			createOrchestration := arch.CreateOrchestrationWithTxn(txn)
+			return createOrchestration(req)
 		},
 	)
 }
@@ -99,10 +101,8 @@ func (s *Server) GetOrchestration(
 	s.logger.Info("Get Orchestration.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			orchestrations, err = s.archManager.GetMatchingOrchestration(
-				txn,
-				req,
-			)
+			getOrchestrations := arch.GetOrchestrationsWithTxn(txn)
+			orchestrations, err = getOrchestrations(req)
 			return err
 		},
 	)
@@ -119,7 +119,8 @@ func (s *Server) CreateStage(req *api.CreateStageRequest) error {
 	s.logger.Info("Create Stage.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.archManager.CreateStage(txn, req)
+			createStage := arch.CreateStageWithTxn(txn)
+			return createStage(req)
 		},
 	)
 }
@@ -133,7 +134,8 @@ func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 	s.logger.Info("Get Stage.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			stages, err = s.archManager.GetMatchingStage(txn, req)
+			getStages := arch.GetStagesWithTxn(txn)
+			stages, err = getStages(req)
 			return err
 		},
 	)
@@ -150,7 +152,8 @@ func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
 	s.logger.Info("Create Link.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			return s.archManager.CreateLink(txn, req)
+			createLink := arch.CreateLinkWithTxn(txn)
+			return createLink(req)
 		},
 	)
 }
@@ -164,7 +167,8 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 	s.logger.Info("Get Link.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			links, err = s.archManager.GetMatchingLinks(txn, req)
+			getLinks := arch.GetLinksWithTxn(txn)
+			links, err = getLinks(req)
 			return err
 		},
 	)

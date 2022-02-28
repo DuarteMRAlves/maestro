@@ -2,7 +2,6 @@ package server
 
 import (
 	apipb "github.com/DuarteMRAlves/maestro/internal/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/dgraph-io/badger/v3"
@@ -60,7 +59,7 @@ func (b *Builder) Build() (*Server, error) {
 	s := &Server{}
 	s.logger = b.logger
 	s.db = b.db
-	err = b.initManagers(s)
+	b.initManagers(s)
 	if b.grpcActive {
 		activateGrpc(s, b)
 	}
@@ -88,15 +87,8 @@ func (b *Builder) validate() error {
 	return nil
 }
 
-func (b *Builder) initManagers(s *Server) error {
-	var err error
-	storageManagerCtx := arch.NewDefaultContext(s.db)
-	s.archManager, err = arch.NewManager(storageManagerCtx)
-	if err != nil {
-		return errdefs.PrependMsg(err, "init managers:")
-	}
+func (b *Builder) initManagers(s *Server) {
 	s.execManager = exec.NewManager(b.logger)
-	return nil
 }
 
 func activateGrpc(s *Server, b *Builder) {

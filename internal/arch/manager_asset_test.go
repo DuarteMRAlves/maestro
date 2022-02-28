@@ -19,17 +19,15 @@ func TestManager_CreateAsset(t *testing.T) {
 		asset api.Asset
 		err   error
 	)
-	cfg := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
+	req := &api.CreateAssetRequest{Name: assetName, Image: assetImage}
 
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewTestContext(db))
-	assert.NilError(t, err, "manager creation")
-
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, cfg)
+			createAsset := CreateAssetWithTxn(txn)
+			return createAsset(req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -40,8 +38,8 @@ func TestManager_CreateAsset(t *testing.T) {
 		},
 	)
 	assert.NilError(t, err, "load error")
-	assert.Equal(t, asset.Name, cfg.Name, "name not correct")
-	assert.Equal(t, asset.Image, cfg.Image, "image not correct")
+	assert.Equal(t, asset.Name, req.Name, "name not correct")
+	assert.Equal(t, asset.Image, req.Image, "image not correct")
 }
 
 func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
@@ -56,12 +54,10 @@ func TestManager_CreateAsset_InvalidArguments(t *testing.T) {
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewTestContext(db))
-	assert.NilError(t, err, "manager creation")
-
-	err = db.Update(
+	err := db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, req)
+			createAsset := CreateAssetWithTxn(txn)
+			return createAsset(req)
 		},
 	)
 	assert.Assert(t, errdefs.IsInvalidArgument(err), "err type")
@@ -89,13 +85,11 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewTestContext(db))
-	assert.NilError(t, err, "manager creation")
-
 	// First create
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, req)
+			createAsset := CreateAssetWithTxn(txn)
+			return createAsset(req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -113,7 +107,8 @@ func TestManager_CreateAsset_AlreadyExists(t *testing.T) {
 	req.Image = fmt.Sprintf("%v-new", assetImage)
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateAsset(txn, req)
+			createAsset := CreateAssetWithTxn(txn)
+			return createAsset(req)
 		},
 	)
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
@@ -201,18 +196,19 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var received []*api.Asset
+				var (
+					received []*api.Asset
+					err      error
+				)
 
 				db := kv.NewTestDb(t)
 				defer db.Close()
 
-				m, err := NewManager(NewTestContext(db))
-				assert.NilError(t, err, "manager creation")
-
 				for _, n := range test.stored {
 					err = db.Update(
 						func(txn *badger.Txn) error {
-							return m.CreateAsset(txn, assetForNum(n))
+							createAsset := CreateAssetWithTxn(txn)
+							return createAsset(assetForNum(n))
 						},
 					)
 					assert.NilError(t, err, "create asset error")
@@ -220,7 +216,8 @@ func TestManager_GetMatchingAssets(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						received, err = m.GetMatchingAssets(txn, test.req)
+						getAssets := GetAssetsWithTxn(txn)
+						received, err = getAssets(test.req)
 						return err
 					},
 				)

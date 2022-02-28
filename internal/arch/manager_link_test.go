@@ -19,9 +19,10 @@ func TestManager_CreateLink(t *testing.T) {
 		{
 			name: "required parameters",
 			req: &api.CreateLinkRequest{
-				Name:        api.LinkName("link-0"),
-				SourceStage: api.StageName("stage-0"),
-				TargetStage: api.StageName("stage-1"),
+				Name:          api.LinkName("link-0"),
+				SourceStage:   api.StageName("stage-0"),
+				TargetStage:   api.StageName("stage-1"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Link{
 				Name:          api.LinkName("link-0"),
@@ -29,7 +30,7 @@ func TestManager_CreateLink(t *testing.T) {
 				SourceField:   "",
 				TargetStage:   api.StageName("stage-1"),
 				TargetField:   "",
-				Orchestration: DefaultOrchestrationName,
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 		},
 		{
@@ -75,10 +76,7 @@ func testCreateLink(
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewDefaultContext(db))
-	assert.NilError(t, err, "manager creation")
-
-	err = db.Update(
+	err := db.Update(
 		func(txn *badger.Txn) error {
 			orchestrationName := DefaultOrchestrationName
 			if req.Orchestration != "" {
@@ -112,7 +110,8 @@ func testCreateLink(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateLink(txn, req)
+			createLink := CreateLinkWithTxn(txn)
+			return createLink(req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -318,12 +317,9 @@ func testCreateLinkError(
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewDefaultContext(db))
-	assert.NilError(t, err, "manager creation")
-
 	// Prepare tests
 	// Number 0 has an orchestration and correct stages created to be used.
-	err = db.Update(
+	err := db.Update(
 		func(txn *badger.Txn) error {
 			helper := kv.NewTxnHelper(txn)
 
@@ -378,7 +374,8 @@ func testCreateLinkError(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateLink(txn, req)
+			createLink := CreateLinkWithTxn(txn)
+			return createLink(req)
 		},
 	)
 	assert.Assert(t, assertErrTypeFn(err), "wrong error type")
@@ -573,13 +570,13 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var received []*api.Link
+				var (
+					err      error
+					received []*api.Link
+				)
 
 				db := kv.NewTestDb(t)
 				defer db.Close()
-
-				m, err := NewManager(NewTestContext(db))
-				assert.NilError(t, err, "manager creation")
 
 				for _, l := range test.stored {
 					err = db.Update(
@@ -591,10 +588,8 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						received, err = m.GetMatchingLinks(
-							txn,
-							test.req,
-						)
+						getLinks := GetLinksWithTxn(txn)
+						received, err = getLinks(test.req)
 						return err
 					},
 				)
