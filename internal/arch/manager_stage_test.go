@@ -20,7 +20,8 @@ func TestManager_CreateStage(t *testing.T) {
 		{
 			name: "required parameters",
 			req: &api.CreateStageRequest{
-				Name: name,
+				Name:          name,
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Stage{
 				Name:    name,
@@ -32,15 +33,16 @@ func TestManager_CreateStage(t *testing.T) {
 					defaultStageHost,
 					defaultStagePort,
 				),
-				Orchestration: api.OrchestrationName("default"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 				Asset:         api.AssetName(""),
 			},
 		},
 		{
 			name: "custom address",
 			req: &api.CreateStageRequest{
-				Name:    name,
-				Address: "some-address",
+				Name:          name,
+				Address:       "some-address",
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Stage{
 				Name:          name,
@@ -48,16 +50,17 @@ func TestManager_CreateStage(t *testing.T) {
 				Service:       "",
 				Rpc:           "",
 				Address:       "some-address",
-				Orchestration: api.OrchestrationName("default"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 				Asset:         api.AssetName(""),
 			},
 		},
 		{
 			name: "custom host and port",
 			req: &api.CreateStageRequest{
-				Name: name,
-				Host: "some-host",
-				Port: 12345,
+				Name:          name,
+				Host:          "some-host",
+				Port:          12345,
+				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Stage{
 				Name:          name,
@@ -65,7 +68,7 @@ func TestManager_CreateStage(t *testing.T) {
 				Service:       "",
 				Rpc:           "",
 				Address:       "some-host:12345",
-				Orchestration: api.OrchestrationName("default"),
+				Orchestration: api.OrchestrationName("orchestration-0"),
 				Asset:         api.AssetName(""),
 			},
 		},
@@ -109,14 +112,12 @@ func testCreateStage(
 	expected *api.Stage,
 ) {
 	var (
+		err           error
 		stored        api.Stage
 		orchestration api.Orchestration
 	)
 	db := kv.NewTestDb(t)
 	defer db.Close()
-
-	m, err := NewManager(NewDefaultContext(db))
-	assert.NilError(t, err, "manager creation")
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
@@ -136,7 +137,8 @@ func testCreateStage(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateStage(txn, req)
+			createStage := CreateStageWithTxn(txn)
+			return createStage(req)
 		},
 	)
 	assert.NilError(t, err, "create error not nil")
@@ -192,20 +194,29 @@ func TestManager_CreateStage_Error(t *testing.T) {
 			expectedErrMsg:  "'req' is nil",
 		},
 		{
-			name:            "empty name",
-			req:             &api.CreateStageRequest{Name: ""},
+			name: "empty name",
+			req: &api.CreateStageRequest{
+				Name:          "",
+				Orchestration: "orchestration-0",
+			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "invalid name ''",
 		},
 		{
-			name:            "invalid name",
-			req:             &api.CreateStageRequest{Name: "some#name"},
+			name: "invalid name",
+			req: &api.CreateStageRequest{
+				Name:          "some#name",
+				Orchestration: "orchestration-0",
+			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "invalid name 'some#name'",
 		},
 		{
-			name:            "stage already exists",
-			req:             &api.CreateStageRequest{Name: "duplicate"},
+			name: "stage already exists",
+			req: &api.CreateStageRequest{
+				Name:          "duplicate",
+				Orchestration: "orchestration-0",
+			},
 			assertErrTypeFn: errdefs.IsAlreadyExists,
 			expectedErrMsg:  "stage 'duplicate' already exists",
 		},
@@ -221,8 +232,9 @@ func TestManager_CreateStage_Error(t *testing.T) {
 		{
 			name: "asset not found",
 			req: &api.CreateStageRequest{
-				Name:  "some-stage",
-				Asset: "unknown",
+				Name:          "some-stage",
+				Asset:         "unknown",
+				Orchestration: "orchestration-0",
 			},
 			assertErrTypeFn: errdefs.IsNotFound,
 			expectedErrMsg:  "asset 'unknown' not found",
@@ -230,9 +242,10 @@ func TestManager_CreateStage_Error(t *testing.T) {
 		{
 			name: "stage and host specified",
 			req: &api.CreateStageRequest{
-				Name:    "some-stage",
-				Address: "some-address",
-				Host:    "some-host",
+				Name:          "some-stage",
+				Address:       "some-address",
+				Host:          "some-host",
+				Orchestration: "orchestration-0",
 			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "Cannot simultaneously specify address and host for stage",
@@ -240,9 +253,10 @@ func TestManager_CreateStage_Error(t *testing.T) {
 		{
 			name: "stage and port specified",
 			req: &api.CreateStageRequest{
-				Name:    "some-stage",
-				Address: "some-address",
-				Port:    23456,
+				Name:          "some-stage",
+				Address:       "some-address",
+				Port:          23456,
+				Orchestration: "orchestration-0",
 			},
 			assertErrTypeFn: errdefs.IsInvalidArgument,
 			expectedErrMsg:  "Cannot simultaneously specify address and port for stage",
@@ -273,18 +287,17 @@ func testCreateStageError(
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewDefaultContext(db))
-	assert.NilError(t, err, "manager creation")
-
-	err = db.Update(
+	err := db.Update(
 		func(txn *badger.Txn) error {
 			helper := kv.NewTxnHelper(txn)
 			a := &api.Asset{Name: api.AssetName("asset-0")}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
 			}
-			o := &api.Stage{Name: api.StageName("stage-0")}
-			if err := helper.SaveStage(o); err != nil {
+			o := &api.Orchestration{
+				Name: api.OrchestrationName("orchestration-0"),
+			}
+			if err := helper.SaveOrchestration(o); err != nil {
 				return err
 			}
 			s := &api.Stage{Name: "duplicate"}
@@ -298,7 +311,8 @@ func testCreateStageError(
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			return m.CreateStage(txn, req)
+			createStage := CreateStageWithTxn(txn)
+			return createStage(req)
 		},
 	)
 	assert.Assert(t, assertErrTypeFn(err), "wrong error type")
@@ -533,13 +547,13 @@ func TestManager_GetMatchingStages(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var received []*api.Stage
+				var (
+					err      error
+					received []*api.Stage
+				)
 
 				db := kv.NewTestDb(t)
 				defer db.Close()
-
-				m, err := NewManager(NewTestContext(db))
-				assert.NilError(t, err, "manager creation")
 
 				for _, s := range test.stored {
 					err = db.Update(
@@ -551,10 +565,8 @@ func TestManager_GetMatchingStages(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						received, err = m.GetMatchingStage(
-							txn,
-							test.req,
-						)
+						getStages := GetStagesWithTxn(txn)
+						received, err = getStages(test.req)
 						return err
 					},
 				)

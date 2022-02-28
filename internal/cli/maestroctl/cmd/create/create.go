@@ -167,13 +167,14 @@ func (o *Options) run() error {
 	}
 	for _, req := range stages {
 		pbReq := &pb.CreateStageRequest{
-			Name:    string(req.Name),
-			Asset:   string(req.Asset),
-			Service: req.Service,
-			Rpc:     req.Rpc,
-			Address: req.Address,
-			Host:    req.Host,
-			Port:    req.Port,
+			Name:          string(req.Name),
+			Asset:         string(req.Asset),
+			Service:       req.Service,
+			Rpc:           req.Rpc,
+			Address:       req.Address,
+			Host:          req.Host,
+			Port:          req.Port,
+			Orchestration: string(req.Orchestration),
 		}
 		if _, err = archStub.CreateStage(ctx, pbReq); err != nil {
 			return util.ErrorFromGrpcError(err)
@@ -181,11 +182,12 @@ func (o *Options) run() error {
 	}
 	for _, req := range links {
 		l := &pb.CreateLinkRequest{
-			Name:        string(req.Name),
-			SourceStage: string(req.SourceStage),
-			SourceField: req.SourceField,
-			TargetStage: string(req.TargetStage),
-			TargetField: req.TargetField,
+			Name:          string(req.Name),
+			SourceStage:   string(req.SourceStage),
+			SourceField:   req.SourceField,
+			TargetStage:   string(req.TargetStage),
+			TargetField:   req.TargetField,
+			Orchestration: string(req.Orchestration),
 		}
 		if _, err = archStub.CreateLink(ctx, l); err != nil {
 			return util.ErrorFromGrpcError(err)
