@@ -26,15 +26,13 @@ type Builder struct {
 	inputs            map[api.StageName]*InputDesc
 	outputs           map[api.StageName]*OutputDesc
 
-	txnHelper  *kv.TxnHelper
-	rpcManager rpc.Manager
+	txnHelper *kv.TxnHelper
 }
 
-func newBuilder(txn *badger.Txn, rpcManager rpc.Manager) *Builder {
+func newBuilder(txn *badger.Txn) *Builder {
 	return &Builder{
-		stageMap:   NewStageMap(),
-		txnHelper:  kv.NewTxnHelper(txn),
-		rpcManager: rpcManager,
+		stageMap:  NewStageMap(),
+		txnHelper: kv.NewTxnHelper(txn),
 	}
 }
 
@@ -152,7 +150,8 @@ func (b *Builder) loadRpc(ctx context.Context, s *api.Stage) (rpc.RPC, error) {
 		)
 	}
 	defer conn.Close()
-	return b.rpcManager.GetRpc(ctx, conn, s)
+	searchRpc := rpc.SearchRpcWithReflection(ctx, conn)
+	return searchRpc(s)
 }
 
 func (b *Builder) loadInputsAndOutputs() error {

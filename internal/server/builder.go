@@ -5,15 +5,12 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 type Builder struct {
-	reflectionManager rpc.Manager
-
 	grpcActive bool
 	grpcOpts   []grpc.ServerOption
 
@@ -50,11 +47,6 @@ func (b *Builder) WithLogger(logger *zap.Logger) *Builder {
 	return b
 }
 
-func (b *Builder) WithReflectionManager(m rpc.Manager) *Builder {
-	b.reflectionManager = m
-	return b
-}
-
 func (b *Builder) Build() (*Server, error) {
 	var err error
 	err = b.complete()
@@ -84,9 +76,6 @@ func (b *Builder) complete() error {
 			return errdefs.UnknownWithMsg("build: setup logger: %v", err)
 		}
 	}
-	if b.reflectionManager == nil {
-		b.reflectionManager = rpc.NewManager()
-	}
 	return nil
 }
 
@@ -101,13 +90,12 @@ func (b *Builder) validate() error {
 
 func (b *Builder) initManagers(s *Server) error {
 	var err error
-	s.reflectionManager = b.reflectionManager
-	storageManagerCtx := arch.NewDefaultContext(s.db, s.reflectionManager)
+	storageManagerCtx := arch.NewDefaultContext(s.db)
 	s.archManager, err = arch.NewManager(storageManagerCtx)
 	if err != nil {
 		return errdefs.PrependMsg(err, "init managers:")
 	}
-	s.execManager = exec.NewManager(s.reflectionManager, b.logger)
+	s.execManager = exec.NewManager(b.logger)
 	return nil
 }
 

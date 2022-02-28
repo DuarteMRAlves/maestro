@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -18,9 +17,8 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	archManager       arch.Manager
-	execManager       exec.Manager
-	reflectionManager rpc.Manager
+	archManager arch.Manager
+	execManager exec.Manager
 
 	grpcServer *grpc.Server
 
