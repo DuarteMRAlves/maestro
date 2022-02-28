@@ -1,48 +1,5 @@
 package rpc
 
-import (
-	"context"
-	"github.com/DuarteMRAlves/maestro/internal/api"
-	"google.golang.org/grpc"
-	"sync"
-)
-
-type MockManager struct {
-	Rpcs sync.Map
-}
-
-func (m *MockManager) GetRpc(
-	_ context.Context,
-	_ grpc.ClientConnInterface,
-	stage api.StageName,
-) (RPC, bool) {
-	rpc, ok := m.Rpcs.Load(stage)
-	if !ok {
-		return nil, false
-	}
-	return rpc.(RPC), true
-}
-
-// MockService is a mock that implements the rpc.MockService interface to allow
-// for easy testing.
-type MockService struct {
-	Name_ string
-	FQN   string
-	RPCs_ []RPC
-}
-
-func (s *MockService) Name() string {
-	return s.Name_
-}
-
-func (s *MockService) FullyQualifiedName() string {
-	return s.FQN
-}
-
-func (s *MockService) RPCs() []RPC {
-	return s.RPCs_
-}
-
 // MockRPC is a mock struct that implements the rpc.MockRPC interface to
 // allow for easy testing.
 type MockRPC struct {

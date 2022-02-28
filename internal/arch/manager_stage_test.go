@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -116,7 +115,7 @@ func testCreateStage(
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
+	m, err := NewManager(NewDefaultContext(db))
 	assert.NilError(t, err, "manager creation")
 
 	err = db.Update(
@@ -274,7 +273,7 @@ func testCreateStageError(
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
-	m, err := NewManager(NewDefaultContext(db, rpc.NewManager()))
+	m, err := NewManager(NewDefaultContext(db))
 	assert.NilError(t, err, "manager creation")
 
 	err = db.Update(

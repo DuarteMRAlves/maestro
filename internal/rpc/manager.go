@@ -7,43 +7,35 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Manager stores the RPC objects for a given stage.
-type Manager interface {
-	// GetRpc searches for a given RPC using the grpc reflection api.
-	GetRpc(context.Context, grpc.ClientConnInterface, *api.Stage) (RPC, error)
-}
+// SearchRpc searches for a given RPC.
+type SearchRpc func(*api.Stage) (RPC, error)
 
-type manager struct{}
-
-func NewManager() Manager {
-	return &manager{}
-}
-
-func (m *manager) GetRpc(
+func SearchRpcWithReflection(
 	ctx context.Context,
 	conn grpc.ClientConnInterface,
-	stage *api.Stage,
-) (RPC, error) {
-	var err error
+) SearchRpc {
+	return func(stage *api.Stage) (RPC, error) {
+		var err error
 
-	client := NewReflectionClient(ctx, conn)
-	availableServices, err := client.ListServices()
-	if err != nil {
-		return nil, errdefs.PrependMsg(err, "find rpc")
+		client := NewReflectionClient(ctx, conn)
+		availableServices, err := client.ListServices()
+		if err != nil {
+			return nil, errdefs.PrependMsg(err, "find rpc")
+		}
+		srvName, err := findService(availableServices, stage)
+		if err != nil {
+			return nil, errdefs.PrependMsg(err, "find rpc")
+		}
+		srv, err := client.ResolveService(srvName)
+		if err != nil {
+			return nil, errdefs.PrependMsg(err, "find rpc")
+		}
+		stageRpc, err := findRpc(srv.RPCs(), stage)
+		if err != nil {
+			return nil, errdefs.PrependMsg(err, "find rpc")
+		}
+		return stageRpc, nil
 	}
-	srvName, err := findService(availableServices, stage)
-	if err != nil {
-		return nil, errdefs.PrependMsg(err, "find rpc")
-	}
-	srv, err := client.ResolveService(srvName)
-	if err != nil {
-		return nil, errdefs.PrependMsg(err, "find rpc")
-	}
-	stageRpc, err := findRpc(srv.RPCs(), stage)
-	if err != nil {
-		return nil, errdefs.PrependMsg(err, "find rpc")
-	}
-	return stageRpc, nil
 }
 
 // findService finds the service that should be used to call the rpc.

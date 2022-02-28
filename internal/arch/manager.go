@@ -4,7 +4,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -48,24 +47,20 @@ type Manager interface {
 }
 
 type manager struct {
-	rpcManager rpc.Manager
 }
 
 // ManagerContext contains configuration to create a new storage manager.
 type ManagerContext struct {
 	// DB is the underlying db where the data should be stored
 	DB *badger.DB
-	// RpcManager provides the manager that handles the rpcs for the stages
-	RpcManager rpc.Manager
 	// CreateDefault specifies whether a default orchestration with the name
 	// "default" should be created.
 	CreateDefault bool
 }
 
-func NewDefaultContext(db *badger.DB, rpcManager rpc.Manager) ManagerContext {
+func NewDefaultContext(db *badger.DB) ManagerContext {
 	return ManagerContext{
 		DB:            db,
-		RpcManager:    rpcManager,
 		CreateDefault: true,
 	}
 }
@@ -73,7 +68,6 @@ func NewDefaultContext(db *badger.DB, rpcManager rpc.Manager) ManagerContext {
 func NewTestContext(db *badger.DB) ManagerContext {
 	return ManagerContext{
 		DB:            db,
-		RpcManager:    rpc.NewManager(),
 		CreateDefault: false,
 	}
 }
@@ -93,9 +87,7 @@ func NewManager(ctx ManagerContext) (Manager, error) {
 			return nil, errdefs.PrependMsg(err, "new storage manager")
 		}
 	}
-	m := &manager{
-		rpcManager: ctx.RpcManager,
-	}
+	m := &manager{}
 	return m, nil
 }
 

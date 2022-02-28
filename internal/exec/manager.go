@@ -5,7 +5,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"sync"
@@ -28,16 +27,13 @@ type manager struct {
 	mu         sync.RWMutex
 	executions map[api.OrchestrationName]*Execution
 
-	reflectionManager rpc.Manager
-
 	logger *zap.Logger
 }
 
-func NewManager(reflectionManager rpc.Manager, logger *zap.Logger) Manager {
+func NewManager(logger *zap.Logger) Manager {
 	return &manager{
-		executions:        map[api.OrchestrationName]*Execution{},
-		reflectionManager: reflectionManager,
-		logger:            logger,
+		executions: map[api.OrchestrationName]*Execution{},
+		logger:     logger,
 	}
 }
 
@@ -63,7 +59,7 @@ func (m *manager) StartExecution(
 		return nil
 	}
 
-	m.executions[name], err = newBuilder(txn, m.reflectionManager).
+	m.executions[name], err = newBuilder(txn).
 		withOrchestration(name).
 		withLogger(m.logger).
 		build()

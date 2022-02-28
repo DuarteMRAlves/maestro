@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -49,8 +48,6 @@ func TestExecution_Linear(t *testing.T) {
 	sinkServer := startLinearSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()
 
-	rpcManager := rpc.NewManager()
-
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
@@ -59,7 +56,7 @@ func TestExecution_Linear(t *testing.T) {
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			builder := newBuilder(txn, rpcManager)
+			builder := newBuilder(txn)
 			e, err = builder.withOrchestration("default").withLogger(logger).build()
 			return err
 		},
@@ -297,8 +294,6 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	sinkServer := startSplitAndMergeSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()
 
-	rpcManager := rpc.NewManager()
-
 	db := kv.NewTestDb(t)
 	defer db.Close()
 
@@ -307,7 +302,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			builder := newBuilder(txn, rpcManager)
+			builder := newBuilder(txn)
 			e, err = builder.withOrchestration("default").withLogger(logger).build()
 			return err
 		},
