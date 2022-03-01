@@ -80,14 +80,7 @@ func (c *CreateStageContext) inferStageAddress() {
 	address := c.req.Address
 	// If address is empty, fill it from req host and port.
 	if address == "" {
-		host, port := c.req.Host, c.req.Port
-		if host == "" {
-			host = defaultStageHost
-		}
-		if port == 0 {
-			port = defaultStagePort
-		}
-		address = fmt.Sprintf("%s:%d", host, port)
+		address = fmt.Sprintf("%s:%d", c.req.Host, c.req.Port)
 	}
 	c.inferredAddress = address
 }
