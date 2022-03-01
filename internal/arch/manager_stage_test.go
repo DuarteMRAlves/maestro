@@ -22,27 +22,7 @@ func TestManager_CreateStage(t *testing.T) {
 			req: &api.CreateStageRequest{
 				Name:          name,
 				Orchestration: api.OrchestrationName("orchestration-0"),
-			},
-			expected: &api.Stage{
-				Name:    name,
-				Phase:   api.StagePending,
-				Service: "",
-				Rpc:     "",
-				Address: fmt.Sprintf(
-					"%s:%d",
-					defaultStageHost,
-					defaultStagePort,
-				),
-				Orchestration: api.OrchestrationName("orchestration-0"),
-				Asset:         api.AssetName(""),
-			},
-		},
-		{
-			name: "custom address",
-			req: &api.CreateStageRequest{
-				Name:          name,
 				Address:       "some-address",
-				Orchestration: api.OrchestrationName("orchestration-0"),
 			},
 			expected: &api.Stage{
 				Name:          name,
