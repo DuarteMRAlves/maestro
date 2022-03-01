@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/events"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
@@ -26,7 +27,7 @@ type GetOrchestrations func(*api.GetOrchestrationRequest) (
 
 type StartExecution func(*api.StartExecutionRequest) error
 type AttachExecution func(*api.AttachExecutionRequest) (
-	*api.Subscription,
+	*events.Subscription,
 	error,
 )
 
