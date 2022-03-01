@@ -1,4 +1,4 @@
-package exec
+package orchestration
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
@@ -75,13 +75,13 @@ func (e *Execution) Stop() {
 	for _, d := range e.done {
 		<-d
 	}
-	close(e.errs)
 	e.stages.Iter(
 		func(s Stage) {
 			s.Close()
 		},
 	)
 	close(e.cleanup)
+	close(e.errs)
 }
 
 func (e *Execution) Subscribe() *events.Subscription {

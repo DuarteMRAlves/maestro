@@ -1,4 +1,4 @@
-package arch
+package orchestration
 
 import (
 	"fmt"
