@@ -3,6 +3,7 @@ package exec
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -19,7 +20,7 @@ type Manager interface {
 	// name. It returns a subscription with list of previous events and a
 	// channel where new events will be written. The subscription also provides
 	// a token that can be used to unsubscribe.
-	AttachExecution(*api.AttachExecutionRequest) (*api.Subscription, error)
+	AttachExecution(*api.AttachExecutionRequest) (*events.Subscription, error)
 }
 
 type manager struct {
@@ -99,7 +100,7 @@ func (m *manager) setRunning(
 }
 
 func (m *manager) AttachExecution(req *api.AttachExecutionRequest) (
-	*api.Subscription,
+	*events.Subscription,
 	error,
 ) {
 	m.mu.Lock()

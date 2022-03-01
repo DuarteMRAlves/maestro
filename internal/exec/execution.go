@@ -84,6 +84,6 @@ func (e *Execution) Stop() {
 	close(e.cleanup)
 }
 
-func (e *Execution) Subscribe() *api.Subscription {
+func (e *Execution) Subscribe() *events.Subscription {
 	return e.pubSub.Subscribe()
 }

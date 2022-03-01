@@ -2,7 +2,6 @@ package events
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/api"
 	"gotest.tools/v3/assert"
 	"testing"
 	"time"
@@ -54,7 +53,7 @@ func TestPubSub_Publish_History(t *testing.T) {
 		}
 	}()
 
-	collected := make([]*api.Event, 0, firstEvents)
+	collected := make([]*Event, 0, firstEvents)
 
 	for i := 0; i < firstEvents; i++ {
 		expected := fmt.Sprintf("Event-First-%d", i+1)

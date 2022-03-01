@@ -1,16 +1,14 @@
 package events
 
-import "github.com/DuarteMRAlves/maestro/internal/api"
-
 // MockPubSub implements the PubSub interface but does no underlying processing.
 type MockPubSub struct {
 }
 
-func (m *MockPubSub) Subscribe() *api.Subscription {
+func (m *MockPubSub) Subscribe() *Subscription {
 	return nil
 }
 
-func (m *MockPubSub) Unsubscribe(token api.SubscriptionToken) error {
+func (m *MockPubSub) Unsubscribe(token SubscriptionToken) error {
 	return nil
 }
 

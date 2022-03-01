@@ -1,25 +1,24 @@
 package events
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"sync"
 	"time"
 )
 
-type GenToken func() api.SubscriptionToken
-type CreateChan func() chan *api.Event
-type SendEvent func(chan<- *api.Event, *api.Event)
+type GenToken func() SubscriptionToken
+type CreateChan func() chan *Event
+type SendEvent func(chan<- *Event, *Event)
 
 // PubSub handles the distribution of events for multiple subscribers with
 // multiple publishers.
 type PubSub interface {
 	// Subscribe returns a new subscription with past events and a channel to
 	// listen to new events.
-	Subscribe() *api.Subscription
+	Subscribe() *Subscription
 	// Unsubscribe stops sending new events for a subscription, closing the
 	// respective channel.
-	Unsubscribe(api.SubscriptionToken) error
+	Unsubscribe(SubscriptionToken) error
 	// Publish publishes a new event with the received description and the
 	// current timestamp.
 	Publish(string)
@@ -47,9 +46,9 @@ type pubSub struct {
 	createChan CreateChan
 	sendEvent  SendEvent
 	// hist stores past events such that new subscribers can retrieve them.
-	hist []*api.Event
+	hist []*Event
 	// subs are the channels used to send messages to the subscribers.
-	subs map[api.SubscriptionToken]chan<- *api.Event
+	subs map[SubscriptionToken]chan<- *Event
 
 	mu sync.Mutex
 }
@@ -57,8 +56,8 @@ type pubSub struct {
 func NewPubSub(ctx PubSubContext) PubSub {
 	var sendEvent SendEvent
 
-	createChan := func() chan *api.Event {
-		return make(chan *api.Event, ctx.BuffSize)
+	createChan := func() chan *Event {
+		return make(chan *Event, ctx.BuffSize)
 	}
 	if ctx.Timeout > 0 {
 		sendEvent = SendWithTimeout(ctx.Timeout)
@@ -69,18 +68,18 @@ func NewPubSub(ctx PubSubContext) PubSub {
 		genToken:   IncrementalGenToken(0),
 		createChan: createChan,
 		sendEvent:  sendEvent,
-		hist:       make([]*api.Event, 0),
-		subs:       make(map[api.SubscriptionToken]chan<- *api.Event, 0),
+		hist:       make([]*Event, 0),
+		subs:       make(map[SubscriptionToken]chan<- *Event, 0),
 	}
 }
 
-func (pb *pubSub) Subscribe() *api.Subscription {
+func (pb *pubSub) Subscribe() *Subscription {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
-	hist := make([]*api.Event, 0, len(pb.hist))
+	hist := make([]*Event, 0, len(pb.hist))
 	for _, h := range pb.hist {
-		event := &api.Event{}
+		event := &Event{}
 		copyEvent(event, h)
 		hist = append(hist, event)
 	}
@@ -89,14 +88,14 @@ func (pb *pubSub) Subscribe() *api.Subscription {
 	sub := pb.createChan()
 	pb.subs[token] = sub
 
-	return &api.Subscription{
+	return &Subscription{
 		Token:  token,
 		Hist:   hist,
 		Future: sub,
 	}
 }
 
-func (pb *pubSub) Unsubscribe(token api.SubscriptionToken) error {
+func (pb *pubSub) Unsubscribe(token SubscriptionToken) error {
 	pb.mu.Lock()
 	defer pb.mu.Unlock()
 
@@ -114,21 +113,21 @@ func (pb *pubSub) Publish(description string) {
 	defer pb.mu.Unlock()
 
 	ts := time.Now()
-	event := &api.Event{
+	event := &Event{
 		Description: description,
 		Timestamp:   ts,
 	}
 
 	pb.hist = append(pb.hist, event)
 	for _, sub := range pb.subs {
-		send := &api.Event{}
+		send := &Event{}
 		copyEvent(send, event)
 		pb.sendEvent(sub, send)
 	}
 }
 
 func SendWithTimeout(timeout time.Duration) SendEvent {
-	return func(sub chan<- *api.Event, event *api.Event) {
+	return func(sub chan<- *Event, event *Event) {
 		timer := time.NewTimer(timeout)
 		defer timer.Stop()
 		select {
@@ -139,7 +138,7 @@ func SendWithTimeout(timeout time.Duration) SendEvent {
 }
 
 func SendWithoutTimeout() SendEvent {
-	return func(sub chan<- *api.Event, event *api.Event) {
+	return func(sub chan<- *Event, event *Event) {
 		select {
 		case sub <- event:
 		default:
@@ -148,7 +147,7 @@ func SendWithoutTimeout() SendEvent {
 	}
 }
 
-func copyEvent(dst *api.Event, src *api.Event) {
+func copyEvent(dst *Event, src *Event) {
 	dst.Description = src.Description
 	dst.Timestamp = src.Timestamp
 }
@@ -162,16 +161,16 @@ func (pb *pubSub) Close() {
 	}
 }
 
-func IncrementalGenToken(start api.SubscriptionToken) GenToken {
+func IncrementalGenToken(start SubscriptionToken) GenToken {
 	c := tokenCounter{curr: start}
 	return c.Next
 }
 
 type tokenCounter struct {
-	curr api.SubscriptionToken
+	curr SubscriptionToken
 }
 
-func (c *tokenCounter) Next() api.SubscriptionToken {
+func (c *tokenCounter) Next() SubscriptionToken {
 	t := c.curr
 	c.curr++
 	return t

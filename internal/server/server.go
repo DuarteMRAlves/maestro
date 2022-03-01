@@ -4,6 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/dgraph-io/badger/v3"
@@ -189,7 +190,7 @@ func (s *Server) StartExecution(req *api.StartExecutionRequest) error {
 }
 
 func (s *Server) AttachExecution(req *api.AttachExecutionRequest) (
-	*api.Subscription,
+	*events.Subscription,
 	error,
 ) {
 	fields := logs.FieldsForAttachExecutionRequest(req)
