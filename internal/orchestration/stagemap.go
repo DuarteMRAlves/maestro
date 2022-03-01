@@ -1,4 +1,4 @@
-package exec
+package orchestration
 
 import "github.com/DuarteMRAlves/maestro/internal/api"
 

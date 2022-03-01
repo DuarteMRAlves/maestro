@@ -1,4 +1,4 @@
-package arch
+package orchestration
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"

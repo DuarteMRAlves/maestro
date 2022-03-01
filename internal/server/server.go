@@ -2,11 +2,10 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/arch"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/events"
-	"github.com/DuarteMRAlves/maestro/internal/exec"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
+	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -18,7 +17,7 @@ const grpcNotConfigured = "grpc server not configured"
 // Server is the main class that handles the requests
 // It implements the InternalAPI interface and manages all requests
 type Server struct {
-	execManager exec.Manager
+	execManager orchestration.Manager
 
 	grpcServer *grpc.Server
 
@@ -51,7 +50,7 @@ func (s *Server) CreateAsset(req *api.CreateAssetRequest) error {
 	s.logger.Info("Create Asset.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			createAsset := arch.CreateAssetWithTxn(txn)
+			createAsset := orchestration.CreateAssetWithTxn(txn)
 			return createAsset(req)
 		},
 	)
@@ -69,7 +68,7 @@ func (s *Server) GetAsset(req *api.GetAssetRequest) (
 	s.logger.Info("Get Asset.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			getAssets := arch.GetAssetsWithTxn(txn)
+			getAssets := orchestration.GetAssetsWithTxn(txn)
 			assets, err = getAssets(req)
 			return err
 		},
@@ -85,7 +84,7 @@ func (s *Server) CreateOrchestration(req *api.CreateOrchestrationRequest) error 
 	s.logger.Info("Create Orchestration.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			createOrchestration := arch.CreateOrchestrationWithTxn(txn)
+			createOrchestration := orchestration.CreateOrchestrationWithTxn(txn)
 			return createOrchestration(req)
 		},
 	)
@@ -102,7 +101,7 @@ func (s *Server) GetOrchestration(
 	s.logger.Info("Get Orchestration.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			getOrchestrations := arch.GetOrchestrationsWithTxn(txn)
+			getOrchestrations := orchestration.GetOrchestrationsWithTxn(txn)
 			orchestrations, err = getOrchestrations(req)
 			return err
 		},
@@ -120,7 +119,7 @@ func (s *Server) CreateStage(req *api.CreateStageRequest) error {
 	s.logger.Info("Create Stage.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			createStage := arch.CreateStageWithTxn(txn)
+			createStage := orchestration.CreateStageWithTxn(txn)
 			return createStage(req)
 		},
 	)
@@ -135,7 +134,7 @@ func (s *Server) GetStage(req *api.GetStageRequest) ([]*api.Stage, error) {
 	s.logger.Info("Get Stage.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			getStages := arch.GetStagesWithTxn(txn)
+			getStages := orchestration.GetStagesWithTxn(txn)
 			stages, err = getStages(req)
 			return err
 		},
@@ -153,7 +152,7 @@ func (s *Server) CreateLink(req *api.CreateLinkRequest) error {
 	s.logger.Info("Create Link.", fields...)
 	return s.db.Update(
 		func(txn *badger.Txn) error {
-			createLink := arch.CreateLinkWithTxn(txn)
+			createLink := orchestration.CreateLinkWithTxn(txn)
 			return createLink(req)
 		},
 	)
@@ -168,7 +167,7 @@ func (s *Server) GetLink(req *api.GetLinkRequest) ([]*api.Link, error) {
 	s.logger.Info("Get Link.", fields...)
 	err = s.db.View(
 		func(txn *badger.Txn) error {
-			getLinks := arch.GetLinksWithTxn(txn)
+			getLinks := orchestration.GetLinksWithTxn(txn)
 			links, err = getLinks(req)
 			return err
 		},
