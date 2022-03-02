@@ -49,35 +49,38 @@ func TestCreateWithServer(t *testing.T) {
 			validateStage: func(req *pb.CreateStageRequest) bool {
 				return equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-1",
-						Asset:   "asset-1",
-						Service: "Service1",
-						Rpc:     "Rpc1",
-						Address: "address-1",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-1",
+						Asset:         "asset-1",
+						Service:       "Service1",
+						Rpc:           "Rpc1",
+						Address:       "address-1",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-1",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-2",
-						Asset:   "asset-2",
-						Service: "Service2",
-						Rpc:     "Rpc2",
-						Address: "address-2",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-2",
+						Asset:         "asset-2",
+						Service:       "Service2",
+						Rpc:           "Rpc2",
+						Address:       "address-2",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-1",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-3",
-						Asset:   "asset-3",
-						Service: "Service3",
-						Rpc:     "Rpc3",
-						Address: "",
-						Host:    "host-3",
-						Port:    33333,
+						Name:          "stage-3",
+						Asset:         "asset-3",
+						Service:       "Service3",
+						Rpc:           "Rpc3",
+						Address:       "",
+						Host:          "host-3",
+						Port:          33333,
+						Orchestration: "orchestration-1",
 					},
 					req,
 				)
@@ -85,20 +88,22 @@ func TestCreateWithServer(t *testing.T) {
 			validateLink: func(req *pb.CreateLinkRequest) bool {
 				return equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-2-stage-1",
-						SourceStage: "stage-2",
-						SourceField: "",
-						TargetStage: "stage-1",
-						TargetField: "",
+						Name:          "link-stage-2-stage-1",
+						SourceStage:   "stage-2",
+						SourceField:   "",
+						TargetStage:   "stage-1",
+						TargetField:   "",
+						Orchestration: "orchestration-1",
 					},
 					req,
 				) || equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-1-stage-2",
-						SourceStage: "stage-1",
-						SourceField: "Field1",
-						TargetStage: "stage-2",
-						TargetField: "Field2",
+						Name:          "link-stage-1-stage-2",
+						SourceStage:   "stage-1",
+						SourceField:   "Field1",
+						TargetStage:   "stage-2",
+						TargetField:   "Field2",
+						Orchestration: "orchestration-1",
 					},
 					req,
 				)
@@ -145,46 +150,50 @@ func TestCreateWithServer(t *testing.T) {
 			validateStage: func(req *pb.CreateStageRequest) bool {
 				return equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-4",
-						Asset:   "asset-4",
-						Service: "",
-						Rpc:     "",
-						Address: "",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-4",
+						Asset:         "asset-4",
+						Service:       "",
+						Rpc:           "",
+						Address:       "",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-4",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-5",
-						Asset:   "",
-						Service: "",
-						Rpc:     "",
-						Address: "",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-5",
+						Asset:         "",
+						Service:       "",
+						Rpc:           "",
+						Address:       "",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-3",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-6",
-						Asset:   "asset-6",
-						Service: "Service6",
-						Rpc:     "Rpc6",
-						Address: "stage-address",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-6",
+						Asset:         "asset-6",
+						Service:       "Service6",
+						Rpc:           "Rpc6",
+						Address:       "stage-address",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-3",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-7",
-						Asset:   "asset-7",
-						Service: "Service7",
-						Rpc:     "Rpc7",
-						Address: "",
-						Host:    "stage-host",
-						Port:    7777,
+						Name:          "stage-7",
+						Asset:         "asset-7",
+						Service:       "Service7",
+						Rpc:           "Rpc7",
+						Address:       "",
+						Host:          "stage-host",
+						Port:          7777,
+						Orchestration: "orchestration-4",
 					},
 					req,
 				)
@@ -192,29 +201,32 @@ func TestCreateWithServer(t *testing.T) {
 			validateLink: func(req *pb.CreateLinkRequest) bool {
 				return equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-4-stage-5",
-						SourceStage: "stage-4",
-						SourceField: "",
-						TargetStage: "stage-5",
-						TargetField: "",
+						Name:          "link-stage-4-stage-5",
+						SourceStage:   "stage-4",
+						SourceField:   "",
+						TargetStage:   "stage-5",
+						TargetField:   "",
+						Orchestration: "orchestration-4",
 					},
 					req,
 				) || equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-5-stage-6",
-						SourceStage: "stage-5",
-						SourceField: "",
-						TargetStage: "stage-6",
-						TargetField: "Field1",
+						Name:          "link-stage-5-stage-6",
+						SourceStage:   "stage-5",
+						SourceField:   "",
+						TargetStage:   "stage-6",
+						TargetField:   "Field1",
+						Orchestration: "orchestration-3",
 					},
 					req,
 				) || equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-4-stage-6",
-						SourceStage: "stage-4",
-						SourceField: "",
-						TargetStage: "stage-6",
-						TargetField: "Field2",
+						Name:          "link-stage-4-stage-6",
+						SourceStage:   "stage-4",
+						SourceField:   "",
+						TargetStage:   "stage-6",
+						TargetField:   "Field2",
+						Orchestration: "orchestration-4",
 					},
 					req,
 				)
@@ -254,24 +266,26 @@ func TestCreateWithServer(t *testing.T) {
 			validateStage: func(req *pb.CreateStageRequest) bool {
 				return equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-1",
-						Asset:   "asset-1",
-						Service: "Service1",
-						Rpc:     "Rpc1",
-						Address: "address-1",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-1",
+						Asset:         "asset-1",
+						Service:       "Service1",
+						Rpc:           "Rpc1",
+						Address:       "address-1",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-1",
 					},
 					req,
 				) || equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-2",
-						Asset:   "asset-2",
-						Service: "Service2",
-						Rpc:     "Rpc2",
-						Address: "address-2",
-						Host:    "",
-						Port:    0,
+						Name:          "stage-2",
+						Asset:         "asset-2",
+						Service:       "Service2",
+						Rpc:           "Rpc2",
+						Address:       "address-2",
+						Host:          "",
+						Port:          0,
+						Orchestration: "orchestration-1",
 					},
 					req,
 				)
@@ -279,11 +293,12 @@ func TestCreateWithServer(t *testing.T) {
 			validateLink: func(req *pb.CreateLinkRequest) bool {
 				return equalCreateLinkRequest(
 					&pb.CreateLinkRequest{
-						Name:        "link-stage-2-stage-1",
-						SourceStage: "stage-2",
-						SourceField: "",
-						TargetStage: "stage-1",
-						TargetField: "",
+						Name:          "link-stage-2-stage-1",
+						SourceStage:   "stage-2",
+						SourceField:   "",
+						TargetStage:   "stage-1",
+						TargetField:   "",
+						Orchestration: "orchestration-1",
 					},
 					req,
 				)
@@ -307,10 +322,19 @@ func TestCreateWithServer(t *testing.T) {
 			validateStage: func(req *pb.CreateStageRequest) bool {
 				return equalCreateStageRequest(
 					&pb.CreateStageRequest{
-						Name:    "stage-unknown-asset",
-						Asset:   "unknown-asset",
-						Service: "Service1",
-						Rpc:     "Rpc1",
+						Name:          "stage-unknown-asset",
+						Asset:         "unknown-asset",
+						Service:       "Service1",
+						Rpc:           "Rpc1",
+						Orchestration: "orchestration-3",
+					},
+					req,
+				)
+			},
+			validateOrchestration: func(req *pb.CreateOrchestrationRequest) bool {
+				return equalCreateOrchestrationRequest(
+					&pb.CreateOrchestrationRequest{
+						Name: "orchestration-3",
 					},
 					req,
 				)
@@ -556,7 +580,8 @@ func equalCreateStageRequest(
 		expected.Rpc == actual.Rpc &&
 		expected.Address == actual.Address &&
 		expected.Host == actual.Host &&
-		expected.Port == actual.Port
+		expected.Port == actual.Port &&
+		expected.Orchestration == actual.Orchestration
 }
 
 func equalCreateLinkRequest(
@@ -567,7 +592,8 @@ func equalCreateLinkRequest(
 		expected.SourceStage == actual.SourceStage &&
 		expected.SourceField == actual.SourceField &&
 		expected.TargetStage == actual.TargetStage &&
-		expected.TargetField == actual.TargetField
+		expected.TargetField == actual.TargetField &&
+		expected.Orchestration == actual.Orchestration
 }
 
 func equalCreateOrchestrationRequest(

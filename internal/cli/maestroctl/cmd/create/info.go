@@ -1,4 +1,4 @@
-package resources
+package create
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"

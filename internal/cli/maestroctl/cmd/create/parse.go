@@ -1,4 +1,4 @@
-package resources
+package create
 
 import (
 	"bytes"
@@ -58,29 +58,34 @@ func ParseBytes(data []byte) ([]*Resource, error) {
 		}
 		return nil, errdefs.InvalidArgumentWithMsg(
 			"unmarshal resource: %v",
-			err)
+			err,
+		)
 	}
 }
 
 func typeErrorToError(typeErr *yaml.TypeError) error {
 	unknownRegex := regexp.MustCompile(
-		`line \d+: field (?P<field>[\w\W_]+) not found in type [\w\W_.]+`)
+		`line \d+: field (?P<field>[\w\W_]+) not found in type [\w\W_.]+`,
+	)
 	unknownFields := make([]string, 0)
 	for _, errMsg := range typeErr.Errors {
 		unknownMatch := unknownRegex.FindStringSubmatch(errMsg)
 		if len(unknownMatch) > 0 {
 			unknownFields = append(
 				unknownFields,
-				unknownMatch[unknownRegex.SubexpIndex("field")])
+				unknownMatch[unknownRegex.SubexpIndex("field")],
+			)
 		}
 	}
 	if len(unknownFields) > 0 {
 		sort.Strings(unknownFields)
 		return errdefs.InvalidArgumentWithMsg(
 			"unknown spec fields: %v",
-			strings.Join(unknownFields, ","))
+			strings.Join(unknownFields, ","),
+		)
 	}
 	return errdefs.InvalidArgumentWithMsg(
 		"unmarshal resource: %v",
-		typeErr)
+		typeErr,
+	)
 }

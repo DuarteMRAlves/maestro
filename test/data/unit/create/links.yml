@@ -3,6 +3,7 @@ spec:
   name: link-stage-4-stage-5
   source_stage: stage-4
   target_stage: stage-5
+  orchestration: orchestration-4
 ---
 kind: link
 spec:
@@ -10,6 +11,7 @@ spec:
   source_stage: stage-5
   target_stage: stage-6
   target_field: Field1
+  orchestration: orchestration-3
 ---
 kind: link
 spec:
@@ -17,3 +19,4 @@ spec:
   source_stage: stage-4
   target_stage: stage-6
   target_field: Field2
+  orchestration: orchestration-4

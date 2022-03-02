@@ -2,10 +2,12 @@ kind: stage
 spec:
   name: stage-4
   asset: asset-4
+  orchestration: orchestration-4
 ---
 kind: stage
 spec:
   name: stage-5
+  orchestration: orchestration-3
 ---
 kind: stage
 spec:
@@ -14,6 +16,7 @@ spec:
   service: Service6
   rpc: Rpc6
   address: stage-address
+  orchestration: orchestration-3
 ---
 kind: stage
 spec:
@@ -23,3 +26,4 @@ spec:
   rpc: Rpc7
   host: stage-host
   port: 7777
+  orchestration: orchestration-4

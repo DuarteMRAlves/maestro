@@ -1,6 +1,11 @@
+kind: orchestration
+spec:
+  name: orchestration-3
+---
 kind: stage
 spec:
   name: stage-unknown-asset
   asset: unknown-asset
   service: Service1
   rpc: Rpc1
+  orchestration: orchestration-3
