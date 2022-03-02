@@ -10,12 +10,14 @@ spec:
   service: Service1
   rpc: Rpc1
   address: address-1
+  orchestration: orchestration-1
 ---
 kind: link
 spec:
   name: link-stage-2-stage-1
   source_stage: stage-2
   target_stage: stage-1
+  orchestration: orchestration-1
 ---
 kind: stage
 spec:
@@ -24,6 +26,7 @@ spec:
   service: Service2
   rpc: Rpc2
   address: address-2
+  orchestration: orchestration-1
 ---
 kind: stage
 spec:
@@ -33,6 +36,7 @@ spec:
   rpc: Rpc3
   host: host-3
   port: 33333
+  orchestration: orchestration-1
 ---
 kind: orchestration
 spec:
@@ -50,6 +54,7 @@ spec:
   source_field: Field1
   target_stage: stage-2
   target_field: Field2
+  orchestration: orchestration-1
 ---
 kind: orchestration
 spec:

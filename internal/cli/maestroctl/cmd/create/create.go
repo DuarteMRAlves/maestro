@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/resources"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -86,27 +84,27 @@ func (o *Options) validate() error {
 
 // run executes the Create command
 func (o *Options) run() error {
-	parsed, err := resources.ParseFiles(o.files)
+	parsed, err := ParseFiles(o.files)
 	if err != nil {
 		return err
 	}
-	if err = resources.IsValidKinds(parsed); err != nil {
+	if err = IsValidKinds(parsed); err != nil {
 		return err
 	}
 
-	assets, err := resources.FilterCreateAssetRequests(parsed)
+	assets, err := collectAssetSpecs(parsed)
 	if err != nil {
 		return errdefs.PrependMsg(err, "create")
 	}
-	orchestrations, err := resources.FilterCreateOrchestrationRequests(parsed)
+	orchestrations, err := collectOrchestrationSpecs(parsed)
 	if err != nil {
 		return errdefs.PrependMsg(err, "create")
 	}
-	stages, err := resources.FilterCreateStageRequests(parsed)
+	stages, err := collectStageSpecs(parsed)
 	if err != nil {
 		return errdefs.PrependMsg(err, "create")
 	}
-	links, err := resources.FilterCreateLinkRequests(parsed)
+	links, err := collectLinkSpecs(parsed)
 	if err != nil {
 		return errdefs.PrependMsg(err, "create")
 	}
@@ -116,10 +114,10 @@ func (o *Options) run() error {
 		for _, n := range o.names {
 			seen[n] = false
 		}
-		assets = o.filterAssets(assets, seen)
-		orchestrations = o.filterOrchestrations(orchestrations, seen)
-		stages = o.filterStages(stages, seen)
-		links = o.filterLinks(links, seen)
+		assets = filterAssets(assets, seen)
+		orchestrations = filterOrchestrations(orchestrations, seen)
+		stages = filterStages(stages, seen)
+		links = filterLinks(links, seen)
 		for n, s := range seen {
 			if !s {
 				_, err = fmt.Fprintf(
@@ -167,8 +165,8 @@ func (o *Options) run() error {
 	}
 	for _, req := range stages {
 		pbReq := &pb.CreateStageRequest{
-			Name:          string(req.Name),
-			Asset:         string(req.Asset),
+			Name:          req.Name,
+			Asset:         req.Asset,
 			Service:       req.Service,
 			Rpc:           req.Rpc,
 			Address:       req.Address,
@@ -197,64 +195,55 @@ func (o *Options) run() error {
 	return nil
 }
 
-func (o *Options) filterAssets(
-	requests []*api.CreateAssetRequest,
-	seen map[string]bool,
-) []*api.CreateAssetRequest {
-	filtered := make([]*api.CreateAssetRequest, 0)
-	for _, req := range requests {
-		name := string(req.Name)
+func filterAssets(specs []*AssetSpec, seen map[string]bool) []*AssetSpec {
+	filtered := make([]*AssetSpec, 0)
+	for _, s := range specs {
+		name := s.Name
 		_, exists := seen[name]
 		if exists {
-			filtered = append(filtered, req)
+			filtered = append(filtered, s)
 			seen[name] = true
 		}
 	}
 	return filtered
 }
 
-func (o *Options) filterOrchestrations(
-	requests []*api.CreateOrchestrationRequest,
+func filterOrchestrations(
+	specs []*OrchestrationSpec,
 	seen map[string]bool,
-) []*api.CreateOrchestrationRequest {
-	filtered := make([]*api.CreateOrchestrationRequest, 0)
-	for _, req := range requests {
-		name := string(req.Name)
+) []*OrchestrationSpec {
+	filtered := make([]*OrchestrationSpec, 0)
+	for _, s := range specs {
+		name := s.Name
 		_, exists := seen[name]
 		if exists {
-			filtered = append(filtered, req)
+			filtered = append(filtered, s)
 			seen[name] = true
 		}
 	}
 	return filtered
 }
 
-func (o *Options) filterStages(
-	requests []*api.CreateStageRequest,
-	seen map[string]bool,
-) []*api.CreateStageRequest {
-	filtered := make([]*api.CreateStageRequest, 0)
-	for _, req := range requests {
-		name := string(req.Name)
+func filterStages(specs []*StageSpec, seen map[string]bool) []*StageSpec {
+	filtered := make([]*StageSpec, 0)
+	for _, s := range specs {
+		name := s.Name
 		_, exists := seen[name]
 		if exists {
-			filtered = append(filtered, req)
+			filtered = append(filtered, s)
 			seen[name] = true
 		}
 	}
 	return filtered
 }
 
-func (o *Options) filterLinks(
-	requests []*api.CreateLinkRequest,
-	seen map[string]bool,
-) []*api.CreateLinkRequest {
-	filtered := make([]*api.CreateLinkRequest, 0)
-	for _, req := range requests {
-		name := string(req.Name)
+func filterLinks(specs []*LinkSpec, seen map[string]bool) []*LinkSpec {
+	filtered := make([]*LinkSpec, 0)
+	for _, s := range specs {
+		name := s.Name
 		_, exists := seen[name]
 		if exists {
-			filtered = append(filtered, req)
+			filtered = append(filtered, s)
 			seen[name] = true
 		}
 	}

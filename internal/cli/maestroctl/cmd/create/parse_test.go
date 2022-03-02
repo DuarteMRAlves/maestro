@@ -1,8 +1,7 @@
-package resources
+package create
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -22,6 +21,8 @@ const (
 	linkSourceField = "linkSourceField"
 	linkTargetStage = "linkTargetStage"
 	linkTargetField = "linkTargetField"
+
+	orchestration = "orchestration"
 )
 
 var fileContent = fmt.Sprintf(
@@ -38,6 +39,7 @@ spec:
   asset: %v
   service: %v
   rpc: %v
+  orchestration: %v
 ---
 kind: link
 spec:
@@ -45,42 +47,47 @@ spec:
   source_stage: %v
   source_field: %v
   target_stage: %v
-  target_field: %v`,
+  target_field: %v
+  orchestration: %v`,
 	assetName,
 	assetImage,
 	stageName,
 	stageAsset,
 	stageService,
 	stageRpc,
+	orchestration,
 	linkName,
 	linkSourceStage,
 	linkSourceField,
 	linkTargetStage,
 	linkTargetField,
+	orchestration,
 )
 
 var expected = []*Resource{
 	{
 		Kind: assetKind,
-		Spec: &api.CreateAssetRequest{Name: assetName, Image: assetImage},
+		Spec: &AssetSpec{Name: assetName, Image: assetImage},
 	},
 	{
 		Kind: stageKind,
-		Spec: &api.CreateStageRequest{
-			Name:    stageName,
-			Asset:   stageAsset,
-			Service: stageService,
-			Rpc:     stageRpc,
+		Spec: &StageSpec{
+			Name:          stageName,
+			Asset:         stageAsset,
+			Service:       stageService,
+			Rpc:           stageRpc,
+			Orchestration: orchestration,
 		},
 	},
 	{
 		Kind: linkKind,
-		Spec: &api.CreateLinkRequest{
-			Name:        linkName,
-			SourceStage: linkSourceStage,
-			SourceField: linkSourceField,
-			TargetStage: linkTargetStage,
-			TargetField: linkTargetField,
+		Spec: &LinkSpec{
+			Name:          linkName,
+			SourceStage:   linkSourceStage,
+			SourceField:   linkSourceField,
+			TargetStage:   linkTargetStage,
+			TargetField:   linkTargetField,
+			Orchestration: orchestration,
 		},
 	},
 }
