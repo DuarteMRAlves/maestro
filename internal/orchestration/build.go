@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/dgraph-io/badger/v3"
@@ -79,7 +78,6 @@ func (b *Builder) build() (*Execution, error) {
 	e := &Execution{
 		orchestration: b.orchestration,
 		stages:        b.stageMap,
-		pubSub:        events.NewPubSub(events.DefaultPubSubContext()),
 		logger:        b.logger,
 	}
 	return e, nil

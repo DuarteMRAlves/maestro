@@ -3,7 +3,6 @@ package orchestration
 import (
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -45,10 +44,9 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	errs := make(chan error)
 	done := make(chan struct{})
 	runCfg := &RunCfg{
-		pubSub: &events.MockPubSub{},
-		term:   term,
-		errs:   errs,
-		done:   done,
+		term: term,
+		errs: errs,
+		done: done,
 	}
 	defer close(term)
 	defer close(errs)
@@ -257,10 +255,9 @@ func TestSourceStage_Run(t *testing.T) {
 
 	go st.Run(
 		&RunCfg{
-			pubSub: &events.MockPubSub{},
-			term:   term,
-			done:   done,
-			errs:   errs,
+			term: term,
+			done: done,
+			errs: errs,
 		},
 	)
 
@@ -335,10 +332,9 @@ func TestMergeStage_Run(t *testing.T) {
 
 	go s.Run(
 		&RunCfg{
-			pubSub: &events.MockPubSub{},
-			term:   term,
-			done:   done,
-			errs:   errs,
+			term: term,
+			done: done,
+			errs: errs,
 		},
 	)
 
@@ -446,10 +442,9 @@ func TestSplitStage_Run(t *testing.T) {
 
 	go s.Run(
 		&RunCfg{
-			pubSub: &events.MockPubSub{},
-			term:   term,
-			done:   done,
-			errs:   errs,
+			term: term,
+			done: done,
+			errs: errs,
 		},
 	)
 

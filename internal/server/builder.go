@@ -103,7 +103,6 @@ func activateGrpc(s *Server, b *Builder) {
 		CreateLink:          s.CreateLink,
 		GetLinks:            s.GetLink,
 		StartExecution:      s.StartExecution,
-		AttachExecution:     s.AttachExecution,
 	}
 	apipb.RegisterServices(grpcServer, m)
 	s.grpcServer = grpcServer

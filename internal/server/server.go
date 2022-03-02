@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/events"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/orchestration"
 	"github.com/dgraph-io/badger/v3"
@@ -186,13 +185,4 @@ func (s *Server) StartExecution(req *api.StartExecutionRequest) error {
 			return s.execManager.StartExecution(txn, req)
 		},
 	)
-}
-
-func (s *Server) AttachExecution(req *api.AttachExecutionRequest) (
-	*events.Subscription,
-	error,
-) {
-	fields := logs.FieldsForAttachExecutionRequest(req)
-	s.logger.Info("Attach Execution.", fields...)
-	return s.execManager.AttachExecution(req)
 }
