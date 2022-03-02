@@ -4,10 +4,8 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/events"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 )
 
 type CreateAsset func(*api.CreateAssetRequest) error
@@ -26,10 +24,6 @@ type GetOrchestrations func(*api.GetOrchestrationRequest) (
 )
 
 type StartExecution func(*api.StartExecutionRequest) error
-type AttachExecution func(*api.AttachExecutionRequest) (
-	*events.Subscription,
-	error,
-)
 
 type ServerManagement struct {
 	CreateAsset CreateAsset
@@ -44,8 +38,7 @@ type ServerManagement struct {
 	CreateLink CreateLink
 	GetLinks   GetLinks
 
-	StartExecution  StartExecution
-	AttachExecution AttachExecution
+	StartExecution StartExecution
 }
 
 // RegisterServices registers all grpc services into a grpc server.
@@ -62,8 +55,7 @@ func RegisterServices(s *grpc.Server, m ServerManagement) {
 	}
 	pb.RegisterArchitectureManagementServer(s, archServ)
 	execServ := &executionsService{
-		startExecution:  m.StartExecution,
-		attachExecution: m.AttachExecution,
+		startExecution: m.StartExecution,
 	}
 	pb.RegisterExecutionManagementServer(s, execServ)
 }
@@ -265,8 +257,7 @@ func (s *architectureService) GetLink(
 type executionsService struct {
 	pb.UnimplementedExecutionManagementServer
 
-	startExecution  StartExecution
-	attachExecution AttachExecution
+	startExecution StartExecution
 }
 
 func (s *executionsService) Start(
@@ -284,91 +275,4 @@ func (s *executionsService) Start(
 		return nil, GrpcErrorFromError(err)
 	}
 	return &emptypb.Empty{}, nil
-}
-
-func (s *executionsService) Attach(stream pb.ExecutionManagement_AttachServer) error {
-	received := make(chan *api.AttachExecutionRequest)
-	errs1 := make(chan error)
-	errs2 := make(chan error)
-	errs := make(chan error)
-	go func() {
-		for {
-			pbReq, err := stream.Recv()
-			if err != nil {
-				if err != io.EOF {
-					errs1 <- err
-				}
-				close(received)
-				close(errs1)
-				return
-			}
-			req := &api.AttachExecutionRequest{}
-			UnmarshalAttachExecutionRequest(req, pbReq)
-			received <- req
-		}
-	}()
-	go func() {
-		req, open := <-received
-		if !open {
-			close(errs2)
-			return
-		}
-		sub, err := s.attachExecution(req)
-		if err != nil {
-			errs2 <- GrpcErrorFromError(err)
-			close(errs2)
-			return
-		}
-		for _, event := range sub.Hist {
-			pbEvent := &pb.Event{}
-			MarshalEvent(pbEvent, event)
-			err = stream.Send(pbEvent)
-			if err != nil {
-				errs2 <- err
-				close(errs2)
-				return
-			}
-		}
-		for {
-			select {
-			case <-received:
-				// TODO: Unsubscribe
-				close(errs2)
-				return
-			case event := <-sub.Future:
-				pbEvent := &pb.Event{}
-				MarshalEvent(pbEvent, event)
-				err = stream.Send(pbEvent)
-				if err != nil {
-					errs2 <- err
-					close(errs2)
-					return
-				}
-			}
-		}
-	}()
-	go func() {
-		defer close(errs)
-		for errs1 != nil && errs2 != nil {
-			select {
-			case err, open := <-errs1:
-				if !open {
-					errs1 = nil
-					continue
-				}
-				errs <- err
-			case err, open := <-errs2:
-				if !open {
-					errs2 = nil
-					continue
-				}
-				errs <- err
-			}
-		}
-	}()
-	err, open := <-errs
-	if !open {
-		return nil
-	}
-	return err
 }
