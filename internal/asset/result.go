@@ -2,12 +2,6 @@ package asset
 
 import "github.com/DuarteMRAlves/maestro/internal/domain"
 
-type Result interface {
-	IsError() bool
-	Unwrap() domain.Asset
-	Error() error
-}
-
 type success struct {
 	domain.Asset
 }
@@ -28,12 +22,12 @@ func (e errResult) Unwrap() domain.Asset { panic("Asset not available in error")
 
 func (e errResult) Error() error { return e.error }
 
-func NewResult(a domain.Asset) Result { return success{a} }
+func NewResult(a domain.Asset) domain.AssetResult { return success{a} }
 
-func NewErrResult(err error) Result { return errResult{err} }
+func NewErrResult(err error) domain.AssetResult { return errResult{err} }
 
-func Bind(f func(domain.Asset) Result) func(Result) Result {
-	return func(resultAsset Result) Result {
+func Bind(f func(domain.Asset) domain.AssetResult) func(domain.AssetResult) domain.AssetResult {
+	return func(resultAsset domain.AssetResult) domain.AssetResult {
 		if resultAsset.IsError() {
 			return resultAsset
 		}
@@ -41,16 +35,16 @@ func Bind(f func(domain.Asset) Result) func(Result) Result {
 	}
 }
 
-func BindNoErr(f func(domain.Asset) domain.Asset) func(Result) Result {
+func BindNoErr(f func(domain.Asset) domain.Asset) func(domain.AssetResult) domain.AssetResult {
 	return Bind(
-		func(d domain.Asset) Result {
+		func(d domain.Asset) domain.AssetResult {
 			return NewResult(f(d))
 		},
 	)
 }
 
-func Compose(funcs ...func(Result) Result) func(Result) Result {
-	return func(r Result) Result {
+func Compose(funcs ...func(domain.AssetResult) domain.AssetResult) func(domain.AssetResult) domain.AssetResult {
+	return func(r domain.AssetResult) domain.AssetResult {
 		for _, f := range funcs {
 			r = f(r)
 		}

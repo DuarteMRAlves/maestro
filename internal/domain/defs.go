@@ -4,9 +4,14 @@ type AssetName interface{ Unwrap() string }
 
 type Image interface{ Unwrap() string }
 
+type OptionalImage interface {
+	Unwrap() Image
+	Present() bool
+}
+
 type Asset interface {
 	Name() AssetName
-	Image() Image
+	Image() OptionalImage
 }
 
 type StageName interface{ Unwrap() string }
