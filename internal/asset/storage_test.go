@@ -18,7 +18,7 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 			name: "default asset",
 			asset: &asset{
 				name:  assetName("some-name"),
-				image: image(""),
+				image: emptyImage{},
 			},
 			expected: []byte("some-name;"),
 		},
@@ -26,7 +26,7 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 			name: "non default stage",
 			asset: &asset{
 				name:  assetName("some-name"),
-				image: image("some-image"),
+				image: presentImage{image("some-image")},
 			},
 			expected: []byte("some-name;some-image"),
 		},
@@ -79,7 +79,7 @@ func TestTxnHelper_LoadAsset(t *testing.T) {
 			stored: []byte("some-name;"),
 			expected: &asset{
 				name:  assetName("some-name"),
-				image: image(""),
+				image: emptyImage{},
 			},
 		},
 		{
@@ -87,7 +87,7 @@ func TestTxnHelper_LoadAsset(t *testing.T) {
 			stored: []byte("some-name;some-image"),
 			expected: &asset{
 				name:  assetName("some-name"),
-				image: image("some-image"),
+				image: presentImage{image("some-image")},
 			},
 		},
 	}
@@ -127,9 +127,16 @@ func TestTxnHelper_LoadAsset(t *testing.T) {
 				)
 				assert.Equal(
 					t,
-					test.expected.Image().Unwrap(),
-					loaded.Image().Unwrap(),
+					test.expected.Image().Present(),
+					loaded.Image().Present(),
 				)
+				if test.expected.Image().Present() {
+					assert.Equal(
+						t,
+						test.expected.Image().Unwrap().Unwrap(),
+						loaded.Image().Unwrap().Unwrap(),
+					)
+				}
 			},
 		)
 	}
