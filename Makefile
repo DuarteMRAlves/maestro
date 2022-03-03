@@ -38,6 +38,8 @@ help:
 	@echo "  pb/api          generates the .pb.go files for the grpc api."
 	@echo "  pb/test         generates the .pb.go files for the grpc tests."
 	@echo "  pb/clean        removes all generated .pb.go files."
+	@echo
+	@echo "  ci-cd/build     builds the docker image for the build workflow."
 
 
 .PHONY: docker/build
@@ -71,6 +73,10 @@ pb/test:
 
 pb/clean:
 	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go
+
+.PHONY: ci-cd/build
+ci-cd/build:
+	docker build -t duartemralves/maestro.build-workflow:latest -f .github/workflows/build.Dockerfile --platform linux/amd64  .
 
 clean: pb/clean
 	rm -rf target
