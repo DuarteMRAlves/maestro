@@ -58,7 +58,8 @@ go/test/unit: pb/api pb/test
 
 .PHONE: go/go/test/e2e
 go/test/e2e: pb/api pb/test
-	go test ./test/e2e
+	@# go test ./test/e2e
+	@echo "Skipping end2end tests"
 
 .PHONY: pb
 pb: pb/api pb/test

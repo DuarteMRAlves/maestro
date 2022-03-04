@@ -1,8 +1,8 @@
 package asset
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,7 +11,7 @@ import (
 func TestTxnHelper_SaveAsset(t *testing.T) {
 	tests := []struct {
 		name     string
-		asset    domain.Asset
+		asset    types.Asset
 		expected []byte
 	}{
 		{
@@ -51,7 +51,7 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						item, err := txn.Get(kv.AssetKey(test.asset.Name()))
+						item, err := txn.Get(kvKey(test.asset.Name()))
 						if err != nil {
 							return err
 						}
@@ -71,7 +71,7 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 func TestTxnHelper_LoadAsset(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected domain.Asset
+		expected types.Asset
 		stored   []byte
 	}{
 		{
@@ -95,14 +95,14 @@ func TestTxnHelper_LoadAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded domain.Asset
+				var loaded types.Asset
 				db := kv.NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
-							kv.AssetKey(test.expected.Name()),
+							kvKey(test.expected.Name()),
 							test.stored,
 						)
 					},

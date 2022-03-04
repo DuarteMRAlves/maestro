@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	util2 "github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/util"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -44,17 +44,17 @@ If a name is provided, only that asset is displayed.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 		},
@@ -68,7 +68,7 @@ If a name is provided, only that asset is displayed.`,
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
 func (o *AssetOpts) addFlags(cmd *cobra.Command) {
-	util.AddMaestroFlag(cmd, &o.maestro)
+	util2.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.image, "image", "", "image name to search")
 }
@@ -109,7 +109,7 @@ func (o *AssetOpts) run() error {
 
 	stream, err := stub.GetAsset(ctx, req)
 	if err != nil {
-		return util.ErrorFromGrpcError(err)
+		return util2.ErrorFromGrpcError(err)
 	}
 	assets := make([]*pb.Asset, 0)
 	for {
@@ -118,7 +118,7 @@ func (o *AssetOpts) run() error {
 			break
 		}
 		if err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 		assets = append(assets, a)
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	util2 "github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/util"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"io"
@@ -38,17 +38,17 @@ func NewCmdCreate() *cobra.Command {
 			var err error
 			err = o.complete(cmd, args)
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 			}
 		},
 	}
@@ -61,8 +61,8 @@ func NewCmdCreate() *cobra.Command {
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // parse the command line arguments and run the command
 func (o *Options) addFlags(cmd *cobra.Command) {
-	util.AddMaestroFlag(cmd, &o.maestro)
-	util.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
+	util2.AddMaestroFlag(cmd, &o.maestro)
+	util2.AddFilesFlag(cmd, &o.files, "files to create one or more resources")
 }
 
 // complete fills any remaining information that is required to execute the
@@ -152,7 +152,7 @@ func (o *Options) run() error {
 			Image: req.Image,
 		}
 		if _, err = archStub.CreateAsset(ctx, a); err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range orchestrations {
@@ -160,7 +160,7 @@ func (o *Options) run() error {
 			Name: string(req.Name),
 		}
 		if _, err = archStub.CreateOrchestration(ctx, pbReq); err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range stages {
@@ -175,7 +175,7 @@ func (o *Options) run() error {
 			Orchestration: string(req.Orchestration),
 		}
 		if _, err = archStub.CreateStage(ctx, pbReq); err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 	}
 	for _, req := range links {
@@ -188,7 +188,7 @@ func (o *Options) run() error {
 			Orchestration: string(req.Orchestration),
 		}
 		if _, err = archStub.CreateLink(ctx, l); err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 	}
 

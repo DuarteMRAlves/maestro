@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/api/pb"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	util2 "github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/util"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"io"
@@ -38,17 +38,17 @@ If no execution is specified, the default one is used.`,
 			var err error
 			err = o.complete(cmd, args)
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.validate(args)
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 				return
 			}
 			err = o.run()
 			if err != nil {
-				util.WriteOut(cmd, util.DisplayMsgFromError(err))
+				util2.WriteOut(cmd, util2.DisplayMsgFromError(err))
 			}
 		},
 	}
@@ -61,7 +61,7 @@ If no execution is specified, the default one is used.`,
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // parse the command line arguments and run the command
 func (o *Options) addFlags(cmd *cobra.Command) {
-	util.AddMaestroFlag(cmd, &o.maestro)
+	util2.AddMaestroFlag(cmd, &o.maestro)
 }
 
 // complete fills any remaining information that is required to execute the
@@ -94,16 +94,16 @@ func (o *Options) run() error {
 	stub := pb.NewExecutionManagementClient(conn)
 	stream, err := stub.Attach(context.Background())
 	if err != nil {
-		return util.ErrorFromGrpcError(err)
+		return util2.ErrorFromGrpcError(err)
 	}
 	err = stream.Send(&pb.AttachExecutionRequest{Orchestration: o.name})
 	if err != nil {
-		return util.ErrorFromGrpcError(err)
+		return util2.ErrorFromGrpcError(err)
 	}
 	for {
 		event, err := stream.Recv()
 		if err != nil {
-			return util.ErrorFromGrpcError(err)
+			return util2.ErrorFromGrpcError(err)
 		}
 		_, err = fmt.Fprintf(
 			o.outWriter,

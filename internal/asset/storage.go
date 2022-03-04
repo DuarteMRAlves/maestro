@@ -2,15 +2,15 @@ package asset
 
 import (
 	"bytes"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
-	return func(a domain.Asset) domain.AssetResult {
+func StoreAssetWithTxn(txn *badger.Txn) func(types.Asset) types.AssetResult {
+	return func(a types.Asset) types.AssetResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -18,7 +18,7 @@ func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
 		buf.WriteString(a.Name().Unwrap())
 		buf.WriteByte(';')
 		buf.WriteString(imageToString(a.Image()))
-		err = txn.Set(kv.AssetKey(a.Name()), buf.Bytes())
+		err = txn.Set(kvKey(a.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("storage error: %v", err)
 			return NewErrResult(err)
@@ -27,14 +27,14 @@ func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
 	}
 }
 
-func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult {
-	return func(name domain.AssetName) domain.AssetResult {
+func LoadAssetWithTxn(txn *badger.Txn) func(types.AssetName) types.AssetResult {
+	return func(name types.AssetName) types.AssetResult {
 		var (
 			item *badger.Item
 			data []byte
 			err  error
 		)
-		item, err = txn.Get(kv.AssetKey(name))
+		item, err = txn.Get(kvKey(name))
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
 			return NewErrResult(err)
@@ -67,7 +67,7 @@ func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult
 	}
 }
 
-func imageToString(img domain.OptionalImage) string {
+func imageToString(img types.OptionalImage) string {
 	if img.Present() {
 		return img.Unwrap().Unwrap()
 	} else {
@@ -75,7 +75,7 @@ func imageToString(img domain.OptionalImage) string {
 	}
 }
 
-func stringToImage(data string) (domain.OptionalImage, error) {
+func stringToImage(data string) (types.OptionalImage, error) {
 	if data == "" {
 		return NewEmptyImage(), nil
 	} else {
@@ -85,4 +85,8 @@ func stringToImage(data string) (domain.OptionalImage, error) {
 		}
 		return NewPresentImage(img), nil
 	}
+}
+
+func kvKey(name types.AssetName) []byte {
+	return []byte(fmt.Sprintf("asset:%s", name.Unwrap()))
 }

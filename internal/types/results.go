@@ -1,4 +1,4 @@
-package domain
+package types
 
 type AssetResult interface {
 	IsError() bool
