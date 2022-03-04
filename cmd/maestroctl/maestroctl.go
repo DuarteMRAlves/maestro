@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/cli/maestroctl/cmd"
+	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd"
 )
 
 func main() {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
@@ -420,8 +419,4 @@ func linkKey(name api.LinkName) []byte {
 
 func assetKey(name api.AssetName) []byte {
 	return []byte(fmt.Sprintf("%s%s", assetPrefix, name))
-}
-
-func AssetKey(name domain.AssetName) []byte {
-	return []byte(fmt.Sprintf("%s%s", assetPrefix, name.Unwrap()))
 }
