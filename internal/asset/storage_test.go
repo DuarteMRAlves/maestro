@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestTxnHelper_SaveAsset(t *testing.T) {
+func TestStoreAssetWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		asset    types.Asset
@@ -68,7 +68,7 @@ func TestTxnHelper_SaveAsset(t *testing.T) {
 	}
 }
 
-func TestTxnHelper_LoadAsset(t *testing.T) {
+func TestLoadAssetWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected types.Asset

@@ -19,9 +19,8 @@ type StageName interface{ Unwrap() string }
 type Service interface{ Unwrap() string }
 
 type OptionalService interface {
-	Unwrap() (Service, bool)
+	Unwrap() Service
 	Present() bool
-	Empty() bool
 }
 
 type Method interface{ Unwrap() string }
@@ -29,16 +28,19 @@ type Method interface{ Unwrap() string }
 type OptionalMethod interface {
 	Unwrap() Method
 	Present() bool
-	Empty() bool
 }
 
 type Address interface{ Unwrap() string }
 
-type Stage interface {
-	Name() StageName
+type MethodContext interface {
+	Address() Address
 	Service() OptionalService
 	Method() OptionalMethod
-	Address() Address
+}
+
+type Stage interface {
+	Name() StageName
+	MethodContext() MethodContext
 }
 
 type LinkName interface{ Unwrap() string }
