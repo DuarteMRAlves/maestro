@@ -5,3 +5,9 @@ type AssetResult interface {
 	Unwrap() Asset
 	Error() error
 }
+
+type StageResult interface {
+	IsError() bool
+	Unwrap() Stage
+	Error() error
+}
