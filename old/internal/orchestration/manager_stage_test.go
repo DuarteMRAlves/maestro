@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -96,12 +96,12 @@ func testCreateStage(
 		stored        api.Stage
 		orchestration api.Orchestration
 	)
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err = db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			a := &api.Asset{Name: api.AssetName("asset-0")}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
@@ -124,7 +124,7 @@ func testCreateStage(
 	assert.NilError(t, err, "create error not nil")
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			return helper.LoadStage(&stored, req.Name)
 		},
 	)
@@ -144,7 +144,7 @@ func testCreateStage(
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			return helper.LoadOrchestration(
 				&orchestration,
 				stored.Orchestration,
@@ -264,12 +264,12 @@ func testCreateStageError(
 	assertErrTypeFn func(error) bool,
 	expectedErrMsg string,
 ) {
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err := db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			a := &api.Asset{Name: api.AssetName("asset-0")}
 			if err := helper.SaveAsset(a); err != nil {
 				return err
@@ -532,7 +532,7 @@ func TestManager_GetMatchingStages(t *testing.T) {
 					received []*api.Stage
 				)
 
-				db := kv.NewTestDb(t)
+				db := storage.NewTestDb(t)
 				defer db.Close()
 
 				for _, s := range test.stored {
@@ -593,7 +593,7 @@ func testStage(num int, phase api.StagePhase) *api.Stage {
 }
 
 func saveStageAndDependencies(txn *badger.Txn, s *api.Stage) error {
-	helper := kv.NewTxnHelper(txn)
+	helper := storage.NewTxnHelper(txn)
 	if !helper.ContainsOrchestration(s.Orchestration) {
 		err := helper.SaveOrchestration(
 			orchestrationForName(

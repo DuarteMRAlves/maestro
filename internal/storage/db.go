@@ -1,4 +1,4 @@
-package kv
+package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"

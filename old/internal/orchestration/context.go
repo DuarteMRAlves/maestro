@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 )
 
 // CreateStageContext offers a context for the creation of a stage.
@@ -12,7 +12,7 @@ type CreateStageContext struct {
 	// req contains the received request. This request should not be changed.
 	req *api.CreateStageRequest
 
-	txnHelper *kv.TxnHelper
+	txnHelper *storage.TxnHelper
 
 	orchestration   *api.Orchestration
 	inferredAddress string
@@ -20,7 +20,7 @@ type CreateStageContext struct {
 
 func newCreateStageContext(
 	req *api.CreateStageRequest,
-	txnHelper *kv.TxnHelper,
+	txnHelper *storage.TxnHelper,
 ) *CreateStageContext {
 	return &CreateStageContext{
 		req:       req,
@@ -116,12 +116,12 @@ type CreateLinkContext struct {
 	source        *api.Stage
 	target        *api.Stage
 
-	txnHelper *kv.TxnHelper
+	txnHelper *storage.TxnHelper
 }
 
 func newCreateLinkContext(
 	req *api.CreateLinkRequest,
-	txnHelper *kv.TxnHelper,
+	txnHelper *storage.TxnHelper,
 ) *CreateLinkContext {
 	return &CreateLinkContext{
 		req:       req,

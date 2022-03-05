@@ -3,7 +3,7 @@ package orchestration
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"sync"
@@ -62,7 +62,7 @@ func CreateOrchestrationWithTxn(txn *badger.Txn) CreateOrchestration {
 			Stages: []api.StageName{},
 			Links:  []api.LinkName{},
 		}
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		return helper.SaveOrchestration(o)
 	}
 }
@@ -80,7 +80,7 @@ func GetOrchestrationsWithTxn(txn *badger.Txn) GetOrchestrations {
 		filter := buildOrchestrationQueryFilter(req)
 		res := make([]*api.Orchestration, 0)
 
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		err = helper.IterOrchestrations(
 			func(o *api.Orchestration) error {
 				if filter(o) {
@@ -90,7 +90,7 @@ func GetOrchestrationsWithTxn(txn *badger.Txn) GetOrchestrations {
 				}
 				return nil
 			},
-			kv.DefaultIterOpts(),
+			storage.DefaultIterOpts(),
 		)
 		if err != nil {
 			return nil, err
@@ -102,7 +102,7 @@ func GetOrchestrationsWithTxn(txn *badger.Txn) GetOrchestrations {
 func CreateStageWithTxn(txn *badger.Txn) CreateStage {
 	return func(req *api.CreateStageRequest) error {
 		var err error
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		ctx := newCreateStageContext(req, helper)
 
 		if err = ctx.validateAndComplete(); err != nil {
@@ -122,7 +122,7 @@ func GetStagesWithTxn(txn *badger.Txn) GetStages {
 		filter := buildStageQueryFilter(req)
 		res := make([]*api.Stage, 0)
 
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		err = helper.IterStages(
 			func(s *api.Stage) error {
 				if filter(s) {
@@ -132,7 +132,7 @@ func GetStagesWithTxn(txn *badger.Txn) GetStages {
 				}
 				return nil
 			},
-			kv.DefaultIterOpts(),
+			storage.DefaultIterOpts(),
 		)
 		if err != nil {
 			return nil, err
@@ -144,7 +144,7 @@ func GetStagesWithTxn(txn *badger.Txn) GetStages {
 func CreateLinkWithTxn(txn *badger.Txn) CreateLink {
 	return func(req *api.CreateLinkRequest) error {
 		var err error
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		ctx := newCreateLinkContext(req, helper)
 
 		if err = ctx.validateAndComplete(); err != nil {
@@ -164,7 +164,7 @@ func GetLinksWithTxn(txn *badger.Txn) GetLinks {
 		filter := buildLinkQueryFilter(req)
 		res := make([]*api.Link, 0)
 
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		err = helper.IterLinks(
 			func(l *api.Link) error {
 				if filter(l) {
@@ -174,7 +174,7 @@ func GetLinksWithTxn(txn *badger.Txn) GetLinks {
 				}
 				return nil
 			},
-			kv.DefaultIterOpts(),
+			storage.DefaultIterOpts(),
 		)
 		if err != nil {
 			return nil, err
@@ -190,7 +190,7 @@ func CreateAssetWithTxn(txn *badger.Txn) CreateAsset {
 			return err
 		}
 		asset := &api.Asset{Name: req.Name, Image: req.Image}
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		if err = helper.SaveAsset(asset); err != nil {
 			return errdefs.InternalWithMsg("persist error: %v", err)
 		}
@@ -208,7 +208,7 @@ func GetAssetsWithTxn(txn *badger.Txn) GetAssets {
 		filter := buildAssetQueryFilter(req)
 		res := make([]*api.Asset, 0)
 
-		helper := kv.NewTxnHelper(txn)
+		helper := storage.NewTxnHelper(txn)
 		err = helper.IterAssets(
 			func(a *api.Asset) error {
 				if filter(a) {
@@ -218,7 +218,7 @@ func GetAssetsWithTxn(txn *badger.Txn) GetAssets {
 				}
 				return nil
 			},
-			kv.DefaultIterOpts(),
+			storage.DefaultIterOpts(),
 		)
 		if err != nil {
 			return nil, err
@@ -285,7 +285,7 @@ func (m *manager) setRunning(
 	name api.OrchestrationName,
 ) error {
 	var err error
-	helper := kv.NewTxnHelper(txn)
+	helper := storage.NewTxnHelper(txn)
 	o := &api.Orchestration{}
 	err = helper.LoadOrchestration(o, name)
 	if err != nil {

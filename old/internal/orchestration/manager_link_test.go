@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -73,12 +73,12 @@ func testCreateLink(
 		stored        api.Link
 		orchestration api.Orchestration
 	)
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err := db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
 				return err
@@ -113,7 +113,7 @@ func testCreateLink(
 	assert.NilError(t, err, "create error not nil")
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			return helper.LoadLink(&stored, req.Name)
 		},
 	)
@@ -127,7 +127,7 @@ func testCreateLink(
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			return helper.LoadOrchestration(
 				&orchestration,
 				stored.Orchestration,
@@ -310,14 +310,14 @@ func testCreateLinkError(
 	assertErrTypeFn func(error) bool,
 	expectedErrMsg string,
 ) {
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	// Prepare tests
 	// Number 0 has an orchestration and correct stages created to be used.
 	err := db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 
 			o := &api.Orchestration{Name: api.OrchestrationName("orchestration-0")}
 			if err := helper.SaveOrchestration(o); err != nil {
@@ -571,7 +571,7 @@ func TestManager_GetMatchingLinks(t *testing.T) {
 					received []*api.Link
 				)
 
-				db := kv.NewTestDb(t)
+				db := storage.NewTestDb(t)
 				defer db.Close()
 
 				for _, l := range test.stored {
@@ -631,7 +631,7 @@ func testLink(num int) *api.Link {
 }
 
 func saveLinkAndDependencies(txn *badger.Txn, l *api.Link) error {
-	helper := kv.NewTxnHelper(txn)
+	helper := storage.NewTxnHelper(txn)
 	if !helper.ContainsOrchestration(l.Orchestration) {
 		err := helper.SaveOrchestration(
 			orchestrationForName(

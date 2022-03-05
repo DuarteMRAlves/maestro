@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"net"
@@ -42,7 +42,7 @@ func NewCmdRoot() *cobra.Command {
 				zap.String("value", lvl.String()),
 			)
 
-			db, err := kv.NewDb()
+			db, err := storage.NewDb()
 			// Should never happen
 			if err != nil {
 				panic(err)

@@ -1,15 +1,16 @@
-package stage
+package storage
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreWithTxn(txn *badger.Txn) func(domain.Stage) domain.StageResult {
+func SaveStageWithTxn(txn *badger.Txn) create.SaveStage {
 	return func(s domain.Stage) domain.StageResult {
 		var (
 			buf bytes.Buffer
@@ -29,7 +30,7 @@ func StoreWithTxn(txn *badger.Txn) func(domain.Stage) domain.StageResult {
 	}
 }
 
-func LoadWithTxn(txn *badger.Txn) func(domain.StageName) domain.StageResult {
+func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 	return func(name domain.StageName) domain.StageResult {
 		var (
 			item *badger.Item

@@ -1,15 +1,16 @@
-package asset
+package storage
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
+func SaveAssetWithTxn(txn *badger.Txn) create.SaveAsset {
 	return func(a domain.Asset) domain.AssetResult {
 		var (
 			buf bytes.Buffer
@@ -18,7 +19,7 @@ func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
 		buf.WriteString(a.Name().Unwrap())
 		buf.WriteByte(';')
 		buf.WriteString(imageToString(a.Image()))
-		err = txn.Set(kvKey(a.Name()), buf.Bytes())
+		err = txn.Set(assetKey(a.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("storage error: %v", err)
 			return domain.ErrAsset(err)
@@ -27,14 +28,14 @@ func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
 	}
 }
 
-func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult {
+func LoadAssetWithTxn(txn *badger.Txn) create.LoadAsset {
 	return func(name domain.AssetName) domain.AssetResult {
 		var (
 			item *badger.Item
 			data []byte
 			err  error
 		)
-		item, err = txn.Get(kvKey(name))
+		item, err = txn.Get(assetKey(name))
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
 			return domain.ErrAsset(err)
@@ -92,6 +93,6 @@ func stringToImage(data string) (domain.OptionalImage, error) {
 	}
 }
 
-func kvKey(name domain.AssetName) []byte {
+func assetKey(name domain.AssetName) []byte {
 	return []byte(fmt.Sprintf("asset:%s", name.Unwrap()))
 }

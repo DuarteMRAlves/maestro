@@ -1,15 +1,13 @@
-package stage
+package storage
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestStoreWithTxn(t *testing.T) {
+func TestSaveStageWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		stage    domain.Stage
@@ -32,12 +30,12 @@ func TestStoreWithTxn(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
-						store := StoreWithTxn(txn)
+						store := SaveStageWithTxn(txn)
 						result := store(test.stage)
 						return result.Error()
 					},
@@ -63,7 +61,7 @@ func TestStoreWithTxn(t *testing.T) {
 	}
 }
 
-func TestLoadWithTxn(t *testing.T) {
+func TestLoadStageWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected domain.Stage
@@ -86,7 +84,7 @@ func TestLoadWithTxn(t *testing.T) {
 			func(t *testing.T) {
 				var loaded domain.Stage
 
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
@@ -98,7 +96,7 @@ func TestLoadWithTxn(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						load := LoadWithTxn(txn)
+						load := LoadStageWithTxn(txn)
 						res := load(test.expected.Name())
 						if !res.IsError() {
 							loaded = res.Unwrap()
@@ -134,28 +132,4 @@ func TestLoadWithTxn(t *testing.T) {
 			},
 		)
 	}
-}
-
-func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
-	var (
-		serviceOpt = domain.NewEmptyService()
-		methodOpt  = domain.NewEmptyMethod()
-	)
-	stageName, err := domain.NewStageName(name)
-	assert.NilError(t, err, "create name for stage %s", name)
-
-	addr, err := domain.NewAddress(fmt.Sprintf("address-%s", name))
-	assert.NilError(t, err, "create address for stage %s", name)
-
-	if !requiredOnly {
-		service, err := domain.NewService(fmt.Sprintf("service-%s", name))
-		assert.NilError(t, err, "create service for stage %s", name)
-		serviceOpt = domain.NewPresentService(service)
-		method, err := domain.NewMethod(fmt.Sprintf("method-%s", name))
-		assert.NilError(t, err, "create method for stage %s", name)
-		methodOpt = domain.NewPresentMethod(method)
-	}
-
-	ctx := domain.NewMethodContext(addr, serviceOpt, methodOpt)
-	return domain.NewStage(stageName, ctx)
 }

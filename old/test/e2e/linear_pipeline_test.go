@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/server"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/create"
 	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/start"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
@@ -205,7 +205,7 @@ func buildMaestro(t *testing.T) *server.Server {
 	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.InfoLevel))
 	assert.NilError(t, err, "init logger")
 
-	db, err := kv.NewDb()
+	db, err := storage.NewDb()
 	assert.NilError(t, err, "init db")
 
 	s, err := server.NewBuilder().
