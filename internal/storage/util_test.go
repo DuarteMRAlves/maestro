@@ -75,16 +75,32 @@ func createLink(
 	return domain.NewLink(name, sourceEndpoint, targetEndpoint)
 }
 
-func assertEqualStage(
+func createOrchestration(
 	t *testing.T,
-	expected domain.Stage,
-	actual domain.Stage,
-) {
-	assert.Equal(
-		t,
-		expected.Name().Unwrap(),
-		actual.Name().Unwrap(),
-	)
+	orchName string,
+	stageNames, linkNames []string,
+	requiredOnly bool,
+) domain.Orchestration {
+	// The ith link is from the ith stage to the (i+1)th stage
+	assert.Equal(t, len(stageNames), len(linkNames)+1)
+	name, err := domain.NewOrchestrationName(orchName)
+	assert.NilError(t, err, "create name for orchestration %s", orchName)
+
+	stages := make([]domain.Stage, 0, len(stageNames))
+	for _, n := range stageNames {
+		stages = append(stages, createStage(t, n, requiredOnly))
+	}
+	links := make([]domain.Link, 0, len(linkNames))
+	for i, n := range linkNames {
+		l := createLink(t, n, stageNames[i], stageNames[i+1], requiredOnly)
+		links = append(links, l)
+	}
+
+	return domain.NewOrchestration(name, stages, links)
+}
+
+func assertEqualStage(t *testing.T, expected, actual domain.Stage) {
+	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assert.Equal(
 		t,
 		expected.MethodContext().Address().Unwrap(),
@@ -103,5 +119,22 @@ func assertEqualStage(
 			expected.MethodContext().Method().Unwrap().Unwrap(),
 			actual.MethodContext().Method().Unwrap().Unwrap(),
 		)
+	}
+}
+
+func assertEqualLink(t *testing.T, expected, actual domain.Link) {
+	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
+	assertEqualLinkEndpoint(t, expected.Source(), actual.Source())
+	assertEqualLinkEndpoint(t, expected.Target(), actual.Target())
+}
+
+func assertEqualLinkEndpoint(
+	t *testing.T,
+	expected, actual domain.LinkEndpoint,
+) {
+	assertEqualStage(t, expected.Stage(), actual.Stage())
+	assert.Equal(t, expected.Field().Present(), actual.Field().Present())
+	if expected.Field().Present() {
+		assert.Equal(t, expected.Field().Unwrap(), actual.Field().Unwrap())
 	}
 }

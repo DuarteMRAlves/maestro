@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func SaveWithTxn(txn *badger.Txn) create.SaveLink {
+func SaveLinkWithTxn(txn *badger.Txn) create.SaveLink {
 	return func(l domain.Link) domain.LinkResult {
 		var (
 			buf bytes.Buffer
