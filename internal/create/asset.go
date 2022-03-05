@@ -7,14 +7,15 @@ func RequestToResult(req AssetRequest) domain.AssetResult {
 	if err != nil {
 		return domain.ErrAsset(err)
 	}
-	if !req.Image.Present() {
-		return domain.SomeAsset(domain.NewAssetWithoutImage(name))
+	imgOpt := domain.NewEmptyImage()
+	if req.Image.Present() {
+		img, err := domain.NewImage(req.Image.Unwrap())
+		if err != nil {
+			return domain.ErrAsset(err)
+		}
+		imgOpt = domain.NewPresentImage(img)
 	}
-	img, err := domain.NewImage(req.Image.Unwrap())
-	if err != nil {
-		return domain.ErrAsset(err)
-	}
-	return domain.SomeAsset(domain.NewAssetWithImage(name, img))
+	return domain.SomeAsset(domain.NewAsset(name, imgOpt))
 }
 
 func ResultToResponse(res domain.AssetResult) AssetResponse {

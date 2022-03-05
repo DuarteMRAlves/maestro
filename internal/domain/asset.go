@@ -68,24 +68,17 @@ type asset struct {
 	image OptionalImage
 }
 
-func NewAssetWithImage(name AssetName, image Image) Asset {
-	return asset{
-		name:  name,
-		image: presentImage{image},
-	}
-}
-
-func NewAssetWithoutImage(name AssetName) Asset {
-	return asset{
-		name:  name,
-		image: emptyImage{},
-	}
-}
-
 func (a asset) Name() AssetName {
 	return a.name
 }
 
 func (a asset) Image() OptionalImage {
 	return a.image
+}
+
+func NewAsset(name AssetName, image OptionalImage) Asset {
+	return asset{
+		name:  name,
+		image: image,
+	}
 }

@@ -14,13 +14,13 @@ func createAsset(
 ) domain.Asset {
 	name, err := domain.NewAssetName(assetName)
 	assert.NilError(t, err, "create name for asset %s", assetName)
-
+	imgOpt := domain.NewEmptyImage()
 	if !requiredOnly {
-		image, err := domain.NewImage("some-image")
+		img, err := domain.NewImage("some-image")
 		assert.NilError(t, err, "create image for asset %s", assetName)
-		return domain.NewAssetWithImage(name, image)
+		imgOpt = domain.NewPresentImage(img)
 	}
-	return domain.NewAssetWithoutImage(name)
+	return domain.NewAsset(name, imgOpt)
 }
 
 func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {

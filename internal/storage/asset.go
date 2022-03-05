@@ -60,16 +60,7 @@ func LoadAssetWithTxn(txn *badger.Txn) create.LoadAsset {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
 			return domain.ErrAsset(err)
 		}
-		if img.Present() {
-			return domain.SomeAsset(
-				domain.NewAssetWithImage(
-					name,
-					img.Unwrap(),
-				),
-			)
-		} else {
-			return domain.SomeAsset(domain.NewAssetWithoutImage(name))
-		}
+		return domain.SomeAsset(domain.NewAsset(name, img))
 	}
 }
 
