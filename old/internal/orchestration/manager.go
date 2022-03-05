@@ -40,10 +40,6 @@ type CreateLink func(*api.CreateLinkRequest) error
 // If a field is empty, then all values for that field are accepted.
 type GetLinks func(*api.GetLinkRequest) ([]*api.Link, error)
 
-// CreateAsset creates a new asset with the specified config. It returns an
-// error if the asset is not created and nil otherwise.
-type CreateAsset func(*api.CreateAssetRequest) error
-
 // GetAssets retrieves stored assets that match the received req.
 // The req is an asset with the fields that the returned stage should
 // have. If a field is empty, then all values for that field are accepted.
@@ -180,21 +176,6 @@ func GetLinksWithTxn(txn *badger.Txn) GetLinks {
 			return nil, err
 		}
 		return res, nil
-	}
-}
-
-func CreateAssetWithTxn(txn *badger.Txn) CreateAsset {
-	return func(req *api.CreateAssetRequest) error {
-		var err error
-		if err = validateCreateAssetRequest(txn, req); err != nil {
-			return err
-		}
-		asset := &api.Asset{Name: req.Name, Image: req.Image}
-		helper := storage.NewTxnHelper(txn)
-		if err = helper.SaveAsset(asset); err != nil {
-			return errdefs.InternalWithMsg("persist error: %v", err)
-		}
-		return nil
 	}
 }
 
