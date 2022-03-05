@@ -11,3 +11,9 @@ type StageResult interface {
 	Unwrap() Stage
 	Error() error
 }
+
+type LinkResult interface {
+	IsError() bool
+	Unwrap() Link
+	Error() error
+}

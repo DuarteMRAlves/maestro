@@ -50,11 +50,10 @@ type MessageField interface{ Unwrap() string }
 type OptionalMessageField interface {
 	Unwrap() MessageField
 	Present() bool
-	Empty() bool
 }
 
 type LinkEndpoint interface {
-	Stage() StageName
+	Stage() Stage
 	Field() OptionalMessageField
 }
 
