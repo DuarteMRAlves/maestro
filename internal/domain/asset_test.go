@@ -1,4 +1,4 @@
-package asset
+package domain
 
 import (
 	"fmt"

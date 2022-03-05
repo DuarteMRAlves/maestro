@@ -15,19 +15,13 @@ func TestStoreAssetWithTxn(t *testing.T) {
 		expected []byte
 	}{
 		{
-			name: "default asset",
-			asset: &asset{
-				name:  assetName("some-name"),
-				image: emptyImage{},
-			},
+			name:     "default asset",
+			asset:    createAsset(t, "some-name", true),
 			expected: []byte("some-name;"),
 		},
 		{
-			name: "non default stage",
-			asset: &asset{
-				name:  assetName("some-name"),
-				image: presentImage{image("some-image")},
-			},
+			name:     "non default stage",
+			asset:    createAsset(t, "some-name", false),
 			expected: []byte("some-name;some-image"),
 		},
 	}
@@ -75,20 +69,14 @@ func TestLoadAssetWithTxn(t *testing.T) {
 		stored   []byte
 	}{
 		{
-			name:   "default asset",
-			stored: []byte("some-name;"),
-			expected: &asset{
-				name:  assetName("some-name"),
-				image: emptyImage{},
-			},
+			name:     "default asset",
+			stored:   []byte("some-name;"),
+			expected: createAsset(t, "some-name", true),
 		},
 		{
-			name:   "non default stage",
-			stored: []byte("some-name;some-image"),
-			expected: &asset{
-				name:  assetName("some-name"),
-				image: presentImage{image("some-image")},
-			},
+			name:     "non default stage",
+			stored:   []byte("some-name;some-image"),
+			expected: createAsset(t, "some-name", false),
 		},
 	}
 	for _, test := range tests {
@@ -140,4 +128,20 @@ func TestLoadAssetWithTxn(t *testing.T) {
 			},
 		)
 	}
+}
+
+func createAsset(
+	t *testing.T,
+	assetName string,
+	requiredOnly bool,
+) domain.Asset {
+	name, err := domain.NewAssetName(assetName)
+	assert.NilError(t, err, "create name for asset %s", assetName)
+
+	if !requiredOnly {
+		image, err := domain.NewImage("some-image")
+		assert.NilError(t, err, "create image for asset %s", assetName)
+		return domain.NewAssetWithImage(name, image)
+	}
+	return domain.NewAssetWithoutImage(name)
 }

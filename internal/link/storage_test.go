@@ -17,33 +17,13 @@ func TestStoreWithTxn(t *testing.T) {
 		expected []byte
 	}{
 		{
-			name: "required fields",
-			link: &link{
-				name: linkName("some-name"),
-				source: &linkEndpoint{
-					stage: createStage(t, "source", true),
-					field: emptyMessageField{},
-				},
-				target: &linkEndpoint{
-					stage: createStage(t, "target", true),
-					field: emptyMessageField{},
-				},
-			},
+			name:     "required fields",
+			link:     createLink(t, "some-name", "source", "target", true),
 			expected: []byte("source;;target;"),
 		},
 		{
-			name: "all fields",
-			link: &link{
-				name: linkName("some-name"),
-				source: &linkEndpoint{
-					stage: createStage(t, "source", false),
-					field: presentMessageField{messageField("source-field")},
-				},
-				target: &linkEndpoint{
-					stage: createStage(t, "target", false),
-					field: presentMessageField{messageField("target-field")},
-				},
-			},
+			name:     "all fields",
+			link:     createLink(t, "some-name", "source", "target", false),
 			expected: []byte("source;source-field;target;target-field"),
 		},
 	}
@@ -111,34 +91,14 @@ func TestLoadWithTxn(t *testing.T) {
 		stored   []byte
 	}{
 		{
-			name: "required fields",
-			expected: &link{
-				name: linkName("some-name"),
-				source: &linkEndpoint{
-					stage: createStage(t, "source", true),
-					field: emptyMessageField{},
-				},
-				target: &linkEndpoint{
-					stage: createStage(t, "target", true),
-					field: emptyMessageField{},
-				},
-			},
-			stored: []byte("source;;target;"),
+			name:     "required fields",
+			expected: createLink(t, "some-name", "source", "target", true),
+			stored:   []byte("source;;target;"),
 		},
 		{
-			name: "all fields",
-			expected: &link{
-				name: linkName("some-name"),
-				source: &linkEndpoint{
-					stage: createStage(t, "source", false),
-					field: presentMessageField{messageField("source-field")},
-				},
-				target: &linkEndpoint{
-					stage: createStage(t, "target", false),
-					field: presentMessageField{messageField("target-field")},
-				},
-			},
-			stored: []byte("source;source-field;target;target-field"),
+			name:     "all fields",
+			expected: createLink(t, "some-name", "source", "target", false),
+			stored:   []byte("source;source-field;target;target-field"),
 		},
 	}
 	for _, test := range tests {
@@ -215,28 +175,56 @@ func TestLoadWithTxn(t *testing.T) {
 	}
 }
 
+func createLink(
+	t *testing.T,
+	linkName, sourceName, targetName string,
+	requiredOnly bool,
+) domain.Link {
+	name, err := domain.NewLinkName(linkName)
+	assert.NilError(t, err, "create name for link %s", linkName)
+
+	source := createStage(t, sourceName, requiredOnly)
+	target := createStage(t, targetName, requiredOnly)
+	sourceFieldOpt := domain.NewEmptyMessageField()
+	targetFieldOpt := domain.NewEmptyMessageField()
+
+	if !requiredOnly {
+		sourceField, err := domain.NewMessageField("source-field")
+		assert.NilError(t, err, "create source field for link %s", linkName)
+		sourceFieldOpt = domain.NewPresentMessageField(sourceField)
+		targetField, err := domain.NewMessageField("target-field")
+		assert.NilError(t, err, "create target field for link %s", linkName)
+		targetFieldOpt = domain.NewPresentMessageField(targetField)
+	}
+
+	sourceEndpoint := domain.NewLinkEndpoint(source, sourceFieldOpt)
+	targetEndpoint := domain.NewLinkEndpoint(target, targetFieldOpt)
+
+	return domain.NewLink(name, sourceEndpoint, targetEndpoint)
+}
+
 func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
 	var (
-		serviceOpt = stage.NewEmptyService()
-		methodOpt  = stage.NewEmptyMethod()
+		serviceOpt = domain.NewEmptyService()
+		methodOpt  = domain.NewEmptyMethod()
 	)
-	stageName, err := stage.NewStageName(name)
+	stageName, err := domain.NewStageName(name)
 	assert.NilError(t, err, "create name for stage %s", name)
 
-	addr, err := stage.NewAddress(fmt.Sprintf("address-%s", name))
+	addr, err := domain.NewAddress(fmt.Sprintf("address-%s", name))
 	assert.NilError(t, err, "create address for stage %s", name)
 
 	if !requiredOnly {
-		service, err := stage.NewService(fmt.Sprintf("service-%s", name))
+		service, err := domain.NewService(fmt.Sprintf("service-%s", name))
 		assert.NilError(t, err, "create service for stage %s", name)
-		serviceOpt = stage.NewPresentService(service)
-		method, err := stage.NewMethod(fmt.Sprintf("method-%s", name))
+		serviceOpt = domain.NewPresentService(service)
+		method, err := domain.NewMethod(fmt.Sprintf("method-%s", name))
 		assert.NilError(t, err, "create method for stage %s", name)
-		methodOpt = stage.NewPresentMethod(method)
+		methodOpt = domain.NewPresentMethod(method)
 	}
 
-	ctx := stage.NewMethodContext(addr, serviceOpt, methodOpt)
-	return stage.NewStage(stageName, ctx)
+	ctx := domain.NewMethodContext(addr, serviceOpt, methodOpt)
+	return domain.NewStage(stageName, ctx)
 }
 
 func assertEqualStage(

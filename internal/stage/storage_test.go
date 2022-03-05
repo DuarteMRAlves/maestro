@@ -1,6 +1,7 @@
 package stage
 
 import (
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
@@ -15,28 +16,14 @@ func TestStoreWithTxn(t *testing.T) {
 		expected []byte
 	}{
 		{
-			name: "required fields",
-			stage: stage{
-				name: stageName("some-name"),
-				methodCtx: methodContext{
-					address: address("some-address"),
-					service: emptyService{},
-					method:  emptyMethod{},
-				},
-			},
-			expected: []byte("some-address;;"),
+			name:     "required fields",
+			stage:    createStage(t, "some-name", true),
+			expected: []byte("address-some-name;;"),
 		},
 		{
-			name: "all fields",
-			stage: stage{
-				name: stageName("some-name"),
-				methodCtx: methodContext{
-					address: address("some-address"),
-					service: presentService{service("some-service")},
-					method:  presentMethod{method("some-method")},
-				},
-			},
-			expected: []byte("some-address;some-service;some-method"),
+			name:     "all fields",
+			stage:    createStage(t, "some-name", false),
+			expected: []byte("address-some-name;service-some-name;method-some-name"),
 		},
 	}
 	for _, test := range tests {
@@ -83,28 +70,14 @@ func TestLoadWithTxn(t *testing.T) {
 		stored   []byte
 	}{
 		{
-			name: "required fields",
-			expected: stage{
-				name: stageName("some-name"),
-				methodCtx: methodContext{
-					address: address("some-address"),
-					service: emptyService{},
-					method:  emptyMethod{},
-				},
-			},
-			stored: []byte("some-address;;"),
+			name:     "required fields",
+			expected: createStage(t, "some-name", true),
+			stored:   []byte("address-some-name;;"),
 		},
 		{
-			name: "all fields",
-			expected: stage{
-				name: stageName("some-name"),
-				methodCtx: methodContext{
-					address: address("some-address"),
-					service: presentService{service("some-service")},
-					method:  presentMethod{method("some-method")},
-				},
-			},
-			stored: []byte("some-address;some-service;some-method"),
+			name:     "all fields",
+			expected: createStage(t, "some-name", false),
+			stored:   []byte("address-some-name;service-some-name;method-some-name"),
 		},
 	}
 	for _, test := range tests {
@@ -161,4 +134,28 @@ func TestLoadWithTxn(t *testing.T) {
 			},
 		)
 	}
+}
+
+func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
+	var (
+		serviceOpt = domain.NewEmptyService()
+		methodOpt  = domain.NewEmptyMethod()
+	)
+	stageName, err := domain.NewStageName(name)
+	assert.NilError(t, err, "create name for stage %s", name)
+
+	addr, err := domain.NewAddress(fmt.Sprintf("address-%s", name))
+	assert.NilError(t, err, "create address for stage %s", name)
+
+	if !requiredOnly {
+		service, err := domain.NewService(fmt.Sprintf("service-%s", name))
+		assert.NilError(t, err, "create service for stage %s", name)
+		serviceOpt = domain.NewPresentService(service)
+		method, err := domain.NewMethod(fmt.Sprintf("method-%s", name))
+		assert.NilError(t, err, "create method for stage %s", name)
+		methodOpt = domain.NewPresentMethod(method)
+	}
+
+	ctx := domain.NewMethodContext(addr, serviceOpt, methodOpt)
+	return domain.NewStage(stageName, ctx)
 }

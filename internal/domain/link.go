@@ -1,16 +1,15 @@
-package link
+package domain
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
-var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
+var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type linkName string
 
-func NewLinkName(name string) (domain.LinkName, error) {
+func NewLinkName(name string) (LinkName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
 	}
@@ -25,7 +24,7 @@ func (s linkName) Unwrap() string {
 }
 
 func isValidLinkName(name string) bool {
-	return nameRegExp.MatchString(name)
+	return linkNameRegExp.MatchString(name)
 }
 
 type messageField string
@@ -34,52 +33,52 @@ func (m messageField) Unwrap() string {
 	return string(m)
 }
 
-func NewMessageField(field string) (domain.MessageField, error) {
+func NewMessageField(field string) (MessageField, error) {
 	if len(field) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty field")
 	}
 	return messageField(field), nil
 }
 
-type presentMessageField struct{ domain.MessageField }
+type presentMessageField struct{ MessageField }
 
-func (p presentMessageField) Unwrap() domain.MessageField { return p.MessageField }
+func (p presentMessageField) Unwrap() MessageField { return p.MessageField }
 
 func (p presentMessageField) Present() bool { return true }
 
 type emptyMessageField struct{}
 
-func (e emptyMessageField) Unwrap() domain.MessageField {
+func (e emptyMessageField) Unwrap() MessageField {
 	panic("Message Field not available in an empty optional")
 }
 
 func (e emptyMessageField) Present() bool { return false }
 
-func NewPresentMessageField(m domain.MessageField) domain.OptionalMessageField {
+func NewPresentMessageField(m MessageField) OptionalMessageField {
 	return presentMessageField{m}
 }
 
-func NewEmptyMessageField() domain.OptionalMessageField {
+func NewEmptyMessageField() OptionalMessageField {
 	return emptyMessageField{}
 }
 
 type linkEndpoint struct {
-	stage domain.Stage
-	field domain.OptionalMessageField
+	stage Stage
+	field OptionalMessageField
 }
 
-func (e *linkEndpoint) Stage() domain.Stage {
+func (e *linkEndpoint) Stage() Stage {
 	return e.stage
 }
 
-func (e *linkEndpoint) Field() domain.OptionalMessageField {
+func (e *linkEndpoint) Field() OptionalMessageField {
 	return e.field
 }
 
 func NewLinkEndpoint(
-	stage domain.Stage,
-	field domain.OptionalMessageField,
-) domain.LinkEndpoint {
+	stage Stage,
+	field OptionalMessageField,
+) LinkEndpoint {
 	return &linkEndpoint{
 		stage: stage,
 		field: field,
@@ -87,28 +86,28 @@ func NewLinkEndpoint(
 }
 
 type link struct {
-	name   domain.LinkName
-	source domain.LinkEndpoint
-	target domain.LinkEndpoint
+	name   LinkName
+	source LinkEndpoint
+	target LinkEndpoint
 }
 
-func (l *link) Name() domain.LinkName {
+func (l *link) Name() LinkName {
 	return l.name
 }
 
-func (l *link) Source() domain.LinkEndpoint {
+func (l *link) Source() LinkEndpoint {
 	return l.source
 }
 
-func (l *link) Target() domain.LinkEndpoint {
+func (l *link) Target() LinkEndpoint {
 	return l.target
 }
 
 func NewLink(
-	name domain.LinkName,
-	source domain.LinkEndpoint,
-	target domain.LinkEndpoint,
-) domain.Link {
+	name LinkName,
+	source LinkEndpoint,
+	target LinkEndpoint,
+) Link {
 	return &link{
 		name:   name,
 		source: source,

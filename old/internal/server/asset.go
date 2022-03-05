@@ -12,7 +12,7 @@ func CreateAssetWithTxn(txn *badger.Txn) CreateAsset {
 	return func(req domain.CreateAssetRequest) domain.CreateAssetResponse {
 		var res domain.AssetResult
 
-		storageFunc := asset.Bind(asset.StoreAssetWithTxn(txn))
+		storageFunc := domain.Bind(asset.StoreAssetWithTxn(txn))
 
 		res = asset.RequestToResult(req)
 		res = storageFunc(res)

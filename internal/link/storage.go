@@ -25,21 +25,21 @@ func StoreWithTxn(txn *badger.Txn) func(domain.Link) domain.LinkResult {
 		if sourceRes.IsError() {
 			err = sourceRes.Error()
 			err = errdefs.PrependMsg(err, "store link: %s", l.Name())
-			return Err(err)
+			return domain.ErrLink(err)
 		}
 		targetRes := storeStage(targetStage)
 		if targetRes.IsError() {
 			err = sourceRes.Error()
 			err = errdefs.PrependMsg(err, "store link %s", l.Name())
-			return Err(err)
+			return domain.ErrLink(err)
 		}
 		linkPersistenceInfoToBuf(&buf, l)
 		err = txn.Set(kvKey(l.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("store link %s: %v", l.Name(), err)
-			return Err(err)
+			return domain.ErrLink(err)
 		}
-		return Some(l)
+		return domain.SomeLink(l)
 	}
 }
 
@@ -52,16 +52,16 @@ func LoadWithTxn(txn *badger.Txn) func(domain.LinkName) domain.LinkResult {
 		)
 		item, err = txn.Get(kvKey(name))
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load link %s", name))
+			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
 		}
 		data, err = item.ValueCopy(nil)
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load link %s", name))
+			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
 		}
 		buf := bytes.NewBuffer(data)
 		splits := strings.Split(buf.String(), ";")
 		if len(splits) != 4 {
-			return Err(
+			return domain.ErrLink(
 				errdefs.InternalWithMsg(
 					"invalid format: expected 4 semi-colon separated values",
 				),
@@ -70,13 +70,13 @@ func LoadWithTxn(txn *badger.Txn) func(domain.LinkName) domain.LinkResult {
 		loadStage := stage.LoadWithTxn(txn)
 		source, err := loadEndpoint(loadStage, splits[0], splits[1])
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load link %s", name))
+			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
 		}
 		target, err := loadEndpoint(loadStage, splits[2], splits[3])
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load link %s", name))
+			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
 		}
-		return Some(NewLink(name, source, target))
+		return domain.SomeLink(domain.NewLink(name, source, target))
 	}
 }
 
@@ -99,7 +99,7 @@ func loadEndpoint(
 	nameData string,
 	fieldData string,
 ) (domain.LinkEndpoint, error) {
-	name, err := stage.NewStageName(nameData)
+	name, err := domain.NewStageName(nameData)
 	if err != nil {
 		return nil, err
 	}
@@ -112,18 +112,18 @@ func loadEndpoint(
 	if err != nil {
 		return nil, err
 	}
-	return NewLinkEndpoint(stage, field), nil
+	return domain.NewLinkEndpoint(stage, field), nil
 }
 
 func loadField(data string) (domain.OptionalMessageField, error) {
 	if data == "" {
-		return NewEmptyMessageField(), nil
+		return domain.NewEmptyMessageField(), nil
 	} else {
-		f, err := NewMessageField(data)
+		f, err := domain.NewMessageField(data)
 		if err != nil {
 			return nil, err
 		}
-		return NewPresentMessageField(f), nil
+		return domain.NewPresentMessageField(f), nil
 	}
 }
 

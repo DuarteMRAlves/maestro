@@ -5,18 +5,18 @@ import (
 )
 
 func RequestToResult(req domain.CreateAssetRequest) domain.AssetResult {
-	name, err := NewAssetName(req.Name)
+	name, err := domain.NewAssetName(req.Name)
 	if err != nil {
-		return NewErrResult(err)
+		return domain.ErrAsset(err)
 	}
 	if !req.Image.Present() {
-		return NewResult(NewAssetWithoutImage(name))
+		return domain.SomeAsset(domain.NewAssetWithoutImage(name))
 	}
-	img, err := NewImage(req.Image.Unwrap())
+	img, err := domain.NewImage(req.Image.Unwrap())
 	if err != nil {
-		return NewErrResult(err)
+		return domain.ErrAsset(err)
 	}
-	return NewResult(NewAssetWithImage(name, img))
+	return domain.SomeAsset(domain.NewAssetWithImage(name, img))
 }
 
 func ResultToResponse(res domain.AssetResult) domain.CreateAssetResponse {
