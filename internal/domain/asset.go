@@ -10,13 +10,13 @@ var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 type assetName string
 
 func NewAssetName(name string) (AssetName, error) {
-	if isValidResourceName(name) {
+	if isValidAssetName(name) {
 		return assetName(name), nil
 	}
 	return nil, errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
 }
 
-func isValidResourceName(name string) bool {
+func isValidAssetName(name string) bool {
 	return assetNameRegExp.MatchString(name)
 }
 
