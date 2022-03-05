@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/asset"
+	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/dgraph-io/badger/v3"
 )
@@ -14,8 +15,8 @@ func CreateAssetWithTxn(txn *badger.Txn) CreateAsset {
 
 		storageFunc := domain.Bind(asset.StoreAssetWithTxn(txn))
 
-		res = asset.RequestToResult(req)
+		res = create.RequestToResult(req)
 		res = storageFunc(res)
-		return asset.ResultToResponse(res)
+		return create.ResultToResponse(res)
 	}
 }

@@ -1,10 +1,8 @@
-package asset
+package create
 
-import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
-)
+import "github.com/DuarteMRAlves/maestro/internal/domain"
 
-func RequestToResult(req domain.CreateAssetRequest) domain.AssetResult {
+func RequestToResult(req AssetRequest) domain.AssetResult {
 	name, err := domain.NewAssetName(req.Name)
 	if err != nil {
 		return domain.ErrAsset(err)
@@ -19,12 +17,12 @@ func RequestToResult(req domain.CreateAssetRequest) domain.AssetResult {
 	return domain.SomeAsset(domain.NewAssetWithImage(name, img))
 }
 
-func ResultToResponse(res domain.AssetResult) domain.CreateAssetResponse {
+func ResultToResponse(res domain.AssetResult) AssetResponse {
 	var errOpt domain.OptionalError
 	if res.IsError() {
 		errOpt = domain.NewPresentError(res.Error())
 	} else {
 		errOpt = domain.NewEmptyError()
 	}
-	return domain.CreateAssetResponse{Err: errOpt}
+	return AssetResponse{Err: errOpt}
 }
