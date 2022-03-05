@@ -33,7 +33,7 @@ func LoadWithTxn(txn *badger.Txn) func(types.StageName) types.StageResult {
 		)
 		item, err = txn.Get(kvKey(name))
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load asset %s", name))
+			return Err(errdefs.PrependMsg(err, "load stage %s", name))
 		}
 		data, err = item.ValueCopy(nil)
 		buf := bytes.NewBuffer(data)

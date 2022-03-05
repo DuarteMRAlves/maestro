@@ -10,7 +10,7 @@ var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type stageName string
 
-func NewStageName(name string) (types.AssetName, error) {
+func NewStageName(name string) (types.StageName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
 	}
