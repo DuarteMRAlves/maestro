@@ -2,7 +2,7 @@ package orchestration
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -16,7 +16,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 	)
 	req := &api.CreateOrchestrationRequest{Name: name}
 
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err = db.Update(
@@ -29,7 +29,7 @@ func TestManager_CreateOrchestration(t *testing.T) {
 
 	err = db.View(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			return helper.LoadOrchestration(&orchestration, name)
 		},
 	)
@@ -203,13 +203,13 @@ func TestManager_GetMatchingOrchestrations(t *testing.T) {
 					received []*api.Orchestration
 				)
 
-				db := kv.NewTestDb(t)
+				db := storage.NewTestDb(t)
 				defer db.Close()
 
 				for _, o := range test.stored {
 					err = db.Update(
 						func(txn *badger.Txn) error {
-							helper := kv.NewTxnHelper(txn)
+							helper := storage.NewTxnHelper(txn)
 							return helper.SaveOrchestration(o)
 						},
 					)

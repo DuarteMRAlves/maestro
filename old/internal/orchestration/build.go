@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -25,13 +25,13 @@ type Builder struct {
 	inputs            map[api.StageName]*InputDesc
 	outputs           map[api.StageName]*OutputDesc
 
-	txnHelper *kv.TxnHelper
+	txnHelper *storage.TxnHelper
 }
 
 func newBuilder(txn *badger.Txn) *Builder {
 	return &Builder{
 		stageMap:  NewStageMap(),
-		txnHelper: kv.NewTxnHelper(txn),
+		txnHelper: storage.NewTxnHelper(txn),
 	}
 }
 

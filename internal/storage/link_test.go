@@ -1,16 +1,14 @@
-package link
+package storage
 
 import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestStoreWithTxn(t *testing.T) {
+func TestSaveLinkWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		link     domain.Link
@@ -37,12 +35,12 @@ func TestStoreWithTxn(t *testing.T) {
 					loadedTarget domain.Stage
 				)
 
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
-						store := StoreWithTxn(txn)
+						store := SaveWithTxn(txn)
 						result := store(test.link)
 						return result.Error()
 					},
@@ -51,7 +49,7 @@ func TestStoreWithTxn(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						linkItem, err := txn.Get(kvKey(test.link.Name()))
+						linkItem, err := txn.Get(linkKey(test.link.Name()))
 						if err != nil {
 							return err
 						}
@@ -59,7 +57,7 @@ func TestStoreWithTxn(t *testing.T) {
 						if err != nil {
 							return err
 						}
-						loadStage := stage.LoadWithTxn(txn)
+						loadStage := LoadStageWithTxn(txn)
 						sourceRes := loadStage(test.link.Source().Stage().Name())
 						if sourceRes.IsError() {
 							return sourceRes.Error()
@@ -84,7 +82,7 @@ func TestStoreWithTxn(t *testing.T) {
 	}
 }
 
-func TestLoadWithTxn(t *testing.T) {
+func TestLoadLinkWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected domain.Link
@@ -107,12 +105,12 @@ func TestLoadWithTxn(t *testing.T) {
 			func(t *testing.T) {
 				var loaded domain.Link
 
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
-						storeStage := stage.StoreWithTxn(txn)
+						storeStage := SaveStageWithTxn(txn)
 						res := storeStage(test.expected.Source().Stage())
 						if res.IsError() {
 							return res.Error()
@@ -121,13 +119,16 @@ func TestLoadWithTxn(t *testing.T) {
 						if res.IsError() {
 							return res.Error()
 						}
-						return txn.Set(kvKey(test.expected.Name()), test.stored)
+						return txn.Set(
+							linkKey(test.expected.Name()),
+							test.stored,
+						)
 					},
 				)
 				assert.NilError(t, err, "save error")
 				err = db.View(
 					func(txn *badger.Txn) error {
-						load := LoadWithTxn(txn)
+						load := LoadLinkWithTxn(txn)
 						res := load(test.expected.Name())
 						if !res.IsError() {
 							loaded = res.Unwrap()
@@ -171,89 +172,6 @@ func TestLoadWithTxn(t *testing.T) {
 					assert.Assert(t, !loaded.Target().Field().Present())
 				}
 			},
-		)
-	}
-}
-
-func createLink(
-	t *testing.T,
-	linkName, sourceName, targetName string,
-	requiredOnly bool,
-) domain.Link {
-	name, err := domain.NewLinkName(linkName)
-	assert.NilError(t, err, "create name for link %s", linkName)
-
-	source := createStage(t, sourceName, requiredOnly)
-	target := createStage(t, targetName, requiredOnly)
-	sourceFieldOpt := domain.NewEmptyMessageField()
-	targetFieldOpt := domain.NewEmptyMessageField()
-
-	if !requiredOnly {
-		sourceField, err := domain.NewMessageField("source-field")
-		assert.NilError(t, err, "create source field for link %s", linkName)
-		sourceFieldOpt = domain.NewPresentMessageField(sourceField)
-		targetField, err := domain.NewMessageField("target-field")
-		assert.NilError(t, err, "create target field for link %s", linkName)
-		targetFieldOpt = domain.NewPresentMessageField(targetField)
-	}
-
-	sourceEndpoint := domain.NewLinkEndpoint(source, sourceFieldOpt)
-	targetEndpoint := domain.NewLinkEndpoint(target, targetFieldOpt)
-
-	return domain.NewLink(name, sourceEndpoint, targetEndpoint)
-}
-
-func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
-	var (
-		serviceOpt = domain.NewEmptyService()
-		methodOpt  = domain.NewEmptyMethod()
-	)
-	stageName, err := domain.NewStageName(name)
-	assert.NilError(t, err, "create name for stage %s", name)
-
-	addr, err := domain.NewAddress(fmt.Sprintf("address-%s", name))
-	assert.NilError(t, err, "create address for stage %s", name)
-
-	if !requiredOnly {
-		service, err := domain.NewService(fmt.Sprintf("service-%s", name))
-		assert.NilError(t, err, "create service for stage %s", name)
-		serviceOpt = domain.NewPresentService(service)
-		method, err := domain.NewMethod(fmt.Sprintf("method-%s", name))
-		assert.NilError(t, err, "create method for stage %s", name)
-		methodOpt = domain.NewPresentMethod(method)
-	}
-
-	ctx := domain.NewMethodContext(addr, serviceOpt, methodOpt)
-	return domain.NewStage(stageName, ctx)
-}
-
-func assertEqualStage(
-	t *testing.T,
-	expected domain.Stage,
-	actual domain.Stage,
-) {
-	assert.Equal(
-		t,
-		expected.Name().Unwrap(),
-		actual.Name().Unwrap(),
-	)
-	assert.Equal(
-		t,
-		expected.MethodContext().Address().Unwrap(),
-		actual.MethodContext().Address().Unwrap(),
-	)
-	if expected.MethodContext().Service().Present() {
-		assert.Equal(
-			t,
-			expected.MethodContext().Service().Unwrap().Unwrap(),
-			actual.MethodContext().Service().Unwrap().Unwrap(),
-		)
-	}
-	if expected.MethodContext().Method().Present() {
-		assert.Equal(
-			t,
-			expected.MethodContext().Method().Unwrap().Unwrap(),
-			actual.MethodContext().Method().Unwrap().Unwrap(),
 		)
 	}
 }

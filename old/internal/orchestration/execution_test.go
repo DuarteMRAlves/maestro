@@ -3,7 +3,7 @@ package orchestration
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -48,7 +48,7 @@ func TestExecution_Linear(t *testing.T) {
 	sinkServer := startLinearSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()
 
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err = initLinearDb(db, sourceAddr, transformAddr, sinkAddr)
@@ -233,7 +233,7 @@ func initLinearDb(
 
 	return db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			err = helper.SaveOrchestration(o)
 			if err != nil {
 				return err
@@ -294,7 +294,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	sinkServer := startSplitAndMergeSink(t, sinkLis, max, &collect, done)
 	defer sinkServer.Stop()
 
-	db := kv.NewTestDb(t)
+	db := storage.NewTestDb(t)
 	defer db.Close()
 
 	err = initSplitAndMergeDb(db, sourceAddr, transformAddr, sinkAddr)
@@ -494,7 +494,7 @@ func initSplitAndMergeDb(
 
 	return db.Update(
 		func(txn *badger.Txn) error {
-			helper := kv.NewTxnHelper(txn)
+			helper := storage.NewTxnHelper(txn)
 			err = helper.SaveOrchestration(o)
 			if err != nil {
 				return err

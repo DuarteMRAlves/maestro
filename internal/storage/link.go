@@ -1,22 +1,22 @@
-package link
+package storage
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/stage"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreWithTxn(txn *badger.Txn) func(domain.Link) domain.LinkResult {
+func SaveWithTxn(txn *badger.Txn) create.SaveLink {
 	return func(l domain.Link) domain.LinkResult {
 		var (
 			buf bytes.Buffer
 			err error
 		)
-		storeStage := stage.StoreWithTxn(txn)
+		storeStage := SaveStageWithTxn(txn)
 
 		sourceStage := l.Source().Stage()
 		targetStage := l.Target().Stage()
@@ -34,7 +34,7 @@ func StoreWithTxn(txn *badger.Txn) func(domain.Link) domain.LinkResult {
 			return domain.ErrLink(err)
 		}
 		linkPersistenceInfoToBuf(&buf, l)
-		err = txn.Set(kvKey(l.Name()), buf.Bytes())
+		err = txn.Set(linkKey(l.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("store link %s: %v", l.Name(), err)
 			return domain.ErrLink(err)
@@ -43,14 +43,14 @@ func StoreWithTxn(txn *badger.Txn) func(domain.Link) domain.LinkResult {
 	}
 }
 
-func LoadWithTxn(txn *badger.Txn) func(domain.LinkName) domain.LinkResult {
+func LoadLinkWithTxn(txn *badger.Txn) create.LoadLink {
 	return func(name domain.LinkName) domain.LinkResult {
 		var (
 			item *badger.Item
 			data []byte
 			err  error
 		)
-		item, err = txn.Get(kvKey(name))
+		item, err = txn.Get(linkKey(name))
 		if err != nil {
 			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
 		}
@@ -67,7 +67,7 @@ func LoadWithTxn(txn *badger.Txn) func(domain.LinkName) domain.LinkResult {
 				),
 			)
 		}
-		loadStage := stage.LoadWithTxn(txn)
+		loadStage := LoadStageWithTxn(txn)
 		source, err := loadEndpoint(loadStage, splits[0], splits[1])
 		if err != nil {
 			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
@@ -127,6 +127,6 @@ func loadField(data string) (domain.OptionalMessageField, error) {
 	}
 }
 
-func kvKey(name domain.LinkName) []byte {
+func linkKey(name domain.LinkName) []byte {
 	return []byte(fmt.Sprintf("link:%s", name.Unwrap()))
 }

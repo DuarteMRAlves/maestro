@@ -3,7 +3,7 @@ package orchestration
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
+	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -20,7 +20,7 @@ func validateCreateOrchestrationConfig(
 	if !IsValidOrchestrationName(req.Name) {
 		return errdefs.InvalidArgumentWithMsg("invalid name '%v'", req.Name)
 	}
-	helper := kv.NewTxnHelper(txn)
+	helper := storage.NewTxnHelper(txn)
 	if helper.ContainsOrchestration(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"orchestration '%s' already exists",
@@ -45,7 +45,7 @@ func validateCreateAssetRequest(
 			req.Name,
 		)
 	}
-	helper := kv.NewTxnHelper(txn)
+	helper := storage.NewTxnHelper(txn)
 	if helper.ContainsAsset(req.Name) {
 		return errdefs.AlreadyExistsWithMsg(
 			"asset '%v' already exists",

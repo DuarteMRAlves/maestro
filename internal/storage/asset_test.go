@@ -1,14 +1,13 @@
-package asset
+package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestStoreAssetWithTxn(t *testing.T) {
+func TestSaveAssetWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
 		asset    domain.Asset
@@ -31,12 +30,12 @@ func TestStoreAssetWithTxn(t *testing.T) {
 			func(t *testing.T) {
 				var stored []byte
 
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
-						store := StoreAssetWithTxn(txn)
+						store := SaveAssetWithTxn(txn)
 						result := store(test.asset)
 						return result.Error()
 					},
@@ -45,7 +44,7 @@ func TestStoreAssetWithTxn(t *testing.T) {
 
 				err = db.View(
 					func(txn *badger.Txn) error {
-						item, err := txn.Get(kvKey(test.asset.Name()))
+						item, err := txn.Get(assetKey(test.asset.Name()))
 						if err != nil {
 							return err
 						}
@@ -84,13 +83,13 @@ func TestLoadAssetWithTxn(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				var loaded domain.Asset
-				db := kv.NewTestDb(t)
+				db := NewTestDb(t)
 				defer db.Close()
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
 						return txn.Set(
-							kvKey(test.expected.Name()),
+							assetKey(test.expected.Name()),
 							test.stored,
 						)
 					},
@@ -128,20 +127,4 @@ func TestLoadAssetWithTxn(t *testing.T) {
 			},
 		)
 	}
-}
-
-func createAsset(
-	t *testing.T,
-	assetName string,
-	requiredOnly bool,
-) domain.Asset {
-	name, err := domain.NewAssetName(assetName)
-	assert.NilError(t, err, "create name for asset %s", assetName)
-
-	if !requiredOnly {
-		image, err := domain.NewImage("some-image")
-		assert.NilError(t, err, "create image for asset %s", assetName)
-		return domain.NewAssetWithImage(name, image)
-	}
-	return domain.NewAssetWithoutImage(name)
 }
