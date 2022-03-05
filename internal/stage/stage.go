@@ -1,8 +1,8 @@
 package stage
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"regexp"
 )
 
@@ -10,7 +10,7 @@ var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type stageName string
 
-func NewStageName(name string) (types.StageName, error) {
+func NewStageName(name string) (domain.StageName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
 	}
@@ -30,7 +30,7 @@ func isValidStageName(name string) bool {
 
 type service string
 
-func NewService(s string) (types.Service, error) {
+func NewService(s string) (domain.Service, error) {
 	if len(s) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty service")
 	}
@@ -41,25 +41,25 @@ func (s service) Unwrap() string {
 	return string(s)
 }
 
-type presentService struct{ types.Service }
+type presentService struct{ domain.Service }
 
-func (s presentService) Unwrap() types.Service { return s.Service }
+func (s presentService) Unwrap() domain.Service { return s.Service }
 
 func (s presentService) Present() bool { return true }
 
 type emptyService struct{}
 
-func (s emptyService) Unwrap() types.Service {
+func (s emptyService) Unwrap() domain.Service {
 	panic("Service not available in an empty service optional")
 }
 
 func (s emptyService) Present() bool { return false }
 
-func NewPresentService(s types.Service) types.OptionalService {
+func NewPresentService(s domain.Service) domain.OptionalService {
 	return presentService{s}
 }
 
-func NewEmptyService() types.OptionalService {
+func NewEmptyService() domain.OptionalService {
 	return emptyService{}
 }
 
@@ -69,32 +69,32 @@ func (m method) Unwrap() string {
 	return string(m)
 }
 
-func NewMethod(m string) (types.Method, error) {
+func NewMethod(m string) (domain.Method, error) {
 	if len(m) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty method")
 	}
 	return method(m), nil
 }
 
-type presentMethod struct{ types.Method }
+type presentMethod struct{ domain.Method }
 
-func (m presentMethod) Unwrap() types.Method { return m.Method }
+func (m presentMethod) Unwrap() domain.Method { return m.Method }
 
 func (m presentMethod) Present() bool { return true }
 
 type emptyMethod struct{}
 
-func (m emptyMethod) Unwrap() types.Method {
+func (m emptyMethod) Unwrap() domain.Method {
 	panic("Method not available in an empty method optional")
 }
 
 func (m emptyMethod) Present() bool { return false }
 
-func NewPresentMethod(m types.Method) types.OptionalMethod {
+func NewPresentMethod(m domain.Method) domain.OptionalMethod {
 	return presentMethod{m}
 }
 
-func NewEmptyMethod() types.OptionalMethod {
+func NewEmptyMethod() domain.OptionalMethod {
 	return emptyMethod{}
 }
 
@@ -102,7 +102,7 @@ type address string
 
 func (a address) Unwrap() string { return string(a) }
 
-func NewAddress(a string) (types.Address, error) {
+func NewAddress(a string) (domain.Address, error) {
 	if len(a) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty address")
 	}
@@ -110,22 +110,22 @@ func NewAddress(a string) (types.Address, error) {
 }
 
 type methodContext struct {
-	address types.Address
-	service types.OptionalService
-	method  types.OptionalMethod
+	address domain.Address
+	service domain.OptionalService
+	method  domain.OptionalMethod
 }
 
-func (m methodContext) Address() types.Address { return m.address }
+func (m methodContext) Address() domain.Address { return m.address }
 
-func (m methodContext) Service() types.OptionalService { return m.service }
+func (m methodContext) Service() domain.OptionalService { return m.service }
 
-func (m methodContext) Method() types.OptionalMethod { return m.method }
+func (m methodContext) Method() domain.OptionalMethod { return m.method }
 
 func NewMethodContext(
-	address types.Address,
-	service types.OptionalService,
-	method types.OptionalMethod,
-) types.MethodContext {
+	address domain.Address,
+	service domain.OptionalService,
+	method domain.OptionalMethod,
+) domain.MethodContext {
 	return methodContext{
 		address: address,
 		service: service,
@@ -134,19 +134,22 @@ func NewMethodContext(
 }
 
 type stage struct {
-	name      types.StageName
-	methodCtx types.MethodContext
+	name      domain.StageName
+	methodCtx domain.MethodContext
 }
 
-func (s stage) Name() types.StageName {
+func (s stage) Name() domain.StageName {
 	return s.name
 }
 
-func (s stage) MethodContext() types.MethodContext {
+func (s stage) MethodContext() domain.MethodContext {
 	return s.methodCtx
 }
 
-func NewStage(name types.StageName, methodCtx types.MethodContext) types.Stage {
+func NewStage(
+	name domain.StageName,
+	methodCtx domain.MethodContext,
+) domain.Stage {
 	return stage{
 		name:      name,
 		methodCtx: methodCtx,

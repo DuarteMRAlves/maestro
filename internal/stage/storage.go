@@ -3,14 +3,14 @@ package stage
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreWithTxn(txn *badger.Txn) func(types.Stage) types.StageResult {
-	return func(s types.Stage) types.StageResult {
+func StoreWithTxn(txn *badger.Txn) func(domain.Stage) domain.StageResult {
+	return func(s domain.Stage) domain.StageResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -24,8 +24,8 @@ func StoreWithTxn(txn *badger.Txn) func(types.Stage) types.StageResult {
 	}
 }
 
-func LoadWithTxn(txn *badger.Txn) func(types.StageName) types.StageResult {
-	return func(name types.StageName) types.StageResult {
+func LoadWithTxn(txn *badger.Txn) func(domain.StageName) domain.StageResult {
+	return func(name domain.StageName) domain.StageResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -62,11 +62,11 @@ func LoadWithTxn(txn *badger.Txn) func(types.StageName) types.StageResult {
 	}
 }
 
-func stageToBuf(buf *bytes.Buffer, s types.Stage) {
+func stageToBuf(buf *bytes.Buffer, s domain.Stage) {
 	methodCtxToBuf(buf, s.MethodContext())
 }
 
-func methodCtxToBuf(buf *bytes.Buffer, m types.MethodContext) {
+func methodCtxToBuf(buf *bytes.Buffer, m domain.MethodContext) {
 	buf.WriteString(m.Address().Unwrap())
 	buf.WriteByte(';')
 	if m.Service().Present() {
@@ -78,11 +78,11 @@ func methodCtxToBuf(buf *bytes.Buffer, m types.MethodContext) {
 	}
 }
 
-func stringToAddress(data string) (types.Address, error) {
+func stringToAddress(data string) (domain.Address, error) {
 	return NewAddress(data)
 }
 
-func stringToService(data string) (types.OptionalService, error) {
+func stringToService(data string) (domain.OptionalService, error) {
 	if data == "" {
 		return NewEmptyService(), nil
 	} else {
@@ -94,7 +94,7 @@ func stringToService(data string) (types.OptionalService, error) {
 	}
 }
 
-func stringToMethod(data string) (types.OptionalMethod, error) {
+func stringToMethod(data string) (domain.OptionalMethod, error) {
 	if data == "" {
 		return NewEmptyMethod(), nil
 	} else {
@@ -106,6 +106,6 @@ func stringToMethod(data string) (types.OptionalMethod, error) {
 	}
 }
 
-func kvKey(name types.StageName) []byte {
+func kvKey(name domain.StageName) []byte {
 	return []byte(fmt.Sprintf("stage:%s", name.Unwrap()))
 }

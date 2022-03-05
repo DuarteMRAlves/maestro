@@ -2,9 +2,9 @@ package link
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -13,7 +13,7 @@ import (
 func TestStoreWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		link     types.Link
+		link     domain.Link
 		expected []byte
 	}{
 		{
@@ -53,8 +53,8 @@ func TestStoreWithTxn(t *testing.T) {
 			func(t *testing.T) {
 				var (
 					storedLink   []byte
-					loadedSource types.Stage
-					loadedTarget types.Stage
+					loadedSource domain.Stage
+					loadedTarget domain.Stage
 				)
 
 				db := kv.NewTestDb(t)
@@ -107,7 +107,7 @@ func TestStoreWithTxn(t *testing.T) {
 func TestLoadWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected types.Link
+		expected domain.Link
 		stored   []byte
 	}{
 		{
@@ -145,7 +145,7 @@ func TestLoadWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded types.Link
+				var loaded domain.Link
 
 				db := kv.NewTestDb(t)
 				defer db.Close()
@@ -215,7 +215,7 @@ func TestLoadWithTxn(t *testing.T) {
 	}
 }
 
-func createStage(t *testing.T, name string, requiredOnly bool) types.Stage {
+func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
 	var (
 		serviceOpt = stage.NewEmptyService()
 		methodOpt  = stage.NewEmptyMethod()
@@ -239,7 +239,11 @@ func createStage(t *testing.T, name string, requiredOnly bool) types.Stage {
 	return stage.NewStage(stageName, ctx)
 }
 
-func assertEqualStage(t *testing.T, expected types.Stage, actual types.Stage) {
+func assertEqualStage(
+	t *testing.T,
+	expected domain.Stage,
+	actual domain.Stage,
+) {
 	assert.Equal(
 		t,
 		expected.Name().Unwrap(),
