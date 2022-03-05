@@ -42,10 +42,14 @@ func (o orchestration) Links() []Link {
 	return o.links
 }
 
-func NewOrchestration(name OrchestrationName) Orchestration {
+func NewOrchestration(
+	name OrchestrationName,
+	stages []Stage,
+	links []Link,
+) Orchestration {
 	return &orchestration{
 		name:   name,
-		stages: []Stage{},
-		links:  []Link{},
+		stages: stages,
+		links:  links,
 	}
 }

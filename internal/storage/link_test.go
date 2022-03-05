@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
@@ -40,7 +39,7 @@ func TestSaveLinkWithTxn(t *testing.T) {
 
 				err := db.Update(
 					func(txn *badger.Txn) error {
-						store := SaveWithTxn(txn)
+						store := SaveLinkWithTxn(txn)
 						result := store(test.link)
 						return result.Error()
 					},
@@ -137,7 +136,6 @@ func TestLoadLinkWithTxn(t *testing.T) {
 					},
 				)
 				assert.NilError(t, err, "load error")
-				fmt.Println(loaded)
 				assert.Equal(
 					t,
 					test.expected.Name().Unwrap(),

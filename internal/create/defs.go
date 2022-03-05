@@ -12,6 +12,9 @@ type LoadStage func(domain.StageName) domain.StageResult
 type SaveLink func(domain.Link) domain.LinkResult
 type LoadLink func(domain.LinkName) domain.LinkResult
 
+type SaveOrchestration func(domain.Orchestration) domain.OrchestrationResult
+type LoadOrchestration func(domain.OrchestrationName) domain.OrchestrationResult
+
 type AssetRequest struct {
 	Name  string
 	Image domain.OptionalString
