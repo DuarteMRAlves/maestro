@@ -1,7 +1,6 @@
-package stage
+package domain
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
@@ -10,7 +9,7 @@ var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type stageName string
 
-func NewStageName(name string) (domain.StageName, error) {
+func NewStageName(name string) (StageName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
 	}
@@ -30,7 +29,7 @@ func isValidStageName(name string) bool {
 
 type service string
 
-func NewService(s string) (domain.Service, error) {
+func NewService(s string) (Service, error) {
 	if len(s) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty service")
 	}
@@ -41,25 +40,25 @@ func (s service) Unwrap() string {
 	return string(s)
 }
 
-type presentService struct{ domain.Service }
+type presentService struct{ Service }
 
-func (s presentService) Unwrap() domain.Service { return s.Service }
+func (s presentService) Unwrap() Service { return s.Service }
 
 func (s presentService) Present() bool { return true }
 
 type emptyService struct{}
 
-func (s emptyService) Unwrap() domain.Service {
+func (s emptyService) Unwrap() Service {
 	panic("Service not available in an empty service optional")
 }
 
 func (s emptyService) Present() bool { return false }
 
-func NewPresentService(s domain.Service) domain.OptionalService {
+func NewPresentService(s Service) OptionalService {
 	return presentService{s}
 }
 
-func NewEmptyService() domain.OptionalService {
+func NewEmptyService() OptionalService {
 	return emptyService{}
 }
 
@@ -69,32 +68,32 @@ func (m method) Unwrap() string {
 	return string(m)
 }
 
-func NewMethod(m string) (domain.Method, error) {
+func NewMethod(m string) (Method, error) {
 	if len(m) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty method")
 	}
 	return method(m), nil
 }
 
-type presentMethod struct{ domain.Method }
+type presentMethod struct{ Method }
 
-func (m presentMethod) Unwrap() domain.Method { return m.Method }
+func (m presentMethod) Unwrap() Method { return m.Method }
 
 func (m presentMethod) Present() bool { return true }
 
 type emptyMethod struct{}
 
-func (m emptyMethod) Unwrap() domain.Method {
+func (m emptyMethod) Unwrap() Method {
 	panic("Method not available in an empty method optional")
 }
 
 func (m emptyMethod) Present() bool { return false }
 
-func NewPresentMethod(m domain.Method) domain.OptionalMethod {
+func NewPresentMethod(m Method) OptionalMethod {
 	return presentMethod{m}
 }
 
-func NewEmptyMethod() domain.OptionalMethod {
+func NewEmptyMethod() OptionalMethod {
 	return emptyMethod{}
 }
 
@@ -102,7 +101,7 @@ type address string
 
 func (a address) Unwrap() string { return string(a) }
 
-func NewAddress(a string) (domain.Address, error) {
+func NewAddress(a string) (Address, error) {
 	if len(a) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty address")
 	}
@@ -110,22 +109,22 @@ func NewAddress(a string) (domain.Address, error) {
 }
 
 type methodContext struct {
-	address domain.Address
-	service domain.OptionalService
-	method  domain.OptionalMethod
+	address Address
+	service OptionalService
+	method  OptionalMethod
 }
 
-func (m methodContext) Address() domain.Address { return m.address }
+func (m methodContext) Address() Address { return m.address }
 
-func (m methodContext) Service() domain.OptionalService { return m.service }
+func (m methodContext) Service() OptionalService { return m.service }
 
-func (m methodContext) Method() domain.OptionalMethod { return m.method }
+func (m methodContext) Method() OptionalMethod { return m.method }
 
 func NewMethodContext(
-	address domain.Address,
-	service domain.OptionalService,
-	method domain.OptionalMethod,
-) domain.MethodContext {
+	address Address,
+	service OptionalService,
+	method OptionalMethod,
+) MethodContext {
 	return methodContext{
 		address: address,
 		service: service,
@@ -134,22 +133,22 @@ func NewMethodContext(
 }
 
 type stage struct {
-	name      domain.StageName
-	methodCtx domain.MethodContext
+	name      StageName
+	methodCtx MethodContext
 }
 
-func (s stage) Name() domain.StageName {
+func (s stage) Name() StageName {
 	return s.name
 }
 
-func (s stage) MethodContext() domain.MethodContext {
+func (s stage) MethodContext() MethodContext {
 	return s.methodCtx
 }
 
 func NewStage(
-	name domain.StageName,
-	methodCtx domain.MethodContext,
-) domain.Stage {
+	name StageName,
+	methodCtx MethodContext,
+) Stage {
 	return stage{
 		name:      name,
 		methodCtx: methodCtx,

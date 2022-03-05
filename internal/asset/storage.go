@@ -21,9 +21,9 @@ func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
 		err = txn.Set(kvKey(a.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("storage error: %v", err)
-			return NewErrResult(err)
+			return domain.ErrAsset(err)
 		}
-		return NewResult(a)
+		return domain.SomeAsset(a)
 	}
 }
 
@@ -37,7 +37,7 @@ func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult
 		item, err = txn.Get(kvKey(name))
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
-			return NewErrResult(err)
+			return domain.ErrAsset(err)
 		}
 
 		data, err = item.ValueCopy(nil)
@@ -47,22 +47,27 @@ func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult
 			err := errdefs.InternalWithMsg(
 				"invalid format: expected 2 semi-colon separated values",
 			)
-			return NewErrResult(err)
+			return domain.ErrAsset(err)
 		}
-		name, err = NewAssetName(splits[0])
+		name, err = domain.NewAssetName(splits[0])
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
-			return NewErrResult(err)
+			return domain.ErrAsset(err)
 		}
 		img, err := stringToImage(splits[1])
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load asset %s", name)
-			return NewErrResult(err)
+			return domain.ErrAsset(err)
 		}
 		if img.Present() {
-			return NewResult(NewAssetWithImage(name, img.Unwrap()))
+			return domain.SomeAsset(
+				domain.NewAssetWithImage(
+					name,
+					img.Unwrap(),
+				),
+			)
 		} else {
-			return NewResult(NewAssetWithoutImage(name))
+			return domain.SomeAsset(domain.NewAssetWithoutImage(name))
 		}
 	}
 }
@@ -77,13 +82,13 @@ func imageToString(img domain.OptionalImage) string {
 
 func stringToImage(data string) (domain.OptionalImage, error) {
 	if data == "" {
-		return NewEmptyImage(), nil
+		return domain.NewEmptyImage(), nil
 	} else {
-		img, err := NewImage(data)
+		img, err := domain.NewImage(data)
 		if err != nil {
 			return nil, err
 		}
-		return NewPresentImage(img), nil
+		return domain.NewPresentImage(img), nil
 	}
 }
 

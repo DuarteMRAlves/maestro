@@ -18,9 +18,14 @@ func StoreWithTxn(txn *badger.Txn) func(domain.Stage) domain.StageResult {
 		stageToBuf(&buf, s)
 		err = txn.Set(kvKey(s.Name()), buf.Bytes())
 		if err != nil {
-			return Err(errdefs.InternalWithMsg("storage error: %v", err))
+			return domain.ErrStage(
+				errdefs.InternalWithMsg(
+					"storage error: %v",
+					err,
+				),
+			)
 		}
-		return Some(s)
+		return domain.SomeStage(s)
 	}
 }
 
@@ -33,13 +38,19 @@ func LoadWithTxn(txn *badger.Txn) func(domain.StageName) domain.StageResult {
 		)
 		item, err = txn.Get(kvKey(name))
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load stage %s", name))
+			return domain.ErrStage(
+				errdefs.PrependMsg(
+					err,
+					"load stage %s",
+					name,
+				),
+			)
 		}
 		data, err = item.ValueCopy(nil)
 		buf := bytes.NewBuffer(data)
 		splits := strings.Split(buf.String(), ";")
 		if len(splits) != 3 {
-			return Err(
+			return domain.ErrStage(
 				errdefs.InternalWithMsg(
 					"invalid format: expected 3 semi-colon separated values",
 				),
@@ -47,18 +58,36 @@ func LoadWithTxn(txn *badger.Txn) func(domain.StageName) domain.StageResult {
 		}
 		a, err := stringToAddress(splits[0])
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load stage %s", name))
+			return domain.ErrStage(
+				errdefs.PrependMsg(
+					err,
+					"load stage %s",
+					name,
+				),
+			)
 		}
 		s, err := stringToService(splits[1])
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load stage %s", name))
+			return domain.ErrStage(
+				errdefs.PrependMsg(
+					err,
+					"load stage %s",
+					name,
+				),
+			)
 		}
 		m, err := stringToMethod(splits[2])
 		if err != nil {
-			return Err(errdefs.PrependMsg(err, "load stage %s", name))
+			return domain.ErrStage(
+				errdefs.PrependMsg(
+					err,
+					"load stage %s",
+					name,
+				),
+			)
 		}
-		methodCtx := NewMethodContext(a, s, m)
-		return Some(NewStage(name, methodCtx))
+		methodCtx := domain.NewMethodContext(a, s, m)
+		return domain.SomeStage(domain.NewStage(name, methodCtx))
 	}
 }
 
@@ -79,30 +108,30 @@ func methodCtxToBuf(buf *bytes.Buffer, m domain.MethodContext) {
 }
 
 func stringToAddress(data string) (domain.Address, error) {
-	return NewAddress(data)
+	return domain.NewAddress(data)
 }
 
 func stringToService(data string) (domain.OptionalService, error) {
 	if data == "" {
-		return NewEmptyService(), nil
+		return domain.NewEmptyService(), nil
 	} else {
-		s, err := NewService(data)
+		s, err := domain.NewService(data)
 		if err != nil {
 			return nil, err
 		}
-		return NewPresentService(s), nil
+		return domain.NewPresentService(s), nil
 	}
 }
 
 func stringToMethod(data string) (domain.OptionalMethod, error) {
 	if data == "" {
-		return NewEmptyMethod(), nil
+		return domain.NewEmptyMethod(), nil
 	} else {
-		m, err := NewMethod(data)
+		m, err := domain.NewMethod(data)
 		if err != nil {
 			return nil, err
 		}
-		return NewPresentMethod(m), nil
+		return domain.NewPresentMethod(m), nil
 	}
 }
 

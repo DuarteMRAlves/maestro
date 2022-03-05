@@ -1,16 +1,15 @@
-package asset
+package domain
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
-var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
+var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type assetName string
 
-func NewAssetName(name string) (domain.AssetName, error) {
+func NewAssetName(name string) (AssetName, error) {
 	if isValidResourceName(name) {
 		return assetName(name), nil
 	}
@@ -18,7 +17,7 @@ func NewAssetName(name string) (domain.AssetName, error) {
 }
 
 func isValidResourceName(name string) bool {
-	return nameRegExp.MatchString(name)
+	return assetNameRegExp.MatchString(name)
 }
 
 func (a assetName) Unwrap() string {
@@ -27,7 +26,7 @@ func (a assetName) Unwrap() string {
 
 type image string
 
-func NewImage(img string) (domain.Image, error) {
+func NewImage(img string) (Image, error) {
 	if len(img) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty image")
 	}
@@ -39,10 +38,10 @@ func (i image) Unwrap() string {
 }
 
 type presentImage struct {
-	domain.Image
+	Image
 }
 
-func (i presentImage) Unwrap() domain.Image {
+func (i presentImage) Unwrap() Image {
 	return i.Image
 }
 
@@ -50,43 +49,43 @@ func (i presentImage) Present() bool { return true }
 
 type emptyImage struct{}
 
-func (i emptyImage) Unwrap() domain.Image {
+func (i emptyImage) Unwrap() Image {
 	panic("Image not available in empty optional")
 }
 
 func (i emptyImage) Present() bool { return false }
 
-func NewPresentImage(i domain.Image) domain.OptionalImage {
+func NewPresentImage(i Image) OptionalImage {
 	return presentImage{i}
 }
 
-func NewEmptyImage() domain.OptionalImage {
+func NewEmptyImage() OptionalImage {
 	return emptyImage{}
 }
 
 type asset struct {
-	name  domain.AssetName
-	image domain.OptionalImage
+	name  AssetName
+	image OptionalImage
 }
 
-func NewAssetWithImage(name domain.AssetName, image domain.Image) domain.Asset {
+func NewAssetWithImage(name AssetName, image Image) Asset {
 	return asset{
 		name:  name,
 		image: presentImage{image},
 	}
 }
 
-func NewAssetWithoutImage(name domain.AssetName) domain.Asset {
+func NewAssetWithoutImage(name AssetName) Asset {
 	return asset{
 		name:  name,
 		image: emptyImage{},
 	}
 }
 
-func (a asset) Name() domain.AssetName {
+func (a asset) Name() AssetName {
 	return a.name
 }
 
-func (a asset) Image() domain.OptionalImage {
+func (a asset) Image() OptionalImage {
 	return a.image
 }
