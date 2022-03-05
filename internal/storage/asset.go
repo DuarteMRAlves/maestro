@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+func ExistsAssetWithTxn(txn *badger.Txn) create.ExistsAsset {
+	return func(name domain.AssetName) bool {
+		item, _ := txn.Get(assetKey(name))
+		return item == nil
+	}
+}
+
 func SaveAssetWithTxn(txn *badger.Txn) create.SaveAsset {
 	return func(a domain.Asset) domain.AssetResult {
 		var (
