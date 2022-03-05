@@ -3,14 +3,14 @@ package asset
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreAssetWithTxn(txn *badger.Txn) func(types.Asset) types.AssetResult {
-	return func(a types.Asset) types.AssetResult {
+func StoreAssetWithTxn(txn *badger.Txn) func(domain.Asset) domain.AssetResult {
+	return func(a domain.Asset) domain.AssetResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -27,8 +27,8 @@ func StoreAssetWithTxn(txn *badger.Txn) func(types.Asset) types.AssetResult {
 	}
 }
 
-func LoadAssetWithTxn(txn *badger.Txn) func(types.AssetName) types.AssetResult {
-	return func(name types.AssetName) types.AssetResult {
+func LoadAssetWithTxn(txn *badger.Txn) func(domain.AssetName) domain.AssetResult {
+	return func(name domain.AssetName) domain.AssetResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -67,7 +67,7 @@ func LoadAssetWithTxn(txn *badger.Txn) func(types.AssetName) types.AssetResult {
 	}
 }
 
-func imageToString(img types.OptionalImage) string {
+func imageToString(img domain.OptionalImage) string {
 	if img.Present() {
 		return img.Unwrap().Unwrap()
 	} else {
@@ -75,7 +75,7 @@ func imageToString(img types.OptionalImage) string {
 	}
 }
 
-func stringToImage(data string) (types.OptionalImage, error) {
+func stringToImage(data string) (domain.OptionalImage, error) {
 	if data == "" {
 		return NewEmptyImage(), nil
 	} else {
@@ -87,6 +87,6 @@ func stringToImage(data string) (types.OptionalImage, error) {
 	}
 }
 
-func kvKey(name types.AssetName) []byte {
+func kvKey(name domain.AssetName) []byte {
 	return []byte(fmt.Sprintf("asset:%s", name.Unwrap()))
 }

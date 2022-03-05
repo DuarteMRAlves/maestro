@@ -1,8 +1,8 @@
 package stage
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,7 +11,7 @@ import (
 func TestStoreWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		stage    types.Stage
+		stage    domain.Stage
 		expected []byte
 	}{
 		{
@@ -79,7 +79,7 @@ func TestStoreWithTxn(t *testing.T) {
 func TestLoadWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected types.Stage
+		expected domain.Stage
 		stored   []byte
 	}{
 		{
@@ -111,7 +111,7 @@ func TestLoadWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded types.Stage
+				var loaded domain.Stage
 
 				db := kv.NewTestDb(t)
 				defer db.Close()

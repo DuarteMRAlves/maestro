@@ -1,4 +1,4 @@
-package types
+package domain
 
 type OptionalString interface {
 	Unwrap() string

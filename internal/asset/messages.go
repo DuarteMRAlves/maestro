@@ -1,10 +1,10 @@
 package asset
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/types"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
-func RequestToResult(req types.CreateAssetRequest) types.AssetResult {
+func RequestToResult(req domain.CreateAssetRequest) domain.AssetResult {
 	name, err := NewAssetName(req.Name)
 	if err != nil {
 		return NewErrResult(err)
@@ -19,12 +19,12 @@ func RequestToResult(req types.CreateAssetRequest) types.AssetResult {
 	return NewResult(NewAssetWithImage(name, img))
 }
 
-func ResultToResponse(res types.AssetResult) types.CreateAssetResponse {
-	var errOpt types.OptionalError
+func ResultToResponse(res domain.AssetResult) domain.CreateAssetResponse {
+	var errOpt domain.OptionalError
 	if res.IsError() {
-		errOpt = types.NewPresentError(res.Error())
+		errOpt = domain.NewPresentError(res.Error())
 	} else {
-		errOpt = types.NewEmptyError()
+		errOpt = domain.NewEmptyError()
 	}
-	return types.CreateAssetResponse{Err: errOpt}
+	return domain.CreateAssetResponse{Err: errOpt}
 }

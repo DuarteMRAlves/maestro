@@ -1,4 +1,4 @@
-package types
+package domain
 
 type CreateAssetRequest struct {
 	Name  string

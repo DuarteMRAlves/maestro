@@ -3,15 +3,15 @@ package link
 import (
 	"bytes"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/stage"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
-func StoreWithTxn(txn *badger.Txn) func(types.Link) types.LinkResult {
-	return func(l types.Link) types.LinkResult {
+func StoreWithTxn(txn *badger.Txn) func(domain.Link) domain.LinkResult {
+	return func(l domain.Link) domain.LinkResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -43,8 +43,8 @@ func StoreWithTxn(txn *badger.Txn) func(types.Link) types.LinkResult {
 	}
 }
 
-func LoadWithTxn(txn *badger.Txn) func(types.LinkName) types.LinkResult {
-	return func(name types.LinkName) types.LinkResult {
+func LoadWithTxn(txn *badger.Txn) func(domain.LinkName) domain.LinkResult {
+	return func(name domain.LinkName) domain.LinkResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -80,13 +80,13 @@ func LoadWithTxn(txn *badger.Txn) func(types.LinkName) types.LinkResult {
 	}
 }
 
-func linkPersistenceInfoToBuf(buf *bytes.Buffer, l types.Link) {
+func linkPersistenceInfoToBuf(buf *bytes.Buffer, l domain.Link) {
 	endpointToBuf(buf, l.Source())
 	buf.WriteByte(';')
 	endpointToBuf(buf, l.Target())
 }
 
-func endpointToBuf(buf *bytes.Buffer, e types.LinkEndpoint) {
+func endpointToBuf(buf *bytes.Buffer, e domain.LinkEndpoint) {
 	buf.WriteString(e.Stage().Name().Unwrap())
 	buf.WriteByte(';')
 	if e.Field().Present() {
@@ -95,10 +95,10 @@ func endpointToBuf(buf *bytes.Buffer, e types.LinkEndpoint) {
 }
 
 func loadEndpoint(
-	loadStage func(types.StageName) types.StageResult,
+	loadStage func(domain.StageName) domain.StageResult,
 	nameData string,
 	fieldData string,
-) (types.LinkEndpoint, error) {
+) (domain.LinkEndpoint, error) {
 	name, err := stage.NewStageName(nameData)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func loadEndpoint(
 	return NewLinkEndpoint(stage, field), nil
 }
 
-func loadField(data string) (types.OptionalMessageField, error) {
+func loadField(data string) (domain.OptionalMessageField, error) {
 	if data == "" {
 		return NewEmptyMessageField(), nil
 	} else {
@@ -127,6 +127,6 @@ func loadField(data string) (types.OptionalMessageField, error) {
 	}
 }
 
-func kvKey(name types.LinkName) []byte {
+func kvKey(name domain.LinkName) []byte {
 	return []byte(fmt.Sprintf("link:%s", name.Unwrap()))
 }

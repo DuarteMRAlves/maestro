@@ -1,14 +1,14 @@
 package asset
 
-import "github.com/DuarteMRAlves/maestro/internal/types"
+import "github.com/DuarteMRAlves/maestro/internal/domain"
 
 type success struct {
-	types.Asset
+	domain.Asset
 }
 
 func (s success) IsError() bool { return false }
 
-func (s success) Unwrap() types.Asset { return s.Asset }
+func (s success) Unwrap() domain.Asset { return s.Asset }
 
 func (s success) Error() error { return nil }
 
@@ -18,16 +18,16 @@ type errResult struct {
 
 func (e errResult) IsError() bool { return true }
 
-func (e errResult) Unwrap() types.Asset { panic("Asset not available in error") }
+func (e errResult) Unwrap() domain.Asset { panic("Asset not available in error") }
 
 func (e errResult) Error() error { return e.error }
 
-func NewResult(a types.Asset) types.AssetResult { return success{a} }
+func NewResult(a domain.Asset) domain.AssetResult { return success{a} }
 
-func NewErrResult(err error) types.AssetResult { return errResult{err} }
+func NewErrResult(err error) domain.AssetResult { return errResult{err} }
 
-func Bind(f func(types.Asset) types.AssetResult) func(types.AssetResult) types.AssetResult {
-	return func(resultAsset types.AssetResult) types.AssetResult {
+func Bind(f func(domain.Asset) domain.AssetResult) func(domain.AssetResult) domain.AssetResult {
+	return func(resultAsset domain.AssetResult) domain.AssetResult {
 		if resultAsset.IsError() {
 			return resultAsset
 		}
@@ -35,16 +35,16 @@ func Bind(f func(types.Asset) types.AssetResult) func(types.AssetResult) types.A
 	}
 }
 
-func BindNoErr(f func(types.Asset) types.Asset) func(types.AssetResult) types.AssetResult {
+func BindNoErr(f func(domain.Asset) domain.Asset) func(domain.AssetResult) domain.AssetResult {
 	return Bind(
-		func(d types.Asset) types.AssetResult {
+		func(d domain.Asset) domain.AssetResult {
 			return NewResult(f(d))
 		},
 	)
 }
 
-func Compose(funcs ...func(types.AssetResult) types.AssetResult) func(types.AssetResult) types.AssetResult {
-	return func(r types.AssetResult) types.AssetResult {
+func Compose(funcs ...func(domain.AssetResult) domain.AssetResult) func(domain.AssetResult) domain.AssetResult {
+	return func(r domain.AssetResult) domain.AssetResult {
 		for _, f := range funcs {
 			r = f(r)
 		}

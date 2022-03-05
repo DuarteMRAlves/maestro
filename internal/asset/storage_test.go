@@ -1,8 +1,8 @@
 package asset
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/kv"
-	"github.com/DuarteMRAlves/maestro/internal/types"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -11,7 +11,7 @@ import (
 func TestStoreAssetWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		asset    types.Asset
+		asset    domain.Asset
 		expected []byte
 	}{
 		{
@@ -71,7 +71,7 @@ func TestStoreAssetWithTxn(t *testing.T) {
 func TestLoadAssetWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected types.Asset
+		expected domain.Asset
 		stored   []byte
 	}{
 		{
@@ -95,7 +95,7 @@ func TestLoadAssetWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded types.Asset
+				var loaded domain.Asset
 				db := kv.NewTestDb(t)
 				defer db.Close()
 
