@@ -11,8 +11,8 @@ func CreateAsset(
 ) func(AssetRequest) AssetResponse {
 	return func(req AssetRequest) AssetResponse {
 		res := requestToAsset(req)
-		res = domain.Bind(newVerifyDuplicateFn(existsFn))(res)
-		res = domain.Bind(saveFn)(res)
+		res = domain.BindAsset(newVerifyDuplicateFn(existsFn))(res)
+		res = domain.BindAsset(saveFn)(res)
 		return assetToResponse(res)
 	}
 }

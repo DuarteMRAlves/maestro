@@ -44,7 +44,7 @@ func SomeAsset(a Asset) AssetResult { return someAsset{a} }
 
 func ErrAsset(err error) AssetResult { return errAsset{err} }
 
-func Bind(f func(Asset) AssetResult) func(AssetResult) AssetResult {
+func BindAsset(f func(Asset) AssetResult) func(AssetResult) AssetResult {
 	return func(resultAsset AssetResult) AssetResult {
 		if resultAsset.IsError() {
 			return resultAsset
@@ -114,3 +114,14 @@ func (e errOrchestration) Error() error { return e.error }
 func SomeOrchestration(o Orchestration) OrchestrationResult { return someOrchestration{o} }
 
 func ErrOrchestration(err error) OrchestrationResult { return errOrchestration{err} }
+
+func BindOrchestration(
+	f func(Orchestration) OrchestrationResult,
+) func(OrchestrationResult) OrchestrationResult {
+	return func(result OrchestrationResult) OrchestrationResult {
+		if result.IsError() {
+			return result
+		}
+		return f(result.Unwrap())
+	}
+}
