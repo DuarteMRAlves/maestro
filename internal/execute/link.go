@@ -5,11 +5,11 @@ import (
 )
 
 type linkEndpoint struct {
-	stage domain.Stage
+	stage Stage
 	field domain.OptionalMessageField
 }
 
-func (e *linkEndpoint) Stage() domain.Stage {
+func (e *linkEndpoint) Stage() Stage {
 	return e.stage
 }
 
@@ -18,7 +18,7 @@ func (e *linkEndpoint) Field() domain.OptionalMessageField {
 }
 
 func NewLinkEndpoint(
-	stage domain.Stage,
+	stage Stage,
 	field domain.OptionalMessageField,
 ) LinkEndpoint {
 	return &linkEndpoint{

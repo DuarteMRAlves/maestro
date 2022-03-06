@@ -139,26 +139,3 @@ func NewMethodContext(
 		method:  method,
 	}
 }
-
-type stage struct {
-	name      StageName
-	methodCtx MethodContext
-}
-
-func (s stage) Name() StageName {
-	return s.name
-}
-
-func (s stage) MethodContext() MethodContext {
-	return s.methodCtx
-}
-
-func NewStage(
-	name StageName,
-	methodCtx MethodContext,
-) Stage {
-	return stage{
-		name:      name,
-		methodCtx: methodCtx,
-	}
-}

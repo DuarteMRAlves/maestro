@@ -56,11 +56,6 @@ type MethodContext interface {
 	Method() OptionalMethod
 }
 
-type Stage interface {
-	Name() StageName
-	MethodContext() MethodContext
-}
-
 type LinkName interface {
 	LinkName()
 	Unwrap() string

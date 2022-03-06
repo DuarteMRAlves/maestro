@@ -5,8 +5,13 @@ import "github.com/DuarteMRAlves/maestro/internal/domain"
 type LoadLink func(domain.LinkName) LinkResult
 type LoadOrchestration func(domain.OrchestrationName) OrchestrationResult
 
+type Stage interface {
+	Name() domain.StageName
+	MethodContext() domain.MethodContext
+}
+
 type LinkEndpoint interface {
-	Stage() domain.Stage
+	Stage() Stage
 	Field() domain.OptionalMessageField
 }
 
@@ -18,6 +23,6 @@ type Link interface {
 
 type Orchestration interface {
 	Name() domain.OrchestrationName
-	Stages() []domain.Stage
+	Stages() []Stage
 	Links() []Link
 }
