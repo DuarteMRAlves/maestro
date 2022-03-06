@@ -46,9 +46,7 @@ func CreateStage(
 		res := requestToStage(req)
 		res = BindStage(verifyDupStage(existsStage))(res)
 		res = BindStage(verifyExistsOrchestration(existsOrchestration))(res)
-		res = BindStage(
-			addStageToOrchestration(loadOrchestration, saveOrchestration),
-		)(res)
+		res = BindStage(addStage(loadOrchestration, saveOrchestration))(res)
 		res = BindStage(saveStage)(res)
 		return stageToResponse(res)
 	}
@@ -119,14 +117,14 @@ func verifyExistsOrchestration(existsFn ExistsOrchestration) func(Stage) StageRe
 	}
 }
 
-func addStageToOrchestration(
+func addStage(
 	loadFn LoadOrchestration,
 	saveFn SaveOrchestration,
 ) func(Stage) StageResult {
 	return func(stage Stage) StageResult {
-		res := loadFn(stage.Orchestration())
-		res = BindOrchestration(updateOrchestration(stage))(res)
-		res = BindOrchestration(saveFn)(res)
+		name := stage.Orchestration()
+		updateFn := addStageToOrchestration(stage)
+		res := updateOrchestration(name, loadFn, updateFn, saveFn)
 		if res.IsError() {
 			err := errdefs.PrependMsg(
 				res.Error(),
@@ -140,7 +138,19 @@ func addStageToOrchestration(
 	}
 }
 
-func updateOrchestration(stage Stage) func(Orchestration) OrchestrationResult {
+func updateOrchestration(
+	name domain.OrchestrationName,
+	loadFn LoadOrchestration,
+	updateFn func(Orchestration) OrchestrationResult,
+	saveFn SaveOrchestration,
+) OrchestrationResult {
+	res := loadFn(name)
+	res = BindOrchestration(updateFn)(res)
+	res = BindOrchestration(saveFn)(res)
+	return res
+}
+
+func addStageToOrchestration(stage Stage) func(Orchestration) OrchestrationResult {
 	return func(o Orchestration) OrchestrationResult {
 		old := o.Stages()
 		stages := make([]domain.StageName, 0, len(old)+1)

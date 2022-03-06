@@ -6,12 +6,6 @@ type StageResult interface {
 	Error() error
 }
 
-type OrchestrationResult interface {
-	IsError() bool
-	Unwrap() Orchestration
-	Error() error
-}
-
 type someStage struct{ Stage }
 
 func (s someStage) IsError() bool { return false }
@@ -39,6 +33,47 @@ func BindStage(f func(Stage) StageResult) func(StageResult) StageResult {
 		}
 		return f(result.Unwrap())
 	}
+}
+
+type LinkResult interface {
+	IsError() bool
+	Unwrap() Link
+	Error() error
+}
+
+type someLink struct{ Link }
+
+func (s someLink) IsError() bool { return false }
+
+func (s someLink) Unwrap() Link { return s.Link }
+
+func (s someLink) Error() error { return nil }
+
+type errLink struct{ error }
+
+func (e errLink) IsError() bool { return true }
+
+func (e errLink) Unwrap() Link { panic("Link not available in error result") }
+
+func (e errLink) Error() error { return e.error }
+
+func SomeLink(l Link) LinkResult { return someLink{l} }
+
+func ErrLink(err error) LinkResult { return errLink{err} }
+
+func BindLink(f func(Link) LinkResult) func(LinkResult) LinkResult {
+	return func(result LinkResult) LinkResult {
+		if result.IsError() {
+			return result
+		}
+		return f(result.Unwrap())
+	}
+}
+
+type OrchestrationResult interface {
+	IsError() bool
+	Unwrap() Orchestration
+	Error() error
 }
 
 type someOrchestration struct{ Orchestration }

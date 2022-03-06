@@ -2,7 +2,6 @@ package create
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/execute"
 )
 
 type SaveAsset func(domain.Asset) domain.AssetResult
@@ -41,9 +40,6 @@ type StageRequest struct {
 type StageResponse struct {
 	Err domain.OptionalError
 }
-
-type SaveLink func(execute.Link) execute.LinkResult
-type LoadLink func(domain.LinkName) execute.LinkResult
 
 type SaveOrchestration func(Orchestration) OrchestrationResult
 type LoadOrchestration func(domain.OrchestrationName) OrchestrationResult

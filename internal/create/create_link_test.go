@@ -8,58 +8,70 @@ import (
 	"testing"
 )
 
-func TestCreateStage(t *testing.T) {
+func TestCreateLink(t *testing.T) {
 	tests := []struct {
 		name              string
-		req               StageRequest
-		expStage          Stage
+		req               LinkRequest
+		expLink           Link
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
 	}{
 		{
 			name: "required fields",
-			req: StageRequest{
+			req: LinkRequest{
 				Name:          "some-name",
-				Address:       "some-address",
-				Service:       domain.NewEmptyString(),
-				Method:        domain.NewEmptyString(),
+				SourceStage:   "source",
+				SourceField:   domain.NewEmptyString(),
+				TargetStage:   "target",
+				TargetField:   domain.NewEmptyString(),
 				Orchestration: "orchestration",
 			},
-			expStage: createStage(
+			expLink: createLink(
 				t,
 				"some-name",
 				"orchestration",
 				true,
 			),
-			loadOrchestration: createEmptyOrchestration(t, "orchestration"),
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				[]string{"source", "target"},
+				[]string{},
+			),
 			expOrchestration: createOrchestration(
 				t,
 				"orchestration",
+				[]string{"source", "target"},
 				[]string{"some-name"},
-				[]string{},
 			),
 		},
 		{
 			name: "all fields",
-			req: StageRequest{
+			req: LinkRequest{
 				Name:          "some-name",
-				Address:       "some-address",
-				Service:       domain.NewPresentString("some-service"),
-				Method:        domain.NewPresentString("some-method"),
+				SourceStage:   "source",
+				SourceField:   domain.NewPresentString("source-field"),
+				TargetStage:   "target",
+				TargetField:   domain.NewPresentString("target-field"),
 				Orchestration: "orchestration",
 			},
-			expStage: createStage(
+			expLink: createLink(
 				t,
 				"some-name",
 				"orchestration",
 				false,
 			),
-			loadOrchestration: createEmptyOrchestration(t, "orchestration"),
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				[]string{"source", "target"},
+				[]string{},
+			),
 			expOrchestration: createOrchestration(
 				t,
 				"orchestration",
+				[]string{"source", "target"},
 				[]string{"some-name"},
-				[]string{},
 			),
 		},
 	}
@@ -67,19 +79,30 @@ func TestCreateStage(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
+				existsLinkCount := 0
+				saveLinkCount := 0
+
 				existsStageCount := 0
-				saveStageCount := 0
 
 				existsOrchestrationCount := 0
 				loadOrchestrationCount := 0
 				saveOrchestrationCount := 0
 
-				existsStage := existsStageFn(
-					test.expStage.Name(),
-					&existsStageCount,
+				existsLink := existsLinkFn(
+					test.expLink.Name(),
+					&existsLinkCount,
 					1,
 				)
-				saveStage := saveStageFn(t, test.expStage, &saveStageCount)
+				saveLink := saveLinkFn(t, test.expLink, &saveLinkCount)
+
+				possibleStages := []domain.StageName{
+					test.expLink.Source().Stage(),
+					test.expLink.Target().Stage(),
+				}
+				existsStage := existsOneOfStageFn(
+					possibleStages,
+					&existsStageCount,
+				)
 
 				existsOrchestration := existsOrchestrationFn(
 					test.loadOrchestration.Name(),
@@ -97,18 +120,21 @@ func TestCreateStage(t *testing.T) {
 					&saveOrchestrationCount,
 				)
 
-				createFn := CreateStage(
+				createFn := CreateLink(
+					existsLink,
+					saveLink,
 					existsStage,
-					saveStage,
 					existsOrchestration,
 					loadOrchestration,
 					saveOrchestration,
 				)
-
 				res := createFn(test.req)
+
 				assert.Assert(t, !res.Err.Present())
-				assert.Equal(t, existsStageCount, 1)
-				assert.Equal(t, saveStageCount, 1)
+				assert.Equal(t, existsLinkCount, 1)
+				assert.Equal(t, saveLinkCount, 1)
+				// Two because of source and target
+				assert.Equal(t, existsStageCount, 2)
 				assert.Equal(t, existsOrchestrationCount, 1)
 				assert.Equal(t, loadOrchestrationCount, 1)
 				assert.Equal(t, saveOrchestrationCount, 1)
@@ -117,31 +143,46 @@ func TestCreateStage(t *testing.T) {
 	}
 }
 
-func TestCreateStage_AlreadyExists(t *testing.T) {
-	req := StageRequest{
+func TestCreateLink_AlreadyExists(t *testing.T) {
+	req := LinkRequest{
 		Name:          "some-name",
-		Address:       "some-address",
-		Service:       domain.NewPresentString("some-service"),
-		Method:        domain.NewPresentString("some-method"),
+		SourceStage:   "source",
+		SourceField:   domain.NewPresentString("source-field"),
+		TargetStage:   "target",
+		TargetField:   domain.NewPresentString("target-field"),
 		Orchestration: "orchestration",
 	}
-	expStage := createStage(t, "some-name", "orchestration", false)
-	storedOrchestration := createEmptyOrchestration(t, "orchestration")
+	expLink := createLink(t, "some-name", "orchestration", false)
+	storedOrchestration := createOrchestration(
+		t,
+		"orchestration",
+		[]string{"source", "target"},
+		[]string{},
+	)
 	expOrchestration := createOrchestration(
 		t,
 		"orchestration",
+		[]string{"source", "target"},
 		[]string{"some-name"},
-		[]string{},
 	)
+
+	existsLinkCount := 0
+	saveLinkCount := 0
+
 	existsStageCount := 0
-	saveStageCount := 0
 
 	existsOrchestrationCount := 0
 	loadOrchestrationCount := 0
 	saveOrchestrationCount := 0
 
-	existsStage := existsStageFn(expStage.Name(), &existsStageCount, 1)
-	saveStage := saveStageFn(t, expStage, &saveStageCount)
+	existsLink := existsLinkFn(expLink.Name(), &existsLinkCount, 1)
+	saveLink := saveLinkFn(t, expLink, &saveLinkCount)
+
+	possibleStages := []domain.StageName{
+		expLink.Source().Stage(),
+		expLink.Target().Stage(),
+	}
+	existsStage := existsOneOfStageFn(possibleStages, &existsStageCount)
 
 	existsOrchestration := existsOrchestrationFn(
 		storedOrchestration.Name(),
@@ -159,38 +200,55 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		&saveOrchestrationCount,
 	)
 
-	createFn := CreateStage(
+	createFn := CreateLink(
+		existsLink,
+		saveLink,
 		existsStage,
-		saveStage,
 		existsOrchestration,
 		loadOrchestration,
 		saveOrchestration,
 	)
-
 	res := createFn(req)
+
 	assert.Assert(t, !res.Err.Present())
-	assert.Equal(t, existsStageCount, 1)
-	assert.Equal(t, saveStageCount, 1)
+	assert.Equal(t, existsLinkCount, 1)
+	assert.Equal(t, saveLinkCount, 1)
+	// Two because of source and target
+	assert.Equal(t, existsStageCount, 2)
 	assert.Equal(t, existsOrchestrationCount, 1)
 	assert.Equal(t, loadOrchestrationCount, 1)
 	assert.Equal(t, saveOrchestrationCount, 1)
 
 	res = createFn(req)
+
 	assert.Assert(t, res.Err.Present())
 	err := res.Err.Unwrap()
 	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
 	assert.ErrorContains(
 		t,
 		err,
-		fmt.Sprintf("stage '%v' already exists", req.Name),
+		fmt.Sprintf("link '%v' already exists", req.Name),
 	)
+	assert.Equal(t, existsLinkCount, 2)
+	assert.Equal(t, saveLinkCount, 1)
+	// Two because of source and target
 	assert.Equal(t, existsStageCount, 2)
-	// Stage should not be saved
-	assert.Equal(t, saveStageCount, 1)
-	// Should not run due to order of verifications
 	assert.Equal(t, existsOrchestrationCount, 1)
-	// Should not run due to order of verifications
 	assert.Equal(t, loadOrchestrationCount, 1)
-	// Orchestration Should not have been updated
 	assert.Equal(t, saveOrchestrationCount, 1)
+}
+
+func existsOneOfStageFn(
+	expected []domain.StageName,
+	callCount *int,
+) ExistsStage {
+	return func(name domain.StageName) bool {
+		*callCount++
+		for _, s := range expected {
+			if s.Unwrap() == name.Unwrap() {
+				return true
+			}
+		}
+		return false
+	}
 }
