@@ -9,6 +9,12 @@ var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type linkName string
 
+func (s linkName) LinkName() {}
+
+func (s linkName) Unwrap() string {
+	return string(s)
+}
+
 func NewLinkName(name string) (LinkName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
@@ -19,15 +25,13 @@ func NewLinkName(name string) (LinkName, error) {
 	return linkName(name), nil
 }
 
-func (s linkName) Unwrap() string {
-	return string(s)
-}
-
 func isValidLinkName(name string) bool {
 	return linkNameRegExp.MatchString(name)
 }
 
 type messageField string
+
+func (m messageField) MessageField() {}
 
 func (m messageField) Unwrap() string {
 	return string(m)
@@ -65,6 +69,8 @@ func NewEmptyMessageField() OptionalMessageField {
 var orchestrationNameReqExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type orchestrationName string
+
+func (o orchestrationName) OrchestrationName() {}
 
 func (o orchestrationName) Unwrap() string {
 	return string(o)
