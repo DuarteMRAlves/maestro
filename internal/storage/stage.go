@@ -11,7 +11,7 @@ import (
 )
 
 func SaveStageWithTxn(txn *badger.Txn) create.SaveStage {
-	return func(s domain.Stage) domain.StageResult {
+	return func(s create.Stage) create.StageResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -19,19 +19,19 @@ func SaveStageWithTxn(txn *badger.Txn) create.SaveStage {
 		stageToBuf(&buf, s)
 		err = txn.Set(kvKey(s.Name()), buf.Bytes())
 		if err != nil {
-			return domain.ErrStage(
+			return create.ErrStage(
 				errdefs.InternalWithMsg(
 					"storage error: %v",
 					err,
 				),
 			)
 		}
-		return domain.SomeStage(s)
+		return create.SomeStage(s)
 	}
 }
 
 func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
-	return func(name domain.StageName) domain.StageResult {
+	return func(name domain.StageName) create.StageResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -39,7 +39,7 @@ func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 		)
 		item, err = txn.Get(kvKey(name))
 		if err != nil {
-			return domain.ErrStage(
+			return create.ErrStage(
 				errdefs.PrependMsg(
 					err,
 					"load stage %s",
@@ -50,16 +50,16 @@ func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 		data, err = item.ValueCopy(nil)
 		buf := bytes.NewBuffer(data)
 		splits := strings.Split(buf.String(), ";")
-		if len(splits) != 3 {
-			return domain.ErrStage(
+		if len(splits) != 4 {
+			return create.ErrStage(
 				errdefs.InternalWithMsg(
-					"invalid format: expected 3 semi-colon separated values",
+					"invalid format: expected 4 semi-colon separated values",
 				),
 			)
 		}
 		a, err := stringToAddress(splits[0])
 		if err != nil {
-			return domain.ErrStage(
+			return create.ErrStage(
 				errdefs.PrependMsg(
 					err,
 					"load stage %s",
@@ -69,7 +69,7 @@ func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 		}
 		s, err := stringToService(splits[1])
 		if err != nil {
-			return domain.ErrStage(
+			return create.ErrStage(
 				errdefs.PrependMsg(
 					err,
 					"load stage %s",
@@ -79,7 +79,7 @@ func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 		}
 		m, err := stringToMethod(splits[2])
 		if err != nil {
-			return domain.ErrStage(
+			return create.ErrStage(
 				errdefs.PrependMsg(
 					err,
 					"load stage %s",
@@ -88,11 +88,21 @@ func LoadStageWithTxn(txn *badger.Txn) create.LoadStage {
 			)
 		}
 		methodCtx := domain.NewMethodContext(a, s, m)
-		return domain.SomeStage(domain.NewStage(name, methodCtx))
+		orchName, err := domain.NewOrchestrationName(splits[3])
+		if err != nil {
+			return create.ErrStage(
+				errdefs.PrependMsg(
+					err,
+					"load stage %s",
+					name,
+				),
+			)
+		}
+		return create.SomeStage(create.NewStage(name, methodCtx, orchName))
 	}
 }
 
-func stageToBuf(buf *bytes.Buffer, s domain.Stage) {
+func stageToBuf(buf *bytes.Buffer, s create.Stage) {
 	methodCtxToBuf(buf, s.MethodContext())
 }
 

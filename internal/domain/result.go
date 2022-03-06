@@ -6,12 +6,6 @@ type AssetResult interface {
 	Error() error
 }
 
-type StageResult interface {
-	IsError() bool
-	Unwrap() Stage
-	Error() error
-}
-
 type someAsset struct{ Asset }
 
 func (s someAsset) IsError() bool { return false }
@@ -40,23 +34,3 @@ func BindAsset(f func(Asset) AssetResult) func(AssetResult) AssetResult {
 		return f(resultAsset.Unwrap())
 	}
 }
-
-type someStage struct{ Stage }
-
-func (s someStage) IsError() bool { return false }
-
-func (s someStage) Unwrap() Stage { return s.Stage }
-
-func (s someStage) Error() error { return nil }
-
-type errStage struct{ error }
-
-func (e errStage) IsError() bool { return true }
-
-func (e errStage) Unwrap() Stage { panic("Stage not available in error result") }
-
-func (e errStage) Error() error { return e.error }
-
-func SomeStage(s Stage) StageResult { return someStage{s} }
-
-func ErrStage(err error) StageResult { return errStage{err} }

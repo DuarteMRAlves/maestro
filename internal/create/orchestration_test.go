@@ -2,7 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -10,10 +9,10 @@ import (
 
 func TestCreateOrchestration(t *testing.T) {
 	req := OrchestrationRequest{Name: "some-name"}
-	expected := createOrchestration(t, "some-name")
+	expected := createEmptyOrchestration(t, "some-name")
 	existsCallCount := 0
 	saveCallCount := 0
-	existsFn := existsOrchestrationFn(expected.Name(), &existsCallCount)
+	existsFn := existsOrchestrationFn(expected.Name(), &existsCallCount, 1)
 	saveFn := saveOrchestrationFn(t, expected, &saveCallCount)
 	createFn := CreateOrchestration(existsFn, saveFn)
 
@@ -25,10 +24,10 @@ func TestCreateOrchestration(t *testing.T) {
 
 func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	req := OrchestrationRequest{Name: "some-name"}
-	expected := createOrchestration(t, "some-name")
+	expected := createEmptyOrchestration(t, "some-name")
 	existsCallCount := 0
 	saveCallCount := 0
-	existsFn := existsOrchestrationFn(expected.Name(), &existsCallCount)
+	existsFn := existsOrchestrationFn(expected.Name(), &existsCallCount, 1)
 	saveFn := saveOrchestrationFn(t, expected, &saveCallCount)
 	createFn := CreateOrchestration(existsFn, saveFn)
 
@@ -49,32 +48,4 @@ func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	assert.Equal(t, existsCallCount, 2)
 	// Should not call save
 	assert.Equal(t, saveCallCount, 1)
-}
-
-func existsOrchestrationFn(
-	expected domain.OrchestrationName,
-	callCount *int,
-) ExistsOrchestration {
-	return func(name domain.OrchestrationName) bool {
-		*callCount++
-		return expected.Unwrap() == name.Unwrap() && (*callCount > 1)
-	}
-}
-
-func saveOrchestrationFn(
-	t *testing.T,
-	expected Orchestration,
-	callCount *int,
-) SaveOrchestration {
-	return func(actual Orchestration) OrchestrationResult {
-		*callCount++
-		assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-		return SomeOrchestration(actual)
-	}
-}
-
-func createOrchestration(t *testing.T, orchName string) Orchestration {
-	name, err := domain.NewOrchestrationName(orchName)
-	assert.NilError(t, err, "create name for orchestration %s", orchName)
-	return NewOrchestration(name, []domain.StageName{}, []domain.LinkName{})
 }

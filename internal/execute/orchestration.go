@@ -6,7 +6,7 @@ import (
 
 type orchestration struct {
 	name   domain.OrchestrationName
-	stages []domain.Stage
+	stages []Stage
 	links  []Link
 }
 
@@ -14,7 +14,7 @@ func (o orchestration) Name() domain.OrchestrationName {
 	return o.name
 }
 
-func (o orchestration) Stages() []domain.Stage {
+func (o orchestration) Stages() []Stage {
 	return o.stages
 }
 
@@ -24,7 +24,7 @@ func (o orchestration) Links() []Link {
 
 func NewOrchestration(
 	name domain.OrchestrationName,
-	stages []domain.Stage,
+	stages []Stage,
 	links []Link,
 ) Orchestration {
 	return &orchestration{
