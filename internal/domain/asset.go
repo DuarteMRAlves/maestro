@@ -9,6 +9,12 @@ var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type assetName string
 
+func (a assetName) AssetName() {}
+
+func (a assetName) Unwrap() string {
+	return string(a)
+}
+
 func NewAssetName(name string) (AssetName, error) {
 	if isValidAssetName(name) {
 		return assetName(name), nil
@@ -20,21 +26,19 @@ func isValidAssetName(name string) bool {
 	return assetNameRegExp.MatchString(name)
 }
 
-func (a assetName) Unwrap() string {
-	return string(a)
-}
-
 type image string
+
+func (i image) Image() {}
+
+func (i image) Unwrap() string {
+	return string(i)
+}
 
 func NewImage(img string) (Image, error) {
 	if len(img) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty image")
 	}
 	return image(img), nil
-}
-
-func (i image) Unwrap() string {
-	return string(i)
 }
 
 type presentImage struct {

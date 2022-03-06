@@ -9,6 +9,12 @@ var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
 type stageName string
 
+func (s stageName) StageName() {}
+
+func (s stageName) Unwrap() string {
+	return string(s)
+}
+
 func NewStageName(name string) (StageName, error) {
 	if len(name) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty name")
@@ -19,25 +25,23 @@ func NewStageName(name string) (StageName, error) {
 	return stageName(name), nil
 }
 
-func (s stageName) Unwrap() string {
-	return string(s)
-}
-
 func isValidStageName(name string) bool {
 	return nameRegExp.MatchString(name)
 }
 
 type service string
 
+func (s service) Service() {}
+
+func (s service) Unwrap() string {
+	return string(s)
+}
+
 func NewService(s string) (Service, error) {
 	if len(s) == 0 {
 		return nil, errdefs.InvalidArgumentWithMsg("empty service")
 	}
 	return service(s), nil
-}
-
-func (s service) Unwrap() string {
-	return string(s)
 }
 
 type presentService struct{ Service }
@@ -63,6 +67,8 @@ func NewEmptyService() OptionalService {
 }
 
 type method string
+
+func (m method) Method() {}
 
 func (m method) Unwrap() string {
 	return string(m)
@@ -98,6 +104,8 @@ func NewEmptyMethod() OptionalMethod {
 }
 
 type address string
+
+func (a address) Address() {}
 
 func (a address) Unwrap() string { return string(a) }
 

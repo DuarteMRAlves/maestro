@@ -1,8 +1,14 @@
 package domain
 
-type AssetName interface{ Unwrap() string }
+type AssetName interface {
+	AssetName()
+	Unwrap() string
+}
 
-type Image interface{ Unwrap() string }
+type Image interface {
+	Image()
+	Unwrap() string
+}
 
 type OptionalImage interface {
 	Unwrap() Image
@@ -14,23 +20,35 @@ type Asset interface {
 	Image() OptionalImage
 }
 
-type StageName interface{ Unwrap() string }
+type StageName interface {
+	StageName()
+	Unwrap() string
+}
 
-type Service interface{ Unwrap() string }
+type Service interface {
+	Service()
+	Unwrap() string
+}
 
 type OptionalService interface {
 	Unwrap() Service
 	Present() bool
 }
 
-type Method interface{ Unwrap() string }
+type Method interface {
+	Method()
+	Unwrap() string
+}
 
 type OptionalMethod interface {
 	Unwrap() Method
 	Present() bool
 }
 
-type Address interface{ Unwrap() string }
+type Address interface {
+	Address()
+	Unwrap() string
+}
 
 type MethodContext interface {
 	Address() Address
@@ -43,13 +61,22 @@ type Stage interface {
 	MethodContext() MethodContext
 }
 
-type LinkName interface{ Unwrap() string }
+type LinkName interface {
+	LinkName()
+	Unwrap() string
+}
 
-type MessageField interface{ Unwrap() string }
+type MessageField interface {
+	MessageField()
+	Unwrap() string
+}
 
 type OptionalMessageField interface {
 	Unwrap() MessageField
 	Present() bool
 }
 
-type OrchestrationName interface{ Unwrap() string }
+type OrchestrationName interface {
+	OrchestrationName()
+	Unwrap() string
+}
