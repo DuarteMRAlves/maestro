@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -10,7 +11,7 @@ import (
 func TestSaveLinkWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		link     domain.Link
+		link     execute.Link
 		expected []byte
 	}{
 		{
@@ -84,7 +85,7 @@ func TestSaveLinkWithTxn(t *testing.T) {
 func TestLoadLinkWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected domain.Link
+		expected execute.Link
 		stored   []byte
 	}{
 		{
@@ -102,7 +103,7 @@ func TestLoadLinkWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded domain.Link
+				var loaded execute.Link
 
 				db := NewTestDb(t)
 				defer db.Close()

@@ -6,46 +6,23 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
 func SaveOrchestrationWithTxn(txn *badger.Txn) create.SaveOrchestration {
-	return func(o domain.Orchestration) domain.OrchestrationResult {
+	return func(o create.Orchestration) create.OrchestrationResult {
 		var (
 			buf bytes.Buffer
 			err error
 		)
-		storeStage := SaveStageWithTxn(txn)
-		storeLink := SaveLinkWithTxn(txn)
 
 		stages := o.Stages()
 		links := o.Links()
 
-		for _, s := range stages {
-			res := storeStage(s)
-			if res.IsError() {
-				err = errdefs.PrependMsg(
-					res.Error(),
-					"store orchestration %s",
-					o.Name(),
-				)
-				return domain.ErrOrchestration(err)
-			}
-		}
-		for _, l := range links {
-			res := storeLink(l)
-			if res.IsError() {
-				err = errdefs.PrependMsg(
-					res.Error(),
-					"store orchestration %s",
-					o.Name(),
-				)
-				return domain.ErrOrchestration(err)
-			}
-		}
 		for i, s := range stages {
-			buf.WriteString(s.Name().Unwrap())
+			buf.WriteString(s.Unwrap())
 			if i+1 != len(stages) {
 				// , is not a valid name char, so we can use it
 				buf.WriteByte(',')
@@ -53,7 +30,7 @@ func SaveOrchestrationWithTxn(txn *badger.Txn) create.SaveOrchestration {
 		}
 		buf.WriteByte(';')
 		for i, l := range links {
-			buf.WriteString(l.Name().Unwrap())
+			buf.WriteString(l.Unwrap())
 			if i+1 != len(links) {
 				buf.WriteByte(',')
 			}
@@ -66,14 +43,14 @@ func SaveOrchestrationWithTxn(txn *badger.Txn) create.SaveOrchestration {
 				o.Name(),
 				err,
 			)
-			return domain.ErrOrchestration(err)
+			return create.ErrOrchestration(err)
 		}
-		return domain.SomeOrchestration(o)
+		return create.SomeOrchestration(o)
 	}
 }
 
-func LoadOrchestrationWithTxn(txn *badger.Txn) create.LoadOrchestration {
-	return func(name domain.OrchestrationName) domain.OrchestrationResult {
+func LoadOrchestrationWithTxn(txn *badger.Txn) execute.LoadOrchestration {
+	return func(name domain.OrchestrationName) execute.OrchestrationResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -85,17 +62,17 @@ func LoadOrchestrationWithTxn(txn *badger.Txn) create.LoadOrchestration {
 		item, err = txn.Get(orchestrationKey(name))
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load orchestration %s", name)
-			return domain.ErrOrchestration(err)
+			return execute.ErrOrchestration(err)
 		}
 		data, err = item.ValueCopy(nil)
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load orchestration %s", name)
-			return domain.ErrOrchestration(err)
+			return execute.ErrOrchestration(err)
 		}
 		buf := bytes.NewBuffer(data)
 		splits := strings.Split(buf.String(), ";")
 		if len(splits) != 2 {
-			return domain.ErrOrchestration(
+			return execute.ErrOrchestration(
 				errdefs.InternalWithMsg(
 					"invalid format: expected 2 semi-colon separated values",
 				),
@@ -104,15 +81,15 @@ func LoadOrchestrationWithTxn(txn *badger.Txn) create.LoadOrchestration {
 		stages, err := splitToStages(loadStage, splits[0])
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load orchestration %s", name)
-			return domain.ErrOrchestration(err)
+			return execute.ErrOrchestration(err)
 		}
 		links, err := splitToLinks(loadLink, splits[1])
 		if err != nil {
 			err = errdefs.PrependMsg(err, "load orchestration %s", name)
-			return domain.ErrOrchestration(err)
+			return execute.ErrOrchestration(err)
 		}
-		o := domain.NewOrchestration(name, stages, links)
-		return domain.SomeOrchestration(o)
+		o := execute.NewOrchestration(name, stages, links)
+		return execute.SomeOrchestration(o)
 	}
 }
 
@@ -139,15 +116,15 @@ func splitToStages(loadFn create.LoadStage, data string) (
 	return stages, nil
 }
 
-func splitToLinks(loadFn create.LoadLink, data string) (
-	[]domain.Link,
+func splitToLinks(loadFn execute.LoadLink, data string) (
+	[]execute.Link,
 	error,
 ) {
 	if len(data) == 0 {
-		return []domain.Link{}, nil
+		return []execute.Link{}, nil
 	}
 	linksNames := strings.Split(data, ",")
-	links := make([]domain.Link, 0, len(linksNames))
+	links := make([]execute.Link, 0, len(linksNames))
 	for _, n := range linksNames {
 		name, err := domain.NewLinkName(n)
 		if err != nil {

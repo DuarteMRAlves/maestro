@@ -63,18 +63,18 @@ func existsOrchestrationFn(
 
 func saveOrchestrationFn(
 	t *testing.T,
-	expected domain.Orchestration,
+	expected Orchestration,
 	callCount *int,
 ) SaveOrchestration {
-	return func(actual domain.Orchestration) domain.OrchestrationResult {
+	return func(actual Orchestration) OrchestrationResult {
 		*callCount++
 		assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-		return domain.SomeOrchestration(actual)
+		return SomeOrchestration(actual)
 	}
 }
 
-func createOrchestration(t *testing.T, orchName string) domain.Orchestration {
+func createOrchestration(t *testing.T, orchName string) Orchestration {
 	name, err := domain.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create name for orchestration %s", orchName)
-	return domain.NewOrchestration(name, []domain.Stage{}, []domain.Link{})
+	return NewOrchestration(name, []domain.StageName{}, []domain.LinkName{})
 }

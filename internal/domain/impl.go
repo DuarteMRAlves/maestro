@@ -62,55 +62,21 @@ func NewEmptyMessageField() OptionalMessageField {
 	return emptyMessageField{}
 }
 
-type linkEndpoint struct {
-	stage Stage
-	field OptionalMessageField
+var orchestrationNameReqExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
+
+type orchestrationName string
+
+func (o orchestrationName) Unwrap() string {
+	return string(o)
 }
 
-func (e *linkEndpoint) Stage() Stage {
-	return e.stage
-}
-
-func (e *linkEndpoint) Field() OptionalMessageField {
-	return e.field
-}
-
-func NewLinkEndpoint(
-	stage Stage,
-	field OptionalMessageField,
-) LinkEndpoint {
-	return &linkEndpoint{
-		stage: stage,
-		field: field,
+func NewOrchestrationName(name string) (OrchestrationName, error) {
+	if isValidOrchestrationName(name) {
+		return orchestrationName(name), nil
 	}
+	return nil, errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
 }
 
-type link struct {
-	name   LinkName
-	source LinkEndpoint
-	target LinkEndpoint
-}
-
-func (l *link) Name() LinkName {
-	return l.name
-}
-
-func (l *link) Source() LinkEndpoint {
-	return l.source
-}
-
-func (l *link) Target() LinkEndpoint {
-	return l.target
-}
-
-func NewLink(
-	name LinkName,
-	source LinkEndpoint,
-	target LinkEndpoint,
-) Link {
-	return &link{
-		name:   name,
-		source: source,
-		target: target,
-	}
+func isValidOrchestrationName(name string) bool {
+	return orchestrationNameReqExp.MatchString(name)
 }
