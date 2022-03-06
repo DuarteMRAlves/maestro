@@ -6,12 +6,13 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/dgraph-io/badger/v3"
 	"strings"
 )
 
 func SaveLinkWithTxn(txn *badger.Txn) create.SaveLink {
-	return func(l domain.Link) domain.LinkResult {
+	return func(l execute.Link) execute.LinkResult {
 		var (
 			buf bytes.Buffer
 			err error
@@ -25,26 +26,26 @@ func SaveLinkWithTxn(txn *badger.Txn) create.SaveLink {
 		if sourceRes.IsError() {
 			err = sourceRes.Error()
 			err = errdefs.PrependMsg(err, "store link: %s", l.Name())
-			return domain.ErrLink(err)
+			return execute.ErrLink(err)
 		}
 		targetRes := storeStage(targetStage)
 		if targetRes.IsError() {
 			err = sourceRes.Error()
 			err = errdefs.PrependMsg(err, "store link %s", l.Name())
-			return domain.ErrLink(err)
+			return execute.ErrLink(err)
 		}
 		linkPersistenceInfoToBuf(&buf, l)
 		err = txn.Set(linkKey(l.Name()), buf.Bytes())
 		if err != nil {
 			err = errdefs.InternalWithMsg("store link %s: %v", l.Name(), err)
-			return domain.ErrLink(err)
+			return execute.ErrLink(err)
 		}
-		return domain.SomeLink(l)
+		return execute.SomeLink(l)
 	}
 }
 
-func LoadLinkWithTxn(txn *badger.Txn) create.LoadLink {
-	return func(name domain.LinkName) domain.LinkResult {
+func LoadLinkWithTxn(txn *badger.Txn) execute.LoadLink {
+	return func(name domain.LinkName) execute.LinkResult {
 		var (
 			item *badger.Item
 			data []byte
@@ -52,16 +53,18 @@ func LoadLinkWithTxn(txn *badger.Txn) create.LoadLink {
 		)
 		item, err = txn.Get(linkKey(name))
 		if err != nil {
-			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
+			err = errdefs.PrependMsg(err, "load link %s", name)
+			return execute.ErrLink(err)
 		}
 		data, err = item.ValueCopy(nil)
 		if err != nil {
-			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
+			err = errdefs.PrependMsg(err, "load link %s", name)
+			return execute.ErrLink(err)
 		}
 		buf := bytes.NewBuffer(data)
 		splits := strings.Split(buf.String(), ";")
 		if len(splits) != 4 {
-			return domain.ErrLink(
+			return execute.ErrLink(
 				errdefs.InternalWithMsg(
 					"invalid format: expected 4 semi-colon separated values",
 				),
@@ -70,23 +73,25 @@ func LoadLinkWithTxn(txn *badger.Txn) create.LoadLink {
 		loadStage := LoadStageWithTxn(txn)
 		source, err := loadEndpoint(loadStage, splits[0], splits[1])
 		if err != nil {
-			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
+			err = errdefs.PrependMsg(err, "load link %s", name)
+			return execute.ErrLink(err)
 		}
 		target, err := loadEndpoint(loadStage, splits[2], splits[3])
 		if err != nil {
-			return domain.ErrLink(errdefs.PrependMsg(err, "load link %s", name))
+			err = errdefs.PrependMsg(err, "load link %s", name)
+			return execute.ErrLink(err)
 		}
-		return domain.SomeLink(domain.NewLink(name, source, target))
+		return execute.SomeLink(execute.NewLink(name, source, target))
 	}
 }
 
-func linkPersistenceInfoToBuf(buf *bytes.Buffer, l domain.Link) {
+func linkPersistenceInfoToBuf(buf *bytes.Buffer, l execute.Link) {
 	endpointToBuf(buf, l.Source())
 	buf.WriteByte(';')
 	endpointToBuf(buf, l.Target())
 }
 
-func endpointToBuf(buf *bytes.Buffer, e domain.LinkEndpoint) {
+func endpointToBuf(buf *bytes.Buffer, e execute.LinkEndpoint) {
 	buf.WriteString(e.Stage().Name().Unwrap())
 	buf.WriteByte(';')
 	if e.Field().Present() {
@@ -98,7 +103,7 @@ func loadEndpoint(
 	loadStage func(domain.StageName) domain.StageResult,
 	nameData string,
 	fieldData string,
-) (domain.LinkEndpoint, error) {
+) (execute.LinkEndpoint, error) {
 	name, err := domain.NewStageName(nameData)
 	if err != nil {
 		return nil, err
@@ -112,7 +117,7 @@ func loadEndpoint(
 	if err != nil {
 		return nil, err
 	}
-	return domain.NewLinkEndpoint(stage, field), nil
+	return execute.NewLinkEndpoint(stage, field), nil
 }
 
 func loadField(data string) (domain.OptionalMessageField, error) {

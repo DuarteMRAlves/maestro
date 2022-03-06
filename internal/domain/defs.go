@@ -52,21 +52,4 @@ type OptionalMessageField interface {
 	Present() bool
 }
 
-type LinkEndpoint interface {
-	Stage() Stage
-	Field() OptionalMessageField
-}
-
-type Link interface {
-	Name() LinkName
-	Source() LinkEndpoint
-	Target() LinkEndpoint
-}
-
 type OrchestrationName interface{ Unwrap() string }
-
-type Orchestration interface {
-	Name() OrchestrationName
-	Stages() []Stage
-	Links() []Link
-}

@@ -2,7 +2,9 @@ package storage
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -51,7 +53,7 @@ func createLink(
 	t *testing.T,
 	linkName, sourceName, targetName string,
 	requiredOnly bool,
-) domain.Link {
+) execute.Link {
 	name, err := domain.NewLinkName(linkName)
 	assert.NilError(t, err, "create name for link %s", linkName)
 
@@ -69,18 +71,48 @@ func createLink(
 		targetFieldOpt = domain.NewPresentMessageField(targetField)
 	}
 
-	sourceEndpoint := domain.NewLinkEndpoint(source, sourceFieldOpt)
-	targetEndpoint := domain.NewLinkEndpoint(target, targetFieldOpt)
+	sourceEndpoint := execute.NewLinkEndpoint(source, sourceFieldOpt)
+	targetEndpoint := execute.NewLinkEndpoint(target, targetFieldOpt)
 
-	return domain.NewLink(name, sourceEndpoint, targetEndpoint)
+	return execute.NewLink(name, sourceEndpoint, targetEndpoint)
 }
 
-func createOrchestration(
+func createCreateOrchestration(
+	t *testing.T,
+	orchName string,
+	stageNames, linkNames []string,
+) create.Orchestration {
+	// The ith link is from the ith stage to the (i+1)th stage or both are empty.
+	assert.Assert(
+		t,
+		len(stageNames) == len(linkNames)+1 ||
+			(len(stageNames) == 0 && len(linkNames) == 0),
+	)
+	name, err := domain.NewOrchestrationName(orchName)
+	assert.NilError(t, err, "create name for orchestration %s", orchName)
+
+	stages := make([]domain.StageName, 0, len(stageNames))
+	for _, n := range stageNames {
+		stageName, err := domain.NewStageName(n)
+		assert.NilError(t, err, "create stage for orchestration %s", orchName)
+		stages = append(stages, stageName)
+	}
+
+	links := make([]domain.LinkName, 0, len(linkNames))
+	for _, n := range linkNames {
+		linkName, err := domain.NewLinkName(n)
+		assert.NilError(t, err, "create link for orchestration %s", orchName)
+		links = append(links, linkName)
+	}
+	return create.NewOrchestration(name, stages, links)
+}
+
+func createExecuteOrchestration(
 	t *testing.T,
 	orchName string,
 	stageNames, linkNames []string,
 	requiredOnly bool,
-) domain.Orchestration {
+) execute.Orchestration {
 	// The ith link is from the ith stage to the (i+1)th stage
 	assert.Equal(t, len(stageNames), len(linkNames)+1)
 	name, err := domain.NewOrchestrationName(orchName)
@@ -90,13 +122,13 @@ func createOrchestration(
 	for _, n := range stageNames {
 		stages = append(stages, createStage(t, n, requiredOnly))
 	}
-	links := make([]domain.Link, 0, len(linkNames))
+	links := make([]execute.Link, 0, len(linkNames))
 	for i, n := range linkNames {
 		l := createLink(t, n, stageNames[i], stageNames[i+1], requiredOnly)
 		links = append(links, l)
 	}
 
-	return domain.NewOrchestration(name, stages, links)
+	return execute.NewOrchestration(name, stages, links)
 }
 
 func assertEqualStage(t *testing.T, expected, actual domain.Stage) {
@@ -122,7 +154,7 @@ func assertEqualStage(t *testing.T, expected, actual domain.Stage) {
 	}
 }
 
-func assertEqualLink(t *testing.T, expected, actual domain.Link) {
+func assertEqualLink(t *testing.T, expected, actual execute.Link) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assertEqualLinkEndpoint(t, expected.Source(), actual.Source())
 	assertEqualLinkEndpoint(t, expected.Target(), actual.Target())
@@ -130,7 +162,7 @@ func assertEqualLink(t *testing.T, expected, actual domain.Link) {
 
 func assertEqualLinkEndpoint(
 	t *testing.T,
-	expected, actual domain.LinkEndpoint,
+	expected, actual execute.LinkEndpoint,
 ) {
 	assertEqualStage(t, expected.Stage(), actual.Stage())
 	assert.Equal(t, expected.Field().Present(), actual.Field().Present())

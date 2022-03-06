@@ -1,7 +1,8 @@
 package storage
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/create"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/dgraph-io/badger/v3"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -10,28 +11,26 @@ import (
 func TestSaveOrchestrationWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		orch     domain.Orchestration
+		orch     create.Orchestration
 		expected []byte
 	}{
 		{
-			name: "required fields",
-			orch: createOrchestration(
+			name: "empty fields",
+			orch: createCreateOrchestration(
 				t,
 				"some-name",
-				[]string{"stage-1", "stage-2", "stage-3"},
-				[]string{"link-1", "link-2"},
-				true,
+				[]string{},
+				[]string{},
 			),
-			expected: []byte("stage-1,stage-2,stage-3;link-1,link-2"),
+			expected: []byte(";"),
 		},
 		{
 			name: "all fields",
-			orch: createOrchestration(
+			orch: createCreateOrchestration(
 				t,
 				"some-name",
 				[]string{"stage-1", "stage-2", "stage-3"},
 				[]string{"link-1", "link-2"},
-				false,
 			),
 			expected: []byte("stage-1,stage-2,stage-3;link-1,link-2"),
 		},
@@ -40,11 +39,7 @@ func TestSaveOrchestrationWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var (
-					stored       []byte
-					loadedStages []domain.Stage
-					loadedLinks  []domain.Link
-				)
+				var stored []byte
 
 				db := NewTestDb(t)
 				defer db.Close()
@@ -68,43 +63,12 @@ func TestSaveOrchestrationWithTxn(t *testing.T) {
 						if err != nil {
 							return err
 						}
-
-						loadStageFn := LoadStageWithTxn(txn)
-						loadLinkFn := LoadLinkWithTxn(txn)
-
-						for _, s := range test.orch.Stages() {
-							res := loadStageFn(s.Name())
-							if res.IsError() {
-								return res.Error()
-							}
-							loadedStages = append(loadedStages, res.Unwrap())
-						}
-
-						for _, l := range test.orch.Links() {
-							res := loadLinkFn(l.Name())
-							if res.IsError() {
-								return res.Error()
-							}
-							loadedLinks = append(loadedLinks, res.Unwrap())
-						}
 						return nil
 					},
 				)
-
 				assert.Equal(t, len(test.expected), len(stored))
 				for i, e := range test.expected {
 					assert.Equal(t, e, stored[i])
-				}
-
-				assert.Equal(t, len(test.orch.Stages()), len(loadedStages))
-				assert.Equal(t, len(test.orch.Links()), len(loadedLinks))
-
-				for i, s := range test.orch.Stages() {
-					assertEqualStage(t, s, loadedStages[i])
-				}
-
-				for i, l := range test.orch.Links() {
-					assertEqualLink(t, l, loadedLinks[i])
 				}
 			},
 		)
@@ -114,12 +78,12 @@ func TestSaveOrchestrationWithTxn(t *testing.T) {
 func TestLoadOrchestrationWithTxn(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected domain.Orchestration
+		expected execute.Orchestration
 		stored   []byte
 	}{
 		{
 			name: "required fields",
-			expected: createOrchestration(
+			expected: createExecuteOrchestration(
 				t,
 				"some-name",
 				[]string{"stage-1", "stage-2", "stage-3"},
@@ -130,7 +94,7 @@ func TestLoadOrchestrationWithTxn(t *testing.T) {
 		},
 		{
 			name: "all fields",
-			expected: createOrchestration(
+			expected: createExecuteOrchestration(
 				t,
 				"some-name",
 				[]string{"stage-1", "stage-2", "stage-3"},
@@ -144,7 +108,7 @@ func TestLoadOrchestrationWithTxn(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				var loaded domain.Orchestration
+				var loaded execute.Orchestration
 
 				db := NewTestDb(t)
 				defer db.Close()

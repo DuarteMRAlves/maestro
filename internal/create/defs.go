@@ -1,6 +1,9 @@
 package create
 
-import "github.com/DuarteMRAlves/maestro/internal/domain"
+import (
+	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
+)
 
 type SaveAsset func(domain.Asset) domain.AssetResult
 type LoadAsset func(domain.AssetName) domain.AssetResult
@@ -18,12 +21,17 @@ type AssetResponse struct {
 type SaveStage func(domain.Stage) domain.StageResult
 type LoadStage func(domain.StageName) domain.StageResult
 
-type SaveLink func(domain.Link) domain.LinkResult
-type LoadLink func(domain.LinkName) domain.LinkResult
+type SaveLink func(execute.Link) execute.LinkResult
+type LoadLink func(domain.LinkName) execute.LinkResult
 
-type SaveOrchestration func(domain.Orchestration) domain.OrchestrationResult
-type LoadOrchestration func(domain.OrchestrationName) domain.OrchestrationResult
+type SaveOrchestration func(Orchestration) OrchestrationResult
 type ExistsOrchestration func(domain.OrchestrationName) bool
+
+type Orchestration interface {
+	Name() domain.OrchestrationName
+	Stages() []domain.StageName
+	Links() []domain.LinkName
+}
 
 type OrchestrationRequest struct {
 	Name string
