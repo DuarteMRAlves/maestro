@@ -1,4 +1,4 @@
-package rpc
+package execute
 
 import (
 	"context"
@@ -62,10 +62,10 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("unit.TestService/Unary", conn)
+	invoke := NewUnaryInvoke("unit.TestService/Unary", conn)
 
 	reply := &unit.Reply{}
-	err = client.Invoke(ctx, correctRequest, reply)
+	err = invoke(ctx, correctRequest, reply)
 	assert.NilError(t, err, "invoke error not nil")
 
 	assert.DeepEqual(
@@ -92,10 +92,10 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("unit.TestService/Unary", conn)
+	invoke := NewUnaryInvoke("unit.TestService/Unary", conn)
 
 	reply := &unit.Reply{}
-	err = client.Invoke(ctx, errorRequest, reply)
+	err = invoke(ctx, errorRequest, reply)
 
 	assert.Assert(t, errdefs.IsUnknown(err), "error is not unknown")
 	assert.ErrorContains(t, err, "unary invoke: ")
@@ -117,10 +117,10 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("unit.ExtraService/ExtraMethod", conn)
+	invoke := NewUnaryInvoke("unit.ExtraService/ExtraMethod", conn)
 
 	reply := &unit.Reply{}
-	err = client.Invoke(ctx, errorRequest, reply)
+	err = invoke(ctx, errorRequest, reply)
 
 	assert.Assert(
 		t,
@@ -146,10 +146,10 @@ func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	client := NewUnary("unit.TestService/NoSuchMethod", conn)
+	invoke := NewUnaryInvoke("unit.TestService/NoSuchMethod", conn)
 
 	reply := &unit.Reply{}
-	err = client.Invoke(ctx, errorRequest, reply)
+	err = invoke(ctx, errorRequest, reply)
 
 	assert.Assert(
 		t,
