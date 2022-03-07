@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+message DynamicTestMessage {
+  int32 val = 1;
+  DynamicTestMessageInner inner = 2;
+}
+
+message DynamicTestMessageInner {
+  string val = 1;
+}
