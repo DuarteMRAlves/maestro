@@ -108,3 +108,9 @@ func BindOrchestration(
 		return f(result.Unwrap())
 	}
 }
+
+func ReturnOrchestration(f func(Orchestration) Orchestration) func(Orchestration) OrchestrationResult {
+	return func(o Orchestration) OrchestrationResult {
+		return SomeOrchestration(f(o))
+	}
+}

@@ -126,7 +126,7 @@ func addLink(
 ) func(Link) LinkResult {
 	return func(l Link) LinkResult {
 		name := l.Orchestration()
-		updateFn := addLinkToOrchestration(l)
+		updateFn := ReturnOrchestration(addLinkNameToOrchestration(l.Name()))
 		res := updateOrchestration(name, loadFn, updateFn, saveFn)
 		if res.IsError() {
 			err := errdefs.PrependMsg(
@@ -138,19 +138,6 @@ func addLink(
 			return ErrLink(err)
 		}
 		return SomeLink(l)
-	}
-}
-
-func addLinkToOrchestration(link Link) func(Orchestration) OrchestrationResult {
-	return func(o Orchestration) OrchestrationResult {
-		old := o.Links()
-		links := make([]domain.LinkName, 0, len(old)+1)
-		for _, s := range old {
-			links = append(links, s)
-		}
-		links = append(links, link.Name())
-		updated := NewOrchestration(o.Name(), o.Stages(), links)
-		return SomeOrchestration(updated)
 	}
 }
 

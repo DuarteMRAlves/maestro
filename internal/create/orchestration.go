@@ -1,9 +1,24 @@
 package create
 
-import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-)
+import "github.com/DuarteMRAlves/maestro/internal/domain"
+
+type SaveOrchestration func(Orchestration) OrchestrationResult
+type LoadOrchestration func(domain.OrchestrationName) OrchestrationResult
+type ExistsOrchestration func(domain.OrchestrationName) bool
+
+type Orchestration interface {
+	Name() domain.OrchestrationName
+	Stages() []domain.StageName
+	Links() []domain.LinkName
+}
+
+type OrchestrationRequest struct {
+	Name string
+}
+
+type OrchestrationResponse struct {
+	Err domain.OptionalError
+}
 
 type orchestration struct {
 	name   domain.OrchestrationName
@@ -35,48 +50,40 @@ func NewOrchestration(
 	}
 }
 
-func CreateOrchestration(
-	existsFn ExistsOrchestration,
+func updateOrchestration(
+	name domain.OrchestrationName,
+	loadFn LoadOrchestration,
+	updateFn func(Orchestration) OrchestrationResult,
 	saveFn SaveOrchestration,
-) func(OrchestrationRequest) OrchestrationResponse {
-	return func(req OrchestrationRequest) OrchestrationResponse {
-		res := requestToOrchestration(req)
-		res = BindOrchestration(verifyDupOrchestration(existsFn))(res)
-		res = BindOrchestration(saveFn)(res)
-		return orchestrationToResponse(res)
-	}
+) OrchestrationResult {
+	res := loadFn(name)
+	res = BindOrchestration(updateFn)(res)
+	res = BindOrchestration(saveFn)(res)
+	return res
 }
 
-func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
-	name, err := domain.NewOrchestrationName(req.Name)
-	if err != nil {
-		return ErrOrchestration(err)
-	}
-	o := NewOrchestration(name, []domain.StageName{}, []domain.LinkName{})
-	return SomeOrchestration(o)
-}
-
-func verifyDupOrchestration(
-	existsFn ExistsOrchestration,
-) func(Orchestration) OrchestrationResult {
-	return func(o Orchestration) OrchestrationResult {
-		if existsFn(o.Name()) {
-			err := errdefs.AlreadyExistsWithMsg(
-				"orchestration '%v' already exists",
-				o.Name().Unwrap(),
-			)
-			return ErrOrchestration(err)
+func addStageNameToOrchestration(
+	s domain.StageName,
+) func(Orchestration) Orchestration {
+	return func(o Orchestration) Orchestration {
+		old := o.Stages()
+		stages := make([]domain.StageName, 0, len(old)+1)
+		for _, name := range old {
+			stages = append(stages, name)
 		}
-		return SomeOrchestration(o)
+		stages = append(stages, s)
+		return NewOrchestration(o.Name(), stages, o.Links())
 	}
 }
 
-func orchestrationToResponse(res OrchestrationResult) OrchestrationResponse {
-	var errOpt domain.OptionalError
-	if res.IsError() {
-		errOpt = domain.NewPresentError(res.Error())
-	} else {
-		errOpt = domain.NewEmptyError()
+func addLinkNameToOrchestration(l domain.LinkName) func(Orchestration) Orchestration {
+	return func(o Orchestration) Orchestration {
+		old := o.Links()
+		links := make([]domain.LinkName, 0, len(old)+1)
+		for _, name := range old {
+			links = append(links, name)
+		}
+		links = append(links, l)
+		return NewOrchestration(o.Name(), o.Stages(), links)
 	}
-	return OrchestrationResponse{Err: errOpt}
 }
