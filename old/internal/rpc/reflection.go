@@ -3,12 +3,11 @@ package rpc
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
-	"google.golang.org/grpc/status"
 )
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
@@ -66,14 +65,14 @@ func (c *reflectionClient) resolveServiceDesc(name string) (
 	descriptor, err := c.client.ResolveService(name)
 	if err != nil {
 		switch {
-		case isGrpcErr(err):
+		case execute.isGrpcErr(err):
 			return nil, handleGrpcError(err, "resolve service: ")
-		case isElementNotFoundErr(err):
+		case execute.isElementNotFoundErr(err):
 			return nil, errdefs.NotFoundWithMsg(
 				"resolve service: %v",
 				err.Error(),
 			)
-		case isProtocolError(err):
+		case execute.isProtocolError(err):
 			return nil, errdefs.UnknownWithError(err)
 		default:
 			// Should never happen as all errors should be caught by one
@@ -82,22 +81,4 @@ func (c *reflectionClient) resolveServiceDesc(name string) (
 		}
 	}
 	return descriptor, nil
-}
-
-func handleGrpcError(err error, prependMsg string) error {
-	if err == nil {
-		return nil
-	}
-	st, _ := status.FromError(err)
-	switch st.Code() {
-	case codes.Unavailable, codes.Unimplemented:
-		// Unavailable is for the case where maestro is not running. When a
-		// stage is not running, it is a failed precondition.
-		// Unimplemented is when the maestro server does not implement a given
-		// method. When a stage does not have an implemented method, in this
-		// case reflection, it is a failed precondition.
-		return errdefs.FailedPreconditionWithMsg("%v%v", prependMsg, st.Err())
-	default:
-		return errdefs.UnknownWithMsg("%s%s", prependMsg, st.Err())
-	}
 }
