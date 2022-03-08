@@ -2,6 +2,7 @@ package invoke
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -10,13 +11,19 @@ import (
 type MessageGenerator func() DynamicMessage
 
 type MessageDescriptor interface {
+	Message() proto.Message
 	MessageFields() map[domain.MessageField]MessageDescriptor
 	MessageGenerator() MessageGenerator
 }
 
 type messageDescriptor struct {
-	desc   *desc.MessageDescriptor
+	msg    proto.Message
 	fields map[domain.MessageField]MessageDescriptor
+	gen    MessageGenerator
+}
+
+func (d messageDescriptor) Message() proto.Message {
+	return d.msg
 }
 
 func (d messageDescriptor) MessageFields() map[domain.MessageField]MessageDescriptor {
@@ -24,12 +31,20 @@ func (d messageDescriptor) MessageFields() map[domain.MessageField]MessageDescri
 }
 
 func (d messageDescriptor) MessageGenerator() MessageGenerator {
-	return func() DynamicMessage {
-		return newDynamicMessage(dynamic.NewMessage(d.desc))
-	}
+	return d.gen
 }
 
-func newMessageDescriptor(desc *desc.MessageDescriptor) (
+func NewMessageDescriptor(msg proto.Message) (MessageDescriptor, error) {
+	d, err := desc.LoadMessageDescriptorForMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+	return newMessageDescriptor(d)
+}
+
+func newMessageDescriptor(
+	desc *desc.MessageDescriptor,
+) (
 	MessageDescriptor,
 	error,
 ) {
@@ -47,19 +62,25 @@ func newMessageDescriptor(desc *desc.MessageDescriptor) (
 			}
 		}
 	}
-	return messageDescriptor{desc: desc, fields: fields}, nil
+	msg := dynamic.NewMessage(desc)
+	gen := newGenFn(desc)
+	return messageDescriptor{msg: msg, fields: fields, gen: gen}, nil
+}
+
+func newGenFn(desc *desc.MessageDescriptor) func() DynamicMessage {
+	return func() DynamicMessage { return newDynamicMessageFromDesc(desc) }
 }
 
 func CompatibleDescriptors(d1, d2 MessageDescriptor) bool {
-	msgDesc1, ok := d1.(messageDescriptor)
-	if !ok {
+	desc1, err := desc.LoadMessageDescriptorForMessage(d1.Message())
+	if err != nil {
 		return false
 	}
-	msgDesc2, ok := d2.(messageDescriptor)
-	if !ok {
+	desc2, err := desc.LoadMessageDescriptorForMessage(d2.Message())
+	if err != nil {
 		return false
 	}
-	return cmpFields(msgDesc1.desc, msgDesc2.desc)
+	return cmpFields(desc1, desc2)
 }
 
 func cmpFields(d1, d2 *desc.MessageDescriptor) bool {
