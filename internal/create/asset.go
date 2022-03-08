@@ -2,9 +2,23 @@ package create
 
 import "github.com/DuarteMRAlves/maestro/internal/domain"
 
-type SaveAsset func(domain.Asset) domain.AssetResult
-type LoadAsset func(domain.AssetName) domain.AssetResult
-type ExistsAsset func(domain.AssetName) bool
+type AssetSaver interface {
+	Save(domain.Asset) domain.AssetResult
+}
+
+type AssetLoader interface {
+	Load(domain.AssetName) domain.AssetResult
+}
+
+type AssetExistsVerifier interface {
+	Verify(domain.AssetName) bool
+}
+
+type AssetStorage interface {
+	AssetSaver
+	AssetLoader
+	AssetExistsVerifier
+}
 
 type AssetRequest struct {
 	Name  string

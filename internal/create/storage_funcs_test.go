@@ -6,29 +6,6 @@ import (
 	"testing"
 )
 
-func existsAssetFn(expected domain.AssetName, callCount *int) ExistsAsset {
-	return func(name domain.AssetName) bool {
-		*callCount++
-		return expected.Unwrap() == name.Unwrap() && (*callCount > 1)
-	}
-}
-
-func saveAssetFn(
-	t *testing.T,
-	expected domain.Asset,
-	callCount *int,
-) SaveAsset {
-	return func(actual domain.Asset) domain.AssetResult {
-		*callCount++
-		assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-		assert.Equal(t, expected.Image().Present(), actual.Image().Present())
-		if expected.Image().Present() {
-			assert.Equal(t, expected.Image().Unwrap(), actual.Image().Unwrap())
-		}
-		return domain.SomeAsset(actual)
-	}
-}
-
 func existsOrchestrationFn(
 	expected domain.OrchestrationName,
 	callCount *int,
