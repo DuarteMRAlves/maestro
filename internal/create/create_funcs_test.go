@@ -6,22 +6,6 @@ import (
 	"testing"
 )
 
-func createAsset(
-	t *testing.T,
-	assetName string,
-	requiredOnly bool,
-) domain.Asset {
-	name, err := domain.NewAssetName(assetName)
-	assert.NilError(t, err, "create name for asset %s", assetName)
-	imgOpt := domain.NewEmptyImage()
-	if !requiredOnly {
-		img, err := domain.NewImage("some-image")
-		assert.NilError(t, err, "create image for asset %s", assetName)
-		imgOpt = domain.NewPresentImage(img)
-	}
-	return domain.NewAsset(name, imgOpt)
-}
-
 func createEmptyOrchestration(t *testing.T, orchName string) Orchestration {
 	name, err := domain.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create name for orchestration %s", orchName)

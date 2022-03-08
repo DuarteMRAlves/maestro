@@ -35,18 +35,19 @@ func TestCreateAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				existsCallCount := 0
-				saveCallCount := 0
-				existsFn := existsAssetFn(
-					test.expected.Name(),
-					&existsCallCount,
-				)
-				saveFn := saveAssetFn(t, test.expected, &saveCallCount)
-				createFn := CreateAsset(existsFn, saveFn)
+				storage := mockAssetStorage{
+					assets: map[domain.AssetName]domain.Asset{},
+				}
+
+				createFn := CreateAsset(storage)
 				res := createFn(test.req)
 				assert.Assert(t, !res.Err.Present())
-				assert.Equal(t, existsCallCount, 1)
-				assert.Equal(t, saveCallCount, 1)
+
+				assert.Equal(t, 1, len(storage.assets))
+
+				asset, exists := storage.assets[test.expected.Name()]
+				assert.Assert(t, exists)
+				assertEqualAsset(t, test.expected, asset)
 			},
 		)
 	}
@@ -58,16 +59,18 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 		Image: domain.NewEmptyString(),
 	}
 	expected := createAsset(t, "some-name", true)
-	existsCallCount := 0
-	saveCallCount := 0
-	existsFn := existsAssetFn(expected.Name(), &existsCallCount)
-	saveFn := saveAssetFn(t, expected, &saveCallCount)
-	createFn := CreateAsset(existsFn, saveFn)
+	storage := mockAssetStorage{
+		assets: map[domain.AssetName]domain.Asset{},
+	}
+
+	createFn := CreateAsset(storage)
 
 	res := createFn(req)
 	assert.Assert(t, !res.Err.Present())
-	assert.Equal(t, existsCallCount, 1)
-	assert.Equal(t, saveCallCount, 1)
+	assert.Equal(t, 1, len(storage.assets))
+	asset, exists := storage.assets[expected.Name()]
+	assert.Assert(t, exists)
+	assertEqualAsset(t, expected, asset)
 
 	res = createFn(req)
 	assert.Assert(t, res.Err.Present())
@@ -78,7 +81,67 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 		err,
 		fmt.Sprintf("asset '%v' already exists", req.Name),
 	)
-	assert.Equal(t, existsCallCount, 2)
-	// Should not call save
-	assert.Equal(t, saveCallCount, 1)
+	assert.Equal(t, 1, len(storage.assets))
+	asset, exists = storage.assets[expected.Name()]
+	assert.Assert(t, exists)
+	assertEqualAsset(t, expected, asset)
+}
+
+type mockAssetStorage struct {
+	assets map[domain.AssetName]domain.Asset
+}
+
+func (m mockAssetStorage) Save(asset domain.Asset) domain.AssetResult {
+	_, exists := m.assets[asset.Name()]
+	if exists {
+		err := errdefs.AlreadyExistsWithMsg(
+			"asset already exists: %s",
+			asset.Name(),
+		)
+		return domain.ErrAsset(err)
+	}
+	m.assets[asset.Name()] = asset
+	return domain.SomeAsset(asset)
+}
+
+func (m mockAssetStorage) Load(name domain.AssetName) domain.AssetResult {
+	asset, exists := m.assets[name]
+	if !exists {
+		err := errdefs.NotFoundWithMsg("asset not found: %s", asset.Name())
+		return domain.ErrAsset(err)
+	}
+	return domain.SomeAsset(asset)
+}
+
+func (m mockAssetStorage) Verify(name domain.AssetName) bool {
+	_, exists := m.assets[name]
+	return exists
+}
+
+func createAsset(
+	t *testing.T,
+	assetName string,
+	requiredOnly bool,
+) domain.Asset {
+	name, err := domain.NewAssetName(assetName)
+	assert.NilError(t, err, "create name for asset %s", assetName)
+	imgOpt := domain.NewEmptyImage()
+	if !requiredOnly {
+		img, err := domain.NewImage("some-image")
+		assert.NilError(t, err, "create image for asset %s", assetName)
+		imgOpt = domain.NewPresentImage(img)
+	}
+	return domain.NewAsset(name, imgOpt)
+}
+
+func assertEqualAsset(t *testing.T, expected, actual domain.Asset) {
+	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
+	assert.Equal(t, expected.Image().Present(), actual.Image().Present())
+	if expected.Image().Present() {
+		assert.Equal(
+			t,
+			expected.Image().Unwrap().Unwrap(),
+			actual.Image().Unwrap().Unwrap(),
+		)
+	}
 }
