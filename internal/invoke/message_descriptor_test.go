@@ -6,17 +6,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
-	"reflect"
 	"testing"
 )
 
 func TestMessageDescriptor_MessageFields(t *testing.T) {
-	msgType := reflect.TypeOf(&unit.TestMessage1{})
-
-	innerDesc, err := desc.LoadMessageDescriptorForType(msgType)
-	assert.NilError(t, err, "load message descriptor")
-
-	msgDesc, err := newMessageDescriptor(innerDesc)
+	msgDesc, err := NewMessageDescriptor(&unit.TestMessage1{})
 	assert.NilError(t, err, "create message descriptor")
 
 	fields := msgDesc.MessageFields()
@@ -27,10 +21,11 @@ func TestMessageDescriptor_MessageFields(t *testing.T) {
 	fieldDesc, ok := fields[field]
 	assert.Assert(t, ok, "field4 exists")
 
-	innerFieldDesc, ok := fieldDesc.(messageDescriptor)
-	assert.Assert(t, ok, "cast for inner field desc")
+	innerMsg := fieldDesc.Message()
+	innerDesc, err := desc.LoadMessageDescriptorForMessage(innerMsg)
+	assert.NilError(t, err, "load inner desc")
 
-	assert.Equal(t, "InternalMessage1", innerFieldDesc.desc.GetName())
+	assert.Equal(t, "InternalMessage1", innerDesc.GetName())
 }
 
 func TestCompatibleDescriptors(t *testing.T) {
@@ -93,17 +88,9 @@ func TestCompatibleDescriptors(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				type1 := reflect.TypeOf(test.msg1)
-				innerDesc1, err := desc.LoadMessageDescriptorForType(type1)
-				assert.NilError(t, err, "load message descriptor 1")
-
-				type2 := reflect.TypeOf(test.msg2)
-				innerDesc2, err := desc.LoadMessageDescriptorForType(type2)
-				assert.NilError(t, err, "load message descriptor 2")
-
-				desc1, err := newMessageDescriptor(innerDesc1)
+				desc1, err := NewMessageDescriptor(test.msg1)
 				assert.NilError(t, err, "create message descriptor 1")
-				desc2, err := newMessageDescriptor(innerDesc2)
+				desc2, err := NewMessageDescriptor(test.msg2)
 				assert.NilError(t, err, "create message descriptor 2")
 
 				assert.Equal(

@@ -14,10 +14,8 @@ func TestNewFieldSetter(t *testing.T) {
 
 	setter := NewFieldSetter(field)
 
-	emptyDyn, err := dynamic.AsDynamicMessage(&unit.DynamicTestMessage{})
+	empty, err := NewDynamicMessage(&unit.DynamicTestMessage{})
 	assert.NilError(t, err, "create dynamic message")
-
-	empty := newDynamicMessage(emptyDyn)
 
 	res := setter(empty, int32(1))
 	assert.Assert(t, !res.IsError(), "error result")
@@ -30,7 +28,10 @@ func TestNewFieldSetter(t *testing.T) {
 	assert.Assert(t, ok, "cast to int on grpc message")
 	assert.Equal(t, int32(1), val)
 
-	emptyVal, ok := emptyDyn.GetFieldByName(field.Unwrap()).(int32)
+	emptyImpl, ok := empty.(dynamicMessage)
+	assert.Assert(t, ok, "dynamic message implementation cast")
+
+	emptyVal, ok := emptyImpl.grpcMsg.GetFieldByName(field.Unwrap()).(int32)
 	assert.Assert(t, ok, "cast to int on empty dynamic field")
 	assert.Equal(t, int32(0), emptyVal)
 }
@@ -45,10 +46,8 @@ func TestNewFieldGetter(t *testing.T) {
 		Inner: &unit.DynamicTestMessageInner{Val: "val"},
 	}
 
-	dyn, err := dynamic.AsDynamicMessage(pbMsg)
-	assert.NilError(t, err, "dynamic message from proto")
-
-	msg := newDynamicMessage(dyn)
+	msg, err := NewDynamicMessage(pbMsg)
+	assert.NilError(t, err, "create dynamic message")
 
 	res := getter(msg)
 	assert.Assert(t, !res.IsError(), "get result error")

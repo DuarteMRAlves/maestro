@@ -4,6 +4,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/golang/protobuf/proto"
+	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 )
 
@@ -20,8 +21,16 @@ type dynamicMessage struct {
 	grpcMsg *dynamic.Message
 }
 
-func newDynamicMessage(msg *dynamic.Message) DynamicMessage {
-	return dynamicMessage{grpcMsg: msg}
+func NewDynamicMessage(msg proto.Message) (DynamicMessage, error) {
+	grpcMsg, err := dynamic.AsDynamicMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+	return dynamicMessage{grpcMsg: grpcMsg}, nil
+}
+
+func newDynamicMessageFromDesc(desc *desc.MessageDescriptor) DynamicMessage {
+	return dynamicMessage{grpcMsg: dynamic.NewMessage(desc)}
 }
 
 func (dm dynamicMessage) GrpcMessage() proto.Message {
@@ -37,7 +46,11 @@ func NewFieldSetter(field domain.MessageField) FieldSetter {
 		msg := dynamic.NewMessage(old.GetMessageDescriptor())
 		msg.Merge(m.GrpcMessage())
 		msg.SetFieldByName(field.Unwrap(), val)
-		return SomeDynamicMessage(newDynamicMessage(msg))
+		newDyn, err := NewDynamicMessage(msg)
+		if err != nil {
+			return ErrDynamicMessage(err)
+		}
+		return SomeDynamicMessage(newDyn)
 	}
 }
 
@@ -56,11 +69,11 @@ func NewFieldGetter(field domain.MessageField) FieldGetter {
 			err = errdefs.InternalWithMsg("Field is not a message")
 			return ErrDynamicMessage(err)
 		}
-		dyn, err := dynamic.AsDynamicMessage(msg)
+		dyn, err := NewDynamicMessage(msg)
 		if err != nil {
 			err = errdefs.InternalWithMsg("convert proto to dynamic: %s", err)
 			return ErrDynamicMessage(err)
 		}
-		return SomeDynamicMessage(newDynamicMessage(dyn))
+		return SomeDynamicMessage(dyn)
 	}
 }
