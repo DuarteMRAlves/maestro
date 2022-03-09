@@ -6,19 +6,18 @@ import (
 )
 
 func CreateLink(
-	existsLink ExistsLink,
-	saveLink SaveLink,
+	storage LinkStorage,
 	existsStage ExistsStage,
-	storage OrchestrationStorage,
+	orchStorage OrchestrationStorage,
 ) func(LinkRequest) LinkResponse {
 	return func(req LinkRequest) LinkResponse {
 		res := requestToLink(req)
-		res = BindLink(verifyDupLink(existsLink))(res)
-		res = BindLink(verifyExistsOrchestrationLink(storage))(res)
+		res = BindLink(verifyDupLink(storage))(res)
+		res = BindLink(verifyExistsOrchestrationLink(orchStorage))(res)
 		res = BindLink(verifyExistsSource(existsStage))(res)
 		res = BindLink(verifyExistsTarget(existsStage))(res)
-		res = BindLink(addLink(storage, storage))(res)
-		res = BindLink(saveLink)(res)
+		res = BindLink(addLink(orchStorage, orchStorage))(res)
+		res = BindLink(storage.Save)(res)
 		return linkToResponse(res)
 	}
 }
@@ -66,9 +65,9 @@ func requestToLink(req LinkRequest) LinkResult {
 	return SomeLink(l)
 }
 
-func verifyDupLink(existsFn ExistsLink) func(Link) LinkResult {
+func verifyDupLink(verifier LinkExistsVerifier) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if existsFn(l.Name()) {
+		if verifier.Verify(l.Name()) {
 			err := errdefs.AlreadyExistsWithMsg(
 				"link '%v' already exists",
 				l.Name().Unwrap(),

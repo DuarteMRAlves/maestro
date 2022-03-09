@@ -79,6 +79,28 @@ func (m mockOrchestrationStorage) Verify(name domain.OrchestrationName) bool {
 	return exists
 }
 
+func createOrchestration(
+	t *testing.T,
+	orchName string,
+	stages, links []string,
+) Orchestration {
+	name, err := domain.NewOrchestrationName(orchName)
+	assert.NilError(t, err, "create name for orchestration %s", orchName)
+	stageNames := make([]domain.StageName, 0, len(stages))
+	for _, s := range stages {
+		sName, err := domain.NewStageName(s)
+		assert.NilError(t, err, "create stage for orchestration %s", orchName)
+		stageNames = append(stageNames, sName)
+	}
+	linkNames := make([]domain.LinkName, 0, len(links))
+	for _, l := range links {
+		lName, err := domain.NewLinkName(l)
+		assert.NilError(t, err, "create link for orchestration %s", orchName)
+		linkNames = append(linkNames, lName)
+	}
+	return NewOrchestration(name, stageNames, linkNames)
+}
+
 func assertEqualOrchestration(t *testing.T, expected, actual Orchestration) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 
