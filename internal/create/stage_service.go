@@ -6,16 +6,15 @@ import (
 )
 
 func CreateStage(
-	existsStage ExistsStage,
-	saveStage SaveStage,
-	storage OrchestrationStorage,
+	stageStorage StageStorage,
+	orchStorage OrchestrationStorage,
 ) func(StageRequest) StageResponse {
 	return func(req StageRequest) StageResponse {
 		res := requestToStage(req)
-		res = BindStage(verifyDupStage(existsStage))(res)
-		res = BindStage(verifyExistsOrchestration(storage))(res)
-		res = BindStage(addStage(storage, storage))(res)
-		res = BindStage(saveStage)(res)
+		res = BindStage(verifyDupStage(stageStorage))(res)
+		res = BindStage(verifyExistsOrchestration(orchStorage))(res)
+		res = BindStage(addStage(orchStorage, orchStorage))(res)
+		res = BindStage(stageStorage.Save)(res)
 		return stageToResponse(res)
 	}
 }
@@ -59,9 +58,9 @@ func requestToStage(req StageRequest) StageResult {
 	return SomeStage(NewStage(name, ctx, orchestrationName))
 }
 
-func verifyDupStage(existsFn ExistsStage) func(Stage) StageResult {
+func verifyDupStage(verifier StageExistsVerifier) func(Stage) StageResult {
 	return func(s Stage) StageResult {
-		if existsFn(s.Name()) {
+		if verifier.Verify(s.Name()) {
 			err := errdefs.AlreadyExistsWithMsg(
 				"stage '%v' already exists",
 				s.Name().Unwrap(),
