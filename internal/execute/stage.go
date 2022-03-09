@@ -2,20 +2,10 @@ package execute
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"sync"
 	"time"
 )
-
-type StageInformation interface {
-	Name() domain.StageName
-	MethodContext() domain.MethodContext
-}
-
-type MethodFinder interface {
-	Find(domain.MethodContext) invoke.UnaryInvoke
-}
 
 type unaryStage struct {
 	running bool
@@ -49,11 +39,17 @@ func (s *unaryStage) Run(ctx context.Context) error {
 	var (
 		in, out  state
 		req, rep invoke.DynamicMessage
+		more     bool
 	)
 	for {
 		select {
-		case in = <-s.input:
+		case in, more = <-s.input:
 		case <-ctx.Done():
+			close(s.output)
+			return nil
+		}
+		// channel is closed
+		if !more {
 			close(s.output)
 			return nil
 		}
@@ -80,4 +76,37 @@ func (s *unaryStage) call(ctx context.Context, req, rep interface{}) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	return s.invoke(ctx, req, rep)
+}
+
+// sourceStage is the source of the orchestration. It defines the initial ids of
+// the states and sends empty messages of the received type.
+type sourceStage struct {
+	count  int32
+	gen    invoke.MessageGenerator
+	output chan<- state
+}
+
+func newSourceStage(
+	start int32,
+	gen invoke.MessageGenerator,
+	output chan<- state,
+) sourceStage {
+	return sourceStage{
+		count:  start,
+		gen:    gen,
+		output: output,
+	}
+}
+
+func (s *sourceStage) Run(ctx context.Context) error {
+	for {
+		next := newState(id(s.count), s.gen())
+		select {
+		case s.output <- next:
+		case <-ctx.Done():
+			close(s.output)
+			return nil
+		}
+		s.count++
+	}
 }
