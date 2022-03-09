@@ -7,15 +7,15 @@ import (
 
 func CreateLink(
 	storage LinkStorage,
-	existsStage ExistsStage,
+	stageExistsVerifier StageExistsVerifier,
 	orchStorage OrchestrationStorage,
 ) func(LinkRequest) LinkResponse {
 	return func(req LinkRequest) LinkResponse {
 		res := requestToLink(req)
 		res = BindLink(verifyDupLink(storage))(res)
 		res = BindLink(verifyExistsOrchestrationLink(orchStorage))(res)
-		res = BindLink(verifyExistsSource(existsStage))(res)
-		res = BindLink(verifyExistsTarget(existsStage))(res)
+		res = BindLink(verifyExistsSource(stageExistsVerifier))(res)
+		res = BindLink(verifyExistsTarget(stageExistsVerifier))(res)
 		res = BindLink(addLink(orchStorage, orchStorage))(res)
 		res = BindLink(storage.Save)(res)
 		return linkToResponse(res)
@@ -91,9 +91,9 @@ func verifyExistsOrchestrationLink(verifier OrchestrationExistsVerifier) func(Li
 	}
 }
 
-func verifyExistsSource(existsFn ExistsStage) func(Link) LinkResult {
+func verifyExistsSource(stageVerifier StageExistsVerifier) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if !existsFn(l.Source().Stage()) {
+		if !stageVerifier.Verify(l.Source().Stage()) {
 			err := errdefs.NotFoundWithMsg(
 				"source '%v' not found",
 				l.Source().Stage().Unwrap(),
@@ -104,9 +104,9 @@ func verifyExistsSource(existsFn ExistsStage) func(Link) LinkResult {
 	}
 }
 
-func verifyExistsTarget(existsFn ExistsStage) func(Link) LinkResult {
+func verifyExistsTarget(stageVerifier StageExistsVerifier) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if !existsFn(l.Target().Stage()) {
+		if !stageVerifier.Verify(l.Target().Stage()) {
 			err := errdefs.NotFoundWithMsg(
 				"target '%v' not found",
 				l.Target().Stage().Unwrap(),

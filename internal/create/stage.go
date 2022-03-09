@@ -2,9 +2,23 @@ package create
 
 import "github.com/DuarteMRAlves/maestro/internal/domain"
 
-type SaveStage func(Stage) StageResult
-type LoadStage func(domain.StageName) StageResult
-type ExistsStage func(domain.StageName) bool
+type StageSaver interface {
+	Save(Stage) StageResult
+}
+
+type StageLoader interface {
+	Load(domain.StageName) StageResult
+}
+
+type StageExistsVerifier interface {
+	Verify(domain.StageName) bool
+}
+
+type StageStorage interface {
+	StageSaver
+	StageLoader
+	StageExistsVerifier
+}
 
 type Stage interface {
 	Name() domain.StageName

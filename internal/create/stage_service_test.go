@@ -77,31 +77,28 @@ func TestCreateStage(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				existsStageCount := 0
-				saveStageCount := 0
+				stageStore := mockStageStorage{
+					stages: map[domain.StageName]Stage{},
+				}
 
-				existsStage := existsStageFn(
-					test.expStage.Name(),
-					&existsStageCount,
-					1,
-				)
-				saveStage := saveStageFn(t, test.expStage, &saveStageCount)
-
-				storage := mockOrchestrationStorage{
+				orchStore := mockOrchestrationStorage{
 					orchs: map[domain.OrchestrationName]Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
 
-				createFn := CreateStage(existsStage, saveStage, storage)
+				createFn := CreateStage(stageStore, orchStore)
 
 				res := createFn(test.req)
 				assert.Assert(t, !res.Err.Present())
-				assert.Equal(t, existsStageCount, 1)
-				assert.Equal(t, saveStageCount, 1)
 
-				assert.Equal(t, 1, len(storage.orchs))
-				o, exists := storage.orchs[test.expOrchestration.Name()]
+				assert.Equal(t, 1, len(stageStore.stages))
+				s, exists := stageStore.stages[test.expStage.Name()]
+				assert.Assert(t, exists)
+				assertEqualStage(t, test.expStage, s)
+
+				assert.Equal(t, 1, len(orchStore.orchs))
+				o, exists := orchStore.orchs[test.expOrchestration.Name()]
 				assert.Assert(t, exists)
 				assertEqualOrchestration(t, test.expOrchestration, o)
 			},
@@ -125,27 +122,29 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		[]string{"some-name"},
 		[]string{},
 	)
-	existsStageCount := 0
-	saveStageCount := 0
 
-	existsStage := existsStageFn(expStage.Name(), &existsStageCount, 1)
-	saveStage := saveStageFn(t, expStage, &saveStageCount)
+	stageStore := mockStageStorage{
+		stages: map[domain.StageName]Stage{},
+	}
 
-	storage := mockOrchestrationStorage{
+	orchStore := mockOrchestrationStorage{
 		orchs: map[domain.OrchestrationName]Orchestration{
 			storedOrchestration.Name(): storedOrchestration,
 		},
 	}
 
-	createFn := CreateStage(existsStage, saveStage, storage)
+	createFn := CreateStage(stageStore, orchStore)
 
 	res := createFn(req)
 	assert.Assert(t, !res.Err.Present())
-	assert.Equal(t, existsStageCount, 1)
-	assert.Equal(t, saveStageCount, 1)
 
-	assert.Equal(t, 1, len(storage.orchs))
-	o, exists := storage.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(stageStore.stages))
+	s, exists := stageStore.stages[expStage.Name()]
+	assert.Assert(t, exists)
+	assertEqualStage(t, expStage, s)
+
+	assert.Equal(t, 1, len(orchStore.orchs))
+	o, exists := orchStore.orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
@@ -158,12 +157,92 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		err,
 		fmt.Sprintf("stage '%v' already exists", req.Name),
 	)
-	assert.Equal(t, existsStageCount, 2)
-	// Stage should not be saved
-	assert.Equal(t, saveStageCount, 1)
 
-	assert.Equal(t, 1, len(storage.orchs))
-	o, exists = storage.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(stageStore.stages))
+	s, exists = stageStore.stages[expStage.Name()]
+	assert.Assert(t, exists)
+	assertEqualStage(t, expStage, s)
+
+	assert.Equal(t, 1, len(orchStore.orchs))
+	o, exists = orchStore.orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
+}
+
+type mockStageStorage struct {
+	stages map[domain.StageName]Stage
+}
+
+func (m mockStageStorage) Save(s Stage) StageResult {
+	m.stages[s.Name()] = s
+	return SomeStage(s)
+}
+
+func (m mockStageStorage) Load(name domain.StageName) StageResult {
+	s, exists := m.stages[name]
+	if !exists {
+		err := errdefs.NotFoundWithMsg("stage not found: %s", s.Name())
+		return ErrStage(err)
+	}
+	return SomeStage(s)
+}
+
+func (m mockStageStorage) Verify(name domain.StageName) bool {
+	_, exists := m.stages[name]
+	return exists
+}
+
+func createStage(
+	t *testing.T,
+	stageName, orchName string,
+	requiredOnly bool,
+) Stage {
+	name, err := domain.NewStageName(stageName)
+	assert.NilError(t, err, "create name for stage %s", stageName)
+	address, err := domain.NewAddress("some-address")
+	assert.NilError(t, err, "create address for stage %s", stageName)
+	orchestration, err := domain.NewOrchestrationName(orchName)
+	assert.NilError(t, err, "create orchestration for stage %s", stageName)
+	serviceOpt := domain.NewEmptyService()
+	methodOpt := domain.NewEmptyMethod()
+	if !requiredOnly {
+		service, err := domain.NewService("some-service")
+		assert.NilError(t, err, "create service for stage %", stageName)
+		serviceOpt = domain.NewPresentService(service)
+		method, err := domain.NewMethod("some-method")
+		assert.NilError(t, err, "create method for stage %s", stageName)
+		methodOpt = domain.NewPresentMethod(method)
+	}
+	ctx := domain.NewMethodContext(address, serviceOpt, methodOpt)
+	return NewStage(name, ctx, orchestration)
+}
+
+func assertEqualStage(t *testing.T, expected Stage, actual Stage) {
+	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
+	assert.Equal(
+		t,
+		expected.Orchestration().Unwrap(),
+		actual.Orchestration().Unwrap(),
+	)
+	assertEqualMethodContext(
+		t,
+		expected.MethodContext(),
+		actual.MethodContext(),
+	)
+}
+
+func assertEqualMethodContext(
+	t *testing.T,
+	expected domain.MethodContext,
+	actual domain.MethodContext,
+) {
+	assert.Equal(t, expected.Address().Unwrap(), actual.Address().Unwrap())
+	assert.Equal(t, expected.Service().Present(), actual.Service().Present())
+	if expected.Service().Present() {
+		assert.Equal(t, expected.Service().Unwrap(), actual.Service().Unwrap())
+	}
+	assert.Equal(t, expected.Method().Present(), actual.Method().Present())
+	if expected.Method().Present() {
+		assert.Equal(t, expected.Method().Present(), actual.Method().Present())
+	}
 }
