@@ -4,8 +4,23 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
-type SaveLink func(Link) LinkResult
-type ExistsLink func(domain.LinkName) bool
+type LinkSaver interface {
+	Save(Link) LinkResult
+}
+
+type LinkLoader interface {
+	Load(domain.LinkName) LinkResult
+}
+
+type LinkExistsVerifier interface {
+	Verify(domain.LinkName) bool
+}
+
+type LinkStorage interface {
+	LinkSaver
+	LinkLoader
+	LinkExistsVerifier
+}
 
 type LinkEndpoint interface {
 	Stage() domain.StageName
