@@ -5,14 +5,11 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
-func CreateOrchestration(
-	existsFn ExistsOrchestration,
-	saveFn SaveOrchestration,
-) func(OrchestrationRequest) OrchestrationResponse {
+func CreateOrchestration(storage OrchestrationStorage) func(OrchestrationRequest) OrchestrationResponse {
 	return func(req OrchestrationRequest) OrchestrationResponse {
 		res := requestToOrchestration(req)
-		res = BindOrchestration(verifyDupOrchestration(existsFn))(res)
-		res = BindOrchestration(saveFn)(res)
+		res = BindOrchestration(verifyDupOrchestration(storage))(res)
+		res = BindOrchestration(storage.Save)(res)
 		return orchestrationToResponse(res)
 	}
 }
@@ -27,10 +24,10 @@ func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
 }
 
 func verifyDupOrchestration(
-	existsFn ExistsOrchestration,
+	verifier OrchestrationExistsVerifier,
 ) func(Orchestration) OrchestrationResult {
 	return func(o Orchestration) OrchestrationResult {
-		if existsFn(o.Name()) {
+		if verifier.Verify(o.Name()) {
 			err := errdefs.AlreadyExistsWithMsg(
 				"orchestration '%v' already exists",
 				o.Name().Unwrap(),

@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-func createEmptyOrchestration(t *testing.T, orchName string) Orchestration {
-	name, err := domain.NewOrchestrationName(orchName)
-	assert.NilError(t, err, "create name for orchestration %s", orchName)
-	return NewOrchestration(name, []domain.StageName{}, []domain.LinkName{})
-}
-
 func createOrchestration(
 	t *testing.T,
 	orchName string,

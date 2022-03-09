@@ -92,14 +92,6 @@ type mockAssetStorage struct {
 }
 
 func (m mockAssetStorage) Save(asset domain.Asset) domain.AssetResult {
-	_, exists := m.assets[asset.Name()]
-	if exists {
-		err := errdefs.AlreadyExistsWithMsg(
-			"asset already exists: %s",
-			asset.Name(),
-		)
-		return domain.ErrAsset(err)
-	}
 	m.assets[asset.Name()] = asset
 	return domain.SomeAsset(asset)
 }

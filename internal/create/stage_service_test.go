@@ -31,7 +31,12 @@ func TestCreateStage(t *testing.T) {
 				"orchestration",
 				true,
 			),
-			loadOrchestration: createEmptyOrchestration(t, "orchestration"),
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
 			expOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -54,7 +59,12 @@ func TestCreateStage(t *testing.T) {
 				"orchestration",
 				false,
 			),
-			loadOrchestration: createEmptyOrchestration(t, "orchestration"),
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
 			expOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -70,10 +80,6 @@ func TestCreateStage(t *testing.T) {
 				existsStageCount := 0
 				saveStageCount := 0
 
-				existsOrchestrationCount := 0
-				loadOrchestrationCount := 0
-				saveOrchestrationCount := 0
-
 				existsStage := existsStageFn(
 					test.expStage.Name(),
 					&existsStageCount,
@@ -81,37 +87,23 @@ func TestCreateStage(t *testing.T) {
 				)
 				saveStage := saveStageFn(t, test.expStage, &saveStageCount)
 
-				existsOrchestration := existsOrchestrationFn(
-					test.loadOrchestration.Name(),
-					&existsOrchestrationCount,
-					0,
-				)
-				loadOrchestration := loadOrchestrationFn(
-					t,
-					test.loadOrchestration,
-					&loadOrchestrationCount,
-				)
-				saveOrchestration := saveOrchestrationFn(
-					t,
-					test.expOrchestration,
-					&saveOrchestrationCount,
-				)
+				storage := mockOrchestrationStorage{
+					orchs: map[domain.OrchestrationName]Orchestration{
+						test.loadOrchestration.Name(): test.loadOrchestration,
+					},
+				}
 
-				createFn := CreateStage(
-					existsStage,
-					saveStage,
-					existsOrchestration,
-					loadOrchestration,
-					saveOrchestration,
-				)
+				createFn := CreateStage(existsStage, saveStage, storage)
 
 				res := createFn(test.req)
 				assert.Assert(t, !res.Err.Present())
 				assert.Equal(t, existsStageCount, 1)
 				assert.Equal(t, saveStageCount, 1)
-				assert.Equal(t, existsOrchestrationCount, 1)
-				assert.Equal(t, loadOrchestrationCount, 1)
-				assert.Equal(t, saveOrchestrationCount, 1)
+
+				assert.Equal(t, 1, len(storage.orchs))
+				o, exists := storage.orchs[test.expOrchestration.Name()]
+				assert.Assert(t, exists)
+				assertEqualOrchestration(t, test.expOrchestration, o)
 			},
 		)
 	}
@@ -126,7 +118,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		Orchestration: "orchestration",
 	}
 	expStage := createStage(t, "some-name", "orchestration", false)
-	storedOrchestration := createEmptyOrchestration(t, "orchestration")
+	storedOrchestration := createOrchestration(t, "orchestration", nil, nil)
 	expOrchestration := createOrchestration(
 		t,
 		"orchestration",
@@ -136,44 +128,26 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	existsStageCount := 0
 	saveStageCount := 0
 
-	existsOrchestrationCount := 0
-	loadOrchestrationCount := 0
-	saveOrchestrationCount := 0
-
 	existsStage := existsStageFn(expStage.Name(), &existsStageCount, 1)
 	saveStage := saveStageFn(t, expStage, &saveStageCount)
 
-	existsOrchestration := existsOrchestrationFn(
-		storedOrchestration.Name(),
-		&existsOrchestrationCount,
-		0,
-	)
-	loadOrchestration := loadOrchestrationFn(
-		t,
-		storedOrchestration,
-		&loadOrchestrationCount,
-	)
-	saveOrchestration := saveOrchestrationFn(
-		t,
-		expOrchestration,
-		&saveOrchestrationCount,
-	)
+	storage := mockOrchestrationStorage{
+		orchs: map[domain.OrchestrationName]Orchestration{
+			storedOrchestration.Name(): storedOrchestration,
+		},
+	}
 
-	createFn := CreateStage(
-		existsStage,
-		saveStage,
-		existsOrchestration,
-		loadOrchestration,
-		saveOrchestration,
-	)
+	createFn := CreateStage(existsStage, saveStage, storage)
 
 	res := createFn(req)
 	assert.Assert(t, !res.Err.Present())
 	assert.Equal(t, existsStageCount, 1)
 	assert.Equal(t, saveStageCount, 1)
-	assert.Equal(t, existsOrchestrationCount, 1)
-	assert.Equal(t, loadOrchestrationCount, 1)
-	assert.Equal(t, saveOrchestrationCount, 1)
+
+	assert.Equal(t, 1, len(storage.orchs))
+	o, exists := storage.orchs[expOrchestration.Name()]
+	assert.Assert(t, exists)
+	assertEqualOrchestration(t, expOrchestration, o)
 
 	res = createFn(req)
 	assert.Assert(t, res.Err.Present())
@@ -187,10 +161,9 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	assert.Equal(t, existsStageCount, 2)
 	// Stage should not be saved
 	assert.Equal(t, saveStageCount, 1)
-	// Should not run due to order of verifications
-	assert.Equal(t, existsOrchestrationCount, 1)
-	// Should not run due to order of verifications
-	assert.Equal(t, loadOrchestrationCount, 1)
-	// Orchestration Should not have been updated
-	assert.Equal(t, saveOrchestrationCount, 1)
+
+	assert.Equal(t, 1, len(storage.orchs))
+	o, exists = storage.orchs[expOrchestration.Name()]
+	assert.Assert(t, exists)
+	assertEqualOrchestration(t, expOrchestration, o)
 }
