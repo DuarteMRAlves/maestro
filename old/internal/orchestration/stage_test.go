@@ -3,6 +3,7 @@ package orchestration
 import (
 	"context"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -26,16 +27,16 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	rpc := testRpc(t)
 	msgs := testRequests(t)
 
-	states := []*State{
-		NewState(1, msgs[0]),
-		NewState(3, msgs[1]),
+	states := []*execute.State{
+		execute.newState(1, msgs[0]),
+		execute.newState(3, msgs[1]),
 	}
-	input := make(chan *State, len(states)+1)
+	input := make(chan *execute.State, len(states)+1)
 	input <- states[0]
 	input <- states[1]
-	input <- NewEOFState(4)
+	input <- execute.NewEOFState(4)
 
-	output := make(chan *State, len(states))
+	output := make(chan *execute.State, len(states))
 
 	s, err := NewRpcStage(addr, rpc, input, output)
 	assert.NilError(t, err, "create stage error")
@@ -80,8 +81,8 @@ func TestUnaryStage_RunAndEOF(t *testing.T) {
 	assert.Equal(t, 0, len(errs), "No errors")
 }
 
-func collectState(output <-chan *State) []*State {
-	rcvStates := make([]*State, 0)
+func collectState(output <-chan *execute.State) []*execute.State {
+	rcvStates := make([]*execute.State, 0)
 	collect := make(chan struct{})
 	go func() {
 		for s := range output {
@@ -233,7 +234,7 @@ func replyFromRequest(request *unit.Request) *unit.Reply {
 
 func TestSourceStage_Run(t *testing.T) {
 	var (
-		state *State
+		state *execute.State
 		err   error
 	)
 
@@ -245,7 +246,7 @@ func TestSourceStage_Run(t *testing.T) {
 	msg, err := rpc.NewMessage(reqDesc)
 	assert.NilError(t, err, "message Request")
 
-	ch := make(chan *State)
+	ch := make(chan *execute.State)
 	st := NewSourceStage(1, ch, msg)
 	assert.NilError(t, err, "build input")
 
@@ -264,7 +265,7 @@ func TestSourceStage_Run(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		state = <-ch
 		assert.NilError(t, err, "next at iter %d", i)
-		assert.Equal(t, Id(i), state.Id(), "id at iter %d", i)
+		assert.Equal(t, execute.id(i), state.Id(), "id at iter %d", i)
 		opt := cmpopts.IgnoreUnexported(dynamic.Message{})
 		assert.DeepEqual(
 			t,
@@ -285,12 +286,12 @@ func TestSourceStage_Run(t *testing.T) {
 func TestMergeStage_Run(t *testing.T) {
 	fields := []string{"in1", "in2", "in3"}
 
-	input1 := make(chan *State)
-	input2 := make(chan *State)
-	input3 := make(chan *State)
-	inputs := []<-chan *State{input1, input2, input3}
+	input1 := make(chan *execute.State)
+	input2 := make(chan *execute.State)
+	input3 := make(chan *execute.State)
+	inputs := []<-chan *execute.State{input1, input2, input3}
 
-	output := make(chan *State)
+	output := make(chan *execute.State)
 
 	outType := reflect.TypeOf(unit.MergeMessage{})
 	outDesc, err := desc.LoadMessageDescriptorForType(outType)
@@ -304,30 +305,30 @@ func TestMergeStage_Run(t *testing.T) {
 	done := make(chan struct{})
 	errs := make(chan error)
 
-	expected := []*State{
-		NewState(3, testMergeMessage(t, 3)),
-		NewState(6, testMergeMessage(t, 6)),
+	expected := []*execute.State{
+		execute.newState(3, testMergeMessage(t, 3)),
+		execute.newState(6, testMergeMessage(t, 6)),
 	}
 
 	go func() {
-		input1 <- NewState(1, testMergeInner1Message(t, 1))
-		input1 <- NewState(2, testMergeInner1Message(t, 2))
-		input1 <- NewState(3, testMergeInner1Message(t, 3))
-		input1 <- NewState(6, testMergeInner1Message(t, 6))
+		input1 <- execute.newState(1, testMergeInner1Message(t, 1))
+		input1 <- execute.newState(2, testMergeInner1Message(t, 2))
+		input1 <- execute.newState(3, testMergeInner1Message(t, 3))
+		input1 <- execute.newState(6, testMergeInner1Message(t, 6))
 	}()
 
 	go func() {
-		input2 <- NewState(2, testMergeInner2Message(t, 2))
-		input2 <- NewState(3, testMergeInner2Message(t, 3))
-		input2 <- NewState(5, testMergeInner2Message(t, 5))
-		input2 <- NewState(6, testMergeInner2Message(t, 6))
+		input2 <- execute.newState(2, testMergeInner2Message(t, 2))
+		input2 <- execute.newState(3, testMergeInner2Message(t, 3))
+		input2 <- execute.newState(5, testMergeInner2Message(t, 5))
+		input2 <- execute.newState(6, testMergeInner2Message(t, 6))
 	}()
 
 	go func() {
-		input3 <- NewState(1, testMergeInner3Message(t, 2))
-		input3 <- NewState(3, testMergeInner3Message(t, 3))
-		input3 <- NewState(5, testMergeInner3Message(t, 5))
-		input3 <- NewState(6, testMergeInner3Message(t, 6))
+		input3 <- execute.newState(1, testMergeInner3Message(t, 2))
+		input3 <- execute.newState(3, testMergeInner3Message(t, 3))
+		input3 <- execute.newState(5, testMergeInner3Message(t, 5))
+		input3 <- execute.newState(6, testMergeInner3Message(t, 6))
 	}()
 
 	go s.Run(
@@ -404,13 +405,13 @@ func TestSplitStage_Run(t *testing.T) {
 	var err error
 	fields := []string{"out1", "", "out2"}
 
-	input := make(chan *State)
+	input := make(chan *execute.State)
 
-	output1 := make(chan *State)
-	output2 := make(chan *State)
-	output3 := make(chan *State)
+	output1 := make(chan *execute.State)
+	output2 := make(chan *execute.State)
+	output3 := make(chan *execute.State)
 
-	outputs := []chan<- *State{output1, output2, output3}
+	outputs := []chan<- *execute.State{output1, output2, output3}
 
 	s := NewSplitStage(fields, input, outputs)
 
@@ -418,26 +419,26 @@ func TestSplitStage_Run(t *testing.T) {
 	done := make(chan struct{})
 	errs := make(chan error)
 
-	expected1 := []*State{
-		NewState(Id(1), testSplitInner1Message(t, 1)),
-		NewState(Id(3), testSplitInner1Message(t, 3)),
-		NewState(Id(5), testSplitInner1Message(t, 5)),
+	expected1 := []*execute.State{
+		execute.newState(execute.id(1), testSplitInner1Message(t, 1)),
+		execute.newState(execute.id(3), testSplitInner1Message(t, 3)),
+		execute.newState(execute.id(5), testSplitInner1Message(t, 5)),
 	}
-	expected2 := []*State{
-		NewState(Id(1), testSplitMessage(t, 1)),
-		NewState(Id(3), testSplitMessage(t, 3)),
-		NewState(Id(5), testSplitMessage(t, 5)),
+	expected2 := []*execute.State{
+		execute.newState(execute.id(1), testSplitMessage(t, 1)),
+		execute.newState(execute.id(3), testSplitMessage(t, 3)),
+		execute.newState(execute.id(5), testSplitMessage(t, 5)),
 	}
-	expected3 := []*State{
-		NewState(Id(1), testSplitInner2Message(t, 1)),
-		NewState(Id(3), testSplitInner2Message(t, 3)),
-		NewState(Id(5), testSplitInner2Message(t, 5)),
+	expected3 := []*execute.State{
+		execute.newState(execute.id(1), testSplitInner2Message(t, 1)),
+		execute.newState(execute.id(3), testSplitInner2Message(t, 3)),
+		execute.newState(execute.id(5), testSplitInner2Message(t, 5)),
 	}
 
 	go func() {
-		input <- NewState(Id(1), testSplitMessage(t, 1))
-		input <- NewState(Id(3), testSplitMessage(t, 3))
-		input <- NewState(Id(5), testSplitMessage(t, 5))
+		input <- execute.newState(execute.id(1), testSplitMessage(t, 1))
+		input <- execute.newState(execute.id(3), testSplitMessage(t, 3))
+		input <- execute.newState(execute.id(5), testSplitMessage(t, 5))
 	}()
 
 	go s.Run(

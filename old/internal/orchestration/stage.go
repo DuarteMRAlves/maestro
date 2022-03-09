@@ -3,6 +3,7 @@ package orchestration
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"google.golang.org/grpc"
 	"io"
@@ -38,8 +39,8 @@ type RunCfg struct {
 func NewRpcStage(
 	address string,
 	rpcDesc rpc.RPC,
-	input <-chan *State,
-	output chan<- *State,
+	input <-chan *execute.State,
+	output chan<- *execute.State,
 ) (Stage, error) {
 	switch {
 	case rpcDesc.IsUnary():
@@ -71,13 +72,13 @@ type UnaryStage struct {
 	rpc     rpc.RPC
 	invoker rpc.UnaryClient
 
-	input  <-chan *State
-	output chan<- *State
+	input  <-chan *execute.State
+	output chan<- *execute.State
 }
 
 func (s *UnaryStage) Run(cfg *RunCfg) {
 	var (
-		in, out  *State
+		in, out  *execute.State
 		req, rep rpc.DynMessage
 		err      error
 	)
@@ -105,7 +106,7 @@ func (s *UnaryStage) Run(cfg *RunCfg) {
 			continue
 		}
 
-		out = NewState(in.Id(), rep)
+		out = execute.newState(in.Id(), rep)
 
 		select {
 		case s.output <- out:
@@ -131,12 +132,12 @@ func (s *UnaryStage) Close() {
 type SourceStage struct {
 	id     int32
 	msg    rpc.MessageDesc
-	output chan<- *State
+	output chan<- *execute.State
 }
 
 func NewSourceStage(
 	initial int32,
-	output chan<- *State,
+	output chan<- *execute.State,
 	msg rpc.MessageDesc,
 ) *SourceStage {
 	i := &SourceStage{
@@ -158,8 +159,8 @@ func (s *SourceStage) Run(cfg *RunCfg) {
 	}
 }
 
-func (s *SourceStage) next() *State {
-	st := NewState(Id(s.id), s.msg.NewEmpty())
+func (s *SourceStage) next() *execute.State {
+	st := execute.newState(execute.id(s.id), s.msg.NewEmpty())
 	s.id++
 	return st
 }
@@ -171,10 +172,10 @@ func (s *SourceStage) Close() {
 // SinkStage defines the last output of the orchestration, where all messages
 // are dropped.
 type SinkStage struct {
-	input <-chan *State
+	input <-chan *execute.State
 }
 
-func NewSinkOutput(input <-chan *State) *SinkStage {
+func NewSinkOutput(input <-chan *execute.State) *SinkStage {
 	s := &SinkStage{
 		input: input,
 	}
@@ -204,19 +205,19 @@ type MergeStage struct {
 	// be filled with the collected messages.
 	fields []string
 	// inputs are the several input channels from which to collect the messages.
-	inputs []<-chan *State
+	inputs []<-chan *execute.State
 	// output is the channel used to send messages to the downstream stage.
-	output chan<- *State
+	output chan<- *execute.State
 	// msg describes the message to create and send to the downstream stage.
 	msg rpc.MessageDesc
 	// currId is the current id being constructed.
-	currId Id
+	currId execute.id
 }
 
 func NewMergeStage(
 	fields []string,
-	inputs []<-chan *State,
-	output chan<- *State,
+	inputs []<-chan *execute.State,
+	output chan<- *execute.State,
 	msg rpc.MessageDesc,
 ) *MergeStage {
 	return &MergeStage{
@@ -232,11 +233,11 @@ func (s *MergeStage) Run(cfg *RunCfg) {
 	var (
 		// partial is the current message being constructed.
 		partial rpc.DynMessage
-		state   *State
+		state   *execute.State
 		done    bool
 	)
 
-	latest := make([]*State, 0, len(s.inputs))
+	latest := make([]*execute.State, 0, len(s.inputs))
 	for i := 0; i < len(s.inputs); i++ {
 		latest = append(latest, nil)
 	}
@@ -265,7 +266,7 @@ func (s *MergeStage) Run(cfg *RunCfg) {
 		}
 		// All fields from inputs were set. The message can be sent
 		if setFields == len(s.inputs) {
-			sendState := NewState(s.currId, partial)
+			sendState := execute.newState(s.currId, partial)
 			select {
 			case s.output <- sendState:
 			case <-cfg.term:
@@ -281,9 +282,9 @@ func (s *MergeStage) Run(cfg *RunCfg) {
 }
 
 func (s *MergeStage) takeUntilCurrId(
-	input <-chan *State,
+	input <-chan *execute.State,
 	term <-chan struct{},
-) (*State, bool) {
+) (*execute.State, bool) {
 	for {
 		select {
 		case state := <-input:
@@ -308,15 +309,15 @@ type SplitStage struct {
 	// entire message is sent.
 	fields []string
 	// input is the channel from which to receive the messages.
-	input <-chan *State
+	input <-chan *execute.State
 	// outputs are the several channels where to send messages.
-	outputs []chan<- *State
+	outputs []chan<- *execute.State
 }
 
 func NewSplitStage(
 	fields []string,
-	input <-chan *State,
-	outputs []chan<- *State,
+	input <-chan *execute.State,
+	outputs []chan<- *execute.State,
 ) *SplitStage {
 	return &SplitStage{
 		fields:  fields,
@@ -327,7 +328,7 @@ func NewSplitStage(
 
 func (s *SplitStage) Run(cfg *RunCfg) {
 	var (
-		state *State
+		state *execute.State
 		send  rpc.DynMessage
 		err   error
 	)
@@ -353,7 +354,7 @@ func (s *SplitStage) Run(cfg *RunCfg) {
 					continue
 				}
 			}
-			newState := NewState(state.Id(), send)
+			newState := execute.newState(state.Id(), send)
 			select {
 			case out <- newState:
 			case <-cfg.term:
