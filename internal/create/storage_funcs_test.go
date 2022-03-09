@@ -6,41 +6,6 @@ import (
 	"testing"
 )
 
-func existsOrchestrationFn(
-	expected domain.OrchestrationName,
-	callCount *int,
-	threshold int,
-) ExistsOrchestration {
-	return func(name domain.OrchestrationName) bool {
-		*callCount++
-		return expected.Unwrap() == name.Unwrap() && (*callCount > threshold)
-	}
-}
-
-func loadOrchestrationFn(
-	t *testing.T,
-	expected Orchestration,
-	callCount *int,
-) LoadOrchestration {
-	return func(name domain.OrchestrationName) OrchestrationResult {
-		*callCount++
-		assert.Equal(t, expected.Name().Unwrap(), name.Unwrap())
-		return SomeOrchestration(expected)
-	}
-}
-
-func saveOrchestrationFn(
-	t *testing.T,
-	expected Orchestration,
-	callCount *int,
-) SaveOrchestration {
-	return func(actual Orchestration) OrchestrationResult {
-		*callCount++
-		assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-		return SomeOrchestration(actual)
-	}
-}
-
 func existsStageFn(
 	expected domain.StageName,
 	callCount *int,

@@ -84,10 +84,6 @@ func TestCreateLink(t *testing.T) {
 
 				existsStageCount := 0
 
-				existsOrchestrationCount := 0
-				loadOrchestrationCount := 0
-				saveOrchestrationCount := 0
-
 				existsLink := existsLinkFn(
 					test.expLink.Name(),
 					&existsLinkCount,
@@ -104,29 +100,17 @@ func TestCreateLink(t *testing.T) {
 					&existsStageCount,
 				)
 
-				existsOrchestration := existsOrchestrationFn(
-					test.loadOrchestration.Name(),
-					&existsOrchestrationCount,
-					0,
-				)
-				loadOrchestration := loadOrchestrationFn(
-					t,
-					test.loadOrchestration,
-					&loadOrchestrationCount,
-				)
-				saveOrchestration := saveOrchestrationFn(
-					t,
-					test.expOrchestration,
-					&saveOrchestrationCount,
-				)
+				storage := mockOrchestrationStorage{
+					orchs: map[domain.OrchestrationName]Orchestration{
+						test.loadOrchestration.Name(): test.loadOrchestration,
+					},
+				}
 
 				createFn := CreateLink(
 					existsLink,
 					saveLink,
 					existsStage,
-					existsOrchestration,
-					loadOrchestration,
-					saveOrchestration,
+					storage,
 				)
 				res := createFn(test.req)
 
@@ -135,9 +119,11 @@ func TestCreateLink(t *testing.T) {
 				assert.Equal(t, saveLinkCount, 1)
 				// Two because of source and target
 				assert.Equal(t, existsStageCount, 2)
-				assert.Equal(t, existsOrchestrationCount, 1)
-				assert.Equal(t, loadOrchestrationCount, 1)
-				assert.Equal(t, saveOrchestrationCount, 1)
+
+				assert.Equal(t, 1, len(storage.orchs))
+				o, exists := storage.orchs[test.expOrchestration.Name()]
+				assert.Assert(t, exists)
+				assertEqualOrchestration(t, test.expOrchestration, o)
 			},
 		)
 	}
@@ -171,10 +157,6 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 
 	existsStageCount := 0
 
-	existsOrchestrationCount := 0
-	loadOrchestrationCount := 0
-	saveOrchestrationCount := 0
-
 	existsLink := existsLinkFn(expLink.Name(), &existsLinkCount, 1)
 	saveLink := saveLinkFn(t, expLink, &saveLinkCount)
 
@@ -184,30 +166,13 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 	existsStage := existsOneOfStageFn(possibleStages, &existsStageCount)
 
-	existsOrchestration := existsOrchestrationFn(
-		storedOrchestration.Name(),
-		&existsOrchestrationCount,
-		0,
-	)
-	loadOrchestration := loadOrchestrationFn(
-		t,
-		storedOrchestration,
-		&loadOrchestrationCount,
-	)
-	saveOrchestration := saveOrchestrationFn(
-		t,
-		expOrchestration,
-		&saveOrchestrationCount,
-	)
+	storage := mockOrchestrationStorage{
+		orchs: map[domain.OrchestrationName]Orchestration{
+			storedOrchestration.Name(): storedOrchestration,
+		},
+	}
 
-	createFn := CreateLink(
-		existsLink,
-		saveLink,
-		existsStage,
-		existsOrchestration,
-		loadOrchestration,
-		saveOrchestration,
-	)
+	createFn := CreateLink(existsLink, saveLink, existsStage, storage)
 	res := createFn(req)
 
 	assert.Assert(t, !res.Err.Present())
@@ -215,9 +180,11 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	assert.Equal(t, saveLinkCount, 1)
 	// Two because of source and target
 	assert.Equal(t, existsStageCount, 2)
-	assert.Equal(t, existsOrchestrationCount, 1)
-	assert.Equal(t, loadOrchestrationCount, 1)
-	assert.Equal(t, saveOrchestrationCount, 1)
+
+	assert.Equal(t, 1, len(storage.orchs))
+	o, exists := storage.orchs[expOrchestration.Name()]
+	assert.Assert(t, exists)
+	assertEqualOrchestration(t, expOrchestration, o)
 
 	res = createFn(req)
 
@@ -233,9 +200,11 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	assert.Equal(t, saveLinkCount, 1)
 	// Two because of source and target
 	assert.Equal(t, existsStageCount, 2)
-	assert.Equal(t, existsOrchestrationCount, 1)
-	assert.Equal(t, loadOrchestrationCount, 1)
-	assert.Equal(t, saveOrchestrationCount, 1)
+
+	assert.Equal(t, 1, len(storage.orchs))
+	o, exists = storage.orchs[expOrchestration.Name()]
+	assert.Assert(t, exists)
+	assertEqualOrchestration(t, expOrchestration, o)
 }
 
 func existsOneOfStageFn(

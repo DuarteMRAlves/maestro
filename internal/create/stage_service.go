@@ -8,15 +8,13 @@ import (
 func CreateStage(
 	existsStage ExistsStage,
 	saveStage SaveStage,
-	existsOrchestration ExistsOrchestration,
-	loadOrchestration LoadOrchestration,
-	saveOrchestration SaveOrchestration,
+	storage OrchestrationStorage,
 ) func(StageRequest) StageResponse {
 	return func(req StageRequest) StageResponse {
 		res := requestToStage(req)
 		res = BindStage(verifyDupStage(existsStage))(res)
-		res = BindStage(verifyExistsOrchestration(existsOrchestration))(res)
-		res = BindStage(addStage(loadOrchestration, saveOrchestration))(res)
+		res = BindStage(verifyExistsOrchestration(storage))(res)
+		res = BindStage(addStage(storage, storage))(res)
 		res = BindStage(saveStage)(res)
 		return stageToResponse(res)
 	}
@@ -74,9 +72,9 @@ func verifyDupStage(existsFn ExistsStage) func(Stage) StageResult {
 	}
 }
 
-func verifyExistsOrchestration(existsFn ExistsOrchestration) func(Stage) StageResult {
+func verifyExistsOrchestration(verifier OrchestrationExistsVerifier) func(Stage) StageResult {
 	return func(s Stage) StageResult {
-		if !existsFn(s.Orchestration()) {
+		if !verifier.Verify(s.Orchestration()) {
 			err := errdefs.NotFoundWithMsg(
 				"orchestration '%v' not found",
 				s.Orchestration().Unwrap(),
@@ -88,13 +86,13 @@ func verifyExistsOrchestration(existsFn ExistsOrchestration) func(Stage) StageRe
 }
 
 func addStage(
-	loadFn LoadOrchestration,
-	saveFn SaveOrchestration,
+	loader OrchestrationLoader,
+	saver OrchestrationSaver,
 ) func(Stage) StageResult {
 	return func(s Stage) StageResult {
 		name := s.Orchestration()
 		updateFn := ReturnOrchestration(addStageNameToOrchestration(s.Name()))
-		res := updateOrchestration(name, loadFn, updateFn, saveFn)
+		res := updateOrchestration(name, loader, updateFn, saver)
 		if res.IsError() {
 			err := errdefs.PrependMsg(
 				res.Error(),

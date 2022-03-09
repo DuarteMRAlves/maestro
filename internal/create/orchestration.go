@@ -2,9 +2,23 @@ package create
 
 import "github.com/DuarteMRAlves/maestro/internal/domain"
 
-type SaveOrchestration func(Orchestration) OrchestrationResult
-type LoadOrchestration func(domain.OrchestrationName) OrchestrationResult
-type ExistsOrchestration func(domain.OrchestrationName) bool
+type OrchestrationSaver interface {
+	Save(Orchestration) OrchestrationResult
+}
+
+type OrchestrationLoader interface {
+	Load(domain.OrchestrationName) OrchestrationResult
+}
+
+type OrchestrationExistsVerifier interface {
+	Verify(domain.OrchestrationName) bool
+}
+
+type OrchestrationStorage interface {
+	OrchestrationSaver
+	OrchestrationLoader
+	OrchestrationExistsVerifier
+}
 
 type Orchestration interface {
 	Name() domain.OrchestrationName
@@ -52,13 +66,13 @@ func NewOrchestration(
 
 func updateOrchestration(
 	name domain.OrchestrationName,
-	loadFn LoadOrchestration,
+	loader OrchestrationLoader,
 	updateFn func(Orchestration) OrchestrationResult,
-	saveFn SaveOrchestration,
+	saver OrchestrationSaver,
 ) OrchestrationResult {
-	res := loadFn(name)
+	res := loader.Load(name)
 	res = BindOrchestration(updateFn)(res)
-	res = BindOrchestration(saveFn)(res)
+	res = BindOrchestration(saver.Save)(res)
 	return res
 }
 

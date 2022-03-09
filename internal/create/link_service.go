@@ -9,17 +9,15 @@ func CreateLink(
 	existsLink ExistsLink,
 	saveLink SaveLink,
 	existsStage ExistsStage,
-	existsOrchestration ExistsOrchestration,
-	loadOrchestration LoadOrchestration,
-	saveOrchestration SaveOrchestration,
+	storage OrchestrationStorage,
 ) func(LinkRequest) LinkResponse {
 	return func(req LinkRequest) LinkResponse {
 		res := requestToLink(req)
 		res = BindLink(verifyDupLink(existsLink))(res)
-		res = BindLink(verifyExistsOrchestrationLink(existsOrchestration))(res)
+		res = BindLink(verifyExistsOrchestrationLink(storage))(res)
 		res = BindLink(verifyExistsSource(existsStage))(res)
 		res = BindLink(verifyExistsTarget(existsStage))(res)
-		res = BindLink(addLink(loadOrchestration, saveOrchestration))(res)
+		res = BindLink(addLink(storage, storage))(res)
 		res = BindLink(saveLink)(res)
 		return linkToResponse(res)
 	}
@@ -81,9 +79,9 @@ func verifyDupLink(existsFn ExistsLink) func(Link) LinkResult {
 	}
 }
 
-func verifyExistsOrchestrationLink(existsFn ExistsOrchestration) func(Link) LinkResult {
+func verifyExistsOrchestrationLink(verifier OrchestrationExistsVerifier) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if !existsFn(l.Orchestration()) {
+		if !verifier.Verify(l.Orchestration()) {
 			err := errdefs.NotFoundWithMsg(
 				"orchestration '%v' not found",
 				l.Orchestration().Unwrap(),
@@ -121,17 +119,17 @@ func verifyExistsTarget(existsFn ExistsStage) func(Link) LinkResult {
 }
 
 func addLink(
-	loadFn LoadOrchestration,
-	saveFn SaveOrchestration,
+	loader OrchestrationLoader,
+	saver OrchestrationSaver,
 ) func(Link) LinkResult {
 	return func(l Link) LinkResult {
 		name := l.Orchestration()
 		updateFn := ReturnOrchestration(addLinkNameToOrchestration(l.Name()))
-		res := updateOrchestration(name, loadFn, updateFn, saveFn)
+		res := updateOrchestration(name, loader, updateFn, saver)
 		if res.IsError() {
 			err := errdefs.PrependMsg(
 				res.Error(),
-				"add link %s to orchestration: %s",
+				"add link %s to orchestration %s",
 				l.Name(),
 				l.Orchestration(),
 			)
