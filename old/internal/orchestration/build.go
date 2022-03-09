@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/rpc"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/dgraph-io/badger/v3"
@@ -235,7 +236,7 @@ func (b *Builder) loadInputsAndOutputs() error {
 
 func (b *Builder) buildExecStages() error {
 	var (
-		inputChan, outputChan chan *State
+		inputChan, outputChan chan *execute.State
 		stage                 Stage
 		err                   error
 	)
@@ -322,7 +323,11 @@ func (i *InputDesc) WithConnection(c *Link) error {
 	return nil
 }
 
-func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
+func (i *InputDesc) BuildExecutionResources() (
+	chan *execute.State,
+	Stage,
+	error,
+) {
 	switch len(i.links) {
 	case 0:
 		if i.msg == nil {
@@ -330,7 +335,7 @@ func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
 				"message required without 0 links.",
 			)
 		}
-		ch := make(chan *State)
+		ch := make(chan *execute.State)
 		s := NewSourceStage(1, ch, i.msg)
 		return ch, s, nil
 	case 1:
@@ -355,12 +360,12 @@ func (i *InputDesc) BuildExecutionResources() (chan *State, Stage, error) {
 	}
 }
 
-func (i *InputDesc) buildMergeStage() (chan *State, *MergeStage) {
+func (i *InputDesc) buildMergeStage() (chan *execute.State, *MergeStage) {
 	fields := make([]string, 0, len(i.links))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan *State, 0, len(i.links))
+	inputs := make([]<-chan *execute.State, 0, len(i.links))
 	// channel where the stage will send the constructed messages.
-	output := make(chan *State)
+	output := make(chan *execute.State)
 	for _, l := range i.links {
 		fields = append(fields, l.TargetField())
 		inputs = append(inputs, l.Chan())
@@ -394,10 +399,10 @@ func (o *OutputDesc) WithConnection(c *Link) error {
 	return nil
 }
 
-func (o *OutputDesc) BuildExecutionResources() (chan *State, Stage) {
+func (o *OutputDesc) BuildExecutionResources() (chan *execute.State, Stage) {
 	switch len(o.links) {
 	case 0:
-		ch := make(chan *State)
+		ch := make(chan *execute.State)
 		s := NewSinkOutput(ch)
 		return ch, s
 	case 1:
@@ -413,12 +418,12 @@ func (o *OutputDesc) BuildExecutionResources() (chan *State, Stage) {
 	}
 }
 
-func (o *OutputDesc) buildSplitStage() (chan *State, Stage) {
+func (o *OutputDesc) buildSplitStage() (chan *execute.State, Stage) {
 	fields := make([]string, 0, len(o.links))
 	// channel where the stage will send the produced states.
-	input := make(chan *State)
+	input := make(chan *execute.State)
 	// channels to split the received states.
-	outputs := make([]chan<- *State, 0, len(o.links))
+	outputs := make([]chan<- *execute.State, 0, len(o.links))
 	for _, l := range o.links {
 		fields = append(fields, l.SourceField())
 		outputs = append(outputs, l.Chan())

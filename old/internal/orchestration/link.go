@@ -2,18 +2,19 @@ package orchestration
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/api"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 )
 
 // Link is a connection between two stages where data is transferred.
 type Link struct {
 	link *api.Link
-	ch   chan *State
+	ch   chan *execute.State
 }
 
 func NewLink(l *api.Link) *Link {
 	f := &Link{
 		link: l,
-		ch:   make(chan *State),
+		ch:   make(chan *execute.State),
 	}
 	return f
 }
@@ -41,6 +42,6 @@ func (l *Link) HasSameTargetField(other *Link) bool {
 	return l.link.TargetField == other.link.TargetField
 }
 
-func (l *Link) Chan() chan *State {
+func (l *Link) Chan() chan *execute.State {
 	return l.ch
 }
