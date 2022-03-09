@@ -201,3 +201,35 @@ func replyFromRequest(request *unit.Request) *unit.Reply {
 		InnerMsg:    innerMsg,
 	}
 }
+
+func TestSourceStage_Run(t *testing.T) {
+	start := int32(1)
+	numRequest := 10
+
+	msgDesc, err := invoke.NewMessageDescriptor(&unit.Request{})
+	assert.NilError(t, err, "request message descriptor")
+
+	output := make(chan state)
+	s := newSourceStage(start, msgDesc.MessageGenerator(), output)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+
+	go func() {
+		_ = s.Run(ctx)
+		close(done)
+	}()
+
+	generated := make([]state, 0, numRequest)
+	for i := 0; i < numRequest; i++ {
+		generated = append(generated, <-output)
+	}
+	cancel()
+	<-done
+
+	for i, g := range generated {
+		assert.Equal(t, int32(g.id), int32(i+1))
+	}
+}
