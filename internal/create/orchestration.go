@@ -10,14 +10,9 @@ type OrchestrationLoader interface {
 	Load(domain.OrchestrationName) OrchestrationResult
 }
 
-type OrchestrationExistsVerifier interface {
-	Verify(domain.OrchestrationName) bool
-}
-
 type OrchestrationStorage interface {
 	OrchestrationSaver
 	OrchestrationLoader
-	OrchestrationExistsVerifier
 }
 
 type Orchestration interface {

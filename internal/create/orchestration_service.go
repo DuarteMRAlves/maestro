@@ -24,17 +24,22 @@ func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
 }
 
 func verifyDupOrchestration(
-	verifier OrchestrationExistsVerifier,
+	loader OrchestrationLoader,
 ) func(Orchestration) OrchestrationResult {
 	return func(o Orchestration) OrchestrationResult {
-		if verifier.Verify(o.Name()) {
-			err := errdefs.AlreadyExistsWithMsg(
-				"orchestration '%v' already exists",
-				o.Name().Unwrap(),
-			)
+		res := loader.Load(o.Name())
+		if res.IsError() {
+			err := res.Error()
+			if errdefs.IsNotFound(err) {
+				return SomeOrchestration(o)
+			}
 			return ErrOrchestration(err)
 		}
-		return SomeOrchestration(o)
+		err := errdefs.AlreadyExistsWithMsg(
+			"orchestration '%v' already exists",
+			o.Name().Unwrap(),
+		)
+		return ErrOrchestration(err)
 	}
 }
 

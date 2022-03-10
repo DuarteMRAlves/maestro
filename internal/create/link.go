@@ -12,14 +12,9 @@ type LinkLoader interface {
 	Load(domain.LinkName) LinkResult
 }
 
-type LinkExistsVerifier interface {
-	Verify(domain.LinkName) bool
-}
-
 type LinkStorage interface {
 	LinkSaver
 	LinkLoader
-	LinkExistsVerifier
 }
 
 type LinkEndpoint interface {
