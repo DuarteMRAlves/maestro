@@ -239,3 +239,71 @@ func (s *mergeStage) takeUntilCurrId(
 		}
 	}
 }
+
+type splitStage struct {
+	// fields are the names of the fields of the received message that should
+	// be sent through the respective channel. If field is empty, the
+	// entire message is sent.
+	fields []domain.OptionalMessageField
+	// input is the channel from which to receive the messages.
+	input <-chan state
+	// outputs are the several channels where to send messages.
+	outputs []chan<- state
+}
+
+func newSplitStage(
+	fields []domain.OptionalMessageField,
+	input <-chan state,
+	outputs []chan<- state,
+) splitStage {
+	return splitStage{
+		fields:  fields,
+		input:   input,
+		outputs: outputs,
+	}
+}
+
+func (s *splitStage) Run(ctx context.Context) error {
+	var currState state
+	fieldGetters := make([]invoke.FieldGetter, 0, len(s.fields))
+	for _, f := range s.fields {
+		var fieldGetter invoke.FieldGetter
+		if f.Present() {
+			fieldGetter = invoke.NewFieldGetter(f.Unwrap())
+		} else {
+			fieldGetter = nil
+		}
+		fieldGetters = append(fieldGetters, fieldGetter)
+	}
+	for {
+		select {
+		case currState = <-s.input:
+		case <-ctx.Done():
+			for _, c := range s.outputs {
+				close(c)
+			}
+			return nil
+		}
+		msg := currState.msg
+		for i, out := range s.outputs {
+			send := msg
+			optField := s.fields[i]
+			if optField.Present() {
+				res := fieldGetters[i](msg)
+				if res.IsError() {
+					return res.Error()
+				}
+				send = res.Unwrap()
+			}
+			sendState := newState(currState.id, send)
+			select {
+			case out <- sendState:
+			case <-ctx.Done():
+				for _, c := range s.outputs {
+					close(c)
+				}
+				return nil
+			}
+		}
+	}
+}
