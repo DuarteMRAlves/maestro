@@ -212,15 +212,10 @@ func (m mockLinkStorage) Save(l Link) LinkResult {
 func (m mockLinkStorage) Load(name domain.LinkName) LinkResult {
 	l, exists := m.links[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("link not found: %s", l.Name())
+		err := errdefs.NotFoundWithMsg("link not found: %s", name)
 		return ErrLink(err)
 	}
 	return SomeLink(l)
-}
-
-func (m mockLinkStorage) Verify(name domain.LinkName) bool {
-	_, exists := m.links[name]
-	return exists
 }
 
 func createLink(

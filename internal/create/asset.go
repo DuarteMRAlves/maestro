@@ -10,14 +10,9 @@ type AssetLoader interface {
 	Load(domain.AssetName) domain.AssetResult
 }
 
-type AssetExistsVerifier interface {
-	Verify(domain.AssetName) bool
-}
-
 type AssetStorage interface {
 	AssetSaver
 	AssetLoader
-	AssetExistsVerifier
 }
 
 type AssetRequest struct {

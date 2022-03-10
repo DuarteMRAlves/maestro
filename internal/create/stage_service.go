@@ -58,27 +58,29 @@ func requestToStage(req StageRequest) StageResult {
 	return SomeStage(NewStage(name, ctx, orchestrationName))
 }
 
-func verifyDupStage(verifier StageExistsVerifier) func(Stage) StageResult {
+func verifyDupStage(loader StageLoader) func(Stage) StageResult {
 	return func(s Stage) StageResult {
-		if verifier.Verify(s.Name()) {
-			err := errdefs.AlreadyExistsWithMsg(
-				"stage '%v' already exists",
-				s.Name().Unwrap(),
-			)
+		res := loader.Load(s.Name())
+		if res.IsError() {
+			err := res.Error()
+			if errdefs.IsNotFound(err) {
+				return SomeStage(s)
+			}
 			return ErrStage(err)
 		}
-		return SomeStage(s)
+		err := errdefs.AlreadyExistsWithMsg(
+			"stage '%v' already exists",
+			s.Name().Unwrap(),
+		)
+		return ErrStage(err)
 	}
 }
 
-func verifyExistsOrchestration(verifier OrchestrationExistsVerifier) func(Stage) StageResult {
+func verifyExistsOrchestration(orchLoader OrchestrationLoader) func(Stage) StageResult {
 	return func(s Stage) StageResult {
-		if !verifier.Verify(s.Orchestration()) {
-			err := errdefs.NotFoundWithMsg(
-				"orchestration '%v' not found",
-				s.Orchestration().Unwrap(),
-			)
-			return ErrStage(err)
+		res := orchLoader.Load(s.Orchestration())
+		if res.IsError() {
+			return ErrStage(res.Error())
 		}
 		return SomeStage(s)
 	}

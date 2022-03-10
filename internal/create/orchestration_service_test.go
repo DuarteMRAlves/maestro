@@ -68,15 +68,10 @@ func (m mockOrchestrationStorage) Save(o Orchestration) OrchestrationResult {
 func (m mockOrchestrationStorage) Load(name domain.OrchestrationName) OrchestrationResult {
 	o, exists := m.orchs[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("orchestration not found: %s", o.Name())
+		err := errdefs.NotFoundWithMsg("orchestration not found: %s", name)
 		return ErrOrchestration(err)
 	}
 	return SomeOrchestration(o)
-}
-
-func (m mockOrchestrationStorage) Verify(name domain.OrchestrationName) bool {
-	_, exists := m.orchs[name]
-	return exists
 }
 
 func createOrchestration(

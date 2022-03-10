@@ -10,14 +10,9 @@ type StageLoader interface {
 	Load(domain.StageName) StageResult
 }
 
-type StageExistsVerifier interface {
-	Verify(domain.StageName) bool
-}
-
 type StageStorage interface {
 	StageSaver
 	StageLoader
-	StageExistsVerifier
 }
 
 type Stage interface {

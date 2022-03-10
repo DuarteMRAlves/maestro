@@ -30,16 +30,21 @@ func requestToAsset(req AssetRequest) domain.AssetResult {
 	return domain.SomeAsset(domain.NewAsset(name, imgOpt))
 }
 
-func newVerifyDuplicateFn(verifier AssetExistsVerifier) func(domain.Asset) domain.AssetResult {
+func newVerifyDuplicateFn(loader AssetLoader) func(domain.Asset) domain.AssetResult {
 	return func(a domain.Asset) domain.AssetResult {
-		if verifier.Verify(a.Name()) {
-			err := errdefs.AlreadyExistsWithMsg(
-				"asset '%v' already exists",
-				a.Name().Unwrap(),
-			)
+		res := loader.Load(a.Name())
+		if res.IsError() {
+			err := res.Error()
+			if errdefs.IsNotFound(err) {
+				return domain.SomeAsset(a)
+			}
 			return domain.ErrAsset(err)
 		}
-		return domain.SomeAsset(a)
+		err := errdefs.AlreadyExistsWithMsg(
+			"asset '%v' already exists",
+			a.Name().Unwrap(),
+		)
+		return domain.ErrAsset(err)
 	}
 }
 

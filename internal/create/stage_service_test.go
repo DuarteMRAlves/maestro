@@ -181,15 +181,10 @@ func (m mockStageStorage) Save(s Stage) StageResult {
 func (m mockStageStorage) Load(name domain.StageName) StageResult {
 	s, exists := m.stages[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("stage not found: %s", s.Name())
+		err := errdefs.NotFoundWithMsg("stage not found: %s", name)
 		return ErrStage(err)
 	}
 	return SomeStage(s)
-}
-
-func (m mockStageStorage) Verify(name domain.StageName) bool {
-	_, exists := m.stages[name]
-	return exists
 }
 
 func createStage(

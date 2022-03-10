@@ -7,15 +7,15 @@ import (
 
 func CreateLink(
 	storage LinkStorage,
-	stageExistsVerifier StageExistsVerifier,
+	stageLoader StageLoader,
 	orchStorage OrchestrationStorage,
 ) func(LinkRequest) LinkResponse {
 	return func(req LinkRequest) LinkResponse {
 		res := requestToLink(req)
 		res = BindLink(verifyDupLink(storage))(res)
 		res = BindLink(verifyExistsOrchestrationLink(orchStorage))(res)
-		res = BindLink(verifyExistsSource(stageExistsVerifier))(res)
-		res = BindLink(verifyExistsTarget(stageExistsVerifier))(res)
+		res = BindLink(verifyExistsSource(stageLoader))(res)
+		res = BindLink(verifyExistsTarget(stageLoader))(res)
 		res = BindLink(addLink(orchStorage, orchStorage))(res)
 		res = BindLink(storage.Save)(res)
 		return linkToResponse(res)
@@ -65,53 +65,49 @@ func requestToLink(req LinkRequest) LinkResult {
 	return SomeLink(l)
 }
 
-func verifyDupLink(verifier LinkExistsVerifier) func(Link) LinkResult {
+func verifyDupLink(loader LinkLoader) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if verifier.Verify(l.Name()) {
-			err := errdefs.AlreadyExistsWithMsg(
-				"link '%v' already exists",
-				l.Name().Unwrap(),
-			)
+		res := loader.Load(l.Name())
+		if res.IsError() {
+			err := res.Error()
+			if errdefs.IsNotFound(err) {
+				return SomeLink(l)
+			}
 			return ErrLink(err)
+		}
+		err := errdefs.AlreadyExistsWithMsg(
+			"link '%v' already exists",
+			l.Name().Unwrap(),
+		)
+		return ErrLink(err)
+	}
+}
+
+func verifyExistsOrchestrationLink(orchLoader OrchestrationLoader) func(Link) LinkResult {
+	return func(l Link) LinkResult {
+		res := orchLoader.Load(l.Orchestration())
+		if res.IsError() {
+			return ErrLink(res.Error())
 		}
 		return SomeLink(l)
 	}
 }
 
-func verifyExistsOrchestrationLink(verifier OrchestrationExistsVerifier) func(Link) LinkResult {
+func verifyExistsSource(stageLoader StageLoader) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if !verifier.Verify(l.Orchestration()) {
-			err := errdefs.NotFoundWithMsg(
-				"orchestration '%v' not found",
-				l.Orchestration().Unwrap(),
-			)
-			return ErrLink(err)
+		res := stageLoader.Load(l.Source().Stage())
+		if res.IsError() {
+			return ErrLink(res.Error())
 		}
 		return SomeLink(l)
 	}
 }
 
-func verifyExistsSource(stageVerifier StageExistsVerifier) func(Link) LinkResult {
+func verifyExistsTarget(stageLoader StageLoader) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		if !stageVerifier.Verify(l.Source().Stage()) {
-			err := errdefs.NotFoundWithMsg(
-				"source '%v' not found",
-				l.Source().Stage().Unwrap(),
-			)
-			return ErrLink(err)
-		}
-		return SomeLink(l)
-	}
-}
-
-func verifyExistsTarget(stageVerifier StageExistsVerifier) func(Link) LinkResult {
-	return func(l Link) LinkResult {
-		if !stageVerifier.Verify(l.Target().Stage()) {
-			err := errdefs.NotFoundWithMsg(
-				"target '%v' not found",
-				l.Target().Stage().Unwrap(),
-			)
-			return ErrLink(err)
+		res := stageLoader.Load(l.Target().Stage())
+		if res.IsError() {
+			return ErrLink(res.Error())
 		}
 		return SomeLink(l)
 	}

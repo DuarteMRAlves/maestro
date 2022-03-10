@@ -99,15 +99,10 @@ func (m mockAssetStorage) Save(asset domain.Asset) domain.AssetResult {
 func (m mockAssetStorage) Load(name domain.AssetName) domain.AssetResult {
 	asset, exists := m.assets[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("asset not found: %s", asset.Name())
+		err := errdefs.NotFoundWithMsg("asset not found: %s", name)
 		return domain.ErrAsset(err)
 	}
 	return domain.SomeAsset(asset)
-}
-
-func (m mockAssetStorage) Verify(name domain.AssetName) bool {
-	_, exists := m.assets[name]
-	return exists
 }
 
 func createAsset(
