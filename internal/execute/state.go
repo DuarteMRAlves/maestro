@@ -16,6 +16,8 @@ type state struct {
 	msg invoke.DynamicMessage
 }
 
+var emptyState = newState(-1, nil)
+
 func newState(id id, msg invoke.DynamicMessage) state {
 	return state{
 		id:  id,

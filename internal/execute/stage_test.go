@@ -3,6 +3,7 @@ package execute
 import (
 	"context"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -232,4 +233,121 @@ func TestSourceStage_Run(t *testing.T) {
 	for i, g := range generated {
 		assert.Equal(t, int32(g.id), int32(i+1))
 	}
+}
+
+func TestMergeStage_Run(t *testing.T) {
+	f1, err := domain.NewMessageField("in1")
+	assert.NilError(t, err, "create field 1")
+
+	f2, err := domain.NewMessageField("in2")
+	assert.NilError(t, err, "create field 2")
+
+	f3, err := domain.NewMessageField("in3")
+	assert.NilError(t, err, "create field 3")
+
+	fields := []domain.MessageField{f1, f2, f3}
+
+	input1 := make(chan state)
+	defer close(input1)
+	input2 := make(chan state)
+	defer close(input2)
+	input3 := make(chan state)
+	defer close(input3)
+	inputs := []<-chan state{input1, input2, input3}
+
+	output := make(chan state)
+
+	outDesc, err := invoke.NewMessageDescriptor(&unit.MergeMessage{})
+	assert.NilError(t, err, "create merge message descriptor")
+
+	s := newMergeStage(fields, inputs, output, outDesc.MessageGenerator())
+
+	expected := []state{
+		newState(3, testMergeMessage(t, 3)),
+		newState(6, testMergeMessage(t, 6)),
+	}
+
+	go func() {
+		input1 <- newState(1, testMergeInner1Message(t, 1))
+		input1 <- newState(2, testMergeInner1Message(t, 2))
+		input1 <- newState(3, testMergeInner1Message(t, 3))
+		input1 <- newState(6, testMergeInner1Message(t, 6))
+	}()
+
+	go func() {
+		input2 <- newState(2, testMergeInner2Message(t, 2))
+		input2 <- newState(3, testMergeInner2Message(t, 3))
+		input2 <- newState(5, testMergeInner2Message(t, 5))
+		input2 <- newState(6, testMergeInner2Message(t, 6))
+	}()
+
+	go func() {
+		input3 <- newState(1, testMergeInner3Message(t, 2))
+		input3 <- newState(3, testMergeInner3Message(t, 3))
+		input3 <- newState(5, testMergeInner3Message(t, 5))
+		input3 <- newState(6, testMergeInner3Message(t, 6))
+	}()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+
+	go func() {
+		err := s.Run(ctx)
+		assert.NilError(t, err, "run error")
+		close(done)
+	}()
+
+	for i, exp := range expected {
+		out := <-output
+		assert.Equal(t, exp.id, out.id, "id at iter %d", i)
+		expDyn, ok := exp.msg.GrpcMessage().(*dynamic.Message)
+		expMsg := &unit.MergeMessage{}
+		err = expDyn.ConvertTo(expMsg)
+		assert.NilError(t, err, "convert dyn to exp")
+		assert.Assert(t, ok, "cast for exp at iter %d", i)
+		dynMsg, ok := out.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for out at iter %d", i)
+		outMsg := &unit.MergeMessage{}
+		err = dynMsg.ConvertTo(outMsg)
+		assert.NilError(t, err, "convert dyn to out")
+		assert.Equal(t, expMsg.In1.Val, outMsg.In1.Val)
+		assert.Equal(t, expMsg.In2.Val, outMsg.In2.Val)
+		assert.Equal(t, expMsg.In3.Val, outMsg.In3.Val)
+	}
+	cancel()
+	<-done
+}
+
+func testMergeMessage(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.MergeMessage{
+		In1: &unit.MergeInner1{Val: val},
+		In2: &unit.MergeInner2{Val: val},
+		In3: &unit.MergeInner3{Val: val},
+	}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create merge message")
+	return msg
+}
+
+func testMergeInner1Message(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.MergeInner1{Val: val}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create merge inner 1message")
+	return msg
+}
+
+func testMergeInner2Message(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.MergeInner2{Val: val}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create merge inner 2 message")
+	return msg
+}
+
+func testMergeInner3Message(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.MergeInner3{Val: val}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create merge inner 3 message")
+	return msg
 }
