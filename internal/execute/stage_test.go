@@ -351,3 +351,134 @@ func testMergeInner3Message(t *testing.T, val int32) invoke.DynamicMessage {
 	assert.NilError(t, err, "create merge inner 3 message")
 	return msg
 }
+
+func TestSplitStage_Run(t *testing.T) {
+	f1, err := domain.NewMessageField("out1")
+	assert.NilError(t, err, "create message field 1")
+
+	f3, err := domain.NewMessageField("out2")
+	assert.NilError(t, err, "create message field 3")
+
+	fields := []domain.OptionalMessageField{
+		domain.NewPresentMessageField(f1),
+		domain.NewEmptyMessageField(),
+		domain.NewPresentMessageField(f3),
+	}
+
+	input := make(chan state)
+
+	output1 := make(chan state)
+	output2 := make(chan state)
+	output3 := make(chan state)
+
+	outputs := []chan<- state{output1, output2, output3}
+
+	s := newSplitStage(fields, input, outputs)
+
+	expected1 := []state{
+		newState(id(1), testSplitInner1Message(t, 1)),
+		newState(id(3), testSplitInner1Message(t, 3)),
+		newState(id(5), testSplitInner1Message(t, 5)),
+	}
+	expected2 := []state{
+		newState(id(1), testSplitMessage(t, 1)),
+		newState(id(3), testSplitMessage(t, 3)),
+		newState(id(5), testSplitMessage(t, 5)),
+	}
+	expected3 := []state{
+		newState(id(1), testSplitInner2Message(t, 1)),
+		newState(id(3), testSplitInner2Message(t, 3)),
+		newState(id(5), testSplitInner2Message(t, 5)),
+	}
+
+	go func() {
+		input <- newState(id(1), testSplitMessage(t, 1))
+		input <- newState(id(3), testSplitMessage(t, 3))
+		input <- newState(id(5), testSplitMessage(t, 5))
+	}()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+
+	go func() {
+		err := s.Run(ctx)
+		assert.NilError(t, err, "run error")
+		close(done)
+	}()
+
+	for i := 0; i < len(expected1); i++ {
+		exp1 := expected1[i]
+		out1 := <-output1
+		assert.Equal(t, exp1.id, out1.id, "id 1 at iter %d", i)
+		expDyn1, ok := exp1.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
+		expMsg1 := &unit.SplitInner1{}
+		err = expDyn1.ConvertTo(expMsg1)
+		assert.NilError(t, err, "convert dyn 1 to exp 1")
+		outDyn1, ok := out1.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
+		outMsg1 := &unit.SplitInner1{}
+		err = outDyn1.ConvertTo(outMsg1)
+		assert.Equal(t, expMsg1.Val, outMsg1.Val)
+
+		exp2 := expected2[i]
+		out2 := <-output2
+		assert.Equal(t, exp2.id, out2.id, "id 2 at iter %d", i)
+		expDyn2, ok := exp2.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for exp 2 at iter %d", i)
+		expMsg2 := &unit.SplitMessage{}
+		err = expDyn2.ConvertTo(expMsg2)
+		assert.NilError(t, err, "convert dyn 2 to exp 2")
+		dynDyn2, ok := out2.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for out 2 at iter %d", i)
+		outMsg2 := &unit.SplitMessage{}
+		err = dynDyn2.ConvertTo(outMsg2)
+		assert.NilError(t, err, "convert dyn 2 to out 2")
+		assert.Equal(t, expMsg2.Out1.Val, outMsg2.Out1.Val)
+		assert.Equal(t, expMsg2.Val, outMsg2.Val)
+		assert.Equal(t, expMsg2.Out2.Val, outMsg2.Out2.Val)
+
+		exp3 := expected3[i]
+		out3 := <-output3
+		assert.Equal(t, exp3.id, out3.id, "id 3 at iter %d", i)
+		expDyn3, ok := exp3.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for exp 3 at iter %d", i)
+		expMsg3 := &unit.SplitInner2{}
+		err = expDyn3.ConvertTo(expMsg3)
+		assert.NilError(t, err, "convert dyn 3 to exp 3")
+		outDyn3, ok := out3.msg.GrpcMessage().(*dynamic.Message)
+		assert.Assert(t, ok, "cast for out 3 at iter %d", i)
+		outMsg3 := &unit.SplitInner2{}
+		err = outDyn3.ConvertTo(outMsg3)
+		assert.Equal(t, expMsg3.Val, outMsg3.Val)
+	}
+	cancel()
+	<-done
+}
+
+func testSplitMessage(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.SplitMessage{
+		Out1: &unit.SplitInner1{Val: val},
+		Val:  val,
+		Out2: &unit.SplitInner2{Val: val},
+	}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create split 1message")
+	return msg
+}
+
+func testSplitInner1Message(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.SplitInner1{Val: val}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create split inner 1message")
+	return msg
+}
+
+func testSplitInner2Message(t *testing.T, val int32) invoke.DynamicMessage {
+	protoMsg := &unit.SplitInner2{Val: val}
+	msg, err := invoke.NewDynamicMessage(protoMsg)
+	assert.NilError(t, err, "create split inner 2 message")
+	return msg
+}
