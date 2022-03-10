@@ -110,3 +110,21 @@ func (s *sourceStage) Run(ctx context.Context) error {
 		s.count++
 	}
 }
+
+type sinkStage struct {
+	input <-chan state
+}
+
+func newSinkStage(input <-chan state) sinkStage {
+	return sinkStage{input: input}
+}
+
+func (s *sinkStage) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-s.input:
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
