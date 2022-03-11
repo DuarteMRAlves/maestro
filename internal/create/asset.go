@@ -7,11 +7,11 @@ import (
 )
 
 type AssetSaver interface {
-	Save(internal.Asset) internal.AssetResult
+	Save(internal.Asset) error
 }
 
 type AssetLoader interface {
-	Load(internal.AssetName) internal.AssetResult
+	Load(internal.AssetName) (internal.Asset, error)
 }
 
 type AssetStorage interface {
@@ -30,54 +30,37 @@ type AssetResponse struct {
 
 func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 	return func(req AssetRequest) AssetResponse {
-		res := requestToAsset(req)
-		res = internal.BindAsset(newVerifyDuplicateFn(storage))(res)
-		res = internal.BindAsset(storage.Save)(res)
-		return assetToResponse(res)
-	}
-}
-
-func requestToAsset(req AssetRequest) internal.AssetResult {
-	name, err := internal.NewAssetName(req.Name)
-	if err != nil {
-		return internal.ErrAsset(err)
-	}
-	if name.IsEmpty() {
-		err := errdefs.InvalidArgumentWithMsg("empty asset name")
-		return internal.ErrAsset(err)
-	}
-	imgOpt := internal.NewEmptyImage()
-	if req.Image.Present() {
-		img := internal.NewImage(req.Image.Unwrap())
-		imgOpt = internal.NewPresentImage(img)
-	}
-	return internal.SomeAsset(internal.NewAsset(name, imgOpt))
-}
-
-func newVerifyDuplicateFn(loader AssetLoader) func(internal.Asset) internal.AssetResult {
-	return func(a internal.Asset) internal.AssetResult {
-		res := loader.Load(a.Name())
-		if res.IsError() {
-			err := res.Error()
-			if errdefs.IsNotFound(err) {
-				return internal.SomeAsset(a)
-			}
-			return internal.ErrAsset(err)
+		name, err := internal.NewAssetName(req.Name)
+		if err != nil {
+			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
-		err := errdefs.AlreadyExistsWithMsg(
-			"asset '%v' already exists",
-			a.Name().Unwrap(),
-		)
-		return internal.ErrAsset(err)
+		if name.IsEmpty() {
+			err := errdefs.InvalidArgumentWithMsg("empty asset name")
+			return AssetResponse{Err: domain.NewPresentError(err)}
+		}
+		imgOpt := internal.NewEmptyImage()
+		if req.Image.Present() {
+			img := internal.NewImage(req.Image.Unwrap())
+			imgOpt = internal.NewPresentImage(img)
+		}
+		// Expect key not found
+		_, err = storage.Load(name)
+		if err == nil {
+			err := errdefs.AlreadyExistsWithMsg(
+				"asset '%v' already exists",
+				name.Unwrap(),
+			)
+			return AssetResponse{Err: domain.NewPresentError(err)}
+		}
+		if !errdefs.IsNotFound(err) {
+			return AssetResponse{Err: domain.NewPresentError(err)}
+		}
+		asset := internal.NewAsset(name, imgOpt)
+		err = storage.Save(asset)
+		errOpt := domain.NewEmptyError()
+		if err != nil {
+			errOpt = domain.NewPresentError(err)
+		}
+		return AssetResponse{Err: errOpt}
 	}
-}
-
-func assetToResponse(res internal.AssetResult) AssetResponse {
-	var errOpt domain.OptionalError
-	if res.IsError() {
-		errOpt = domain.NewPresentError(res.Error())
-	} else {
-		errOpt = domain.NewEmptyError()
-	}
-	return AssetResponse{Err: errOpt}
 }
