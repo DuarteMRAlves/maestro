@@ -25,10 +25,7 @@ func requestToAsset(req AssetRequest) domain.AssetResult {
 	}
 	imgOpt := domain.NewEmptyImage()
 	if req.Image.Present() {
-		img, err := domain.NewImage(req.Image.Unwrap())
-		if err != nil {
-			return domain.ErrAsset(err)
-		}
+		img := domain.NewImage(req.Image.Unwrap())
 		imgOpt = domain.NewPresentImage(img)
 	}
 	return domain.SomeAsset(domain.NewAsset(name, imgOpt))
