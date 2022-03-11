@@ -150,8 +150,7 @@ func createAsset(
 	assert.NilError(t, err, "create name for asset %s", assetName)
 	imgOpt := domain.NewEmptyImage()
 	if !requiredOnly {
-		img, err := domain.NewImage("some-image")
-		assert.NilError(t, err, "create image for asset %s", assetName)
+		img := domain.NewImage("some-image")
 		imgOpt = domain.NewPresentImage(img)
 	}
 	return domain.NewAsset(name, imgOpt)

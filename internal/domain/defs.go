@@ -1,15 +1,5 @@
 package domain
 
-type Image interface {
-	Image()
-	Unwrap() string
-}
-
-type OptionalImage interface {
-	Unwrap() Image
-	Present() bool
-}
-
 type Asset interface {
 	Name() AssetName
 	Image() OptionalImage

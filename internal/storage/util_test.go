@@ -1,26 +1,20 @@
 package storage
 
-import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"gotest.tools/v3/assert"
-	"testing"
-)
-
-func createAsset(
-	t *testing.T,
-	assetName string,
-	requiredOnly bool,
-) domain.Asset {
-	name, err := domain.NewAssetName(assetName)
-	assert.NilError(t, err, "create name for asset %s", assetName)
-	imgOpt := domain.NewEmptyImage()
-	if !requiredOnly {
-		img, err := domain.NewImage("some-image")
-		assert.NilError(t, err, "create image for asset %s", assetName)
-		imgOpt = domain.NewPresentImage(img)
-	}
-	return domain.NewAsset(name, imgOpt)
-}
+// func createAsset(
+// 	t *testing.T,
+// 	assetName string,
+// 	requiredOnly bool,
+// ) domain.Asset {
+// 	name, err := domain.NewAssetName(assetName)
+// 	assert.NilError(t, err, "create name for asset %s", assetName)
+// 	imgOpt := domain.NewEmptyImage()
+// 	if !requiredOnly {
+// 		img, err := domain.NewImage("some-image")
+// 		assert.NilError(t, err, "create image for asset %s", assetName)
+// 		imgOpt = domain.NewPresentImage(img)
+// 	}
+// 	return domain.NewAsset(name, imgOpt)
+// }
 
 // func createStage(t *testing.T, name string, requiredOnly bool) domain.Stage {
 // 	var (
