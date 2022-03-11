@@ -171,10 +171,6 @@ func (s *mergeStage) Run(ctx context.Context) error {
 	for i := 0; i < len(s.inputs); i++ {
 		latest = append(latest, emptyState)
 	}
-	fieldSetters := make([]invoke.FieldSetter, 0, len(s.fields))
-	for _, f := range s.fields {
-		fieldSetters = append(fieldSetters, invoke.NewFieldSetter(f))
-	}
 	for {
 		partial = s.gen()
 		// number of fields in the partial message that are set.
@@ -197,11 +193,10 @@ func (s *mergeStage) Run(ctx context.Context) error {
 				s.currId = currState.id
 				break
 			}
-			res := fieldSetters[i](partial, currState.msg.GrpcMessage())
-			if res.IsError() {
-				return res.Error()
+			err := partial.SetField(s.fields[i], currState.msg.GrpcMessage())
+			if err != nil {
+				return err
 			}
-			partial = res.Unwrap()
 			setFields++
 		}
 		// All fields from inputs were set. The message can be sent
