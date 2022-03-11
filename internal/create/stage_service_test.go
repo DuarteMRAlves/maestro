@@ -106,6 +106,55 @@ func TestCreateStage(t *testing.T) {
 	}
 }
 
+func TestCreateStage_Err(t *testing.T) {
+	tests := []struct {
+		name              string
+		req               StageRequest
+		assertErrTypeFn   func(error) bool
+		expectedErrMsg    string
+		loadOrchestration Orchestration
+	}{
+		{
+			name:            "empty name",
+			req:             StageRequest{Name: ""},
+			assertErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg:  "empty stage name",
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				stageStore := mockStageStorage{
+					stages: map[domain.StageName]Stage{},
+				}
+
+				orchStore := mockOrchestrationStorage{
+					orchs: map[domain.OrchestrationName]Orchestration{
+						test.loadOrchestration.Name(): test.loadOrchestration,
+					},
+				}
+
+				createFn := CreateStage(stageStore, orchStore)
+				res := createFn(test.req)
+				assert.Assert(t, res.Err.Present())
+
+				assert.Equal(t, 0, len(stageStore.stages))
+
+				err := res.Err.Unwrap()
+				assert.Assert(t, test.assertErrTypeFn(err))
+				assert.Error(t, err, test.expectedErrMsg)
+			},
+		)
+	}
+}
+
 func TestCreateStage_AlreadyExists(t *testing.T) {
 	req := StageRequest{
 		Name:          "some-name",

@@ -1,10 +1,5 @@
 package domain
 
-type StageName interface {
-	StageName()
-	Unwrap() string
-}
-
 type Service interface {
 	Service()
 	Unwrap() string

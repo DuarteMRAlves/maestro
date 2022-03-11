@@ -5,24 +5,20 @@ import (
 	"regexp"
 )
 
-var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
+var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
 
-type stageName string
+type StageName struct{ val string }
 
-func (s stageName) StageName() {}
+func (s StageName) Unwrap() string { return s.val }
 
-func (s stageName) Unwrap() string {
-	return string(s)
-}
+func (s StageName) IsEmpty() bool { return s.val == "" }
 
 func NewStageName(name string) (StageName, error) {
-	if len(name) == 0 {
-		return nil, errdefs.InvalidArgumentWithMsg("empty name")
-	}
 	if !isValidStageName(name) {
-		return nil, errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
+		err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
+		return StageName{}, err
 	}
-	return stageName(name), nil
+	return StageName{val: name}, nil
 }
 
 func isValidStageName(name string) bool {
