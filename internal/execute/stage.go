@@ -260,16 +260,6 @@ func newSplitStage(
 
 func (s *splitStage) Run(ctx context.Context) error {
 	var currState state
-	fieldGetters := make([]invoke.FieldGetter, 0, len(s.fields))
-	for _, f := range s.fields {
-		var fieldGetter invoke.FieldGetter
-		if f.Present() {
-			fieldGetter = invoke.NewFieldGetter(f.Unwrap())
-		} else {
-			fieldGetter = nil
-		}
-		fieldGetters = append(fieldGetters, fieldGetter)
-	}
 	for {
 		select {
 		case currState = <-s.input:
@@ -284,11 +274,11 @@ func (s *splitStage) Run(ctx context.Context) error {
 			send := msg
 			optField := s.fields[i]
 			if optField.Present() {
-				res := fieldGetters[i](msg)
-				if res.IsError() {
-					return res.Error()
+				field, err := msg.GetField(optField.Unwrap())
+				if err != nil {
+					return err
 				}
-				send = res.Unwrap()
+				send = field
 			}
 			sendState := newState(currState.id, send)
 			select {
