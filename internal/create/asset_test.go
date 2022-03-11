@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
@@ -12,7 +13,7 @@ func TestCreateAsset(t *testing.T) {
 	tests := []struct {
 		name     string
 		req      AssetRequest
-		expected domain.Asset
+		expected internal.Asset
 	}{
 		{
 			name: "required fields",
@@ -36,10 +37,10 @@ func TestCreateAsset(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				storage := mockAssetStorage{
-					assets: map[domain.AssetName]domain.Asset{},
+					assets: map[internal.AssetName]internal.Asset{},
 				}
 
-				createFn := CreateAsset(storage)
+				createFn := Asset(storage)
 				res := createFn(test.req)
 				assert.Assert(t, !res.Err.Present())
 
@@ -72,10 +73,10 @@ func TestCreateAsset_Err(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				storage := mockAssetStorage{
-					assets: map[domain.AssetName]domain.Asset{},
+					assets: map[internal.AssetName]internal.Asset{},
 				}
 
-				createFn := CreateAsset(storage)
+				createFn := Asset(storage)
 				res := createFn(test.req)
 				assert.Assert(t, res.Err.Present())
 
@@ -96,10 +97,10 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 	}
 	expected := createAsset(t, "some-name", true)
 	storage := mockAssetStorage{
-		assets: map[domain.AssetName]domain.Asset{},
+		assets: map[internal.AssetName]internal.Asset{},
 	}
 
-	createFn := CreateAsset(storage)
+	createFn := Asset(storage)
 
 	res := createFn(req)
 	assert.Assert(t, !res.Err.Present())
@@ -124,39 +125,39 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 }
 
 type mockAssetStorage struct {
-	assets map[domain.AssetName]domain.Asset
+	assets map[internal.AssetName]internal.Asset
 }
 
-func (m mockAssetStorage) Save(asset domain.Asset) domain.AssetResult {
+func (m mockAssetStorage) Save(asset internal.Asset) internal.AssetResult {
 	m.assets[asset.Name()] = asset
-	return domain.SomeAsset(asset)
+	return internal.SomeAsset(asset)
 }
 
-func (m mockAssetStorage) Load(name domain.AssetName) domain.AssetResult {
+func (m mockAssetStorage) Load(name internal.AssetName) internal.AssetResult {
 	asset, exists := m.assets[name]
 	if !exists {
 		err := errdefs.NotFoundWithMsg("asset not found: %s", name)
-		return domain.ErrAsset(err)
+		return internal.ErrAsset(err)
 	}
-	return domain.SomeAsset(asset)
+	return internal.SomeAsset(asset)
 }
 
 func createAsset(
 	t *testing.T,
 	assetName string,
 	requiredOnly bool,
-) domain.Asset {
-	name, err := domain.NewAssetName(assetName)
+) internal.Asset {
+	name, err := internal.NewAssetName(assetName)
 	assert.NilError(t, err, "create name for asset %s", assetName)
-	imgOpt := domain.NewEmptyImage()
+	imgOpt := internal.NewEmptyImage()
 	if !requiredOnly {
-		img := domain.NewImage("some-image")
-		imgOpt = domain.NewPresentImage(img)
+		img := internal.NewImage("some-image")
+		imgOpt = internal.NewPresentImage(img)
 	}
-	return domain.NewAsset(name, imgOpt)
+	return internal.NewAsset(name, imgOpt)
 }
 
-func assertEqualAsset(t *testing.T, expected, actual domain.Asset) {
+func assertEqualAsset(t *testing.T, expected, actual internal.Asset) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assert.Equal(t, expected.Image().Present(), actual.Image().Present())
 	if expected.Image().Present() {
