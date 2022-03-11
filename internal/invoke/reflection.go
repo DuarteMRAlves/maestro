@@ -26,11 +26,7 @@ func listServices(conn grpc.ClientConnInterface) func(context.Context) (
 		services := make([]domain.Service, 0, len(all)-1)
 		for _, s := range all {
 			if s != reflectionServiceName {
-				name, err := domain.NewService(s)
-				if err != nil {
-					return nil, err
-				}
-				services = append(services, name)
+				services = append(services, domain.NewService(s))
 			}
 		}
 		return services, nil

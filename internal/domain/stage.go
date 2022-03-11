@@ -25,41 +25,33 @@ func isValidStageName(name string) bool {
 	return nameRegExp.MatchString(name)
 }
 
-type service string
+type Service struct{ val string }
 
-func (s service) Service() {}
-
-func (s service) Unwrap() string {
-	return string(s)
+func (s Service) Unwrap() string {
+	return s.val
 }
 
-func NewService(s string) (Service, error) {
-	if len(s) == 0 {
-		return nil, errdefs.InvalidArgumentWithMsg("empty service")
-	}
-	return service(s), nil
+func (s Service) IsEmpty() bool { return s.val == "" }
+
+func NewService(s string) Service {
+	return Service{val: s}
 }
 
-type presentService struct{ Service }
-
-func (s presentService) Unwrap() Service { return s.Service }
-
-func (s presentService) Present() bool { return true }
-
-type emptyService struct{}
-
-func (s emptyService) Unwrap() Service {
-	panic("Service not available in an empty service optional")
+type OptionalService struct {
+	val     Service
+	present bool
 }
 
-func (s emptyService) Present() bool { return false }
+func (o OptionalService) Unwrap() Service { return o.val }
+
+func (o OptionalService) Present() bool { return o.present }
 
 func NewPresentService(s Service) OptionalService {
-	return presentService{s}
+	return OptionalService{val: s, present: true}
 }
 
 func NewEmptyService() OptionalService {
-	return emptyService{}
+	return OptionalService{}
 }
 
 type method string

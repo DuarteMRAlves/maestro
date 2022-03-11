@@ -37,8 +37,9 @@ func requestToStage(req StageRequest) StageResult {
 	}
 
 	if req.Service.Present() {
-		service, err := domain.NewService(req.Service.Unwrap())
-		if err != nil {
+		service := domain.NewService(req.Service.Unwrap())
+		if service.IsEmpty() {
+			err := errdefs.InvalidArgumentWithMsg("empty service")
 			return ErrStage(err)
 		}
 		serviceOpt = domain.NewPresentService(service)
