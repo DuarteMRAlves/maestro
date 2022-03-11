@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
+var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
 
 type AssetName struct{ val string }
 

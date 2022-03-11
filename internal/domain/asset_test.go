@@ -17,7 +17,7 @@ func TestNewAssetName(t *testing.T) {
 		{"name-with-dashes-123-and-number-021", true},
 		{"name/with-dash/and_underscore:tag-123", true},
 		{"a", true},
-		{"", false},
+		{"", true},
 		{"name--double-dash", false},
 		{"/back-slash-start", false},
 		{"colon-end:", false},
