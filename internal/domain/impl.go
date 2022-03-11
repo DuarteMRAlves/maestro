@@ -65,24 +65,3 @@ func NewPresentMessageField(m MessageField) OptionalMessageField {
 func NewEmptyMessageField() OptionalMessageField {
 	return emptyMessageField{}
 }
-
-var orchestrationNameReqExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
-
-type orchestrationName string
-
-func (o orchestrationName) OrchestrationName() {}
-
-func (o orchestrationName) Unwrap() string {
-	return string(o)
-}
-
-func NewOrchestrationName(name string) (OrchestrationName, error) {
-	if isValidOrchestrationName(name) {
-		return orchestrationName(name), nil
-	}
-	return nil, errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
-}
-
-func isValidOrchestrationName(name string) bool {
-	return orchestrationNameReqExp.MatchString(name)
-}
