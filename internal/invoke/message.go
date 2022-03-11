@@ -8,13 +8,12 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-type FieldGetter func(DynamicMessage) DynamicMessageResult
-
 // DynamicMessage offers a wrapper around a grpc message with some extra
 // operations.
 type DynamicMessage interface {
 	GrpcMessage() proto.Message
 	SetField(domain.MessageField, interface{}) error
+	GetField(domain.MessageField) (DynamicMessage, error)
 }
 
 type dynamicMessage struct {
@@ -50,26 +49,21 @@ func (dm *dynamicMessage) SetField(
 	return nil
 }
 
-func NewFieldGetter(field domain.MessageField) FieldGetter {
-	return func(m DynamicMessage) DynamicMessageResult {
-		old, err := dynamic.AsDynamicMessage(m.GrpcMessage())
-		if err != nil {
-			return ErrDynamicMessage(err)
-		}
-		f, err := old.TryGetFieldByName(field.Unwrap())
-		if err != nil {
-			return ErrDynamicMessage(err)
-		}
-		msg, ok := f.(proto.Message)
-		if !ok {
-			err = errdefs.InternalWithMsg("Field is not a message")
-			return ErrDynamicMessage(err)
-		}
-		dyn, err := NewDynamicMessage(msg)
-		if err != nil {
-			err = errdefs.InternalWithMsg("convert proto to dynamic: %s", err)
-			return ErrDynamicMessage(err)
-		}
-		return SomeDynamicMessage(dyn)
+func (dm *dynamicMessage) GetField(name domain.MessageField) (
+	DynamicMessage,
+	error,
+) {
+	field, err := dm.grpcMsg.TryGetFieldByName(name.Unwrap())
+	if err != nil {
+		return nil, err
 	}
+	msg, ok := field.(proto.Message)
+	if !ok {
+		return nil, errdefs.InternalWithMsg("Field is not a message")
+	}
+	dyn, err := NewDynamicMessage(msg)
+	if err != nil {
+		return nil, errdefs.InternalWithMsg("convert proto to dynamic: %s", err)
+	}
+	return dyn, nil
 }

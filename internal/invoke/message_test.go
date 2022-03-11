@@ -30,8 +30,6 @@ func TestNewFieldGetter(t *testing.T) {
 	field, err := domain.NewMessageField("inner")
 	assert.NilError(t, err, "create message field")
 
-	getter := NewFieldGetter(field)
-
 	pbMsg := &unit.DynamicTestMessage{
 		Inner: &unit.DynamicTestMessageInner{Val: "val"},
 	}
@@ -39,10 +37,9 @@ func TestNewFieldGetter(t *testing.T) {
 	msg, err := NewDynamicMessage(pbMsg)
 	assert.NilError(t, err, "create dynamic message")
 
-	res := getter(msg)
-	assert.Assert(t, !res.IsError(), "get result error")
+	inner, err := msg.GetField(field)
+	assert.NilError(t, err, "get inner error")
 
-	inner := res.Unwrap()
 	innerDyn, err := dynamic.AsDynamicMessage(inner.GrpcMessage())
 	assert.NilError(t, err, "inner as dynamic message")
 
