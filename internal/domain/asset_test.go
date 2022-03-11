@@ -32,7 +32,7 @@ func TestNewAssetName(t *testing.T) {
 					assert.NilError(t, err, "create error")
 					assert.Equal(t, test.name, created.Unwrap())
 				} else {
-					assert.Assert(t, created == nil)
+					assert.Assert(t, created.IsEmpty())
 					assert.Assert(t, errdefs.IsInvalidArgument(err))
 					errMsg := fmt.Sprintf("invalid name '%v'", test.name)
 					assert.Error(t, err, errMsg)

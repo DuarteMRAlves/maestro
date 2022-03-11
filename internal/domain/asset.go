@@ -7,19 +7,24 @@ import (
 
 var assetNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$`)
 
-type assetName string
+type AssetName struct{ val string }
 
-func (a assetName) AssetName() {}
+var emptyAssetName = AssetName{val: ""}
 
-func (a assetName) Unwrap() string {
-	return string(a)
+func (a AssetName) Unwrap() string {
+	return a.val
+}
+
+func (a AssetName) IsEmpty() bool {
+	return a.val == emptyAssetName.val
 }
 
 func NewAssetName(name string) (AssetName, error) {
 	if isValidAssetName(name) {
-		return assetName(name), nil
+		return AssetName{name}, nil
 	}
-	return nil, errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
+	err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
+	return emptyAssetName, err
 }
 
 func isValidAssetName(name string) bool {
