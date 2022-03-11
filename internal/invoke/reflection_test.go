@@ -95,8 +95,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName, err := domain.NewService("unit.TestService")
-	assert.NilError(t, err, "create service name")
+	serviceName := domain.NewService("unit.TestService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 	assert.NilError(t, err, "resolve service error")
@@ -216,8 +215,7 @@ func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName, err := domain.NewService("unit.ExtraService")
-	assert.NilError(t, err, "create service name")
+	serviceName := domain.NewService("unit.ExtraService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 	assert.NilError(t, err, "resolve service error")
@@ -336,8 +334,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName, err := domain.NewService("pb.TestService")
-	assert.NilError(t, err, "create service name")
+	serviceName := domain.NewService("pb.TestService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 
@@ -362,8 +359,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName, err := domain.NewService("pb.UnknownService")
-	assert.NilError(t, err, "create service name")
+	serviceName := domain.NewService("pb.UnknownService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 

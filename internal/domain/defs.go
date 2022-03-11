@@ -1,15 +1,5 @@
 package domain
 
-type Service interface {
-	Service()
-	Unwrap() string
-}
-
-type OptionalService interface {
-	Unwrap() Service
-	Present() bool
-}
-
 type Method interface {
 	Method()
 	Unwrap() string
