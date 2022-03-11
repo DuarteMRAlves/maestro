@@ -128,18 +128,21 @@ type mockAssetStorage struct {
 	assets map[internal.AssetName]internal.Asset
 }
 
-func (m mockAssetStorage) Save(asset internal.Asset) internal.AssetResult {
+func (m mockAssetStorage) Save(asset internal.Asset) error {
 	m.assets[asset.Name()] = asset
-	return internal.SomeAsset(asset)
+	return nil
 }
 
-func (m mockAssetStorage) Load(name internal.AssetName) internal.AssetResult {
+func (m mockAssetStorage) Load(name internal.AssetName) (
+	internal.Asset,
+	error,
+) {
 	asset, exists := m.assets[name]
 	if !exists {
 		err := errdefs.NotFoundWithMsg("asset not found: %s", name)
-		return internal.ErrAsset(err)
+		return internal.Asset{}, err
 	}
-	return internal.SomeAsset(asset)
+	return asset, nil
 }
 
 func createAsset(
