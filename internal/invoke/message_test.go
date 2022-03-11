@@ -12,28 +12,18 @@ func TestNewFieldSetter(t *testing.T) {
 	field, err := domain.NewMessageField("val")
 	assert.NilError(t, err, "create message field")
 
-	setter := NewFieldSetter(field)
-
-	empty, err := NewDynamicMessage(&unit.DynamicTestMessage{})
+	msg, err := NewDynamicMessage(&unit.DynamicTestMessage{})
 	assert.NilError(t, err, "create dynamic message")
 
-	res := setter(empty, int32(1))
-	assert.Assert(t, !res.IsError(), "error result")
+	err = msg.SetField(field, int32(1))
+	assert.NilError(t, err, "set error")
 
-	msg := res.Unwrap()
 	grpcMsg, err := dynamic.AsDynamicMessage(msg.GrpcMessage())
 	assert.NilError(t, err, "dynamic grpc message")
 
 	val, ok := grpcMsg.GetFieldByName(field.Unwrap()).(int32)
 	assert.Assert(t, ok, "cast to int on grpc message")
 	assert.Equal(t, int32(1), val)
-
-	emptyImpl, ok := empty.(dynamicMessage)
-	assert.Assert(t, ok, "dynamic message implementation cast")
-
-	emptyVal, ok := emptyImpl.grpcMsg.GetFieldByName(field.Unwrap()).(int32)
-	assert.Assert(t, ok, "cast to int on empty dynamic field")
-	assert.Equal(t, int32(0), emptyVal)
 }
 
 func TestNewFieldGetter(t *testing.T) {
