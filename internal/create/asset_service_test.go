@@ -53,6 +53,42 @@ func TestCreateAsset(t *testing.T) {
 	}
 }
 
+func TestCreateAsset_Err(t *testing.T) {
+	tests := []struct {
+		name            string
+		req             AssetRequest
+		assertErrTypeFn func(error) bool
+		expectedErrMsg  string
+	}{
+		{
+			name:            "empty name",
+			req:             AssetRequest{Name: ""},
+			assertErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg:  "empty asset name",
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				storage := mockAssetStorage{
+					assets: map[domain.AssetName]domain.Asset{},
+				}
+
+				createFn := CreateAsset(storage)
+				res := createFn(test.req)
+				assert.Assert(t, res.Err.Present())
+
+				assert.Equal(t, 0, len(storage.assets))
+
+				err := res.Err.Unwrap()
+				assert.Assert(t, test.assertErrTypeFn(err))
+				assert.Error(t, err, test.expectedErrMsg)
+			},
+		)
+	}
+}
+
 func TestCreateAsset_AlreadyExists(t *testing.T) {
 	req := AssetRequest{
 		Name:  "some-name",

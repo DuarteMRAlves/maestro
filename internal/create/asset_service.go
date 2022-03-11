@@ -19,6 +19,10 @@ func requestToAsset(req AssetRequest) domain.AssetResult {
 	if err != nil {
 		return domain.ErrAsset(err)
 	}
+	if name.IsEmpty() {
+		err := errdefs.InvalidArgumentWithMsg("empty asset name")
+		return domain.ErrAsset(err)
+	}
 	imgOpt := domain.NewEmptyImage()
 	if req.Image.Present() {
 		img, err := domain.NewImage(req.Image.Unwrap())
