@@ -64,21 +64,21 @@ func NewEmptyImage() OptionalImage {
 	return OptionalImage{}
 }
 
-type asset struct {
+type Asset struct {
 	name  AssetName
 	image OptionalImage
 }
 
-func (a asset) Name() AssetName {
+func (a Asset) Name() AssetName {
 	return a.name
 }
 
-func (a asset) Image() OptionalImage {
+func (a Asset) Image() OptionalImage {
 	return a.image
 }
 
 func NewAsset(name AssetName, image OptionalImage) Asset {
-	return asset{
+	return Asset{
 		name:  name,
 		image: image,
 	}
