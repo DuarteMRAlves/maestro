@@ -1,10 +1,5 @@
 package domain
 
-type AssetName interface {
-	AssetName()
-	Unwrap() string
-}
-
 type Image interface {
 	Image()
 	Unwrap() string
