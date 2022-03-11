@@ -55,8 +55,3 @@ type OptionalMessageField interface {
 	Unwrap() MessageField
 	Present() bool
 }
-
-type OrchestrationName interface {
-	OrchestrationName()
-	Unwrap() string
-}

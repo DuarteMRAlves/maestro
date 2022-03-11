@@ -25,6 +25,42 @@ func TestCreateOrchestration(t *testing.T) {
 	assertEqualOrchestration(t, expected, o)
 }
 
+func TestCreateOrchestration_Err(t *testing.T) {
+	tests := []struct {
+		name            string
+		req             OrchestrationRequest
+		assertErrTypeFn func(error) bool
+		expectedErrMsg  string
+	}{
+		{
+			name:            "empty name",
+			req:             OrchestrationRequest{Name: ""},
+			assertErrTypeFn: errdefs.IsInvalidArgument,
+			expectedErrMsg:  "empty orchestration name",
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name,
+			func(t *testing.T) {
+				storage := mockOrchestrationStorage{
+					orchs: map[domain.OrchestrationName]Orchestration{},
+				}
+
+				createFn := CreateOrchestration(storage)
+				res := createFn(test.req)
+				assert.Assert(t, res.Err.Present())
+
+				assert.Equal(t, 0, len(storage.orchs))
+
+				err := res.Err.Unwrap()
+				assert.Assert(t, test.assertErrTypeFn(err))
+				assert.Error(t, err, test.expectedErrMsg)
+			},
+		)
+	}
+}
+
 func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	req := OrchestrationRequest{Name: "some-name"}
 	expected := createOrchestration(t, "some-name", nil, nil)
