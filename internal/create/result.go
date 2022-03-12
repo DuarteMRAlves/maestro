@@ -41,15 +41,15 @@ func BindLink(f func(internal.Link) LinkResult) func(LinkResult) LinkResult {
 
 type OrchestrationResult interface {
 	IsError() bool
-	Unwrap() Orchestration
+	Unwrap() internal.Orchestration
 	Error() error
 }
 
-type someOrchestration struct{ Orchestration }
+type someOrchestration struct{ internal.Orchestration }
 
 func (s someOrchestration) IsError() bool { return false }
 
-func (s someOrchestration) Unwrap() Orchestration { return s.Orchestration }
+func (s someOrchestration) Unwrap() internal.Orchestration { return s.Orchestration }
 
 func (s someOrchestration) Error() error { return nil }
 
@@ -57,18 +57,18 @@ type errOrchestration struct{ error }
 
 func (e errOrchestration) IsError() bool { return true }
 
-func (e errOrchestration) Unwrap() Orchestration {
+func (e errOrchestration) Unwrap() internal.Orchestration {
 	panic("Orchestration not available in error result")
 }
 
 func (e errOrchestration) Error() error { return e.error }
 
-func SomeOrchestration(o Orchestration) OrchestrationResult { return someOrchestration{o} }
+func SomeOrchestration(o internal.Orchestration) OrchestrationResult { return someOrchestration{o} }
 
 func ErrOrchestration(err error) OrchestrationResult { return errOrchestration{err} }
 
 func BindOrchestration(
-	f func(Orchestration) OrchestrationResult,
+	f func(internal.Orchestration) OrchestrationResult,
 ) func(OrchestrationResult) OrchestrationResult {
 	return func(result OrchestrationResult) OrchestrationResult {
 		if result.IsError() {
@@ -78,8 +78,8 @@ func BindOrchestration(
 	}
 }
 
-func ReturnOrchestration(f func(Orchestration) Orchestration) func(Orchestration) OrchestrationResult {
-	return func(o Orchestration) OrchestrationResult {
+func ReturnOrchestration(f func(internal.Orchestration) internal.Orchestration) func(internal.Orchestration) OrchestrationResult {
+	return func(o internal.Orchestration) OrchestrationResult {
 		return SomeOrchestration(f(o))
 	}
 }
