@@ -89,24 +89,24 @@ func (a Address) IsEmpty() bool { return a.val == "" }
 
 func NewAddress(a string) Address { return Address{val: a} }
 
-type methodContext struct {
+type MethodContext struct {
 	address Address
 	service OptionalService
 	method  OptionalMethod
 }
 
-func (m methodContext) Address() Address { return m.address }
+func (m MethodContext) Address() Address { return m.address }
 
-func (m methodContext) Service() OptionalService { return m.service }
+func (m MethodContext) Service() OptionalService { return m.service }
 
-func (m methodContext) Method() OptionalMethod { return m.method }
+func (m MethodContext) Method() OptionalMethod { return m.method }
 
 func NewMethodContext(
 	address Address,
 	service OptionalService,
 	method OptionalMethod,
 ) MethodContext {
-	return methodContext{
+	return MethodContext{
 		address: address,
 		service: service,
 		method:  method,
