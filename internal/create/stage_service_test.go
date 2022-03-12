@@ -243,8 +243,7 @@ func createStage(
 ) Stage {
 	name, err := domain.NewStageName(stageName)
 	assert.NilError(t, err, "create name for stage %s", stageName)
-	address, err := domain.NewAddress("some-address")
-	assert.NilError(t, err, "create address for stage %s", stageName)
+	address := domain.NewAddress("some-address")
 	orchestration, err := domain.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create orchestration for stage %s", stageName)
 	serviceOpt := domain.NewEmptyService()
