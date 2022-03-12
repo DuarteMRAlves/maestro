@@ -1,15 +1,5 @@
 package domain
 
-type Method interface {
-	Method()
-	Unwrap() string
-}
-
-type OptionalMethod interface {
-	Unwrap() Method
-	Present() bool
-}
-
 type Address interface {
 	Address()
 	Unwrap() string
