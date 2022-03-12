@@ -5,11 +5,6 @@ type AlreadyExists interface {
 	AlreadyExists()
 }
 
-// NotFound error signals that some resource does not exist
-type NotFound interface {
-	NotFound()
-}
-
 // InvalidArgument signals the client specified an invalid argument value
 type InvalidArgument interface {
 	InvalidArgument()

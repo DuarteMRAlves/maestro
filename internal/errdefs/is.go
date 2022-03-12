@@ -5,11 +5,6 @@ func IsAlreadyExists(err error) bool {
 	return ok
 }
 
-func IsNotFound(err error) bool {
-	_, ok := getImplementer(err).(NotFound)
-	return ok
-}
-
 func IsInvalidArgument(err error) bool {
 	_, ok := getImplementer(err).(InvalidArgument)
 	return ok
@@ -43,7 +38,6 @@ func getImplementer(err error) error {
 	switch e := err.(type) {
 	case
 		AlreadyExists,
-		NotFound,
 		InvalidArgument,
 		FailedPrecondition,
 		Unavailable,

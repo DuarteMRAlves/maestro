@@ -274,7 +274,7 @@ func (m mockStageStorage) Load(name internal.StageName) (
 ) {
 	s, exists := m.stages[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("stage not found: %s", name)
+		err := &internal.NotFound{Type: "stage", Ident: name.Unwrap()}
 		return internal.Stage{}, err
 	}
 	return s, nil

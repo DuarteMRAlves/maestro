@@ -55,7 +55,7 @@ func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 			)
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
-		var notFound *internal.AssetNotFound
+		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}

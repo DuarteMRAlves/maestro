@@ -2,6 +2,7 @@ package invoke
 
 import (
 	"context"
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -363,8 +364,9 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 
-	assert.Assert(t, errdefs.IsNotFound(err), "resolve service error")
-	expectedMsg := "resolve service: Service not found: pb.UnknownService"
-	assert.Error(t, err, expectedMsg)
+	var notFound *internal.NotFound
+	assert.Assert(t, errors.As(err, &notFound), "resolve service error")
+	assert.Equal(t, "service", notFound.Type)
+	assert.Equal(t, serviceName.Unwrap(), notFound.Ident)
 	assert.Assert(t, serv == nil, "service is not nil")
 }

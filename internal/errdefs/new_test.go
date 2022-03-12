@@ -28,28 +28,6 @@ func TestAlreadyExistsWithMsg(t *testing.T) {
 	assert.Equal(t, dummyErrMsg, msg, "error message")
 }
 
-func TestNotFoundWithError(t *testing.T) {
-	var ok bool
-	err := NotFoundWithError(dummyErr)
-	_, ok = err.(NotFound)
-	assert.Assert(t, ok, "NotFound interface")
-	_, ok = err.(notFound)
-	assert.Assert(t, ok, "notFound struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
-func TestNotFoundWithMessage(t *testing.T) {
-	var ok bool
-	err := NotFoundWithMsg(dummyErrMsg)
-	_, ok = err.(NotFound)
-	assert.Assert(t, ok, "NotFound interface")
-	_, ok = err.(notFound)
-	assert.Assert(t, ok, "notFound struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
 func TestInvalidArgumentWithError(t *testing.T) {
 	var ok bool
 	err := InvalidArgumentWithError(dummyErr)
@@ -178,11 +156,6 @@ func TestPrependMsg(t *testing.T) {
 			valTypeFn: IsAlreadyExists,
 		},
 		{
-			name:      "not found error",
-			err:       NotFoundWithMsg(dummyErrMsg),
-			valTypeFn: IsNotFound,
-		},
-		{
 			name:      "invalid argument error",
 			err:       InvalidArgumentWithMsg(dummyErrMsg),
 			valTypeFn: IsInvalidArgument,
@@ -221,10 +194,12 @@ func TestPrependMsg(t *testing.T) {
 				wrappedErr := PrependMsg(
 					test.err,
 					prependFormat,
-					prependArgs...)
+					prependArgs...,
+				)
 				assert.Assert(t, test.valTypeFn(wrappedErr), "correct type")
 				msg := wrappedErr.Error()
 				assert.Equal(t, expectedMsg, msg, "correct message")
-			})
+			},
+		)
 	}
 }

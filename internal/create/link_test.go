@@ -213,7 +213,7 @@ func (m mockLinkStorage) Save(l internal.Link) LinkResult {
 func (m mockLinkStorage) Load(name internal.LinkName) LinkResult {
 	l, exists := m.links[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("link not found: %s", name)
+		err := &internal.NotFound{Type: "link", Ident: name.Unwrap()}
 		return ErrLink(err)
 	}
 	return SomeLink(l)

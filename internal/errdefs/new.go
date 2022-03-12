@@ -2,17 +2,6 @@ package errdefs
 
 import "fmt"
 
-func NotFoundWithError(err error) error {
-	if err == nil || IsNotFound(err) {
-		return err
-	}
-	return notFound{err}
-}
-
-func NotFoundWithMsg(format string, a ...interface{}) error {
-	return NotFoundWithError(fmt.Errorf(format, a...))
-}
-
 func AlreadyExistsWithError(err error) error {
 	if err == nil || IsAlreadyExists(err) {
 		return err
@@ -89,8 +78,6 @@ func PrependMsg(err error, format string, a ...interface{}) error {
 	switch causeErr.(type) {
 	case AlreadyExists:
 		return AlreadyExistsWithMsg(format, a...)
-	case NotFound:
-		return NotFoundWithMsg(format, a...)
 	case InvalidArgument:
 		return InvalidArgumentWithMsg(format, a...)
 	case FailedPrecondition:

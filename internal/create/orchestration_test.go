@@ -104,7 +104,7 @@ func (m mockOrchestrationStorage) Save(o internal.Orchestration) OrchestrationRe
 func (m mockOrchestrationStorage) Load(name internal.OrchestrationName) OrchestrationResult {
 	o, exists := m.orchs[name]
 	if !exists {
-		err := errdefs.NotFoundWithMsg("orchestration not found: %s", name)
+		err := &internal.NotFound{Type: "orchestration", Ident: name.Unwrap()}
 		return ErrOrchestration(err)
 	}
 	return SomeOrchestration(o)

@@ -2,6 +2,7 @@ package invoke
 
 import (
 	"context"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/grpcreflect"
@@ -46,10 +47,8 @@ func resolveService(conn grpc.ClientConnInterface) func(
 			case isGrpcErr(err):
 				return nil, handleGrpcError(err, "resolve service: ")
 			case isElementNotFoundErr(err):
-				return nil, errdefs.NotFoundWithMsg(
-					"resolve service: %v",
-					err.Error(),
-				)
+				err := &internal.NotFound{Type: "service", Ident: d.Unwrap()}
+				return nil, fmt.Errorf("resolve service: %w", err)
 			case isProtocolError(err):
 				return nil, errdefs.UnknownWithError(err)
 			default:

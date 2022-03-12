@@ -2,10 +2,15 @@ package internal
 
 import "fmt"
 
-type AssetNotFound struct {
-	Name AssetName
+// NotFound defines an error when a resource is does not exist.
+type NotFound struct {
+	// Type defines the resource type (e.g.: file, orchestration, image, etc.).
+	Type string
+	// Ident is the concrete resource identifier that was requested. (e.g.
+	// file.tsv, orchestration-1, etc.).
+	Ident string
 }
 
-func (err *AssetNotFound) Error() string {
-	return fmt.Sprintf("asset '%s' not found", err.Name)
+func (err *NotFound) Error() string {
+	return fmt.Sprintf("%s '%s' not found", err.Type, err.Ident)
 }
