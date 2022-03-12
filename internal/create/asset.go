@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -52,7 +53,8 @@ func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 			)
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
-		if !errdefs.IsNotFound(err) {
+		var notFound *internal.AssetNotFound
+		if !errors.As(err, &notFound) {
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
 		asset := internal.NewAsset(name, imgOpt)
