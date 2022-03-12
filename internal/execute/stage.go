@@ -2,7 +2,7 @@ package execute
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"sync"
 	"time"
@@ -133,7 +133,7 @@ func (s *sinkStage) Run(ctx context.Context) error {
 type mergeStage struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
-	fields []domain.MessageField
+	fields []internal.MessageField
 	// inputs are the several input channels from which to collect the messages.
 	inputs []<-chan state
 	// output is the channel used to send messages to the downstream stage.
@@ -145,7 +145,7 @@ type mergeStage struct {
 }
 
 func newMergeStage(
-	fields []domain.MessageField,
+	fields []internal.MessageField,
 	inputs []<-chan state,
 	output chan<- state,
 	gen invoke.MessageGenerator,
@@ -239,7 +239,7 @@ type splitStage struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []domain.OptionalMessageField
+	fields []internal.OptionalMessageField
 	// input is the channel from which to receive the messages.
 	input <-chan state
 	// outputs are the several channels where to send messages.
@@ -247,7 +247,7 @@ type splitStage struct {
 }
 
 func newSplitStage(
-	fields []domain.OptionalMessageField,
+	fields []internal.OptionalMessageField,
 	input <-chan state,
 	outputs []chan<- state,
 ) splitStage {

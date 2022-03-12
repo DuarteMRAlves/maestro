@@ -1,7 +1,7 @@
 package invoke
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/jhump/protoreflect/dynamic"
 	"gotest.tools/v3/assert"
@@ -9,8 +9,7 @@ import (
 )
 
 func TestNewFieldSetter(t *testing.T) {
-	field, err := domain.NewMessageField("val")
-	assert.NilError(t, err, "create message field")
+	field := internal.NewMessageField("val")
 
 	msg, err := NewDynamicMessage(&unit.DynamicTestMessage{})
 	assert.NilError(t, err, "create dynamic message")
@@ -27,8 +26,7 @@ func TestNewFieldSetter(t *testing.T) {
 }
 
 func TestNewFieldGetter(t *testing.T) {
-	field, err := domain.NewMessageField("inner")
-	assert.NilError(t, err, "create message field")
+	field := internal.NewMessageField("inner")
 
 	pbMsg := &unit.DynamicTestMessage{
 		Inner: &unit.DynamicTestMessageInner{Val: "val"},

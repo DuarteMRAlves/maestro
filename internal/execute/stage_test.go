@@ -3,7 +3,7 @@ package execute
 import (
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -236,16 +236,10 @@ func TestSourceStage_Run(t *testing.T) {
 }
 
 func TestMergeStage_Run(t *testing.T) {
-	f1, err := domain.NewMessageField("in1")
-	assert.NilError(t, err, "create field 1")
-
-	f2, err := domain.NewMessageField("in2")
-	assert.NilError(t, err, "create field 2")
-
-	f3, err := domain.NewMessageField("in3")
-	assert.NilError(t, err, "create field 3")
-
-	fields := []domain.MessageField{f1, f2, f3}
+	f1 := internal.NewMessageField("in1")
+	f2 := internal.NewMessageField("in2")
+	f3 := internal.NewMessageField("in3")
+	fields := []internal.MessageField{f1, f2, f3}
 
 	input1 := make(chan state)
 	defer close(input1)
@@ -353,16 +347,13 @@ func testMergeInner3Message(t *testing.T, val int32) invoke.DynamicMessage {
 }
 
 func TestSplitStage_Run(t *testing.T) {
-	f1, err := domain.NewMessageField("out1")
-	assert.NilError(t, err, "create message field 1")
+	f1 := internal.NewMessageField("out1")
+	f3 := internal.NewMessageField("out2")
 
-	f3, err := domain.NewMessageField("out2")
-	assert.NilError(t, err, "create message field 3")
-
-	fields := []domain.OptionalMessageField{
-		domain.NewPresentMessageField(f1),
-		domain.NewEmptyMessageField(),
-		domain.NewPresentMessageField(f3),
+	fields := []internal.OptionalMessageField{
+		internal.NewPresentMessageField(f1),
+		internal.NewEmptyMessageField(),
+		internal.NewPresentMessageField(f3),
 	}
 
 	input := make(chan state)
@@ -415,7 +406,7 @@ func TestSplitStage_Run(t *testing.T) {
 		expDyn1, ok := exp1.msg.GrpcMessage().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
 		expMsg1 := &unit.SplitInner1{}
-		err = expDyn1.ConvertTo(expMsg1)
+		err := expDyn1.ConvertTo(expMsg1)
 		assert.NilError(t, err, "convert dyn 1 to exp 1")
 		outDyn1, ok := out1.msg.GrpcMessage().(*dynamic.Message)
 		assert.Assert(t, ok, "cast for out 1 at iter %d", i)

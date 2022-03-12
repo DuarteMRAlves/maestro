@@ -1,7 +1,7 @@
 package invoke
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
@@ -16,8 +16,7 @@ func TestMessageDescriptor_MessageFields(t *testing.T) {
 	fields := msgDesc.MessageFields()
 	assert.Equal(t, 1, len(fields))
 
-	field, err := domain.NewMessageField("field4")
-	assert.NilError(t, err, "create inner field name")
+	field := internal.NewMessageField("field4")
 	fieldDesc, ok := fields[field]
 	assert.Assert(t, ok, "field4 exists")
 

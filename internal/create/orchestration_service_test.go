@@ -124,9 +124,9 @@ func createOrchestration(
 		assert.NilError(t, err, "create stage for orchestration %s", orchName)
 		stageNames = append(stageNames, sName)
 	}
-	linkNames := make([]domain.LinkName, 0, len(links))
+	linkNames := make([]internal.LinkName, 0, len(links))
 	for _, l := range links {
-		lName, err := domain.NewLinkName(l)
+		lName, err := internal.NewLinkName(l)
 		assert.NilError(t, err, "create link for orchestration %s", orchName)
 		linkNames = append(linkNames, lName)
 	}
