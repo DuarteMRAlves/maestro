@@ -2,17 +2,18 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type OrchestrationSaver interface {
-	Save(internal.Orchestration) OrchestrationResult
+	Save(internal.Orchestration) error
 }
 
 type OrchestrationLoader interface {
-	Load(internal.OrchestrationName) OrchestrationResult
+	Load(internal.OrchestrationName) (internal.Orchestration, error)
 }
 
 type OrchestrationStorage interface {
@@ -28,63 +29,58 @@ type OrchestrationResponse struct {
 	Err domain.OptionalError
 }
 
+var EmptyOrchestrationName = fmt.Errorf("empty orchestration name")
+
 func Create(storage OrchestrationStorage) func(OrchestrationRequest) OrchestrationResponse {
 	return func(req OrchestrationRequest) OrchestrationResponse {
-		res := requestToOrchestration(req)
-		res = BindOrchestration(verifyDupOrchestration(storage))(res)
-		res = BindOrchestration(storage.Save)(res)
-		return orchestrationToResponse(res)
-	}
-}
+		name, err := internal.NewOrchestrationName(req.Name)
+		if err != nil {
+			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+		}
+		if name.IsEmpty() {
+			err := EmptyOrchestrationName
+			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+		}
 
-func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
-	name, err := internal.NewOrchestrationName(req.Name)
-	if err != nil {
-		return ErrOrchestration(err)
+		_, err = storage.Load(name)
+		if err == nil {
+			err := errdefs.AlreadyExistsWithMsg(
+				"orchestration '%v' already exists",
+				name.Unwrap(),
+			)
+			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+		}
+		var notFound *internal.NotFound
+		if !errors.As(err, &notFound) {
+			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+		}
+
+		o := internal.NewOrchestration(
+			name,
+			[]internal.StageName{},
+			[]internal.LinkName{},
+		)
+		err = storage.Save(o)
+		errOpt := domain.NewEmptyError()
+		if err != nil {
+			errOpt = domain.NewPresentError(err)
+		}
+		return OrchestrationResponse{Err: errOpt}
 	}
-	if name.IsEmpty() {
-		err := errdefs.InvalidArgumentWithMsg("empty orchestration name")
-		return ErrOrchestration(err)
-	}
-	o := internal.NewOrchestration(
-		name,
-		[]internal.StageName{},
-		[]internal.LinkName{},
-	)
-	return SomeOrchestration(o)
 }
 
 func updateOrchestration(
 	name internal.OrchestrationName,
 	loader OrchestrationLoader,
-	updateFn func(internal.Orchestration) OrchestrationResult,
+	updateFn func(internal.Orchestration) internal.Orchestration,
 	saver OrchestrationSaver,
-) OrchestrationResult {
-	res := loader.Load(name)
-	res = BindOrchestration(updateFn)(res)
-	res = BindOrchestration(saver.Save)(res)
-	return res
-}
-
-func verifyDupOrchestration(
-	loader OrchestrationLoader,
-) func(internal.Orchestration) OrchestrationResult {
-	return func(o internal.Orchestration) OrchestrationResult {
-		res := loader.Load(o.Name())
-		if res.IsError() {
-			var notFound *internal.NotFound
-			err := res.Error()
-			if errors.As(err, &notFound) {
-				return SomeOrchestration(o)
-			}
-			return ErrOrchestration(err)
-		}
-		err := errdefs.AlreadyExistsWithMsg(
-			"orchestration '%v' already exists",
-			o.Name().Unwrap(),
-		)
-		return ErrOrchestration(err)
+) error {
+	orch, err := loader.Load(name)
+	if err != nil {
+		return err
 	}
+	orch = updateFn(orch)
+	return saver.Save(orch)
 }
 
 func addStageNameToOrchestration(
@@ -111,14 +107,4 @@ func addLinkNameToOrchestration(l internal.LinkName) func(internal.Orchestration
 		links = append(links, l)
 		return internal.NewOrchestration(o.Name(), o.Stages(), links)
 	}
-}
-
-func orchestrationToResponse(res OrchestrationResult) OrchestrationResponse {
-	var errOpt domain.OptionalError
-	if res.IsError() {
-		errOpt = domain.NewPresentError(res.Error())
-	} else {
-		errOpt = domain.NewEmptyError()
-	}
-	return OrchestrationResponse{Err: errOpt}
 }
