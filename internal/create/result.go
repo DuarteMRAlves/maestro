@@ -1,16 +1,18 @@
 package create
 
+import "github.com/DuarteMRAlves/maestro/internal/domain"
+
 type StageResult interface {
 	IsError() bool
-	Unwrap() Stage
+	Unwrap() domain.Stage
 	Error() error
 }
 
-type someStage struct{ Stage }
+type someStage struct{ domain.Stage }
 
 func (s someStage) IsError() bool { return false }
 
-func (s someStage) Unwrap() Stage { return s.Stage }
+func (s someStage) Unwrap() domain.Stage { return s.Stage }
 
 func (s someStage) Error() error { return nil }
 
@@ -18,15 +20,15 @@ type errStage struct{ error }
 
 func (e errStage) IsError() bool { return true }
 
-func (e errStage) Unwrap() Stage { panic("Stage not available in error result") }
+func (e errStage) Unwrap() domain.Stage { panic("Stage not available in error result") }
 
 func (e errStage) Error() error { return e.error }
 
-func SomeStage(s Stage) StageResult { return someStage{s} }
+func SomeStage(s domain.Stage) StageResult { return someStage{s} }
 
 func ErrStage(err error) StageResult { return errStage{err} }
 
-func BindStage(f func(Stage) StageResult) func(StageResult) StageResult {
+func BindStage(f func(domain.Stage) StageResult) func(StageResult) StageResult {
 	return func(result StageResult) StageResult {
 		if result.IsError() {
 			return result

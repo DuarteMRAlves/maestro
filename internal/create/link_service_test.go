@@ -15,7 +15,7 @@ func TestCreateLink(t *testing.T) {
 		expLink           Link
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
-		storedStages      []Stage
+		storedStages      []domain.Stage
 	}{
 		{
 			name: "required fields",
@@ -45,7 +45,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
-			storedStages: []Stage{
+			storedStages: []domain.Stage{
 				createStage(t, "source", "orchestration", true),
 				createStage(t, "target", "orchestration", true),
 			},
@@ -78,7 +78,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
-			storedStages: []Stage{
+			storedStages: []domain.Stage{
 				createStage(t, "source", "orchestration", false),
 				createStage(t, "target", "orchestration", false),
 			},
@@ -91,7 +91,7 @@ func TestCreateLink(t *testing.T) {
 				linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
 
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]Stage{},
+					stages: map[domain.StageName]domain.Stage{},
 				}
 				for _, s := range test.storedStages {
 					stageStore.stages[s.Name()] = s
@@ -144,7 +144,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		[]string{"source", "target"},
 		[]string{"some-name"},
 	)
-	storedStages := []Stage{
+	storedStages := []domain.Stage{
 		createStage(t, "source", "orchestration", false),
 		createStage(t, "target", "orchestration", false),
 	}
@@ -152,7 +152,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
 
 	stageStore := mockStageStorage{
-		stages: map[domain.StageName]Stage{},
+		stages: map[domain.StageName]domain.Stage{},
 	}
 	for _, s := range storedStages {
 		stageStore.stages[s.Name()] = s

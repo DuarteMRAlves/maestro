@@ -112,3 +112,33 @@ func NewMethodContext(
 		method:  method,
 	}
 }
+
+type Stage struct {
+	name          StageName
+	methodCtx     MethodContext
+	orchestration OrchestrationName
+}
+
+func (s Stage) Name() StageName {
+	return s.name
+}
+
+func (s Stage) MethodContext() MethodContext {
+	return s.methodCtx
+}
+
+func (s Stage) Orchestration() OrchestrationName {
+	return s.orchestration
+}
+
+func NewStage(
+	name StageName,
+	methodCtx MethodContext,
+	orchestration OrchestrationName,
+) Stage {
+	return Stage{
+		name:          name,
+		methodCtx:     methodCtx,
+		orchestration: orchestration,
+	}
+}

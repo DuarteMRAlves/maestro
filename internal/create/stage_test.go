@@ -12,7 +12,7 @@ func TestCreateStage(t *testing.T) {
 	tests := []struct {
 		name              string
 		req               StageRequest
-		expStage          Stage
+		expStage          domain.Stage
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
 	}{
@@ -78,7 +78,7 @@ func TestCreateStage(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]Stage{},
+					stages: map[domain.StageName]domain.Stage{},
 				}
 
 				orchStore := mockOrchestrationStorage{
@@ -132,7 +132,7 @@ func TestCreateStage_Err(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]Stage{},
+					stages: map[domain.StageName]domain.Stage{},
 				}
 
 				orchStore := mockOrchestrationStorage{
@@ -173,7 +173,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	)
 
 	stageStore := mockStageStorage{
-		stages: map[domain.StageName]Stage{},
+		stages: map[domain.StageName]domain.Stage{},
 	}
 
 	orchStore := mockOrchestrationStorage{
@@ -219,10 +219,10 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 }
 
 type mockStageStorage struct {
-	stages map[domain.StageName]Stage
+	stages map[domain.StageName]domain.Stage
 }
 
-func (m mockStageStorage) Save(s Stage) StageResult {
+func (m mockStageStorage) Save(s domain.Stage) StageResult {
 	m.stages[s.Name()] = s
 	return SomeStage(s)
 }
@@ -240,7 +240,7 @@ func createStage(
 	t *testing.T,
 	stageName, orchName string,
 	requiredOnly bool,
-) Stage {
+) domain.Stage {
 	name, err := domain.NewStageName(stageName)
 	assert.NilError(t, err, "create name for stage %s", stageName)
 	address := domain.NewAddress("some-address")
@@ -254,10 +254,14 @@ func createStage(
 		methodOpt = domain.NewPresentMethod(method)
 	}
 	ctx := domain.NewMethodContext(address, serviceOpt, methodOpt)
-	return NewStage(name, ctx, orchestration)
+	return domain.NewStage(name, ctx, orchestration)
 }
 
-func assertEqualStage(t *testing.T, expected Stage, actual Stage) {
+func assertEqualStage(
+	t *testing.T,
+	expected domain.Stage,
+	actual domain.Stage,
+) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assert.Equal(
 		t,
