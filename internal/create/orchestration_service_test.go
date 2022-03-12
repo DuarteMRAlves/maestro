@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
@@ -117,9 +118,9 @@ func createOrchestration(
 ) Orchestration {
 	name, err := domain.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create name for orchestration %s", orchName)
-	stageNames := make([]domain.StageName, 0, len(stages))
+	stageNames := make([]internal.StageName, 0, len(stages))
 	for _, s := range stages {
-		sName, err := domain.NewStageName(s)
+		sName, err := internal.NewStageName(s)
 		assert.NilError(t, err, "create stage for orchestration %s", orchName)
 		stageNames = append(stageNames, sName)
 	}

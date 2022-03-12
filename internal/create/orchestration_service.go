@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -23,7 +24,7 @@ func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
 		err := errdefs.InvalidArgumentWithMsg("empty orchestration name")
 		return ErrOrchestration(err)
 	}
-	o := NewOrchestration(name, []domain.StageName{}, []domain.LinkName{})
+	o := NewOrchestration(name, []internal.StageName{}, []domain.LinkName{})
 	return SomeOrchestration(o)
 }
 

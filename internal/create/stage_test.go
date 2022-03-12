@@ -3,6 +3,7 @@ package create
 import (
 	"errors"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
@@ -13,7 +14,7 @@ func TestCreateStage(t *testing.T) {
 	tests := []struct {
 		name              string
 		req               StageRequest
-		expStage          domain.Stage
+		expStage          internal.Stage
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
 	}{
@@ -79,7 +80,7 @@ func TestCreateStage(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]domain.Stage{},
+					stages: map[internal.StageName]internal.Stage{},
 				}
 
 				orchStore := mockOrchestrationStorage{
@@ -88,7 +89,7 @@ func TestCreateStage(t *testing.T) {
 					},
 				}
 
-				createFn := CreateStage(stageStore, orchStore)
+				createFn := Stage(stageStore, orchStore)
 
 				res := createFn(test.req)
 				assert.Assert(t, !res.Err.Present())
@@ -173,7 +174,7 @@ func TestCreateStage_Err(t *testing.T) {
 			test.name,
 			func(t *testing.T) {
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]domain.Stage{},
+					stages: map[internal.StageName]internal.Stage{},
 				}
 
 				orchStore := mockOrchestrationStorage{
@@ -182,7 +183,7 @@ func TestCreateStage_Err(t *testing.T) {
 					},
 				}
 
-				createFn := CreateStage(stageStore, orchStore)
+				createFn := Stage(stageStore, orchStore)
 				res := createFn(test.req)
 				assert.Assert(t, res.Err.Present())
 
@@ -213,7 +214,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	)
 
 	stageStore := mockStageStorage{
-		stages: map[domain.StageName]domain.Stage{},
+		stages: map[internal.StageName]internal.Stage{},
 	}
 
 	orchStore := mockOrchestrationStorage{
@@ -222,7 +223,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		},
 	}
 
-	createFn := CreateStage(stageStore, orchStore)
+	createFn := Stage(stageStore, orchStore)
 
 	res := createFn(req)
 	assert.Assert(t, !res.Err.Present())
@@ -259,15 +260,15 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 }
 
 type mockStageStorage struct {
-	stages map[domain.StageName]domain.Stage
+	stages map[internal.StageName]internal.Stage
 }
 
-func (m mockStageStorage) Save(s domain.Stage) StageResult {
+func (m mockStageStorage) Save(s internal.Stage) StageResult {
 	m.stages[s.Name()] = s
 	return SomeStage(s)
 }
 
-func (m mockStageStorage) Load(name domain.StageName) StageResult {
+func (m mockStageStorage) Load(name internal.StageName) StageResult {
 	s, exists := m.stages[name]
 	if !exists {
 		err := errdefs.NotFoundWithMsg("stage not found: %s", name)
@@ -280,27 +281,27 @@ func createStage(
 	t *testing.T,
 	stageName, orchName string,
 	requiredOnly bool,
-) domain.Stage {
-	name, err := domain.NewStageName(stageName)
+) internal.Stage {
+	name, err := internal.NewStageName(stageName)
 	assert.NilError(t, err, "create name for stage %s", stageName)
-	address := domain.NewAddress("some-address")
+	address := internal.NewAddress("some-address")
 	orchestration, err := domain.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create orchestration for stage %s", stageName)
-	serviceOpt := domain.NewEmptyService()
-	methodOpt := domain.NewEmptyMethod()
+	serviceOpt := internal.NewEmptyService()
+	methodOpt := internal.NewEmptyMethod()
 	if !requiredOnly {
-		serviceOpt = domain.NewPresentService(domain.NewService("some-service"))
-		method := domain.NewMethod("some-method")
-		methodOpt = domain.NewPresentMethod(method)
+		serviceOpt = internal.NewPresentService(internal.NewService("some-service"))
+		method := internal.NewMethod("some-method")
+		methodOpt = internal.NewPresentMethod(method)
 	}
-	ctx := domain.NewMethodContext(address, serviceOpt, methodOpt)
-	return domain.NewStage(name, ctx, orchestration)
+	ctx := internal.NewMethodContext(address, serviceOpt, methodOpt)
+	return internal.NewStage(name, ctx, orchestration)
 }
 
 func assertEqualStage(
 	t *testing.T,
-	expected domain.Stage,
-	actual domain.Stage,
+	expected internal.Stage,
+	actual internal.Stage,
 ) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assert.Equal(
@@ -317,8 +318,8 @@ func assertEqualStage(
 
 func assertEqualMethodContext(
 	t *testing.T,
-	expected domain.MethodContext,
-	actual domain.MethodContext,
+	expected internal.MethodContext,
+	actual internal.MethodContext,
 ) {
 	assert.Equal(t, expected.Address().Unwrap(), actual.Address().Unwrap())
 	assert.Equal(t, expected.Service().Present(), actual.Service().Present())

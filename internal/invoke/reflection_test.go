@@ -2,7 +2,7 @@ package invoke
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
@@ -95,7 +95,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := domain.NewService("unit.TestService")
+	serviceName := internal.NewService("unit.TestService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 	assert.NilError(t, err, "resolve service error")
@@ -215,7 +215,7 @@ func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := domain.NewService("unit.ExtraService")
+	serviceName := internal.NewService("unit.ExtraService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 	assert.NilError(t, err, "resolve service error")
@@ -334,7 +334,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := domain.NewService("pb.TestService")
+	serviceName := internal.NewService("pb.TestService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 
@@ -359,7 +359,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := domain.NewService("pb.UnknownService")
+	serviceName := internal.NewService("pb.UnknownService")
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 
