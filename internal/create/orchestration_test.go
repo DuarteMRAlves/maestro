@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -27,16 +28,14 @@ func TestCreateOrchestration(t *testing.T) {
 
 func TestCreateOrchestration_Err(t *testing.T) {
 	tests := []struct {
-		name            string
-		req             OrchestrationRequest
-		assertErrTypeFn func(error) bool
-		expectedErrMsg  string
+		name    string
+		req     OrchestrationRequest
+		isError error
 	}{
 		{
-			name:            "empty name",
-			req:             OrchestrationRequest{Name: ""},
-			assertErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg:  "empty orchestration name",
+			name:    "empty name",
+			req:     OrchestrationRequest{Name: ""},
+			isError: EmptyOrchestrationName,
 		},
 	}
 	for _, test := range tests {
@@ -54,8 +53,7 @@ func TestCreateOrchestration_Err(t *testing.T) {
 				assert.Equal(t, 0, len(storage.orchs))
 
 				err := res.Err.Unwrap()
-				assert.Assert(t, test.assertErrTypeFn(err))
-				assert.Error(t, err, test.expectedErrMsg)
+				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}
@@ -96,18 +94,21 @@ type mockOrchestrationStorage struct {
 	orchs map[internal.OrchestrationName]internal.Orchestration
 }
 
-func (m mockOrchestrationStorage) Save(o internal.Orchestration) OrchestrationResult {
+func (m mockOrchestrationStorage) Save(o internal.Orchestration) error {
 	m.orchs[o.Name()] = o
-	return SomeOrchestration(o)
+	return nil
 }
 
-func (m mockOrchestrationStorage) Load(name internal.OrchestrationName) OrchestrationResult {
+func (m mockOrchestrationStorage) Load(name internal.OrchestrationName) (
+	internal.Orchestration,
+	error,
+) {
 	o, exists := m.orchs[name]
 	if !exists {
 		err := &internal.NotFound{Type: "orchestration", Ident: name.Unwrap()}
-		return ErrOrchestration(err)
+		return internal.Orchestration{}, err
 	}
-	return SomeOrchestration(o)
+	return o, nil
 }
 
 func createOrchestration(

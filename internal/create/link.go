@@ -127,9 +127,9 @@ func verifyDupLink(loader LinkLoader) func(internal.Link) LinkResult {
 
 func verifyExistsOrchestrationLink(orchLoader OrchestrationLoader) func(internal.Link) LinkResult {
 	return func(l internal.Link) LinkResult {
-		res := orchLoader.Load(l.Orchestration())
-		if res.IsError() {
-			return ErrLink(res.Error())
+		_, err := orchLoader.Load(l.Orchestration())
+		if err != nil {
+			return ErrLink(err)
 		}
 		return SomeLink(l)
 	}
@@ -161,11 +161,11 @@ func addLink(
 ) func(internal.Link) LinkResult {
 	return func(l internal.Link) LinkResult {
 		name := l.Orchestration()
-		updateFn := ReturnOrchestration(addLinkNameToOrchestration(l.Name()))
-		res := updateOrchestration(name, loader, updateFn, saver)
-		if res.IsError() {
+		updateFn := addLinkNameToOrchestration(l.Name())
+		err := updateOrchestration(name, loader, updateFn, saver)
+		if err != nil {
 			err := errdefs.PrependMsg(
-				res.Error(),
+				err,
 				"add link %s to orchestration %s",
 				l.Name(),
 				l.Orchestration(),

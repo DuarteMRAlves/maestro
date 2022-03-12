@@ -97,20 +97,20 @@ func Stage(
 		if !errors.As(err, &notFound) {
 			return StageResponse{Err: domain.NewPresentError(err)}
 		}
-		res := orchStorage.Load(orchestrationName)
-		if res.IsError() {
-			return StageResponse{Err: domain.NewPresentError(res.Error())}
+		_, err = orchStorage.Load(orchestrationName)
+		if err != nil {
+			return StageResponse{Err: domain.NewPresentError(err)}
 		}
-		updateFn := ReturnOrchestration(addStageNameToOrchestration(name))
-		res = updateOrchestration(
+		updateFn := addStageNameToOrchestration(name)
+		err = updateOrchestration(
 			orchestrationName,
 			orchStorage,
 			updateFn,
 			orchStorage,
 		)
-		if res.IsError() {
+		if err != nil {
 			err := errdefs.PrependMsg(
-				res.Error(),
+				err,
 				"add stage %s to orchestration: %s",
 				name,
 				orchestrationName,
