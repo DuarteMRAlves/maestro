@@ -2,6 +2,7 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -29,6 +30,8 @@ type AssetResponse struct {
 	Err domain.OptionalError
 }
 
+var EmptyAssetName = fmt.Errorf("empty asset name")
+
 func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 	return func(req AssetRequest) AssetResponse {
 		name, err := internal.NewAssetName(req.Name)
@@ -36,8 +39,7 @@ func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
 		if name.IsEmpty() {
-			err := errdefs.InvalidArgumentWithMsg("empty asset name")
-			return AssetResponse{Err: domain.NewPresentError(err)}
+			return AssetResponse{Err: domain.NewPresentError(EmptyAssetName)}
 		}
 		imgOpt := internal.NewEmptyImage()
 		if req.Image.Present() {

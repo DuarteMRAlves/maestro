@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
@@ -56,16 +57,14 @@ func TestCreateAsset(t *testing.T) {
 
 func TestCreateAsset_Err(t *testing.T) {
 	tests := []struct {
-		name            string
-		req             AssetRequest
-		assertErrTypeFn func(error) bool
-		expectedErrMsg  string
+		name    string
+		req     AssetRequest
+		isError error
 	}{
 		{
-			name:            "empty name",
-			req:             AssetRequest{Name: ""},
-			assertErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg:  "empty asset name",
+			name:    "empty name",
+			req:     AssetRequest{Name: ""},
+			isError: EmptyAssetName,
 		},
 	}
 	for _, test := range tests {
@@ -83,8 +82,7 @@ func TestCreateAsset_Err(t *testing.T) {
 				assert.Equal(t, 0, len(storage.assets))
 
 				err := res.Err.Unwrap()
-				assert.Assert(t, test.assertErrTypeFn(err))
-				assert.Error(t, err, test.expectedErrMsg)
+				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}

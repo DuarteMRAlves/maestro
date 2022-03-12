@@ -1,6 +1,7 @@
 package create
 
 import (
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -32,6 +33,13 @@ type StageResponse struct {
 	Err domain.OptionalError
 }
 
+var (
+	EmptyStageName = fmt.Errorf("empty stage name")
+	EmptyAddress   = fmt.Errorf("empty address")
+	EmptyService   = fmt.Errorf("empty service")
+	EmptyMethod    = fmt.Errorf("empty method")
+)
+
 func CreateStage(
 	stageStorage StageStorage,
 	orchStorage OrchestrationStorage,
@@ -55,19 +63,17 @@ func requestToStage(req StageRequest) StageResult {
 		return ErrStage(err)
 	}
 	if name.IsEmpty() {
-		err := errdefs.InvalidArgumentWithMsg("empty stage name")
-		return ErrStage(err)
+		return ErrStage(EmptyStageName)
 	}
 	addr := domain.NewAddress(req.Address)
 	if addr.IsEmpty() {
-		return ErrStage(errdefs.InvalidArgumentWithMsg("empty address"))
+		return ErrStage(EmptyAddress)
 	}
 
 	if req.Service.Present() {
 		service := domain.NewService(req.Service.Unwrap())
 		if service.IsEmpty() {
-			err := errdefs.InvalidArgumentWithMsg("empty service")
-			return ErrStage(err)
+			return ErrStage(EmptyService)
 		}
 		serviceOpt = domain.NewPresentService(service)
 	}
@@ -75,8 +81,7 @@ func requestToStage(req StageRequest) StageResult {
 	if req.Method.Present() {
 		method := domain.NewMethod(req.Method.Unwrap())
 		if method.IsEmpty() {
-			err := errdefs.InvalidArgumentWithMsg("empty method")
-			return ErrStage(err)
+			return ErrStage(EmptyMethod)
 		}
 		methodOpt = domain.NewPresentMethod(method)
 	}

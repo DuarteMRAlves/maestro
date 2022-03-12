@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -110,15 +111,55 @@ func TestCreateStage_Err(t *testing.T) {
 	tests := []struct {
 		name              string
 		req               StageRequest
-		assertErrTypeFn   func(error) bool
-		expectedErrMsg    string
+		isError           error
 		loadOrchestration Orchestration
 	}{
 		{
-			name:            "empty name",
-			req:             StageRequest{Name: ""},
-			assertErrTypeFn: errdefs.IsInvalidArgument,
-			expectedErrMsg:  "empty stage name",
+			name:    "empty name",
+			req:     StageRequest{Name: ""},
+			isError: EmptyStageName,
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
+		},
+		{
+			name:    "empty address",
+			req:     StageRequest{Name: "some-name", Address: ""},
+			isError: EmptyAddress,
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
+		},
+		{
+			name: "empty service",
+			req: StageRequest{
+				Name:    "some-name",
+				Address: "some-address",
+				Service: domain.NewPresentString(""),
+			},
+			isError: EmptyService,
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
+		},
+		{
+			name: "empty method",
+			req: StageRequest{
+				Name:    "some-name",
+				Address: "some-address",
+				Service: domain.NewEmptyString(),
+				Method:  domain.NewPresentString(""),
+			},
+			isError: EmptyMethod,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -148,8 +189,7 @@ func TestCreateStage_Err(t *testing.T) {
 				assert.Equal(t, 0, len(stageStore.stages))
 
 				err := res.Err.Unwrap()
-				assert.Assert(t, test.assertErrTypeFn(err))
-				assert.Error(t, err, test.expectedErrMsg)
+				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}
