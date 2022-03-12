@@ -251,8 +251,7 @@ func createStage(
 	methodOpt := domain.NewEmptyMethod()
 	if !requiredOnly {
 		serviceOpt = domain.NewPresentService(domain.NewService("some-service"))
-		method, err := domain.NewMethod("some-method")
-		assert.NilError(t, err, "create method for stage %s", stageName)
+		method := domain.NewMethod("some-method")
 		methodOpt = domain.NewPresentMethod(method)
 	}
 	ctx := domain.NewMethodContext(address, serviceOpt, methodOpt)

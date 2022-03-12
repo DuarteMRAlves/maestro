@@ -46,8 +46,9 @@ func requestToStage(req StageRequest) StageResult {
 	}
 
 	if req.Method.Present() {
-		method, err := domain.NewMethod(req.Method.Unwrap())
-		if err != nil {
+		method := domain.NewMethod(req.Method.Unwrap())
+		if method.IsEmpty() {
+			err := errdefs.InvalidArgumentWithMsg("empty method")
 			return ErrStage(err)
 		}
 		methodOpt = domain.NewPresentMethod(method)

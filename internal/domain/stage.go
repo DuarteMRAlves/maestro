@@ -54,41 +54,31 @@ func NewEmptyService() OptionalService {
 	return OptionalService{}
 }
 
-type method string
+type Method struct{ val string }
 
-func (m method) Method() {}
-
-func (m method) Unwrap() string {
-	return string(m)
+func (m Method) Unwrap() string {
+	return m.val
 }
 
-func NewMethod(m string) (Method, error) {
-	if len(m) == 0 {
-		return nil, errdefs.InvalidArgumentWithMsg("empty method")
-	}
-	return method(m), nil
+func (m Method) IsEmpty() bool { return m.val == "" }
+
+func NewMethod(m string) Method { return Method{val: m} }
+
+type OptionalMethod struct {
+	val     Method
+	present bool
 }
 
-type presentMethod struct{ Method }
+func (m OptionalMethod) Unwrap() Method { return m.val }
 
-func (m presentMethod) Unwrap() Method { return m.Method }
-
-func (m presentMethod) Present() bool { return true }
-
-type emptyMethod struct{}
-
-func (m emptyMethod) Unwrap() Method {
-	panic("Method not available in an empty method optional")
-}
-
-func (m emptyMethod) Present() bool { return false }
+func (m OptionalMethod) Present() bool { return m.present }
 
 func NewPresentMethod(m Method) OptionalMethod {
-	return presentMethod{m}
+	return OptionalMethod{val: m, present: true}
 }
 
 func NewEmptyMethod() OptionalMethod {
-	return emptyMethod{}
+	return OptionalMethod{}
 }
 
 type address string
