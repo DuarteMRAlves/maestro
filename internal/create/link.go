@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
@@ -18,7 +19,7 @@ type LinkStorage interface {
 }
 
 type LinkEndpoint interface {
-	Stage() domain.StageName
+	Stage() internal.StageName
 	Field() domain.OptionalMessageField
 }
 
@@ -47,11 +48,11 @@ type LinkResponse struct {
 // Implementation of interfaces
 
 type linkEndpoint struct {
-	stage domain.StageName
+	stage internal.StageName
 	field domain.OptionalMessageField
 }
 
-func (e linkEndpoint) Stage() domain.StageName {
+func (e linkEndpoint) Stage() internal.StageName {
 	return e.stage
 }
 
@@ -60,7 +61,7 @@ func (e linkEndpoint) Field() domain.OptionalMessageField {
 }
 
 func NewLinkEndpoint(
-	stage domain.StageName,
+	stage internal.StageName,
 	field domain.OptionalMessageField,
 ) LinkEndpoint {
 	return linkEndpoint{

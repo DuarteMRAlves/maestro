@@ -2,16 +2,17 @@ package create
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type StageSaver interface {
-	Save(domain.Stage) StageResult
+	Save(internal.Stage) StageResult
 }
 
 type StageLoader interface {
-	Load(domain.StageName) StageResult
+	Load(internal.StageName) StageResult
 }
 
 type StageStorage interface {
@@ -40,7 +41,7 @@ var (
 	EmptyMethod    = fmt.Errorf("empty method")
 )
 
-func CreateStage(
+func Stage(
 	stageStorage StageStorage,
 	orchStorage OrchestrationStorage,
 ) func(StageRequest) StageResponse {
@@ -55,49 +56,49 @@ func CreateStage(
 }
 
 func requestToStage(req StageRequest) StageResult {
-	serviceOpt := domain.NewEmptyService()
-	methodOpt := domain.NewEmptyMethod()
+	serviceOpt := internal.NewEmptyService()
+	methodOpt := internal.NewEmptyMethod()
 
-	name, err := domain.NewStageName(req.Name)
+	name, err := internal.NewStageName(req.Name)
 	if err != nil {
 		return ErrStage(err)
 	}
 	if name.IsEmpty() {
 		return ErrStage(EmptyStageName)
 	}
-	addr := domain.NewAddress(req.Address)
+	addr := internal.NewAddress(req.Address)
 	if addr.IsEmpty() {
 		return ErrStage(EmptyAddress)
 	}
 
 	if req.Service.Present() {
-		service := domain.NewService(req.Service.Unwrap())
+		service := internal.NewService(req.Service.Unwrap())
 		if service.IsEmpty() {
 			return ErrStage(EmptyService)
 		}
-		serviceOpt = domain.NewPresentService(service)
+		serviceOpt = internal.NewPresentService(service)
 	}
 
 	if req.Method.Present() {
-		method := domain.NewMethod(req.Method.Unwrap())
+		method := internal.NewMethod(req.Method.Unwrap())
 		if method.IsEmpty() {
 			return ErrStage(EmptyMethod)
 		}
-		methodOpt = domain.NewPresentMethod(method)
+		methodOpt = internal.NewPresentMethod(method)
 	}
 
-	ctx := domain.NewMethodContext(addr, serviceOpt, methodOpt)
+	ctx := internal.NewMethodContext(addr, serviceOpt, methodOpt)
 
 	orchestrationName, err := domain.NewOrchestrationName(req.Orchestration)
 	if err != nil {
 		return ErrStage(err)
 	}
 
-	return SomeStage(domain.NewStage(name, ctx, orchestrationName))
+	return SomeStage(internal.NewStage(name, ctx, orchestrationName))
 }
 
-func verifyDupStage(loader StageLoader) func(domain.Stage) StageResult {
-	return func(s domain.Stage) StageResult {
+func verifyDupStage(loader StageLoader) func(internal.Stage) StageResult {
+	return func(s internal.Stage) StageResult {
 		res := loader.Load(s.Name())
 		if res.IsError() {
 			err := res.Error()
@@ -114,8 +115,8 @@ func verifyDupStage(loader StageLoader) func(domain.Stage) StageResult {
 	}
 }
 
-func verifyExistsOrchestration(orchLoader OrchestrationLoader) func(domain.Stage) StageResult {
-	return func(s domain.Stage) StageResult {
+func verifyExistsOrchestration(orchLoader OrchestrationLoader) func(internal.Stage) StageResult {
+	return func(s internal.Stage) StageResult {
 		res := orchLoader.Load(s.Orchestration())
 		if res.IsError() {
 			return ErrStage(res.Error())
@@ -127,8 +128,8 @@ func verifyExistsOrchestration(orchLoader OrchestrationLoader) func(domain.Stage
 func addStage(
 	loader OrchestrationLoader,
 	saver OrchestrationSaver,
-) func(domain.Stage) StageResult {
-	return func(s domain.Stage) StageResult {
+) func(internal.Stage) StageResult {
+	return func(s internal.Stage) StageResult {
 		name := s.Orchestration()
 		updateFn := ReturnOrchestration(addStageNameToOrchestration(s.Name()))
 		res := updateOrchestration(name, loader, updateFn, saver)

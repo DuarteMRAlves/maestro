@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
@@ -15,7 +16,7 @@ func TestCreateLink(t *testing.T) {
 		expLink           Link
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
-		storedStages      []domain.Stage
+		storedStages      []internal.Stage
 	}{
 		{
 			name: "required fields",
@@ -45,7 +46,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
-			storedStages: []domain.Stage{
+			storedStages: []internal.Stage{
 				createStage(t, "source", "orchestration", true),
 				createStage(t, "target", "orchestration", true),
 			},
@@ -78,7 +79,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
-			storedStages: []domain.Stage{
+			storedStages: []internal.Stage{
 				createStage(t, "source", "orchestration", false),
 				createStage(t, "target", "orchestration", false),
 			},
@@ -91,7 +92,7 @@ func TestCreateLink(t *testing.T) {
 				linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
 
 				stageStore := mockStageStorage{
-					stages: map[domain.StageName]domain.Stage{},
+					stages: map[internal.StageName]internal.Stage{},
 				}
 				for _, s := range test.storedStages {
 					stageStore.stages[s.Name()] = s
@@ -144,7 +145,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		[]string{"source", "target"},
 		[]string{"some-name"},
 	)
-	storedStages := []domain.Stage{
+	storedStages := []internal.Stage{
 		createStage(t, "source", "orchestration", false),
 		createStage(t, "target", "orchestration", false),
 	}
@@ -152,7 +153,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
 
 	stageStore := mockStageStorage{
-		stages: map[domain.StageName]domain.Stage{},
+		stages: map[internal.StageName]internal.Stage{},
 	}
 	for _, s := range storedStages {
 		stageStore.stages[s.Name()] = s
@@ -226,7 +227,7 @@ func createLink(
 	name, err := domain.NewLinkName(linkName)
 	assert.NilError(t, err, "create name for link %s", linkName)
 
-	sourceStage, err := domain.NewStageName("source")
+	sourceStage, err := internal.NewStageName("source")
 	assert.NilError(t, err, "create source stage for link %s", linkName)
 	sourceFieldOpt := domain.NewEmptyMessageField()
 	if !requiredOnly {
@@ -236,7 +237,7 @@ func createLink(
 	}
 	sourceEndpoint := NewLinkEndpoint(sourceStage, sourceFieldOpt)
 
-	targetStage, err := domain.NewStageName("target")
+	targetStage, err := internal.NewStageName("target")
 	assert.NilError(t, err, "create target stage for link %s", linkName)
 	targetFieldOpt := domain.NewEmptyMessageField()
 	if !requiredOnly {

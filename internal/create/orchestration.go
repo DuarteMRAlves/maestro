@@ -1,6 +1,9 @@
 package create
 
-import "github.com/DuarteMRAlves/maestro/internal/domain"
+import (
+	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/domain"
+)
 
 type OrchestrationSaver interface {
 	Save(Orchestration) OrchestrationResult
@@ -17,7 +20,7 @@ type OrchestrationStorage interface {
 
 type Orchestration interface {
 	Name() domain.OrchestrationName
-	Stages() []domain.StageName
+	Stages() []internal.StageName
 	Links() []domain.LinkName
 }
 
@@ -31,7 +34,7 @@ type OrchestrationResponse struct {
 
 type orchestration struct {
 	name   domain.OrchestrationName
-	stages []domain.StageName
+	stages []internal.StageName
 	links  []domain.LinkName
 }
 
@@ -39,7 +42,7 @@ func (o orchestration) Name() domain.OrchestrationName {
 	return o.name
 }
 
-func (o orchestration) Stages() []domain.StageName {
+func (o orchestration) Stages() []internal.StageName {
 	return o.stages
 }
 
@@ -49,7 +52,7 @@ func (o orchestration) Links() []domain.LinkName {
 
 func NewOrchestration(
 	name domain.OrchestrationName,
-	stages []domain.StageName,
+	stages []internal.StageName,
 	links []domain.LinkName,
 ) Orchestration {
 	return &orchestration{
@@ -72,11 +75,11 @@ func updateOrchestration(
 }
 
 func addStageNameToOrchestration(
-	s domain.StageName,
+	s internal.StageName,
 ) func(Orchestration) Orchestration {
 	return func(o Orchestration) Orchestration {
 		old := o.Stages()
-		stages := make([]domain.StageName, 0, len(old)+1)
+		stages := make([]internal.StageName, 0, len(old)+1)
 		for _, name := range old {
 			stages = append(stages, name)
 		}

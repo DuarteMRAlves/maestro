@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
@@ -27,7 +28,7 @@ func requestToLink(req LinkRequest) LinkResult {
 	if err != nil {
 		return ErrLink(err)
 	}
-	sourceStage, err := domain.NewStageName(req.SourceStage)
+	sourceStage, err := internal.NewStageName(req.SourceStage)
 	if err != nil {
 		return ErrLink(err)
 	}
@@ -41,7 +42,7 @@ func requestToLink(req LinkRequest) LinkResult {
 		sourceFieldOpt = domain.NewPresentMessageField(sourceField)
 	}
 
-	targetStage, err := domain.NewStageName(req.TargetStage)
+	targetStage, err := internal.NewStageName(req.TargetStage)
 
 	targetFieldOpt := domain.NewEmptyMessageField()
 	if req.TargetField.Present() {

@@ -2,7 +2,7 @@ package invoke
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
@@ -12,10 +12,10 @@ import (
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
 func listServices(conn grpc.ClientConnInterface) func(context.Context) (
-	[]domain.Service,
+	[]internal.Service,
 	error,
 ) {
-	return func(ctx context.Context) ([]domain.Service, error) {
+	return func(ctx context.Context) ([]internal.Service, error) {
 		stub := gr.NewServerReflectionClient(conn)
 		c := grpcreflect.NewClient(ctx, stub)
 		all, err := c.ListServices()
@@ -23,10 +23,10 @@ func listServices(conn grpc.ClientConnInterface) func(context.Context) (
 			return nil, handleGrpcError(err, "list services: ")
 		}
 		// Filter the reflection service
-		services := make([]domain.Service, 0, len(all)-1)
+		services := make([]internal.Service, 0, len(all)-1)
 		for _, s := range all {
 			if s != reflectionServiceName {
-				services = append(services, domain.NewService(s))
+				services = append(services, internal.NewService(s))
 			}
 		}
 		return services, nil
@@ -35,9 +35,9 @@ func listServices(conn grpc.ClientConnInterface) func(context.Context) (
 
 func resolveService(conn grpc.ClientConnInterface) func(
 	context.Context,
-	domain.Service,
+	internal.Service,
 ) (Service, error) {
-	return func(ctx context.Context, d domain.Service) (Service, error) {
+	return func(ctx context.Context, d internal.Service) (Service, error) {
 		stub := gr.NewServerReflectionClient(conn)
 		c := grpcreflect.NewClient(ctx, stub)
 		descriptor, err := c.ResolveService(d.Unwrap())
