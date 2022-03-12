@@ -1,7 +1,7 @@
 package invoke
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
@@ -12,8 +12,8 @@ import (
 // operations.
 type DynamicMessage interface {
 	GrpcMessage() proto.Message
-	SetField(domain.MessageField, interface{}) error
-	GetField(domain.MessageField) (DynamicMessage, error)
+	SetField(internal.MessageField, interface{}) error
+	GetField(internal.MessageField) (DynamicMessage, error)
 }
 
 type dynamicMessage struct {
@@ -37,7 +37,7 @@ func (dm *dynamicMessage) GrpcMessage() proto.Message {
 }
 
 func (dm *dynamicMessage) SetField(
-	field domain.MessageField,
+	field internal.MessageField,
 	val interface{},
 ) error {
 	msg := dynamic.NewMessage(dm.grpcMsg.GetMessageDescriptor())
@@ -49,7 +49,7 @@ func (dm *dynamicMessage) SetField(
 	return nil
 }
 
-func (dm *dynamicMessage) GetField(name domain.MessageField) (
+func (dm *dynamicMessage) GetField(name internal.MessageField) (
 	DynamicMessage,
 	error,
 ) {

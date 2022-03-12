@@ -24,7 +24,7 @@ func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
 		err := errdefs.InvalidArgumentWithMsg("empty orchestration name")
 		return ErrOrchestration(err)
 	}
-	o := NewOrchestration(name, []internal.StageName{}, []domain.LinkName{})
+	o := NewOrchestration(name, []internal.StageName{}, []internal.LinkName{})
 	return SomeOrchestration(o)
 }
 

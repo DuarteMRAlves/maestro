@@ -13,7 +13,7 @@ func TestCreateLink(t *testing.T) {
 	tests := []struct {
 		name              string
 		req               LinkRequest
-		expLink           Link
+		expLink           internal.Link
 		loadOrchestration Orchestration
 		expOrchestration  Orchestration
 		storedStages      []internal.Stage
@@ -89,7 +89,7 @@ func TestCreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
+				linkStore := mockLinkStorage{links: map[internal.LinkName]internal.Link{}}
 
 				stageStore := mockStageStorage{
 					stages: map[internal.StageName]internal.Stage{},
@@ -150,7 +150,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		createStage(t, "target", "orchestration", false),
 	}
 
-	linkStore := mockLinkStorage{links: map[domain.LinkName]Link{}}
+	linkStore := mockLinkStorage{links: map[internal.LinkName]internal.Link{}}
 
 	stageStore := mockStageStorage{
 		stages: map[internal.StageName]internal.Stage{},
@@ -202,15 +202,15 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 }
 
 type mockLinkStorage struct {
-	links map[domain.LinkName]Link
+	links map[internal.LinkName]internal.Link
 }
 
-func (m mockLinkStorage) Save(l Link) LinkResult {
+func (m mockLinkStorage) Save(l internal.Link) LinkResult {
 	m.links[l.Name()] = l
 	return SomeLink(l)
 }
 
-func (m mockLinkStorage) Load(name domain.LinkName) LinkResult {
+func (m mockLinkStorage) Load(name internal.LinkName) LinkResult {
 	l, exists := m.links[name]
 	if !exists {
 		err := errdefs.NotFoundWithMsg("link not found: %s", name)
@@ -223,44 +223,42 @@ func createLink(
 	t *testing.T,
 	linkName, orchestrationName string,
 	requiredOnly bool,
-) Link {
-	name, err := domain.NewLinkName(linkName)
+) internal.Link {
+	name, err := internal.NewLinkName(linkName)
 	assert.NilError(t, err, "create name for link %s", linkName)
 
 	sourceStage, err := internal.NewStageName("source")
 	assert.NilError(t, err, "create source stage for link %s", linkName)
-	sourceFieldOpt := domain.NewEmptyMessageField()
+	sourceFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
-		sourceField, err := domain.NewMessageField("source-field")
-		assert.NilError(t, err, "create source field for link %s", linkName)
-		sourceFieldOpt = domain.NewPresentMessageField(sourceField)
+		sourceField := internal.NewMessageField("source-field")
+		sourceFieldOpt = internal.NewPresentMessageField(sourceField)
 	}
-	sourceEndpoint := NewLinkEndpoint(sourceStage, sourceFieldOpt)
+	sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
 
 	targetStage, err := internal.NewStageName("target")
 	assert.NilError(t, err, "create target stage for link %s", linkName)
-	targetFieldOpt := domain.NewEmptyMessageField()
+	targetFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
-		targetField, err := domain.NewMessageField("target-field")
-		assert.NilError(t, err, "create target field for link %s", linkName)
-		targetFieldOpt = domain.NewPresentMessageField(targetField)
+		targetField := internal.NewMessageField("target-field")
+		targetFieldOpt = internal.NewPresentMessageField(targetField)
 	}
-	targetEndpoint := NewLinkEndpoint(targetStage, targetFieldOpt)
+	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
 
 	orchestration, err := domain.NewOrchestrationName(orchestrationName)
 	assert.NilError(t, err, "create orchestration for link %s", linkName)
 
-	return NewLink(name, sourceEndpoint, targetEndpoint, orchestration)
+	return internal.NewLink(name, sourceEndpoint, targetEndpoint, orchestration)
 }
 
-func assertEqualLink(t *testing.T, expected, actual Link) {
+func assertEqualLink(t *testing.T, expected, actual internal.Link) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assertEqualEndpoint(t, expected.Source(), actual.Source())
 	assertEqualEndpoint(t, expected.Target(), actual.Target())
 	assert.Equal(t, expected.Orchestration(), actual.Orchestration())
 }
 
-func assertEqualEndpoint(t *testing.T, expected, actual LinkEndpoint) {
+func assertEqualEndpoint(t *testing.T, expected, actual internal.LinkEndpoint) {
 	assert.Equal(t, expected.Stage().Unwrap(), actual.Stage().Unwrap())
 	assert.Equal(t, expected.Field().Present(), actual.Field().Present())
 	if expected.Field().Present() {

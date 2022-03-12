@@ -21,7 +21,7 @@ type OrchestrationStorage interface {
 type Orchestration interface {
 	Name() domain.OrchestrationName
 	Stages() []internal.StageName
-	Links() []domain.LinkName
+	Links() []internal.LinkName
 }
 
 type OrchestrationRequest struct {
@@ -35,7 +35,7 @@ type OrchestrationResponse struct {
 type orchestration struct {
 	name   domain.OrchestrationName
 	stages []internal.StageName
-	links  []domain.LinkName
+	links  []internal.LinkName
 }
 
 func (o orchestration) Name() domain.OrchestrationName {
@@ -46,14 +46,14 @@ func (o orchestration) Stages() []internal.StageName {
 	return o.stages
 }
 
-func (o orchestration) Links() []domain.LinkName {
+func (o orchestration) Links() []internal.LinkName {
 	return o.links
 }
 
 func NewOrchestration(
 	name domain.OrchestrationName,
 	stages []internal.StageName,
-	links []domain.LinkName,
+	links []internal.LinkName,
 ) Orchestration {
 	return &orchestration{
 		name:   name,
@@ -88,10 +88,10 @@ func addStageNameToOrchestration(
 	}
 }
 
-func addLinkNameToOrchestration(l domain.LinkName) func(Orchestration) Orchestration {
+func addLinkNameToOrchestration(l internal.LinkName) func(Orchestration) Orchestration {
 	return func(o Orchestration) Orchestration {
 		old := o.Links()
-		links := make([]domain.LinkName, 0, len(old)+1)
+		links := make([]internal.LinkName, 0, len(old)+1)
 		for _, name := range old {
 			links = append(links, name)
 		}

@@ -1,7 +1,7 @@
 package invoke
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
@@ -12,13 +12,13 @@ type MessageGenerator func() DynamicMessage
 
 type MessageDescriptor interface {
 	Message() proto.Message
-	MessageFields() map[domain.MessageField]MessageDescriptor
+	MessageFields() map[internal.MessageField]MessageDescriptor
 	MessageGenerator() MessageGenerator
 }
 
 type messageDescriptor struct {
 	msg    proto.Message
-	fields map[domain.MessageField]MessageDescriptor
+	fields map[internal.MessageField]MessageDescriptor
 	gen    MessageGenerator
 }
 
@@ -26,7 +26,7 @@ func (d messageDescriptor) Message() proto.Message {
 	return d.msg
 }
 
-func (d messageDescriptor) MessageFields() map[domain.MessageField]MessageDescriptor {
+func (d messageDescriptor) MessageFields() map[internal.MessageField]MessageDescriptor {
 	return d.fields
 }
 
@@ -48,14 +48,11 @@ func newMessageDescriptor(
 	MessageDescriptor,
 	error,
 ) {
-	fields := map[domain.MessageField]MessageDescriptor{}
+	fields := map[internal.MessageField]MessageDescriptor{}
 	for _, f := range desc.GetFields() {
 		if f.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-			name, err := domain.NewMessageField(f.GetName())
-			// Should never happen as the name should be valid
-			if err != nil {
-				return nil, err
-			}
+			var err error
+			name := internal.NewMessageField(f.GetName())
 			fields[name], err = newMessageDescriptor(f.GetMessageType())
 			if err != nil {
 				return nil, err
