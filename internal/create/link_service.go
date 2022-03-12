@@ -96,9 +96,9 @@ func verifyExistsOrchestrationLink(orchLoader OrchestrationLoader) func(Link) Li
 
 func verifyExistsSource(stageLoader StageLoader) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		res := stageLoader.Load(l.Source().Stage())
-		if res.IsError() {
-			return ErrLink(res.Error())
+		_, err := stageLoader.Load(l.Source().Stage())
+		if err != nil {
+			return ErrLink(err)
 		}
 		return SomeLink(l)
 	}
@@ -106,9 +106,9 @@ func verifyExistsSource(stageLoader StageLoader) func(Link) LinkResult {
 
 func verifyExistsTarget(stageLoader StageLoader) func(Link) LinkResult {
 	return func(l Link) LinkResult {
-		res := stageLoader.Load(l.Target().Stage())
-		if res.IsError() {
-			return ErrLink(res.Error())
+		_, err := stageLoader.Load(l.Target().Stage())
+		if err != nil {
+			return ErrLink(err)
 		}
 		return SomeLink(l)
 	}

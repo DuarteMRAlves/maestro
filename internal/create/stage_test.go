@@ -263,18 +263,21 @@ type mockStageStorage struct {
 	stages map[internal.StageName]internal.Stage
 }
 
-func (m mockStageStorage) Save(s internal.Stage) StageResult {
+func (m mockStageStorage) Save(s internal.Stage) error {
 	m.stages[s.Name()] = s
-	return SomeStage(s)
+	return nil
 }
 
-func (m mockStageStorage) Load(name internal.StageName) StageResult {
+func (m mockStageStorage) Load(name internal.StageName) (
+	internal.Stage,
+	error,
+) {
 	s, exists := m.stages[name]
 	if !exists {
 		err := errdefs.NotFoundWithMsg("stage not found: %s", name)
-		return ErrStage(err)
+		return internal.Stage{}, err
 	}
-	return SomeStage(s)
+	return s, nil
 }
 
 func createStage(
