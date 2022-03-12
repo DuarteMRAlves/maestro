@@ -31,9 +31,9 @@ func requestToStage(req StageRequest) StageResult {
 		err := errdefs.InvalidArgumentWithMsg("empty stage name")
 		return ErrStage(err)
 	}
-	addr, err := domain.NewAddress(req.Address)
-	if err != nil {
-		return ErrStage(err)
+	addr := domain.NewAddress(req.Address)
+	if addr.IsEmpty() {
+		return ErrStage(errdefs.InvalidArgumentWithMsg("empty address"))
 	}
 
 	if req.Service.Present() {

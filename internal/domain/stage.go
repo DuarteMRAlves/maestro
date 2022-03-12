@@ -81,18 +81,13 @@ func NewEmptyMethod() OptionalMethod {
 	return OptionalMethod{}
 }
 
-type address string
+type Address struct{ val string }
 
-func (a address) Address() {}
+func (a Address) Unwrap() string { return a.val }
 
-func (a address) Unwrap() string { return string(a) }
+func (a Address) IsEmpty() bool { return a.val == "" }
 
-func NewAddress(a string) (Address, error) {
-	if len(a) == 0 {
-		return nil, errdefs.InvalidArgumentWithMsg("empty address")
-	}
-	return address(a), nil
-}
+func NewAddress(a string) Address { return Address{val: a} }
 
 type methodContext struct {
 	address Address

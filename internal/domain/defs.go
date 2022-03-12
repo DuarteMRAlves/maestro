@@ -1,10 +1,5 @@
 package domain
 
-type Address interface {
-	Address()
-	Unwrap() string
-}
-
 type MethodContext interface {
 	Address() Address
 	Service() OptionalService
