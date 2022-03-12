@@ -79,7 +79,7 @@ func Stage(
 
 		ctx := internal.NewMethodContext(addr, serviceOpt, methodOpt)
 
-		orchestrationName, err := domain.NewOrchestrationName(req.Orchestration)
+		orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
 		if err != nil {
 			return StageResponse{Err: domain.NewPresentError(err)}
 		}

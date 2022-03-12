@@ -14,8 +14,8 @@ func TestCreateLink(t *testing.T) {
 		name              string
 		req               LinkRequest
 		expLink           internal.Link
-		loadOrchestration Orchestration
-		expOrchestration  Orchestration
+		loadOrchestration internal.Orchestration
+		expOrchestration  internal.Orchestration
 		storedStages      []internal.Stage
 	}{
 		{
@@ -99,7 +99,7 @@ func TestCreateLink(t *testing.T) {
 				}
 
 				orchStore := mockOrchestrationStorage{
-					orchs: map[domain.OrchestrationName]Orchestration{
+					orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -160,7 +160,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 
 	orchStore := mockOrchestrationStorage{
-		orchs: map[domain.OrchestrationName]Orchestration{
+		orchs: map[internal.OrchestrationName]internal.Orchestration{
 			storedOrchestration.Name(): storedOrchestration,
 		},
 	}
@@ -245,7 +245,7 @@ func createLink(
 	}
 	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
 
-	orchestration, err := domain.NewOrchestrationName(orchestrationName)
+	orchestration, err := internal.NewOrchestrationName(orchestrationName)
 	assert.NilError(t, err, "create orchestration for link %s", linkName)
 
 	return internal.NewLink(name, sourceEndpoint, targetEndpoint, orchestration)

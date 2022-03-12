@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
@@ -80,7 +79,7 @@ type Link struct {
 	name          LinkName
 	source        LinkEndpoint
 	target        LinkEndpoint
-	orchestration domain.OrchestrationName
+	orchestration OrchestrationName
 }
 
 func (l Link) Name() LinkName {
@@ -95,14 +94,14 @@ func (l Link) Target() LinkEndpoint {
 	return l.target
 }
 
-func (l Link) Orchestration() domain.OrchestrationName {
+func (l Link) Orchestration() OrchestrationName {
 	return l.orchestration
 }
 
 func NewLink(
 	name LinkName,
 	source, target LinkEndpoint,
-	orchestration domain.OrchestrationName,
+	orchestration OrchestrationName,
 ) Link {
 	return Link{
 		name:          name,

@@ -3,25 +3,20 @@ package create
 import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type OrchestrationSaver interface {
-	Save(Orchestration) OrchestrationResult
+	Save(internal.Orchestration) OrchestrationResult
 }
 
 type OrchestrationLoader interface {
-	Load(domain.OrchestrationName) OrchestrationResult
+	Load(internal.OrchestrationName) OrchestrationResult
 }
 
 type OrchestrationStorage interface {
 	OrchestrationSaver
 	OrchestrationLoader
-}
-
-type Orchestration interface {
-	Name() domain.OrchestrationName
-	Stages() []internal.StageName
-	Links() []internal.LinkName
 }
 
 type OrchestrationRequest struct {
@@ -32,40 +27,36 @@ type OrchestrationResponse struct {
 	Err domain.OptionalError
 }
 
-type orchestration struct {
-	name   domain.OrchestrationName
-	stages []internal.StageName
-	links  []internal.LinkName
-}
-
-func (o orchestration) Name() domain.OrchestrationName {
-	return o.name
-}
-
-func (o orchestration) Stages() []internal.StageName {
-	return o.stages
-}
-
-func (o orchestration) Links() []internal.LinkName {
-	return o.links
-}
-
-func NewOrchestration(
-	name domain.OrchestrationName,
-	stages []internal.StageName,
-	links []internal.LinkName,
-) Orchestration {
-	return &orchestration{
-		name:   name,
-		stages: stages,
-		links:  links,
+func Create(storage OrchestrationStorage) func(OrchestrationRequest) OrchestrationResponse {
+	return func(req OrchestrationRequest) OrchestrationResponse {
+		res := requestToOrchestration(req)
+		res = BindOrchestration(verifyDupOrchestration(storage))(res)
+		res = BindOrchestration(storage.Save)(res)
+		return orchestrationToResponse(res)
 	}
 }
 
+func requestToOrchestration(req OrchestrationRequest) OrchestrationResult {
+	name, err := internal.NewOrchestrationName(req.Name)
+	if err != nil {
+		return ErrOrchestration(err)
+	}
+	if name.IsEmpty() {
+		err := errdefs.InvalidArgumentWithMsg("empty orchestration name")
+		return ErrOrchestration(err)
+	}
+	o := internal.NewOrchestration(
+		name,
+		[]internal.StageName{},
+		[]internal.LinkName{},
+	)
+	return SomeOrchestration(o)
+}
+
 func updateOrchestration(
-	name domain.OrchestrationName,
+	name internal.OrchestrationName,
 	loader OrchestrationLoader,
-	updateFn func(Orchestration) OrchestrationResult,
+	updateFn func(internal.Orchestration) OrchestrationResult,
 	saver OrchestrationSaver,
 ) OrchestrationResult {
 	res := loader.Load(name)
@@ -74,28 +65,58 @@ func updateOrchestration(
 	return res
 }
 
+func verifyDupOrchestration(
+	loader OrchestrationLoader,
+) func(internal.Orchestration) OrchestrationResult {
+	return func(o internal.Orchestration) OrchestrationResult {
+		res := loader.Load(o.Name())
+		if res.IsError() {
+			err := res.Error()
+			if errdefs.IsNotFound(err) {
+				return SomeOrchestration(o)
+			}
+			return ErrOrchestration(err)
+		}
+		err := errdefs.AlreadyExistsWithMsg(
+			"orchestration '%v' already exists",
+			o.Name().Unwrap(),
+		)
+		return ErrOrchestration(err)
+	}
+}
+
 func addStageNameToOrchestration(
 	s internal.StageName,
-) func(Orchestration) Orchestration {
-	return func(o Orchestration) Orchestration {
+) func(internal.Orchestration) internal.Orchestration {
+	return func(o internal.Orchestration) internal.Orchestration {
 		old := o.Stages()
 		stages := make([]internal.StageName, 0, len(old)+1)
 		for _, name := range old {
 			stages = append(stages, name)
 		}
 		stages = append(stages, s)
-		return NewOrchestration(o.Name(), stages, o.Links())
+		return internal.NewOrchestration(o.Name(), stages, o.Links())
 	}
 }
 
-func addLinkNameToOrchestration(l internal.LinkName) func(Orchestration) Orchestration {
-	return func(o Orchestration) Orchestration {
+func addLinkNameToOrchestration(l internal.LinkName) func(internal.Orchestration) internal.Orchestration {
+	return func(o internal.Orchestration) internal.Orchestration {
 		old := o.Links()
 		links := make([]internal.LinkName, 0, len(old)+1)
 		for _, name := range old {
 			links = append(links, name)
 		}
 		links = append(links, l)
-		return NewOrchestration(o.Name(), o.Stages(), links)
+		return internal.NewOrchestration(o.Name(), o.Stages(), links)
 	}
+}
+
+func orchestrationToResponse(res OrchestrationResult) OrchestrationResponse {
+	var errOpt domain.OptionalError
+	if res.IsError() {
+		errOpt = domain.NewPresentError(res.Error())
+	} else {
+		errOpt = domain.NewEmptyError()
+	}
+	return OrchestrationResponse{Err: errOpt}
 }

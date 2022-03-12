@@ -1,4 +1,4 @@
-package domain
+package internal
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -25,4 +25,34 @@ func NewOrchestrationName(name string) (OrchestrationName, error) {
 
 func isValidOrchestrationName(name string) bool {
 	return orchestrationNameReqExp.MatchString(name)
+}
+
+type Orchestration struct {
+	name   OrchestrationName
+	stages []StageName
+	links  []LinkName
+}
+
+func (o Orchestration) Name() OrchestrationName {
+	return o.name
+}
+
+func (o Orchestration) Stages() []StageName {
+	return o.stages
+}
+
+func (o Orchestration) Links() []LinkName {
+	return o.links
+}
+
+func NewOrchestration(
+	name OrchestrationName,
+	stages []StageName,
+	links []LinkName,
+) Orchestration {
+	return Orchestration{
+		name:   name,
+		stages: stages,
+		links:  links,
+	}
 }

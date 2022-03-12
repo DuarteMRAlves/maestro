@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
@@ -117,7 +116,7 @@ func NewMethodContext(
 type Stage struct {
 	name          StageName
 	methodCtx     MethodContext
-	orchestration domain.OrchestrationName
+	orchestration OrchestrationName
 }
 
 func (s Stage) Name() StageName {
@@ -128,14 +127,14 @@ func (s Stage) MethodContext() MethodContext {
 	return s.methodCtx
 }
 
-func (s Stage) Orchestration() domain.OrchestrationName {
+func (s Stage) Orchestration() OrchestrationName {
 	return s.orchestration
 }
 
 func NewStage(
 	name StageName,
 	methodCtx MethodContext,
-	orchestration domain.OrchestrationName,
+	orchestration OrchestrationName,
 ) Stage {
 	return Stage{
 		name:          name,

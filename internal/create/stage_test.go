@@ -15,8 +15,8 @@ func TestCreateStage(t *testing.T) {
 		name              string
 		req               StageRequest
 		expStage          internal.Stage
-		loadOrchestration Orchestration
-		expOrchestration  Orchestration
+		loadOrchestration internal.Orchestration
+		expOrchestration  internal.Orchestration
 	}{
 		{
 			name: "required fields",
@@ -84,7 +84,7 @@ func TestCreateStage(t *testing.T) {
 				}
 
 				orchStore := mockOrchestrationStorage{
-					orchs: map[domain.OrchestrationName]Orchestration{
+					orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -113,7 +113,7 @@ func TestCreateStage_Err(t *testing.T) {
 		name              string
 		req               StageRequest
 		isError           error
-		loadOrchestration Orchestration
+		loadOrchestration internal.Orchestration
 	}{
 		{
 			name:    "empty name",
@@ -178,7 +178,7 @@ func TestCreateStage_Err(t *testing.T) {
 				}
 
 				orchStore := mockOrchestrationStorage{
-					orchs: map[domain.OrchestrationName]Orchestration{
+					orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -218,7 +218,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	}
 
 	orchStore := mockOrchestrationStorage{
-		orchs: map[domain.OrchestrationName]Orchestration{
+		orchs: map[internal.OrchestrationName]internal.Orchestration{
 			storedOrchestration.Name(): storedOrchestration,
 		},
 	}
@@ -288,7 +288,7 @@ func createStage(
 	name, err := internal.NewStageName(stageName)
 	assert.NilError(t, err, "create name for stage %s", stageName)
 	address := internal.NewAddress("some-address")
-	orchestration, err := domain.NewOrchestrationName(orchName)
+	orchestration, err := internal.NewOrchestrationName(orchName)
 	assert.NilError(t, err, "create orchestration for stage %s", stageName)
 	serviceOpt := internal.NewEmptyService()
 	methodOpt := internal.NewEmptyMethod()

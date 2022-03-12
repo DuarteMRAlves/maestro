@@ -87,7 +87,7 @@ func requestToLink(req LinkRequest) LinkResult {
 		targetFieldOpt = internal.NewPresentMessageField(targetField)
 	}
 
-	orchestrationName, err := domain.NewOrchestrationName(req.Orchestration)
+	orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
 	if err != nil {
 		return ErrLink(err)
 	}
