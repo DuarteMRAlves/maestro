@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
@@ -92,7 +93,8 @@ func Stage(
 			)
 			return StageResponse{Err: domain.NewPresentError(err)}
 		}
-		if !errdefs.IsNotFound(err) {
+		var notFound *internal.NotFound
+		if !errors.As(err, &notFound) {
 			return StageResponse{Err: domain.NewPresentError(err)}
 		}
 		res := orchStorage.Load(orchestrationName)

@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
@@ -71,8 +72,9 @@ func verifyDupOrchestration(
 	return func(o internal.Orchestration) OrchestrationResult {
 		res := loader.Load(o.Name())
 		if res.IsError() {
+			var notFound *internal.NotFound
 			err := res.Error()
-			if errdefs.IsNotFound(err) {
+			if errors.As(err, &notFound) {
 				return SomeOrchestration(o)
 			}
 			return ErrOrchestration(err)

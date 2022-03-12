@@ -1,6 +1,7 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
@@ -109,8 +110,9 @@ func verifyDupLink(loader LinkLoader) func(internal.Link) LinkResult {
 	return func(l internal.Link) LinkResult {
 		res := loader.Load(l.Name())
 		if res.IsError() {
+			var notFound *internal.NotFound
 			err := res.Error()
-			if errdefs.IsNotFound(err) {
+			if errors.As(err, &notFound) {
 				return SomeLink(l)
 			}
 			return ErrLink(err)

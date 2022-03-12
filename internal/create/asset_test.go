@@ -137,7 +137,8 @@ func (m mockAssetStorage) Load(name internal.AssetName) (
 ) {
 	asset, exists := m.assets[name]
 	if !exists {
-		return internal.Asset{}, &internal.AssetNotFound{Name: name}
+		err := &internal.NotFound{Type: "asset", Ident: name.Unwrap()}
+		return internal.Asset{}, err
 	}
 	return asset, nil
 }
