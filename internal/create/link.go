@@ -33,10 +33,21 @@ type LinkRequest struct {
 }
 
 var (
-	EmptyLinkName    = fmt.Errorf("empty link name")
-	EmptySourceField = fmt.Errorf("empty source field")
-	EmptyTargetField = fmt.Errorf("empty target field")
+	EmptyLinkName        = fmt.Errorf("empty link name")
+	EmptySourceField     = fmt.Errorf("empty source field")
+	EmptyTargetField     = fmt.Errorf("empty target field")
+	EqualSourceAndTarget = fmt.Errorf("equal source and target stages")
 )
+
+type StageNotInOrchestration struct {
+	Orch  internal.OrchestrationName
+	Stage internal.StageName
+}
+
+func (err *StageNotInOrchestration) Error() string {
+	format := "stage '%s' not found in orchestration '%s'."
+	return fmt.Sprintf(format, err.Stage, err.Orch)
+}
 
 func CreateLink(
 	storage LinkStorage,
@@ -78,7 +89,7 @@ func CreateLink(
 			targetFieldOpt = internal.NewPresentMessageField(targetField)
 		}
 
-		orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
+		orchName, err := internal.NewOrchestrationName(req.Orchestration)
 		if err != nil {
 			return err
 		}
@@ -92,7 +103,7 @@ func CreateLink(
 			return err
 		}
 
-		_, err = orchStorage.Load(orchestrationName)
+		orch, err := orchStorage.Load(orchName)
 		if err != nil {
 			return err
 		}
@@ -107,31 +118,37 @@ func CreateLink(
 			return err
 		}
 
+		foundTarget := false
+		foundSource := false
+		for _, s := range orch.Stages() {
+			if s == sourceStage {
+				foundSource = true
+			} else if s == targetStage {
+				foundTarget = true
+			}
+		}
+		if !foundSource {
+			return &StageNotInOrchestration{Orch: orchName, Stage: sourceStage}
+		}
+		if !foundTarget {
+			return &StageNotInOrchestration{Orch: orchName, Stage: targetStage}
+		}
+
+		if sourceStage == targetStage {
+			return EqualSourceAndTarget
+		}
+
 		updateFn := addLinkNameToOrchestration(name)
-		err = updateOrchestration(
-			orchestrationName,
-			orchStorage,
-			updateFn,
-			orchStorage,
-		)
+		err = updateOrchestration(orchName, orchStorage, updateFn, orchStorage)
 		if err != nil {
-			return errdefs.PrependMsg(
-				err,
-				"add link %s to orchestration %s",
-				name,
-				orchestrationName,
-			)
+			format := "add link %s to orchestration %s"
+			return errdefs.PrependMsg(err, format, name, orchName)
 		}
 
 		sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
 		targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
 
-		l := internal.NewLink(
-			name,
-			sourceEndpoint,
-			targetEndpoint,
-			orchestrationName,
-		)
+		l := internal.NewLink(name, sourceEndpoint, targetEndpoint, orchName)
 
 		return storage.Save(l)
 	}
