@@ -8,37 +8,6 @@ import (
 	"testing"
 )
 
-func TestManager_CreateOrchestration(t *testing.T) {
-	const name api.OrchestrationName = "Orchestration-Name"
-	var (
-		orchestration api.Orchestration
-		err           error
-	)
-	req := &api.CreateOrchestrationRequest{Name: name}
-
-	db := storage.NewTestDb(t)
-	defer db.Close()
-
-	err = db.Update(
-		func(txn *badger.Txn) error {
-			createOrchestration := CreateOrchestrationWithTxn(txn)
-			return createOrchestration(req)
-		},
-	)
-	assert.NilError(t, err, "create error not nil")
-
-	err = db.View(
-		func(txn *badger.Txn) error {
-			helper := storage.NewTxnHelper(txn)
-			return helper.LoadOrchestration(&orchestration, name)
-		},
-	)
-	assert.NilError(t, err, "load error")
-	assert.Equal(t, orchestration.Name, req.Name, "name not correct")
-	phase := orchestration.Phase
-	assert.Equal(t, phase, api.OrchestrationPending, "phase not correct")
-}
-
 func TestManager_GetMatchingOrchestrations(t *testing.T) {
 	tests := []struct {
 		name   string
