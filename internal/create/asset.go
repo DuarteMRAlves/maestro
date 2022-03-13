@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type AssetSaver interface {
@@ -49,10 +48,7 @@ func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 		// Expect key not found
 		_, err = storage.Load(name)
 		if err == nil {
-			err := errdefs.AlreadyExistsWithMsg(
-				"asset '%v' already exists",
-				name.Unwrap(),
-			)
+			err := &internal.AlreadyExists{Type: "asset", Ident: name.Unwrap()}
 			return AssetResponse{Err: domain.NewPresentError(err)}
 		}
 		var notFound *internal.NotFound

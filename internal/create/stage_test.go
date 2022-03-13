@@ -2,10 +2,8 @@ package create
 
 import (
 	"errors"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -241,12 +239,10 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	res = createFn(req)
 	assert.Assert(t, res.Err.Present())
 	err := res.Err.Unwrap()
-	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
-	assert.ErrorContains(
-		t,
-		err,
-		fmt.Sprintf("stage '%v' already exists", req.Name),
-	)
+	var alreadyExists *internal.AlreadyExists
+	assert.Assert(t, errors.As(err, &alreadyExists))
+	assert.Equal(t, "stage", alreadyExists.Type)
+	assert.Equal(t, req.Name, alreadyExists.Ident)
 
 	assert.Equal(t, 1, len(stageStore.stages))
 	s, exists = stageStore.stages[expStage.Name()]

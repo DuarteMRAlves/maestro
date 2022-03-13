@@ -1,10 +1,9 @@
 package create
 
 import (
-	"fmt"
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -184,12 +183,10 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 
 	assert.Assert(t, res.Err.Present())
 	err := res.Err.Unwrap()
-	assert.Assert(t, errdefs.IsAlreadyExists(err), "err type")
-	assert.ErrorContains(
-		t,
-		err,
-		fmt.Sprintf("link '%v' already exists", req.Name),
-	)
+	var alreadyExists *internal.AlreadyExists
+	assert.Assert(t, errors.As(err, &alreadyExists))
+	assert.Equal(t, "link", alreadyExists.Type)
+	assert.Equal(t, req.Name, alreadyExists.Ident)
 	assert.Equal(t, 1, len(linkStore.links))
 	l, exists = linkStore.links[expLink.Name()]
 	assert.Assert(t, exists)

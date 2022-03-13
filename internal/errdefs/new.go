@@ -2,17 +2,6 @@ package errdefs
 
 import "fmt"
 
-func AlreadyExistsWithError(err error) error {
-	if err == nil || IsAlreadyExists(err) {
-		return err
-	}
-	return alreadyExists{err}
-}
-
-func AlreadyExistsWithMsg(format string, a ...interface{}) error {
-	return AlreadyExistsWithError(fmt.Errorf(format, a...))
-}
-
 func InvalidArgumentWithError(err error) error {
 	if err == nil || IsInvalidArgument(err) {
 		return err
@@ -76,8 +65,6 @@ func PrependMsg(err error, format string, a ...interface{}) error {
 
 	causeErr := getImplementer(err)
 	switch causeErr.(type) {
-	case AlreadyExists:
-		return AlreadyExistsWithMsg(format, a...)
 	case InvalidArgument:
 		return InvalidArgumentWithMsg(format, a...)
 	case FailedPrecondition:

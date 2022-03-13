@@ -1,10 +1,5 @@
 package errdefs
 
-// AlreadyExists error signals that some resource already exists
-type AlreadyExists interface {
-	AlreadyExists()
-}
-
 // InvalidArgument signals the client specified an invalid argument value
 type InvalidArgument interface {
 	InvalidArgument()

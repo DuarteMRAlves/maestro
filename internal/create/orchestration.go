@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type OrchestrationSaver interface {
@@ -44,10 +43,10 @@ func Create(storage OrchestrationStorage) func(OrchestrationRequest) Orchestrati
 
 		_, err = storage.Load(name)
 		if err == nil {
-			err := errdefs.AlreadyExistsWithMsg(
-				"orchestration '%v' already exists",
-				name.Unwrap(),
-			)
+			err := &internal.AlreadyExists{
+				Type:  "orchestration",
+				Ident: name.Unwrap(),
+			}
 			return OrchestrationResponse{Err: domain.NewPresentError(err)}
 		}
 		var notFound *internal.NotFound
