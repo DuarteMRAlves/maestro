@@ -5,11 +5,6 @@ import (
 	"testing"
 )
 
-func TestIsAlreadyExists(t *testing.T) {
-	err := alreadyExists{dummyErr}
-	assert.Assert(t, IsAlreadyExists(err), "type assertion")
-}
-
 func TestIsInvalidArgument(t *testing.T) {
 	err := invalidArgument{dummyErr}
 	assert.Assert(t, IsInvalidArgument(err), "type assertion")

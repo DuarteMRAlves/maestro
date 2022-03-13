@@ -117,10 +117,7 @@ func verifyDupLink(loader LinkLoader) func(internal.Link) LinkResult {
 			}
 			return ErrLink(err)
 		}
-		err := errdefs.AlreadyExistsWithMsg(
-			"link '%v' already exists",
-			l.Name().Unwrap(),
-		)
+		err := &internal.AlreadyExists{Type: "link", Ident: l.Name().Unwrap()}
 		return ErrLink(err)
 	}
 }

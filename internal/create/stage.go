@@ -87,10 +87,7 @@ func Stage(
 
 		_, err = stageStorage.Load(name)
 		if err == nil {
-			err := errdefs.AlreadyExistsWithMsg(
-				"stage '%v' already exists",
-				name.Unwrap(),
-			)
+			err := &internal.AlreadyExists{Type: "stage", Ident: name.Unwrap()}
 			return StageResponse{Err: domain.NewPresentError(err)}
 		}
 		var notFound *internal.NotFound

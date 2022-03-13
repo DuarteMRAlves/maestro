@@ -6,28 +6,6 @@ import (
 	"testing"
 )
 
-func TestAlreadyExistsWithError(t *testing.T) {
-	var ok bool
-	err := AlreadyExistsWithError(dummyErr)
-	_, ok = err.(AlreadyExists)
-	assert.Assert(t, ok, "AlreadyExists interface")
-	_, ok = err.(alreadyExists)
-	assert.Assert(t, ok, "alreadyExists struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
-func TestAlreadyExistsWithMsg(t *testing.T) {
-	var ok bool
-	err := AlreadyExistsWithMsg(dummyErrMsg)
-	_, ok = err.(AlreadyExists)
-	assert.Assert(t, ok, "AlreadyExists interface")
-	_, ok = err.(alreadyExists)
-	assert.Assert(t, ok, "alreadyExists struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
 func TestInvalidArgumentWithError(t *testing.T) {
 	var ok bool
 	err := InvalidArgumentWithError(dummyErr)
@@ -150,11 +128,6 @@ func TestPrependMsg(t *testing.T) {
 		err       error
 		valTypeFn func(err error) bool
 	}{
-		{
-			name:      "already exists error",
-			err:       AlreadyExistsWithMsg(dummyErrMsg),
-			valTypeFn: IsAlreadyExists,
-		},
 		{
 			name:      "invalid argument error",
 			err:       InvalidArgumentWithMsg(dummyErrMsg),

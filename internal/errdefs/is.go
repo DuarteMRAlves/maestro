@@ -1,10 +1,5 @@
 package errdefs
 
-func IsAlreadyExists(err error) bool {
-	_, ok := getImplementer(err).(AlreadyExists)
-	return ok
-}
-
 func IsInvalidArgument(err error) bool {
 	_, ok := getImplementer(err).(InvalidArgument)
 	return ok
@@ -37,7 +32,6 @@ type causer interface {
 func getImplementer(err error) error {
 	switch e := err.(type) {
 	case
-		AlreadyExists,
 		InvalidArgument,
 		FailedPrecondition,
 		Unavailable,
