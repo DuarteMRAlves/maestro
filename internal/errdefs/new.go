@@ -13,17 +13,6 @@ func InvalidArgumentWithMsg(format string, a ...interface{}) error {
 	return InvalidArgumentWithError(fmt.Errorf(format, a...))
 }
 
-func FailedPreconditionWithError(err error) error {
-	if err == nil || IsFailedPrecondition(err) {
-		return err
-	}
-	return failedPrecondition{err}
-}
-
-func FailedPreconditionWithMsg(format string, a ...interface{}) error {
-	return FailedPreconditionWithError(fmt.Errorf(format, a...))
-}
-
 func UnavailableWithError(err error) error {
 	if err == nil || IsUnavailable(err) {
 		return err
@@ -67,8 +56,6 @@ func PrependMsg(err error, format string, a ...interface{}) error {
 	switch causeErr.(type) {
 	case InvalidArgument:
 		return InvalidArgumentWithMsg(format, a...)
-	case FailedPrecondition:
-		return FailedPreconditionWithMsg(format, a...)
 	case Unavailable:
 		return UnavailableWithMsg(format, a...)
 	case Internal:

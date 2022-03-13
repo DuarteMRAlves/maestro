@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gotest.tools/v3/assert"
 	"net"
 	"testing"
@@ -75,8 +76,13 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 	listFn := listServices(conn)
 	services, err := listFn(ctx)
 
-	assert.Assert(t, errdefs.IsFailedPrecondition(err), "list services error")
-	assert.ErrorContains(t, err, "list services:")
+	assert.Assert(t, err != nil)
+	cause, ok := errors.Unwrap(err).(interface {
+		GRPCStatus() *status.Status
+	})
+	st := cause.GRPCStatus()
+	assert.Assert(t, ok, "correct type")
+	assert.Equal(t, codes.Unimplemented, st.Code())
 	assert.Assert(t, services == nil, "services is not nil")
 }
 
@@ -339,8 +345,13 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	resolveFn := resolveService(conn)
 	serv, err := resolveFn(ctx, serviceName)
 
-	assert.Assert(t, errdefs.IsFailedPrecondition(err), "resolve service error")
-	assert.ErrorContains(t, err, "resolve service: ")
+	assert.Assert(t, err != nil)
+	cause, ok := errors.Unwrap(err).(interface {
+		GRPCStatus() *status.Status
+	})
+	st := cause.GRPCStatus()
+	assert.Assert(t, ok, "correct type")
+	assert.Equal(t, codes.Unimplemented, st.Code())
 	assert.Assert(t, serv == nil, "service is not nil")
 }
 

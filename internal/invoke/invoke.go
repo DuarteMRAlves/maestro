@@ -2,7 +2,9 @@ package invoke
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 // UnaryInvoke calls a unary grpc method. The context and args are passed to the
@@ -16,6 +18,10 @@ type UnaryInvoke func(context.Context, interface{}, interface{}) error
 func NewUnaryInvoke(method string, conn grpc.ClientConnInterface) UnaryInvoke {
 	return func(ctx context.Context, req interface{}, rep interface{}) error {
 		err := conn.Invoke(ctx, method, req, rep)
-		return handleGrpcError(err, "unary invoke: ")
+		if err == nil {
+			return nil
+		}
+		st, _ := status.FromError(err)
+		return fmt.Errorf("invoke %s: %w", method, st.Err())
 	}
 }

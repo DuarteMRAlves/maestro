@@ -5,11 +5,6 @@ func IsInvalidArgument(err error) bool {
 	return ok
 }
 
-func IsFailedPrecondition(err error) bool {
-	_, ok := getImplementer(err).(FailedPrecondition)
-	return ok
-}
-
 func IsUnavailable(err error) bool {
 	_, ok := getImplementer(err).(Unavailable)
 	return ok
@@ -33,7 +28,6 @@ func getImplementer(err error) error {
 	switch e := err.(type) {
 	case
 		InvalidArgument,
-		FailedPrecondition,
 		Unavailable,
 		Internal,
 		Unknown:

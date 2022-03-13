@@ -10,16 +10,6 @@ func (e invalidArgument) Cause() error {
 	return e.error
 }
 
-type failedPrecondition struct {
-	error
-}
-
-func (e failedPrecondition) FailedPrecondition() { /* Do nothing */ }
-
-func (e failedPrecondition) Cause() error {
-	return e.error
-}
-
 type unavailable struct {
 	error
 }
