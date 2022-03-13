@@ -9,10 +9,6 @@ import (
 	"sync"
 )
 
-// CreateOrchestration creates an orchestration from the given request. The
-// function returns an error if the orchestration name is not valid.
-type CreateOrchestration func(*api.CreateOrchestrationRequest) error
-
 // GetOrchestrations retrieves stored orchestrations that match the
 // received req. The req is an orchestration with the fields that the
 // returned orchestrations should have. If a field is empty, then all values
@@ -22,18 +18,10 @@ type GetOrchestrations func(*api.GetOrchestrationRequest) (
 	error,
 )
 
-// CreateStage creates a new stage with the specified config.
-// It returns an error if the asset can not be created and nil otherwise.
-type CreateStage func(*api.CreateStageRequest) error
-
 // GetStages retrieves stored stages that match the received req.
 // The req is a stage with the fields that the returned stage should have.
 // If a field is empty, then all values for that field are accepted.
 type GetStages func(*api.GetStageRequest) ([]*api.Stage, error)
-
-// CreateLink creates a new link with the specified config. It returns an
-// error if the link is not created and nil otherwise.
-type CreateLink func(*api.CreateLinkRequest) error
 
 // GetLinks retrieves stored links that match the received req.
 // The req is a link with the fields that the returned stage should have.
@@ -44,24 +32,6 @@ type GetLinks func(*api.GetLinkRequest) ([]*api.Link, error)
 // The req is an asset with the fields that the returned stage should
 // have. If a field is empty, then all values for that field are accepted.
 type GetAssets func(*api.GetAssetRequest) ([]*api.Asset, error)
-
-func CreateOrchestrationWithTxn(txn *badger.Txn) CreateOrchestration {
-	return func(req *api.CreateOrchestrationRequest) error {
-		var err error
-		if err = validateCreateOrchestrationConfig(txn, req); err != nil {
-			return err
-		}
-
-		o := &api.Orchestration{
-			Name:   req.Name,
-			Phase:  api.OrchestrationPending,
-			Stages: []api.StageName{},
-			Links:  []api.LinkName{},
-		}
-		helper := storage.NewTxnHelper(txn)
-		return helper.SaveOrchestration(o)
-	}
-}
 
 func GetOrchestrationsWithTxn(txn *badger.Txn) GetOrchestrations {
 	return func(req *api.GetOrchestrationRequest) (
@@ -95,19 +65,6 @@ func GetOrchestrationsWithTxn(txn *badger.Txn) GetOrchestrations {
 	}
 }
 
-func CreateStageWithTxn(txn *badger.Txn) CreateStage {
-	return func(req *api.CreateStageRequest) error {
-		var err error
-		helper := storage.NewTxnHelper(txn)
-		ctx := newCreateStageContext(req, helper)
-
-		if err = ctx.validateAndComplete(); err != nil {
-			return err
-		}
-		return ctx.persist()
-	}
-}
-
 func GetStagesWithTxn(txn *badger.Txn) GetStages {
 	return func(req *api.GetStageRequest) ([]*api.Stage, error) {
 		var err error
@@ -134,19 +91,6 @@ func GetStagesWithTxn(txn *badger.Txn) GetStages {
 			return nil, err
 		}
 		return res, nil
-	}
-}
-
-func CreateLinkWithTxn(txn *badger.Txn) CreateLink {
-	return func(req *api.CreateLinkRequest) error {
-		var err error
-		helper := storage.NewTxnHelper(txn)
-		ctx := newCreateLinkContext(req, helper)
-
-		if err = ctx.validateAndComplete(); err != nil {
-			return err
-		}
-		return ctx.persist()
 	}
 }
 
