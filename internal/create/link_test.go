@@ -202,18 +202,18 @@ type mockLinkStorage struct {
 	links map[internal.LinkName]internal.Link
 }
 
-func (m mockLinkStorage) Save(l internal.Link) LinkResult {
+func (m mockLinkStorage) Save(l internal.Link) error {
 	m.links[l.Name()] = l
-	return SomeLink(l)
+	return nil
 }
 
-func (m mockLinkStorage) Load(name internal.LinkName) LinkResult {
+func (m mockLinkStorage) Load(name internal.LinkName) (internal.Link, error) {
 	l, exists := m.links[name]
 	if !exists {
 		err := &internal.NotFound{Type: "link", Ident: name.Unwrap()}
-		return ErrLink(err)
+		return internal.Link{}, err
 	}
-	return SomeLink(l)
+	return l, nil
 }
 
 func createLink(

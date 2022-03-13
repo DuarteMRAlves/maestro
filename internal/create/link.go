@@ -9,11 +9,11 @@ import (
 )
 
 type LinkSaver interface {
-	Save(internal.Link) LinkResult
+	Save(internal.Link) error
 }
 
 type LinkLoader interface {
-	Load(internal.LinkName) LinkResult
+	Load(internal.LinkName) (internal.Link, error)
 }
 
 type LinkStorage interface {
@@ -37,6 +37,7 @@ type LinkResponse struct {
 }
 
 var (
+	EmptyLinkName    = fmt.Errorf("empty link name")
 	EmptySourceField = fmt.Errorf("empty source field")
 	EmptyTargetField = fmt.Errorf("empty target field")
 )
@@ -47,138 +48,104 @@ func CreateLink(
 	orchStorage OrchestrationStorage,
 ) func(LinkRequest) LinkResponse {
 	return func(req LinkRequest) LinkResponse {
-		res := requestToLink(req)
-		res = BindLink(verifyDupLink(storage))(res)
-		res = BindLink(verifyExistsOrchestrationLink(orchStorage))(res)
-		res = BindLink(verifyExistsSource(stageLoader))(res)
-		res = BindLink(verifyExistsTarget(stageLoader))(res)
-		res = BindLink(addLink(orchStorage, orchStorage))(res)
-		res = BindLink(storage.Save)(res)
-		return linkToResponse(res)
-	}
-}
-
-func requestToLink(req LinkRequest) LinkResult {
-	name, err := internal.NewLinkName(req.Name)
-	if err != nil {
-		return ErrLink(err)
-	}
-	sourceStage, err := internal.NewStageName(req.SourceStage)
-	if err != nil {
-		return ErrLink(err)
-	}
-
-	sourceFieldOpt := internal.NewEmptyMessageField()
-	if req.SourceField.Present() {
-		sourceField := internal.NewMessageField(req.SourceField.Unwrap())
-		if sourceField.IsEmpty() {
-			return ErrLink(EmptySourceField)
+		name, err := internal.NewLinkName(req.Name)
+		if err != nil {
+			return LinkResponse{Err: domain.NewPresentError(err)}
 		}
-		sourceFieldOpt = internal.NewPresentMessageField(sourceField)
-	}
-
-	targetStage, err := internal.NewStageName(req.TargetStage)
-
-	targetFieldOpt := internal.NewEmptyMessageField()
-	if req.TargetField.Present() {
-		targetField := internal.NewMessageField(req.TargetField.Unwrap())
-		if targetField.IsEmpty() {
-			return ErrLink(EmptyTargetField)
+		if name.IsEmpty() {
+			return LinkResponse{Err: domain.NewPresentError(EmptyLinkName)}
 		}
-		targetFieldOpt = internal.NewPresentMessageField(targetField)
-	}
 
-	orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
-	if err != nil {
-		return ErrLink(err)
-	}
-
-	sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
-	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
-
-	l := internal.NewLink(
-		name,
-		sourceEndpoint,
-		targetEndpoint,
-		orchestrationName,
-	)
-
-	return SomeLink(l)
-}
-
-func verifyDupLink(loader LinkLoader) func(internal.Link) LinkResult {
-	return func(l internal.Link) LinkResult {
-		res := loader.Load(l.Name())
-		if res.IsError() {
-			var notFound *internal.NotFound
-			err := res.Error()
-			if errors.As(err, &notFound) {
-				return SomeLink(l)
+		sourceStage, err := internal.NewStageName(req.SourceStage)
+		if err != nil {
+			return LinkResponse{Err: domain.NewPresentError(err)}
+		}
+		sourceFieldOpt := internal.NewEmptyMessageField()
+		if req.SourceField.Present() {
+			sourceField := internal.NewMessageField(req.SourceField.Unwrap())
+			if sourceField.IsEmpty() {
+				err := EmptySourceField
+				return LinkResponse{Err: domain.NewPresentError(err)}
 			}
-			return ErrLink(err)
+			sourceFieldOpt = internal.NewPresentMessageField(sourceField)
 		}
-		err := &internal.AlreadyExists{Type: "link", Ident: l.Name().Unwrap()}
-		return ErrLink(err)
-	}
-}
 
-func verifyExistsOrchestrationLink(orchLoader OrchestrationLoader) func(internal.Link) LinkResult {
-	return func(l internal.Link) LinkResult {
-		_, err := orchLoader.Load(l.Orchestration())
+		targetStage, err := internal.NewStageName(req.TargetStage)
 		if err != nil {
-			return ErrLink(err)
+			return LinkResponse{Err: domain.NewPresentError(err)}
 		}
-		return SomeLink(l)
-	}
-}
+		targetFieldOpt := internal.NewEmptyMessageField()
+		if req.TargetField.Present() {
+			targetField := internal.NewMessageField(req.TargetField.Unwrap())
+			if targetField.IsEmpty() {
+				err := EmptyTargetField
+				return LinkResponse{Err: domain.NewPresentError(err)}
+			}
+			targetFieldOpt = internal.NewPresentMessageField(targetField)
+		}
 
-func verifyExistsSource(stageLoader StageLoader) func(internal.Link) LinkResult {
-	return func(l internal.Link) LinkResult {
-		_, err := stageLoader.Load(l.Source().Stage())
+		orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
 		if err != nil {
-			return ErrLink(err)
+			return LinkResponse{Err: domain.NewPresentError(err)}
 		}
-		return SomeLink(l)
-	}
-}
 
-func verifyExistsTarget(stageLoader StageLoader) func(internal.Link) LinkResult {
-	return func(l internal.Link) LinkResult {
-		_, err := stageLoader.Load(l.Target().Stage())
+		_, err = storage.Load(name)
+		if err == nil {
+			err := &internal.AlreadyExists{Type: "link", Ident: name.Unwrap()}
+			return LinkResponse{Err: domain.NewPresentError(err)}
+		}
+		var notFound *internal.NotFound
+		if !errors.As(err, &notFound) {
+			return LinkResponse{Err: domain.NewPresentError(err)}
+		}
+
+		_, err = orchStorage.Load(orchestrationName)
 		if err != nil {
-			return ErrLink(err)
+			return LinkResponse{Err: domain.NewPresentError(err)}
 		}
-		return SomeLink(l)
-	}
-}
 
-func addLink(
-	loader OrchestrationLoader,
-	saver OrchestrationSaver,
-) func(internal.Link) LinkResult {
-	return func(l internal.Link) LinkResult {
-		name := l.Orchestration()
-		updateFn := addLinkNameToOrchestration(l.Name())
-		err := updateOrchestration(name, loader, updateFn, saver)
+		_, err = stageLoader.Load(sourceStage)
+		if err != nil {
+			return LinkResponse{Err: domain.NewPresentError(err)}
+		}
+
+		_, err = stageLoader.Load(targetStage)
+		if err != nil {
+			return LinkResponse{Err: domain.NewPresentError(err)}
+		}
+
+		updateFn := addLinkNameToOrchestration(name)
+		err = updateOrchestration(
+			orchestrationName,
+			orchStorage,
+			updateFn,
+			orchStorage,
+		)
 		if err != nil {
 			err := errdefs.PrependMsg(
 				err,
 				"add link %s to orchestration %s",
-				l.Name(),
-				l.Orchestration(),
+				name,
+				orchestrationName,
 			)
-			return ErrLink(err)
+			return LinkResponse{Err: domain.NewPresentError(err)}
 		}
-		return SomeLink(l)
-	}
-}
 
-func linkToResponse(res LinkResult) LinkResponse {
-	var errOpt domain.OptionalError
-	if res.IsError() {
-		errOpt = domain.NewPresentError(res.Error())
-	} else {
-		errOpt = domain.NewEmptyError()
+		sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
+		targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
+
+		l := internal.NewLink(
+			name,
+			sourceEndpoint,
+			targetEndpoint,
+			orchestrationName,
+		)
+
+		err = storage.Save(l)
+		errOpt := domain.NewEmptyError()
+		if err != nil {
+			errOpt = domain.NewPresentError(err)
+		}
+		return LinkResponse{Err: errOpt}
 	}
-	return LinkResponse{Err: errOpt}
 }
