@@ -8,6 +8,7 @@ import (
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+	"google.golang.org/grpc/status"
 )
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
@@ -21,7 +22,8 @@ func listServices(conn grpc.ClientConnInterface) func(context.Context) (
 		c := grpcreflect.NewClient(ctx, stub)
 		all, err := c.ListServices()
 		if err != nil {
-			return nil, handleGrpcError(err, "list services: ")
+			st, _ := status.FromError(err)
+			return nil, fmt.Errorf("list services: %w", st.Err())
 		}
 		// Filter the reflection service
 		services := make([]internal.Service, 0, len(all)-1)
@@ -45,7 +47,9 @@ func resolveService(conn grpc.ClientConnInterface) func(
 		if err != nil {
 			switch {
 			case isGrpcErr(err):
-				return nil, handleGrpcError(err, "resolve service: ")
+				st, _ := status.FromError(err)
+				err = fmt.Errorf("resolve service %s: %w", d.Unwrap(), st.Err())
+				return nil, err
 			case isElementNotFoundErr(err):
 				err := &internal.NotFound{Type: "service", Ident: d.Unwrap()}
 				return nil, fmt.Errorf("resolve service: %w", err)
@@ -62,4 +66,18 @@ func resolveService(conn grpc.ClientConnInterface) func(
 		}
 		return newService(descriptor)
 	}
+}
+
+func isGrpcErr(err error) bool {
+	_, ok := status.FromError(err)
+	return ok
+}
+
+func isElementNotFoundErr(err error) bool {
+	return grpcreflect.IsElementNotFoundError(err)
+}
+
+func isProtocolError(err error) bool {
+	_, ok := err.(*grpcreflect.ProtocolError)
+	return ok
 }

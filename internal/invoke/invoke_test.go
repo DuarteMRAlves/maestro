@@ -2,10 +2,12 @@ package invoke
 
 import (
 	"context"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"errors"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gotest.tools/v3/assert"
 	"net"
 	"testing"
@@ -97,8 +99,13 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	reply := &unit.Reply{}
 	err = invoke(ctx, errorRequest, reply)
 
-	assert.Assert(t, errdefs.IsUnknown(err), "error is not unknown")
-	assert.ErrorContains(t, err, "unary invoke: ")
+	assert.Assert(t, err != nil)
+	cause, ok := errors.Unwrap(err).(interface {
+		GRPCStatus() *status.Status
+	})
+	st := cause.GRPCStatus()
+	assert.Assert(t, ok, "correct type")
+	assert.Equal(t, codes.Unknown, st.Code())
 }
 
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
@@ -117,17 +124,18 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	invoke := NewUnaryInvoke("unit.ExtraService/ExtraMethod", conn)
+	method := "unit.ExtraService/ExtraMethod"
+	invoke := NewUnaryInvoke(method, conn)
 
 	reply := &unit.Reply{}
 	err = invoke(ctx, errorRequest, reply)
-
-	assert.Assert(
-		t,
-		errdefs.IsFailedPrecondition(err),
-		"error is not FailedPrecondition",
-	)
-	assert.ErrorContains(t, err, "unary invoke: ")
+	assert.Assert(t, err != nil)
+	cause, ok := errors.Unwrap(err).(interface {
+		GRPCStatus() *status.Status
+	})
+	st := cause.GRPCStatus()
+	assert.Assert(t, ok, "correct type")
+	assert.Equal(t, codes.Unimplemented, st.Code())
 }
 
 func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
@@ -146,15 +154,16 @@ func TestUnaryClient_Invoke_MethodDoesNotExist(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	invoke := NewUnaryInvoke("unit.TestService/NoSuchMethod", conn)
+	method := "unit.TestService/NoSuchMethod"
+	invoke := NewUnaryInvoke(method, conn)
 
 	reply := &unit.Reply{}
 	err = invoke(ctx, errorRequest, reply)
-
-	assert.Assert(
-		t,
-		errdefs.IsFailedPrecondition(err),
-		"error is not FailedPrecondition",
-	)
-	assert.ErrorContains(t, err, "unary invoke: ")
+	assert.Assert(t, err != nil)
+	cause, ok := errors.Unwrap(err).(interface {
+		GRPCStatus() *status.Status
+	})
+	st := cause.GRPCStatus()
+	assert.Assert(t, ok, "correct type")
+	assert.Equal(t, codes.Unimplemented, st.Code())
 }
