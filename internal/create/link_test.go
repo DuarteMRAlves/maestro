@@ -103,7 +103,7 @@ func TestCreateLink(t *testing.T) {
 					},
 				}
 
-				createFn := CreateLink(linkStore, stageStore, orchStore)
+				createFn := Link(linkStore, stageStore, orchStore)
 				err := createFn(test.req)
 
 				assert.NilError(t, err)
@@ -164,7 +164,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		},
 	}
 
-	createFn := CreateLink(linkStore, stageStore, orchStore)
+	createFn := Link(linkStore, stageStore, orchStore)
 	err := createFn(req)
 
 	assert.NilError(t, err)
