@@ -25,20 +25,16 @@ type AssetRequest struct {
 	Image domain.OptionalString
 }
 
-type AssetResponse struct {
-	Err domain.OptionalError
-}
-
 var EmptyAssetName = fmt.Errorf("empty asset name")
 
-func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
-	return func(req AssetRequest) AssetResponse {
+func Asset(storage AssetStorage) func(AssetRequest) error {
+	return func(req AssetRequest) error {
 		name, err := internal.NewAssetName(req.Name)
 		if err != nil {
-			return AssetResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		if name.IsEmpty() {
-			return AssetResponse{Err: domain.NewPresentError(EmptyAssetName)}
+			return EmptyAssetName
 		}
 		imgOpt := internal.NewEmptyImage()
 		if req.Image.Present() {
@@ -48,19 +44,13 @@ func Asset(storage AssetStorage) func(AssetRequest) AssetResponse {
 		// Expect key not found
 		_, err = storage.Load(name)
 		if err == nil {
-			err := &internal.AlreadyExists{Type: "asset", Ident: name.Unwrap()}
-			return AssetResponse{Err: domain.NewPresentError(err)}
+			return &internal.AlreadyExists{Type: "asset", Ident: name.Unwrap()}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {
-			return AssetResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		asset := internal.NewAsset(name, imgOpt)
-		err = storage.Save(asset)
-		errOpt := domain.NewEmptyError()
-		if err != nil {
-			errOpt = domain.NewPresentError(err)
-		}
-		return AssetResponse{Err: errOpt}
+		return storage.Save(asset)
 	}
 }

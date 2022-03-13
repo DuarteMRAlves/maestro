@@ -40,8 +40,8 @@ func TestCreateAsset(t *testing.T) {
 				}
 
 				createFn := Asset(storage)
-				res := createFn(test.req)
-				assert.Assert(t, !res.Err.Present())
+				err := createFn(test.req)
+				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(storage.assets))
 
@@ -74,13 +74,11 @@ func TestCreateAsset_Err(t *testing.T) {
 				}
 
 				createFn := Asset(storage)
-				res := createFn(test.req)
-				assert.Assert(t, res.Err.Present())
+				err := createFn(test.req)
+				assert.Assert(t, err != nil)
+				assert.Assert(t, errors.Is(err, test.isError))
 
 				assert.Equal(t, 0, len(storage.assets))
-
-				err := res.Err.Unwrap()
-				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}
@@ -98,16 +96,15 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 
 	createFn := Asset(storage)
 
-	res := createFn(req)
-	assert.Assert(t, !res.Err.Present())
+	err := createFn(req)
+	assert.NilError(t, err, "first create")
 	assert.Equal(t, 1, len(storage.assets))
 	asset, exists := storage.assets[expected.Name()]
 	assert.Assert(t, exists)
 	assertEqualAsset(t, expected, asset)
 
-	res = createFn(req)
-	assert.Assert(t, res.Err.Present())
-	err := res.Err.Unwrap()
+	err = createFn(req)
+	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "asset", alreadyExists.Type)

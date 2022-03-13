@@ -104,9 +104,9 @@ func TestCreateLink(t *testing.T) {
 				}
 
 				createFn := CreateLink(linkStore, stageStore, orchStore)
-				res := createFn(test.req)
+				err := createFn(test.req)
 
-				assert.Assert(t, !res.Err.Present())
+				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(linkStore.links))
 				l, exists := linkStore.links[test.expLink.Name()]
@@ -165,9 +165,9 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 
 	createFn := CreateLink(linkStore, stageStore, orchStore)
-	res := createFn(req)
+	err := createFn(req)
 
-	assert.Assert(t, !res.Err.Present())
+	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(linkStore.links))
 	l, exists := linkStore.links[expLink.Name()]
@@ -179,10 +179,9 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
-	res = createFn(req)
+	err = createFn(req)
 
-	assert.Assert(t, res.Err.Present())
-	err := res.Err.Unwrap()
+	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "link", alreadyExists.Type)
