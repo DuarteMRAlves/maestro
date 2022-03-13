@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
 type OrchestrationSaver interface {
@@ -24,34 +23,28 @@ type OrchestrationRequest struct {
 	Name string
 }
 
-type OrchestrationResponse struct {
-	Err domain.OptionalError
-}
-
 var EmptyOrchestrationName = fmt.Errorf("empty orchestration name")
 
-func Create(storage OrchestrationStorage) func(OrchestrationRequest) OrchestrationResponse {
-	return func(req OrchestrationRequest) OrchestrationResponse {
+func Create(storage OrchestrationStorage) func(OrchestrationRequest) error {
+	return func(req OrchestrationRequest) error {
 		name, err := internal.NewOrchestrationName(req.Name)
 		if err != nil {
-			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		if name.IsEmpty() {
-			err := EmptyOrchestrationName
-			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+			return EmptyOrchestrationName
 		}
 
 		_, err = storage.Load(name)
 		if err == nil {
-			err := &internal.AlreadyExists{
+			return &internal.AlreadyExists{
 				Type:  "orchestration",
 				Ident: name.Unwrap(),
 			}
-			return OrchestrationResponse{Err: domain.NewPresentError(err)}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {
-			return OrchestrationResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 
 		o := internal.NewOrchestration(
@@ -59,12 +52,7 @@ func Create(storage OrchestrationStorage) func(OrchestrationRequest) Orchestrati
 			[]internal.StageName{},
 			[]internal.LinkName{},
 		)
-		err = storage.Save(o)
-		errOpt := domain.NewEmptyError()
-		if err != nil {
-			errOpt = domain.NewPresentError(err)
-		}
-		return OrchestrationResponse{Err: errOpt}
+		return storage.Save(o)
 	}
 }
 

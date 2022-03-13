@@ -14,8 +14,8 @@ func TestCreateOrchestration(t *testing.T) {
 
 	createFn := Create(storage)
 
-	res := createFn(req)
-	assert.Assert(t, !res.Err.Present())
+	err := createFn(req)
+	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(storage.orchs))
 
@@ -45,13 +45,11 @@ func TestCreateOrchestration_Err(t *testing.T) {
 				}
 
 				createFn := Create(storage)
-				res := createFn(test.req)
-				assert.Assert(t, res.Err.Present())
+				err := createFn(test.req)
+				assert.Assert(t, err != nil)
+				assert.Assert(t, errors.Is(err, test.isError))
 
 				assert.Equal(t, 0, len(storage.orchs))
-
-				err := res.Err.Unwrap()
-				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}
@@ -64,17 +62,16 @@ func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 
 	createFn := Create(storage)
 
-	res := createFn(req)
-	assert.Assert(t, !res.Err.Present())
+	err := createFn(req)
+	assert.NilError(t, err)
 	assert.Equal(t, 1, len(storage.orchs))
 
 	o, exists := storage.orchs[expected.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expected, o)
 
-	res = createFn(req)
-	assert.Assert(t, res.Err.Present())
-	err := res.Err.Unwrap()
+	err = createFn(req)
+	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "orchestration", alreadyExists.Type)

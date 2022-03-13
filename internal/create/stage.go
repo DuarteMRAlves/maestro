@@ -31,10 +31,6 @@ type StageRequest struct {
 	Orchestration string
 }
 
-type StageResponse struct {
-	Err domain.OptionalError
-}
-
 var (
 	EmptyStageName = fmt.Errorf("empty stage name")
 	EmptyAddress   = fmt.Errorf("empty address")
@@ -45,27 +41,27 @@ var (
 func Stage(
 	stageStorage StageStorage,
 	orchStorage OrchestrationStorage,
-) func(StageRequest) StageResponse {
-	return func(req StageRequest) StageResponse {
+) func(StageRequest) error {
+	return func(req StageRequest) error {
 		serviceOpt := internal.NewEmptyService()
 		methodOpt := internal.NewEmptyMethod()
 
 		name, err := internal.NewStageName(req.Name)
 		if err != nil {
-			return StageResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		if name.IsEmpty() {
-			return StageResponse{Err: domain.NewPresentError(EmptyStageName)}
+			return EmptyStageName
 		}
 		addr := internal.NewAddress(req.Address)
 		if addr.IsEmpty() {
-			return StageResponse{Err: domain.NewPresentError(EmptyAddress)}
+			return EmptyAddress
 		}
 
 		if req.Service.Present() {
 			service := internal.NewService(req.Service.Unwrap())
 			if service.IsEmpty() {
-				return StageResponse{Err: domain.NewPresentError(EmptyService)}
+				return EmptyService
 			}
 			serviceOpt = internal.NewPresentService(service)
 		}
@@ -73,7 +69,7 @@ func Stage(
 		if req.Method.Present() {
 			method := internal.NewMethod(req.Method.Unwrap())
 			if method.IsEmpty() {
-				return StageResponse{Err: domain.NewPresentError(EmptyMethod)}
+				return EmptyMethod
 			}
 			methodOpt = internal.NewPresentMethod(method)
 		}
@@ -82,21 +78,20 @@ func Stage(
 
 		orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
 		if err != nil {
-			return StageResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 
 		_, err = stageStorage.Load(name)
 		if err == nil {
-			err := &internal.AlreadyExists{Type: "stage", Ident: name.Unwrap()}
-			return StageResponse{Err: domain.NewPresentError(err)}
+			return &internal.AlreadyExists{Type: "stage", Ident: name.Unwrap()}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {
-			return StageResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		_, err = orchStorage.Load(orchestrationName)
 		if err != nil {
-			return StageResponse{Err: domain.NewPresentError(err)}
+			return err
 		}
 		updateFn := addStageNameToOrchestration(name)
 		err = updateOrchestration(
@@ -106,20 +101,14 @@ func Stage(
 			orchStorage,
 		)
 		if err != nil {
-			err := errdefs.PrependMsg(
+			return errdefs.PrependMsg(
 				err,
 				"add stage %s to orchestration: %s",
 				name,
 				orchestrationName,
 			)
-			return StageResponse{Err: domain.NewPresentError(err)}
 		}
 		stage := internal.NewStage(name, ctx, orchestrationName)
-		err = stageStorage.Save(stage)
-		errOpt := domain.NewEmptyError()
-		if err != nil {
-			errOpt = domain.NewPresentError(err)
-		}
-		return StageResponse{Err: errOpt}
+		return stageStorage.Save(stage)
 	}
 }

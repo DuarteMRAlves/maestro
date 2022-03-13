@@ -89,8 +89,8 @@ func TestCreateStage(t *testing.T) {
 
 				createFn := Stage(stageStore, orchStore)
 
-				res := createFn(test.req)
-				assert.Assert(t, !res.Err.Present())
+				err := createFn(test.req)
+				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(stageStore.stages))
 				s, exists := stageStore.stages[test.expStage.Name()]
@@ -182,13 +182,11 @@ func TestCreateStage_Err(t *testing.T) {
 				}
 
 				createFn := Stage(stageStore, orchStore)
-				res := createFn(test.req)
-				assert.Assert(t, res.Err.Present())
+				err := createFn(test.req)
+				assert.Assert(t, err != nil)
+				assert.Assert(t, errors.Is(err, test.isError))
 
 				assert.Equal(t, 0, len(stageStore.stages))
-
-				err := res.Err.Unwrap()
-				assert.Assert(t, errors.Is(err, test.isError))
 			},
 		)
 	}
@@ -223,8 +221,8 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 
 	createFn := Stage(stageStore, orchStore)
 
-	res := createFn(req)
-	assert.Assert(t, !res.Err.Present())
+	err := createFn(req)
+	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(stageStore.stages))
 	s, exists := stageStore.stages[expStage.Name()]
@@ -236,9 +234,8 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
-	res = createFn(req)
-	assert.Assert(t, res.Err.Present())
-	err := res.Err.Unwrap()
+	err = createFn(req)
+	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "stage", alreadyExists.Type)
