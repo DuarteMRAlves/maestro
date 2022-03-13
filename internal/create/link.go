@@ -49,7 +49,7 @@ func (err *StageNotInOrchestration) Error() string {
 	return fmt.Sprintf(format, err.Stage, err.Orch)
 }
 
-func CreateLink(
+func Link(
 	storage LinkStorage,
 	stageLoader StageLoader,
 	orchStorage OrchestrationStorage,

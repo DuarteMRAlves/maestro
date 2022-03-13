@@ -12,7 +12,7 @@ func TestCreateOrchestration(t *testing.T) {
 	expected := createOrchestration(t, "some-name", nil, nil)
 	storage := mockOrchestrationStorage{orchs: map[internal.OrchestrationName]internal.Orchestration{}}
 
-	createFn := Create(storage)
+	createFn := Orchestration(storage)
 
 	err := createFn(req)
 	assert.NilError(t, err)
@@ -44,7 +44,7 @@ func TestCreateOrchestration_Err(t *testing.T) {
 					orchs: map[internal.OrchestrationName]internal.Orchestration{},
 				}
 
-				createFn := Create(storage)
+				createFn := Orchestration(storage)
 				err := createFn(test.req)
 				assert.Assert(t, err != nil)
 				assert.Assert(t, errors.Is(err, test.isError))
@@ -60,7 +60,7 @@ func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	expected := createOrchestration(t, "some-name", nil, nil)
 	storage := mockOrchestrationStorage{orchs: map[internal.OrchestrationName]internal.Orchestration{}}
 
-	createFn := Create(storage)
+	createFn := Orchestration(storage)
 
 	err := createFn(req)
 	assert.NilError(t, err)

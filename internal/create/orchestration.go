@@ -25,7 +25,7 @@ type OrchestrationRequest struct {
 
 var EmptyOrchestrationName = fmt.Errorf("empty orchestration name")
 
-func Create(storage OrchestrationStorage) func(OrchestrationRequest) error {
+func Orchestration(storage OrchestrationStorage) func(OrchestrationRequest) error {
 	return func(req OrchestrationRequest) error {
 		name, err := internal.NewOrchestrationName(req.Name)
 		if err != nil {
