@@ -2,7 +2,6 @@ package create
 
 import (
 	"errors"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
@@ -19,23 +18,15 @@ type OrchestrationStorage interface {
 	OrchestrationLoader
 }
 
-type OrchestrationRequest struct {
-	Name string
-}
+var EmptyOrchestrationName = errors.New("empty orchestration name")
 
-var EmptyOrchestrationName = fmt.Errorf("empty orchestration name")
-
-func Orchestration(storage OrchestrationStorage) func(OrchestrationRequest) error {
-	return func(req OrchestrationRequest) error {
-		name, err := internal.NewOrchestrationName(req.Name)
-		if err != nil {
-			return err
-		}
+func Orchestration(storage OrchestrationStorage) func(internal.OrchestrationName) error {
+	return func(name internal.OrchestrationName) error {
 		if name.IsEmpty() {
 			return EmptyOrchestrationName
 		}
 
-		_, err = storage.Load(name)
+		_, err := storage.Load(name)
 		if err == nil {
 			return &internal.AlreadyExists{
 				Type:  "orchestration",

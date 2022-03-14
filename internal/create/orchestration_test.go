@@ -8,13 +8,14 @@ import (
 )
 
 func TestCreateOrchestration(t *testing.T) {
-	req := OrchestrationRequest{Name: "some-name"}
-	expected := createOrchestration(t, "some-name", nil, nil)
+	name := "some-name"
+	orchName := createOrchestrationName(t, name)
+	expected := createOrchestration(t, name, nil, nil)
 	storage := mockOrchestrationStorage{orchs: map[internal.OrchestrationName]internal.Orchestration{}}
 
 	createFn := Orchestration(storage)
 
-	err := createFn(req)
+	err := createFn(orchName)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(storage.orchs))
@@ -26,14 +27,14 @@ func TestCreateOrchestration(t *testing.T) {
 
 func TestCreateOrchestration_Err(t *testing.T) {
 	tests := []struct {
-		name    string
-		req     OrchestrationRequest
-		isError error
+		name     string
+		orchName internal.OrchestrationName
+		isError  error
 	}{
 		{
-			name:    "empty name",
-			req:     OrchestrationRequest{Name: ""},
-			isError: EmptyOrchestrationName,
+			name:     "empty name",
+			orchName: createOrchestrationName(t, ""),
+			isError:  EmptyOrchestrationName,
 		},
 	}
 	for _, test := range tests {
@@ -45,7 +46,7 @@ func TestCreateOrchestration_Err(t *testing.T) {
 				}
 
 				createFn := Orchestration(storage)
-				err := createFn(test.req)
+				err := createFn(test.orchName)
 				assert.Assert(t, err != nil)
 				assert.Assert(t, errors.Is(err, test.isError))
 
@@ -56,13 +57,14 @@ func TestCreateOrchestration_Err(t *testing.T) {
 }
 
 func TestCreateOrchestration_AlreadyExists(t *testing.T) {
-	req := OrchestrationRequest{Name: "some-name"}
-	expected := createOrchestration(t, "some-name", nil, nil)
+	name := "some-name"
+	orchName := createOrchestrationName(t, name)
+	expected := createOrchestration(t, name, nil, nil)
 	storage := mockOrchestrationStorage{orchs: map[internal.OrchestrationName]internal.Orchestration{}}
 
 	createFn := Orchestration(storage)
 
-	err := createFn(req)
+	err := createFn(orchName)
 	assert.NilError(t, err)
 	assert.Equal(t, 1, len(storage.orchs))
 
@@ -70,12 +72,12 @@ func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expected, o)
 
-	err = createFn(req)
+	err = createFn(orchName)
 	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "orchestration", alreadyExists.Type)
-	assert.Equal(t, req.Name, alreadyExists.Ident)
+	assert.Equal(t, name, alreadyExists.Ident)
 	assert.Equal(t, 1, len(storage.orchs))
 
 	o, exists = storage.orchs[expected.Name()]
@@ -102,6 +104,15 @@ func (m mockOrchestrationStorage) Load(name internal.OrchestrationName) (
 		return internal.Orchestration{}, err
 	}
 	return o, nil
+}
+
+func createOrchestrationName(
+	t *testing.T,
+	orchName string,
+) internal.OrchestrationName {
+	name, err := internal.NewOrchestrationName(orchName)
+	assert.NilError(t, err, "create orchestration name %s", orchName)
+	return name
 }
 
 func createOrchestration(
