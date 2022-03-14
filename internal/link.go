@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
@@ -15,8 +14,7 @@ func (s LinkName) IsEmpty() bool { return s.val == "" }
 
 func NewLinkName(name string) (LinkName, error) {
 	if !isValidLinkName(name) {
-		err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
-		return LinkName{}, err
+		return LinkName{}, &InvalidIdentifier{Type: "link", Ident: name}
 	}
 	return LinkName{val: name}, nil
 }

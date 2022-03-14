@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
@@ -19,7 +18,7 @@ func NewOrchestrationName(name string) (OrchestrationName, error) {
 	if isValidOrchestrationName(name) {
 		return OrchestrationName{name}, nil
 	}
-	err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
+	err := &InvalidIdentifier{Type: "orchestration", Ident: name}
 	return emptyOrchestrationName, err
 }
 

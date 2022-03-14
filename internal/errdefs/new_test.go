@@ -6,28 +6,6 @@ import (
 	"testing"
 )
 
-func TestInvalidArgumentWithError(t *testing.T) {
-	var ok bool
-	err := InvalidArgumentWithError(dummyErr)
-	_, ok = err.(InvalidArgument)
-	assert.Assert(t, ok, "InvalidArgument interface")
-	_, ok = err.(invalidArgument)
-	assert.Assert(t, ok, "invalidArgument struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
-func TestInvalidArgumentWithMessage(t *testing.T) {
-	var ok bool
-	err := InvalidArgumentWithMsg(dummyErrMsg)
-	_, ok = err.(InvalidArgument)
-	assert.Assert(t, ok, "InvalidArgument interface")
-	_, ok = err.(invalidArgument)
-	assert.Assert(t, ok, "invalidArgument struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
 func TestInternalWithError(t *testing.T) {
 	var ok bool
 	err := InternalWithError(dummyErr)
@@ -62,11 +40,6 @@ func TestPrependMsg(t *testing.T) {
 		err       error
 		valTypeFn func(err error) bool
 	}{
-		{
-			name:      "invalid argument error",
-			err:       InvalidArgumentWithMsg(dummyErrMsg),
-			valTypeFn: IsInvalidArgument,
-		},
 		{
 			name:      "internal error",
 			err:       InternalWithMsg(dummyErrMsg),

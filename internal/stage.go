@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
@@ -15,8 +14,7 @@ func (s StageName) IsEmpty() bool { return s.val == "" }
 
 func NewStageName(name string) (StageName, error) {
 	if !isValidStageName(name) {
-		err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
-		return StageName{}, err
+		return StageName{}, &InvalidIdentifier{Type: "stage", Ident: name}
 	}
 	return StageName{val: name}, nil
 }
