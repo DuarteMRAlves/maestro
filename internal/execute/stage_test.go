@@ -2,204 +2,121 @@ package execute
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/invoke"
-	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jhump/protoreflect/dynamic"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
-	"net"
 	"testing"
 )
 
 func TestUnaryStage_Run(t *testing.T) {
-	var collect []state
+	var received []state
 
 	stageDone := make(chan struct{})
-	serverDone := make(chan struct{})
+	receiveDone := make(chan struct{})
 
-	requests := testRequests(t)
+	fieldName := internal.NewMessageField("field")
+
+	requests := testRequests(fieldName)
 	states := []state{
 		newState(1, requests[0]),
 		newState(3, requests[1]),
 		newState(5, requests[2]),
 	}
 
-	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
-	addr := lis.Addr().String()
-	server := startTestServer(t, lis)
-	defer server.Stop()
-
 	input := make(chan state, len(requests))
 	output := make(chan state, len(requests))
 
-	outDesc, err := invoke.NewMessageDescriptor(&unit.Reply{})
-	assert.NilError(t, err, "create input descriptor")
-
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "unable to connect to address: %s", addr)
-
-	invokeFn := invoke.NewUnaryInvoke("unit.TestService/Unary", conn)
-
-	stage := newUnaryStage(input, output, outDesc.MessageGenerator(), invokeFn)
+	method := testUnaryMethod(fieldName)
+	stage := newUnaryStage(input, output, mock.NewGen(), method)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go func() {
-		_ = stage.Run(ctx)
+		err := stage.Run(ctx)
+		assert.NilError(t, err)
 		close(stageDone)
 	}()
 
 	go func() {
 		for i := 0; i < len(states); i++ {
 			c := <-output
-			collect = append(collect, c)
+			received = append(received, c)
 		}
-		close(serverDone)
+		close(receiveDone)
 	}()
 
 	input <- states[0]
 	input <- states[1]
 	input <- states[2]
-	<-serverDone
+	<-receiveDone
 	cancel()
 	<-stageDone
 	close(input)
 
-	assert.Assert(t, len(collect) == len(states))
-	for i, c := range collect {
+	assert.Assert(t, len(received) == len(states))
+	for i, rcv := range received {
 		in := states[i]
-		assert.Equal(t, in.id, c.id, "correct received id")
+		assert.Equal(t, in.id, rcv.id, "correct received id")
 
-		dynReq, err := dynamic.AsDynamicMessage(in.msg.GrpcMessage())
-		assert.Assert(t, err, "request dynamic message")
-		req := &unit.Request{}
-		err = dynReq.ConvertTo(req)
-		assert.NilError(t, err, "convert dynamic to Request")
+		reqMock, ok := in.msg.(*mock.Message)
+		assert.Assert(t, ok, "request mock message")
 
-		dynRep, err := dynamic.AsDynamicMessage(c.msg.GrpcMessage())
-		assert.NilError(t, err, "reply dynamic message")
-		rep := &unit.Reply{}
-		err = dynRep.ConvertTo(rep)
-		assert.NilError(t, err, "convert dynamic to Reply")
+		assert.Equal(t, 1, len(reqMock.Fields))
+		reqVal, ok := reqMock.Fields[fieldName]
+		assert.Assert(t, ok, "field exists")
+		assert.Equal(t, fmt.Sprintf("val%d", i+1), reqVal.(string))
 
-		assertUnaryRequest(t, req, rep)
+		repMock, ok := rcv.msg.(*mock.Message)
+		assert.Assert(t, ok, "reply mock message")
+		repVal, ok := repMock.Fields[fieldName]
+		assert.Assert(t, ok, "field exists")
+		assert.Equal(t, fmt.Sprintf("val%dval%d", i+1, i+1), repVal.(string))
 	}
 }
 
-func testRequests(t *testing.T) []invoke.DynamicMessage {
-	msg1, err := invoke.NewDynamicMessage(
-		&unit.Request{
-			StringField:   "string-1",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*unit.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "1"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-	)
-	assert.NilError(t, err, "create message 1")
-	msg2, err := invoke.NewDynamicMessage(
-		&unit.Request{
-			StringField:   "string-2",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*unit.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "2"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "2"},
-				},
-			},
-		},
-	)
-	assert.NilError(t, err, "create message 2")
-	msg3, err := invoke.NewDynamicMessage(
-		&unit.Request{
-			StringField:   "string-3",
-			RepeatedField: []int64{1, 2, 3, 4},
-			RepeatedInnerMsg: []*unit.InnerMessage{
-				{
-					RepeatedString: []string{"hello", "world", "3"},
-				},
-				{
-					RepeatedString: []string{"other", "message", "3"},
-				},
-			},
-		},
-	)
-	assert.NilError(t, err, "create message 3")
+func testRequests(field internal.MessageField) []*mock.Message {
+	fields1 := map[internal.MessageField]interface{}{field: "val1"}
+	msg1 := &mock.Message{Fields: fields1}
 
-	return []invoke.DynamicMessage{msg1, msg2, msg3}
+	fields2 := map[internal.MessageField]interface{}{field: "val2"}
+	msg2 := &mock.Message{Fields: fields2}
+
+	fields3 := map[internal.MessageField]interface{}{field: "val3"}
+	msg3 := &mock.Message{Fields: fields3}
+
+	return []*mock.Message{msg1, msg2, msg3}
 }
 
-func assertUnaryRequest(t *testing.T, req *unit.Request, rep *unit.Reply) {
-	expected := replyFromRequest(req)
-	opts := cmpopts.IgnoreUnexported(unit.Reply{}, unit.InnerMessage{})
-	assert.DeepEqual(t, expected, rep, opts)
-}
-
-func startTestServer(
-	t *testing.T,
-	lis net.Listener,
-) *grpc.Server {
-	testServer := grpc.NewServer()
-	service := &testService{}
-	unit.RegisterTestServiceServer(testServer, service)
-
-	reflection.Register(testServer)
-
-	go func() {
-		err := testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
-	}()
-	return testServer
-}
-
-type testService struct {
-	unit.UnimplementedTestServiceServer
-	unit.UnimplementedExtraServiceServer
-}
-
-func (s *testService) Unary(
-	_ context.Context,
-	request *unit.Request,
-) (*unit.Reply, error) {
-	if request.StringField == "error" {
-		return nil, fmt.Errorf("dummy error")
-	}
-	return replyFromRequest(request), nil
-}
-
-func replyFromRequest(request *unit.Request) *unit.Reply {
-	doubleField := float64(len(request.StringField))
-	for _, val := range request.RepeatedField {
-		doubleField += float64(val)
-	}
-
-	innerMsg := &unit.InnerMessage{RepeatedString: []string{}}
-	for _, inner := range request.RepeatedInnerMsg {
-		repeatedString := ""
-		for _, str := range inner.RepeatedString {
-			repeatedString += str
+func testUnaryMethod(field internal.MessageField) func(
+	ctx context.Context,
+	req, rep internal.Message,
+) error {
+	return func(ctx context.Context, req, rep internal.Message) error {
+		reqMock, ok := req.(*mock.Message)
+		if !ok {
+			return errors.New("request message is not *mock.Message")
 		}
-		innerMsg.RepeatedString = append(
-			innerMsg.RepeatedString,
-			repeatedString,
-		)
-	}
-	return &unit.Reply{
-		DoubleField: doubleField,
-		InnerMsg:    innerMsg,
+		repMock, ok := rep.(*mock.Message)
+		if !ok {
+			return errors.New("reply message is not *mock.Message")
+		}
+		if len(repMock.Fields) != 0 {
+			return errors.New("reply message is not empty")
+		}
+		val1, ok := reqMock.Fields[field]
+		if !ok {
+			return errors.New("request message does not have field1 field")
+		}
+		val1AsString, ok := val1.(string)
+		if !ok {
+			return errors.New("request message field1 is not a string")
+		}
+		replyField := val1AsString + val1AsString
+		repMock.Fields[field] = replyField
+		return nil
 	}
 }
 
@@ -207,11 +124,8 @@ func TestSourceStage_Run(t *testing.T) {
 	start := int32(1)
 	numRequest := 10
 
-	msgDesc, err := invoke.NewMessageDescriptor(&unit.Request{})
-	assert.NilError(t, err, "request message descriptor")
-
 	output := make(chan state)
-	s := newSourceStage(start, msgDesc.MessageGenerator(), output)
+	s := newSourceStage(start, mock.NewGen(), output)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -236,9 +150,14 @@ func TestSourceStage_Run(t *testing.T) {
 }
 
 func TestMergeStage_Run(t *testing.T) {
-	f1 := internal.NewMessageField("in1")
-	f2 := internal.NewMessageField("in2")
-	f3 := internal.NewMessageField("in3")
+	inner1 := internal.NewMessageField("inner1")
+	inner2 := internal.NewMessageField("inner2")
+	inner3 := internal.NewMessageField("inner3")
+	inner := []internal.MessageField{inner1, inner2, inner3}
+
+	f1 := internal.NewMessageField("f1")
+	f2 := internal.NewMessageField("f2")
+	f3 := internal.NewMessageField("f3")
 	fields := []internal.MessageField{f1, f2, f3}
 
 	input1 := make(chan state)
@@ -251,35 +170,32 @@ func TestMergeStage_Run(t *testing.T) {
 
 	output := make(chan state)
 
-	outDesc, err := invoke.NewMessageDescriptor(&unit.MergeMessage{})
-	assert.NilError(t, err, "create merge message descriptor")
-
-	s := newMergeStage(fields, inputs, output, outDesc.MessageGenerator())
+	s := newMergeStage(fields, inputs, output, mock.NewGen())
 
 	expected := []state{
-		newState(3, testMergeMessage(t, 3)),
-		newState(6, testMergeMessage(t, 6)),
+		newState(3, testMergeOuterMessage(inner, fields, 3)),
+		newState(6, testMergeOuterMessage(inner, fields, 6)),
 	}
 
 	go func() {
-		input1 <- newState(1, testMergeInner1Message(t, 1))
-		input1 <- newState(2, testMergeInner1Message(t, 2))
-		input1 <- newState(3, testMergeInner1Message(t, 3))
-		input1 <- newState(6, testMergeInner1Message(t, 6))
+		input1 <- newState(1, testInnerMessage(inner[0], 1))
+		input1 <- newState(2, testInnerMessage(inner[0], 2))
+		input1 <- newState(3, testInnerMessage(inner[0], 3))
+		input1 <- newState(6, testInnerMessage(inner[0], 6))
 	}()
 
 	go func() {
-		input2 <- newState(2, testMergeInner2Message(t, 2))
-		input2 <- newState(3, testMergeInner2Message(t, 3))
-		input2 <- newState(5, testMergeInner2Message(t, 5))
-		input2 <- newState(6, testMergeInner2Message(t, 6))
+		input2 <- newState(2, testInnerMessage(inner[1], 2))
+		input2 <- newState(3, testInnerMessage(inner[1], 3))
+		input2 <- newState(5, testInnerMessage(inner[1], 5))
+		input2 <- newState(6, testInnerMessage(inner[1], 6))
 	}()
 
 	go func() {
-		input3 <- newState(1, testMergeInner3Message(t, 2))
-		input3 <- newState(3, testMergeInner3Message(t, 3))
-		input3 <- newState(5, testMergeInner3Message(t, 5))
-		input3 <- newState(6, testMergeInner3Message(t, 6))
+		input3 <- newState(1, testInnerMessage(inner[2], 2))
+		input3 <- newState(3, testInnerMessage(inner[2], 3))
+		input3 <- newState(5, testInnerMessage(inner[2], 5))
+		input3 <- newState(6, testInnerMessage(inner[2], 6))
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -296,59 +212,36 @@ func TestMergeStage_Run(t *testing.T) {
 	for i, exp := range expected {
 		out := <-output
 		assert.Equal(t, exp.id, out.id, "id at iter %d", i)
-		expDyn, ok := exp.msg.GrpcMessage().(*dynamic.Message)
-		expMsg := &unit.MergeMessage{}
-		err = expDyn.ConvertTo(expMsg)
-		assert.NilError(t, err, "convert dyn to exp")
+		expMock, ok := exp.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for exp at iter %d", i)
-		dynMsg, ok := out.msg.GrpcMessage().(*dynamic.Message)
+		outMock, ok := out.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for out at iter %d", i)
-		outMsg := &unit.MergeMessage{}
-		err = dynMsg.ConvertTo(outMsg)
-		assert.NilError(t, err, "convert dyn to out")
-		assert.Equal(t, expMsg.In1.Val, outMsg.In1.Val)
-		assert.Equal(t, expMsg.In2.Val, outMsg.In2.Val)
-		assert.Equal(t, expMsg.In3.Val, outMsg.In3.Val)
+		assert.DeepEqual(t, expMock, outMock)
 	}
 	cancel()
 	<-done
 }
 
-func testMergeMessage(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.MergeMessage{
-		In1: &unit.MergeInner1{Val: val},
-		In2: &unit.MergeInner2{Val: val},
-		In3: &unit.MergeInner3{Val: val},
+func testMergeOuterMessage(
+	inner, fields []internal.MessageField,
+	val int32,
+) *mock.Message {
+	msgFields := map[internal.MessageField]interface{}{}
+	for i, f := range fields {
+		innerMsg := testInnerMessage(inner[i], val)
+		msgFields[f] = innerMsg
 	}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create merge message")
-	return msg
-}
-
-func testMergeInner1Message(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.MergeInner1{Val: val}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create merge inner 1message")
-	return msg
-}
-
-func testMergeInner2Message(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.MergeInner2{Val: val}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create merge inner 2 message")
-	return msg
-}
-
-func testMergeInner3Message(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.MergeInner3{Val: val}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create merge inner 3 message")
+	msg := &mock.Message{Fields: msgFields}
 	return msg
 }
 
 func TestSplitStage_Run(t *testing.T) {
-	f1 := internal.NewMessageField("out1")
-	f3 := internal.NewMessageField("out2")
+	inner1 := internal.NewMessageField("inner1")
+	inner3 := internal.NewMessageField("inner3")
+	inner := []internal.MessageField{inner1, inner3}
+
+	f1 := internal.NewMessageField("f1")
+	f3 := internal.NewMessageField("f3")
 
 	fields := []internal.OptionalMessageField{
 		internal.NewPresentMessageField(f1),
@@ -367,25 +260,25 @@ func TestSplitStage_Run(t *testing.T) {
 	s := newSplitStage(fields, input, outputs)
 
 	expected1 := []state{
-		newState(id(1), testSplitInner1Message(t, 1)),
-		newState(id(3), testSplitInner1Message(t, 3)),
-		newState(id(5), testSplitInner1Message(t, 5)),
+		newState(id(1), testInnerMessage(inner[0], 1)),
+		newState(id(3), testInnerMessage(inner[0], 3)),
+		newState(id(5), testInnerMessage(inner[0], 5)),
 	}
 	expected2 := []state{
-		newState(id(1), testSplitMessage(t, 1)),
-		newState(id(3), testSplitMessage(t, 3)),
-		newState(id(5), testSplitMessage(t, 5)),
+		newState(id(1), testSplitOuterMessage(inner, fields, 1)),
+		newState(id(3), testSplitOuterMessage(inner, fields, 3)),
+		newState(id(5), testSplitOuterMessage(inner, fields, 5)),
 	}
 	expected3 := []state{
-		newState(id(1), testSplitInner2Message(t, 1)),
-		newState(id(3), testSplitInner2Message(t, 3)),
-		newState(id(5), testSplitInner2Message(t, 5)),
+		newState(id(1), testInnerMessage(inner[1], 1)),
+		newState(id(3), testInnerMessage(inner[1], 3)),
+		newState(id(5), testInnerMessage(inner[1], 5)),
 	}
 
 	go func() {
-		input <- newState(id(1), testSplitMessage(t, 1))
-		input <- newState(id(3), testSplitMessage(t, 3))
-		input <- newState(id(5), testSplitMessage(t, 5))
+		input <- newState(id(1), testSplitOuterMessage(inner, fields, 1))
+		input <- newState(id(3), testSplitOuterMessage(inner, fields, 3))
+		input <- newState(id(5), testSplitOuterMessage(inner, fields, 5))
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -403,73 +296,52 @@ func TestSplitStage_Run(t *testing.T) {
 		exp1 := expected1[i]
 		out1 := <-output1
 		assert.Equal(t, exp1.id, out1.id, "id 1 at iter %d", i)
-		expDyn1, ok := exp1.msg.GrpcMessage().(*dynamic.Message)
+		expMock1, ok := exp1.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
-		expMsg1 := &unit.SplitInner1{}
-		err := expDyn1.ConvertTo(expMsg1)
-		assert.NilError(t, err, "convert dyn 1 to exp 1")
-		outDyn1, ok := out1.msg.GrpcMessage().(*dynamic.Message)
+		outMock1, ok := out1.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
-		outMsg1 := &unit.SplitInner1{}
-		err = outDyn1.ConvertTo(outMsg1)
-		assert.Equal(t, expMsg1.Val, outMsg1.Val)
+		assert.DeepEqual(t, expMock1, outMock1)
 
 		exp2 := expected2[i]
 		out2 := <-output2
 		assert.Equal(t, exp2.id, out2.id, "id 2 at iter %d", i)
-		expDyn2, ok := exp2.msg.GrpcMessage().(*dynamic.Message)
+		expMock2, ok := exp2.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for exp 2 at iter %d", i)
-		expMsg2 := &unit.SplitMessage{}
-		err = expDyn2.ConvertTo(expMsg2)
-		assert.NilError(t, err, "convert dyn 2 to exp 2")
-		dynDyn2, ok := out2.msg.GrpcMessage().(*dynamic.Message)
+		outMock2, ok := out2.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for out 2 at iter %d", i)
-		outMsg2 := &unit.SplitMessage{}
-		err = dynDyn2.ConvertTo(outMsg2)
-		assert.NilError(t, err, "convert dyn 2 to out 2")
-		assert.Equal(t, expMsg2.Out1.Val, outMsg2.Out1.Val)
-		assert.Equal(t, expMsg2.Val, outMsg2.Val)
-		assert.Equal(t, expMsg2.Out2.Val, outMsg2.Out2.Val)
+		assert.DeepEqual(t, expMock2, outMock2)
 
 		exp3 := expected3[i]
 		out3 := <-output3
 		assert.Equal(t, exp3.id, out3.id, "id 3 at iter %d", i)
-		expDyn3, ok := exp3.msg.GrpcMessage().(*dynamic.Message)
+		expMock3, ok := exp3.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for exp 3 at iter %d", i)
-		expMsg3 := &unit.SplitInner2{}
-		err = expDyn3.ConvertTo(expMsg3)
-		assert.NilError(t, err, "convert dyn 3 to exp 3")
-		outDyn3, ok := out3.msg.GrpcMessage().(*dynamic.Message)
+		outMock3, ok := out3.msg.(*mock.Message)
 		assert.Assert(t, ok, "cast for out 3 at iter %d", i)
-		outMsg3 := &unit.SplitInner2{}
-		err = outDyn3.ConvertTo(outMsg3)
-		assert.Equal(t, expMsg3.Val, outMsg3.Val)
+		assert.DeepEqual(t, expMock3, outMock3)
 	}
 	cancel()
 	<-done
 }
 
-func testSplitMessage(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.SplitMessage{
-		Out1: &unit.SplitInner1{Val: val},
-		Val:  val,
-		Out2: &unit.SplitInner2{Val: val},
+func testSplitOuterMessage(
+	inner []internal.MessageField, fields []internal.OptionalMessageField,
+	val int32,
+) *mock.Message {
+	msgFields := map[internal.MessageField]interface{}{}
+	innerIdx := 0
+	for _, f := range fields {
+		if f.Present() {
+			innerMsg := testInnerMessage(inner[innerIdx], val)
+			msgFields[f.Unwrap()] = innerMsg
+			innerIdx++
+		}
 	}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create split 1message")
+	msg := &mock.Message{Fields: msgFields}
 	return msg
 }
 
-func testSplitInner1Message(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.SplitInner1{Val: val}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create split inner 1message")
-	return msg
-}
-
-func testSplitInner2Message(t *testing.T, val int32) invoke.DynamicMessage {
-	protoMsg := &unit.SplitInner2{Val: val}
-	msg, err := invoke.NewDynamicMessage(protoMsg)
-	assert.NilError(t, err, "create split inner 2 message")
-	return msg
+func testInnerMessage(field internal.MessageField, val int32) *mock.Message {
+	fields := map[internal.MessageField]interface{}{field: val}
+	return &mock.Message{Fields: fields}
 }

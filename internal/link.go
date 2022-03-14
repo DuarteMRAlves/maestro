@@ -23,33 +23,6 @@ func isValidLinkName(name string) bool {
 	return linkNameRegExp.MatchString(name)
 }
 
-type MessageField struct{ val string }
-
-func (m MessageField) Unwrap() string { return m.val }
-
-func (m MessageField) IsEmpty() bool { return m.val == "" }
-
-func NewMessageField(field string) MessageField {
-	return MessageField{val: field}
-}
-
-type OptionalMessageField struct {
-	val     MessageField
-	present bool
-}
-
-func (p OptionalMessageField) Unwrap() MessageField { return p.val }
-
-func (p OptionalMessageField) Present() bool { return p.present }
-
-func NewPresentMessageField(m MessageField) OptionalMessageField {
-	return OptionalMessageField{val: m, present: true}
-}
-
-func NewEmptyMessageField() OptionalMessageField {
-	return OptionalMessageField{}
-}
-
 type LinkEndpoint struct {
 	stage StageName
 	field OptionalMessageField

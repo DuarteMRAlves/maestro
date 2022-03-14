@@ -3,7 +3,6 @@ package execute
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/invoke"
 	"sync"
 	"time"
 )
@@ -14,8 +13,8 @@ type unaryStage struct {
 	input  <-chan state
 	output chan<- state
 
-	gen    invoke.MessageGenerator
-	invoke invoke.UnaryInvoke
+	gen    internal.EmptyMessageGen
+	method internal.UnaryMethod
 
 	mu sync.Mutex
 }
@@ -23,15 +22,15 @@ type unaryStage struct {
 func newUnaryStage(
 	input <-chan state,
 	output chan<- state,
-	gen invoke.MessageGenerator,
-	invoke invoke.UnaryInvoke,
+	gen internal.EmptyMessageGen,
+	method internal.UnaryMethod,
 ) *unaryStage {
 	return &unaryStage{
 		running: false,
 		input:   input,
 		output:  output,
 		gen:     gen,
-		invoke:  invoke,
+		method:  method,
 		mu:      sync.Mutex{},
 	}
 }
@@ -39,7 +38,7 @@ func newUnaryStage(
 func (s *unaryStage) Run(ctx context.Context) error {
 	var (
 		in, out  state
-		req, rep invoke.DynamicMessage
+		req, rep internal.Message
 		more     bool
 	)
 	for {
@@ -57,7 +56,7 @@ func (s *unaryStage) Run(ctx context.Context) error {
 		req = in.msg
 		rep = s.gen()
 
-		err := s.call(ctx, req.GrpcMessage(), rep.GrpcMessage())
+		err := s.call(ctx, req, rep)
 		if err != nil {
 			return err
 		}
@@ -73,23 +72,26 @@ func (s *unaryStage) Run(ctx context.Context) error {
 	}
 }
 
-func (s *unaryStage) call(ctx context.Context, req, rep interface{}) error {
+func (s *unaryStage) call(
+	ctx context.Context,
+	req, rep internal.Message,
+) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	return s.invoke(ctx, req, rep)
+	return s.method(ctx, req, rep)
 }
 
 // sourceStage is the source of the orchestration. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type sourceStage struct {
 	count  int32
-	gen    invoke.MessageGenerator
+	gen    internal.EmptyMessageGen
 	output chan<- state
 }
 
 func newSourceStage(
 	start int32,
-	gen invoke.MessageGenerator,
+	gen internal.EmptyMessageGen,
 	output chan<- state,
 ) sourceStage {
 	return sourceStage{
@@ -139,7 +141,7 @@ type mergeStage struct {
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- state
 	// gen generates empty messages for the output type.
-	gen invoke.MessageGenerator
+	gen internal.EmptyMessageGen
 	// currId is the current id being constructed.
 	currId id
 }
@@ -148,7 +150,7 @@ func newMergeStage(
 	fields []internal.MessageField,
 	inputs []<-chan state,
 	output chan<- state,
-	gen invoke.MessageGenerator,
+	gen internal.EmptyMessageGen,
 ) mergeStage {
 	return mergeStage{
 		fields: fields,
@@ -162,7 +164,7 @@ func newMergeStage(
 func (s *mergeStage) Run(ctx context.Context) error {
 	var (
 		// partial is the current message being constructed.
-		partial   invoke.DynamicMessage
+		partial   internal.Message
 		currState state
 		done      bool
 	)
@@ -193,7 +195,7 @@ func (s *mergeStage) Run(ctx context.Context) error {
 				s.currId = currState.id
 				break
 			}
-			err := partial.SetField(s.fields[i], currState.msg.GrpcMessage())
+			err := partial.SetField(s.fields[i], currState.msg)
 			if err != nil {
 				return err
 			}
