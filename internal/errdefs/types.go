@@ -5,12 +5,6 @@ type InvalidArgument interface {
 	InvalidArgument()
 }
 
-// Unavailable signals some subsystem is currently unavailable. The client
-// should wait and retry later.
-type Unavailable interface {
-	Unavailable()
-}
-
 // Internal error signals a severe error that occurred in the computation
 type Internal interface {
 	Internal()

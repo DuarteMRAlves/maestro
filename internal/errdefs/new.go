@@ -13,17 +13,6 @@ func InvalidArgumentWithMsg(format string, a ...interface{}) error {
 	return InvalidArgumentWithError(fmt.Errorf(format, a...))
 }
 
-func UnavailableWithError(err error) error {
-	if err == nil || IsUnavailable(err) {
-		return err
-	}
-	return unavailable{err}
-}
-
-func UnavailableWithMsg(format string, a ...interface{}) error {
-	return UnavailableWithError(fmt.Errorf(format, a...))
-}
-
 func InternalWithError(err error) error {
 	if err == nil || IsInternal(err) {
 		return err
@@ -56,8 +45,6 @@ func PrependMsg(err error, format string, a ...interface{}) error {
 	switch causeErr.(type) {
 	case InvalidArgument:
 		return InvalidArgumentWithMsg(format, a...)
-	case Unavailable:
-		return UnavailableWithMsg(format, a...)
 	case Internal:
 		return InternalWithMsg(format, a...)
 	case Unknown:
