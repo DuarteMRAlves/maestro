@@ -50,28 +50,6 @@ func TestInternalWithMessage(t *testing.T) {
 	assert.Equal(t, dummyErrMsg, msg, "error message")
 }
 
-func TestUnknownWithError(t *testing.T) {
-	var ok bool
-	err := UnknownWithError(dummyErr)
-	_, ok = err.(Unknown)
-	assert.Assert(t, ok, "Unknown interface")
-	_, ok = err.(unknown)
-	assert.Assert(t, ok, "unknown struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
-func TestUnknownWithMessage(t *testing.T) {
-	var ok bool
-	err := UnknownWithMsg(dummyErrMsg)
-	_, ok = err.(Unknown)
-	assert.Assert(t, ok, "Unknown interface")
-	_, ok = err.(unknown)
-	assert.Assert(t, ok, "unknown struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
 func TestPrependMsg(t *testing.T) {
 	prependFormat := "prepend message with %s, %s"
 	prependArgs := []interface{}{"arg1", "arg2"}
@@ -93,16 +71,6 @@ func TestPrependMsg(t *testing.T) {
 			name:      "internal error",
 			err:       InternalWithMsg(dummyErrMsg),
 			valTypeFn: IsInternal,
-		},
-		{
-			name:      "unknown error",
-			err:       UnknownWithMsg(dummyErrMsg),
-			valTypeFn: IsUnknown,
-		},
-		{
-			name:      "fmt error",
-			err:       fmt.Errorf(dummyErrMsg),
-			valTypeFn: IsUnknown,
 		},
 	}
 

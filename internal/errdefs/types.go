@@ -9,8 +9,3 @@ type InvalidArgument interface {
 type Internal interface {
 	Internal()
 }
-
-// Unknown error signals that the king of error is unknown
-type Unknown interface {
-	Unknown()
-}
