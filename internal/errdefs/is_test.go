@@ -14,8 +14,3 @@ func TestIsInternal(t *testing.T) {
 	err := internal{dummyErr}
 	assert.Assert(t, IsInternal(err), "type assertion")
 }
-
-func TestIsUnknown(t *testing.T) {
-	err := unknown{dummyErr}
-	assert.Assert(t, IsUnknown(err), "type assertion")
-}

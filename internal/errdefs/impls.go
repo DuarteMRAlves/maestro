@@ -19,13 +19,3 @@ func (e internal) Internal() { /* Do nothing */ }
 func (e internal) Cause() error {
 	return e.error
 }
-
-type unknown struct {
-	error
-}
-
-func (e unknown) Unknown() { /* Do nothing */ }
-
-func (e unknown) Cause() error {
-	return e.error
-}

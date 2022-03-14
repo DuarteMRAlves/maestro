@@ -54,7 +54,8 @@ func resolveService(conn grpc.ClientConnInterface) func(
 				err := &internal.NotFound{Type: "service", Ident: d.Unwrap()}
 				return nil, fmt.Errorf("resolve service: %w", err)
 			case isProtocolError(err):
-				return nil, errdefs.UnknownWithError(err)
+				err := fmt.Errorf("resolve service %s: %w", d.Unwrap(), err)
+				return nil, err
 			default:
 				// Should never happen as all errors should be caught by one
 				// of the above options
