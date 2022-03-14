@@ -2,7 +2,7 @@ package execute
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/invoke"
+	"github.com/DuarteMRAlves/maestro/internal"
 )
 
 type id int
@@ -13,19 +13,19 @@ type id int
 // be synchronized.
 type state struct {
 	id  id
-	msg invoke.DynamicMessage
+	msg internal.Message
 }
 
 var emptyState = newState(-1, nil)
 
-func newState(id id, msg invoke.DynamicMessage) state {
+func newState(id id, msg internal.Message) state {
 	return state{
 		id:  id,
 		msg: msg,
 	}
 }
 
-func updateStateMsg(s state, msg invoke.DynamicMessage) state {
+func updateStateMsg(s state, msg internal.Message) state {
 	return newState(s.id, msg)
 }
 
