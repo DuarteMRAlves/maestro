@@ -5,11 +5,6 @@ func IsInvalidArgument(err error) bool {
 	return ok
 }
 
-func IsUnavailable(err error) bool {
-	_, ok := getImplementer(err).(Unavailable)
-	return ok
-}
-
 func IsInternal(err error) bool {
 	_, ok := getImplementer(err).(Internal)
 	return ok
@@ -28,7 +23,6 @@ func getImplementer(err error) error {
 	switch e := err.(type) {
 	case
 		InvalidArgument,
-		Unavailable,
 		Internal,
 		Unknown:
 		return err

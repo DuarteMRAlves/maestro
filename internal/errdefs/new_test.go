@@ -28,28 +28,6 @@ func TestInvalidArgumentWithMessage(t *testing.T) {
 	assert.Equal(t, dummyErrMsg, msg, "error message")
 }
 
-func TestUnavailableWithError(t *testing.T) {
-	var ok bool
-	err := UnavailableWithError(dummyErr)
-	_, ok = err.(Unavailable)
-	assert.Assert(t, ok, "Unavailable interface")
-	_, ok = err.(unavailable)
-	assert.Assert(t, ok, "unavailable struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
-func TestUnavailableWithMsg(t *testing.T) {
-	var ok bool
-	err := UnavailableWithMsg(dummyErrMsg)
-	_, ok = err.(Unavailable)
-	assert.Assert(t, ok, "Unavailable interface")
-	_, ok = err.(unavailable)
-	assert.Assert(t, ok, "unavailable struct")
-	msg := err.Error()
-	assert.Equal(t, dummyErrMsg, msg, "error message")
-}
-
 func TestInternalWithError(t *testing.T) {
 	var ok bool
 	err := InternalWithError(dummyErr)
@@ -110,11 +88,6 @@ func TestPrependMsg(t *testing.T) {
 			name:      "invalid argument error",
 			err:       InvalidArgumentWithMsg(dummyErrMsg),
 			valTypeFn: IsInvalidArgument,
-		},
-		{
-			name:      "unavailable error",
-			err:       UnavailableWithMsg(dummyErrMsg),
-			valTypeFn: IsUnavailable,
 		},
 		{
 			name:      "internal error",
