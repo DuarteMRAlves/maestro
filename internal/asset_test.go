@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"errors"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -33,9 +32,10 @@ func TestNewAssetName(t *testing.T) {
 					assert.Equal(t, test.name, created.Unwrap())
 				} else {
 					assert.Assert(t, created.IsEmpty())
-					assert.Assert(t, errdefs.IsInvalidArgument(err))
-					errMsg := fmt.Sprintf("invalid name '%v'", test.name)
-					assert.Error(t, err, errMsg)
+					var invalidIdentifier *InvalidIdentifier
+					assert.Assert(t, errors.As(err, &invalidIdentifier))
+					assert.Equal(t, "asset", invalidIdentifier.Type)
+					assert.Equal(t, test.name, invalidIdentifier.Ident)
 				}
 			},
 		)

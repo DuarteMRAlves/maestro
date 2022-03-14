@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"regexp"
 )
 
@@ -23,8 +22,7 @@ func NewAssetName(name string) (AssetName, error) {
 	if isValidAssetName(name) {
 		return AssetName{name}, nil
 	}
-	err := errdefs.InvalidArgumentWithMsg("invalid name '%v'", name)
-	return emptyAssetName, err
+	return emptyAssetName, &InvalidIdentifier{Type: "asset", Ident: name}
 }
 
 func isValidAssetName(name string) bool {

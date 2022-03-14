@@ -4,17 +4,6 @@ import (
 	"fmt"
 )
 
-func InvalidArgumentWithError(err error) error {
-	if err == nil || IsInvalidArgument(err) {
-		return err
-	}
-	return invalidArgument{err}
-}
-
-func InvalidArgumentWithMsg(format string, a ...interface{}) error {
-	return InvalidArgumentWithError(fmt.Errorf(format, a...))
-}
-
 func InternalWithError(err error) error {
 	if err == nil || IsInternal(err) {
 		return err
@@ -34,8 +23,6 @@ func PrependMsg(err error, format string, a ...interface{}) error {
 
 	causeErr := getImplementer(err)
 	switch causeErr.(type) {
-	case InvalidArgument:
-		return InvalidArgumentWithMsg(format, a...)
 	case Internal:
 		return InternalWithMsg(format, a...)
 	}
