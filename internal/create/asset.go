@@ -2,9 +2,7 @@ package create
 
 import (
 	"errors"
-	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
 type AssetSaver interface {
@@ -20,29 +18,24 @@ type AssetStorage interface {
 	AssetLoader
 }
 
-type AssetRequest struct {
-	Name  string
-	Image domain.OptionalString
-}
+var (
+	EmptyAssetName = errors.New("empty asset name")
+	EmptyImageName = errors.New("empty image name")
+)
 
-var EmptyAssetName = fmt.Errorf("empty asset name")
-
-func Asset(storage AssetStorage) func(AssetRequest) error {
-	return func(req AssetRequest) error {
-		name, err := internal.NewAssetName(req.Name)
-		if err != nil {
-			return err
-		}
+func Asset(storage AssetStorage) func(
+	internal.AssetName,
+	internal.OptionalImage,
+) error {
+	return func(name internal.AssetName, image internal.OptionalImage) error {
 		if name.IsEmpty() {
 			return EmptyAssetName
 		}
-		imgOpt := internal.NewEmptyImage()
-		if req.Image.Present() {
-			img := internal.NewImage(req.Image.Unwrap())
-			imgOpt = internal.NewPresentImage(img)
+		if image.Present() && image.Unwrap().IsEmpty() {
+			return EmptyImageName
 		}
 		// Expect key not found
-		_, err = storage.Load(name)
+		_, err := storage.Load(name)
 		if err == nil {
 			return &internal.AlreadyExists{Type: "asset", Ident: name.Unwrap()}
 		}
@@ -50,7 +43,7 @@ func Asset(storage AssetStorage) func(AssetRequest) error {
 		if !errors.As(err, &notFound) {
 			return err
 		}
-		asset := internal.NewAsset(name, imgOpt)
+		asset := internal.NewAsset(name, image)
 		return storage.Save(asset)
 	}
 }
