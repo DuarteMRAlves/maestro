@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
@@ -59,7 +58,8 @@ func resolveService(conn grpc.ClientConnInterface) func(
 			default:
 				// Should never happen as all errors should be caught by one
 				// of the above options
-				return nil, errdefs.InternalWithMsg("resolve service: %v", err)
+				err := fmt.Errorf("resolve service %s: %w", d.Unwrap(), err)
+				return nil, err
 			}
 		}
 		if err != nil {

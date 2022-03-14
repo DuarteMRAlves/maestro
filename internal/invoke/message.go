@@ -1,8 +1,8 @@
 package invoke
 
 import (
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -18,6 +18,14 @@ type DynamicMessage interface {
 
 type dynamicMessage struct {
 	grpcMsg *dynamic.Message
+}
+
+type FieldNotMessage struct {
+	Field string
+}
+
+func (err *FieldNotMessage) Error() string {
+	return fmt.Sprintf("field %s not a message.", err.Field)
 }
 
 func NewDynamicMessage(msg proto.Message) (DynamicMessage, error) {
@@ -59,11 +67,11 @@ func (dm *dynamicMessage) GetField(name internal.MessageField) (
 	}
 	msg, ok := field.(proto.Message)
 	if !ok {
-		return nil, errdefs.InternalWithMsg("Field is not a message")
+		return nil, &FieldNotMessage{Field: name.Unwrap()}
 	}
 	dyn, err := NewDynamicMessage(msg)
 	if err != nil {
-		return nil, errdefs.InternalWithMsg("convert proto to dynamic: %s", err)
+		return nil, fmt.Errorf("convert proto to dynamic: %w", err)
 	}
 	return dyn, nil
 }

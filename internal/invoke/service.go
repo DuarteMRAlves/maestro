@@ -1,7 +1,7 @@
 package invoke
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
+	"fmt"
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -25,8 +25,7 @@ func newService(desc *desc.ServiceDescriptor) (Service, error) {
 		m, err := newMethodDescriptor(d)
 		// Should never happen
 		if err != nil {
-			err = errdefs.PrependMsg(err, "create service %s", desc.GetName())
-			return nil, err
+			return nil, fmt.Errorf("create %s descriptor: %w", d.GetName(), err)
 		}
 		methods = append(methods, m)
 	}

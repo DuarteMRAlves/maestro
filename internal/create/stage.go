@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type StageSaver interface {
@@ -101,12 +100,10 @@ func Stage(
 			orchStorage,
 		)
 		if err != nil {
-			return errdefs.PrependMsg(
-				err,
-				"add stage %s to orchestration: %s",
-				name,
-				orchestrationName,
-			)
+			if err != nil {
+				format := "add stage %s to orchestration %s: %w"
+				return fmt.Errorf(format, name, orchestrationName, err)
+			}
 		}
 		stage := internal.NewStage(name, ctx, orchestrationName)
 		return stageStorage.Save(stage)

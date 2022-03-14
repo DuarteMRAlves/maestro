@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
@@ -13,13 +12,13 @@ func NewDb() (*badger.DB, error) {
 	lvl := zap.NewAtomicLevelAt(zap.InfoLevel)
 	zapLogger, err := logs.DefaultProductionLogger(lvl)
 	if err != nil {
-		return nil, errdefs.InternalWithMsg("create database: %v", err)
+		return nil, err
 	}
 	logger := NewBadgerLogger(zapLogger.Sugar())
 	opts := badger.DefaultOptions("").WithInMemory(true).WithLogger(logger)
 	db, err := badger.Open(opts)
 	if err != nil {
-		return nil, errdefs.InternalWithMsg("create database: %v", err)
+		return nil, err
 	}
 	return db, err
 }
