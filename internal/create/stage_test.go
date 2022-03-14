@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -77,12 +78,12 @@ func TestCreateStage(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				stageStore := mockStageStorage{
-					stages: map[internal.StageName]internal.Stage{},
+				stageStore := mock.StageStorage{
+					Stages: map[internal.StageName]internal.Stage{},
 				}
 
-				orchStore := mockOrchestrationStorage{
-					orchs: map[internal.OrchestrationName]internal.Orchestration{
+				orchStore := mock.OrchestrationStorage{
+					Orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -92,13 +93,13 @@ func TestCreateStage(t *testing.T) {
 				err := createFn(test.req)
 				assert.NilError(t, err)
 
-				assert.Equal(t, 1, len(stageStore.stages))
-				s, exists := stageStore.stages[test.expStage.Name()]
+				assert.Equal(t, 1, len(stageStore.Stages))
+				s, exists := stageStore.Stages[test.expStage.Name()]
 				assert.Assert(t, exists)
 				assertEqualStage(t, test.expStage, s)
 
-				assert.Equal(t, 1, len(orchStore.orchs))
-				o, exists := orchStore.orchs[test.expOrchestration.Name()]
+				assert.Equal(t, 1, len(orchStore.Orchs))
+				o, exists := orchStore.Orchs[test.expOrchestration.Name()]
 				assert.Assert(t, exists)
 				assertEqualOrchestration(t, test.expOrchestration, o)
 			},
@@ -171,12 +172,12 @@ func TestCreateStage_Err(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				stageStore := mockStageStorage{
-					stages: map[internal.StageName]internal.Stage{},
+				stageStore := mock.StageStorage{
+					Stages: map[internal.StageName]internal.Stage{},
 				}
 
-				orchStore := mockOrchestrationStorage{
-					orchs: map[internal.OrchestrationName]internal.Orchestration{
+				orchStore := mock.OrchestrationStorage{
+					Orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -186,7 +187,7 @@ func TestCreateStage_Err(t *testing.T) {
 				assert.Assert(t, err != nil)
 				assert.Assert(t, errors.Is(err, test.isError))
 
-				assert.Equal(t, 0, len(stageStore.stages))
+				assert.Equal(t, 0, len(stageStore.Stages))
 			},
 		)
 	}
@@ -209,12 +210,12 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		[]string{},
 	)
 
-	stageStore := mockStageStorage{
-		stages: map[internal.StageName]internal.Stage{},
+	stageStore := mock.StageStorage{
+		Stages: map[internal.StageName]internal.Stage{},
 	}
 
-	orchStore := mockOrchestrationStorage{
-		orchs: map[internal.OrchestrationName]internal.Orchestration{
+	orchStore := mock.OrchestrationStorage{
+		Orchs: map[internal.OrchestrationName]internal.Orchestration{
 			storedOrchestration.Name(): storedOrchestration,
 		},
 	}
@@ -224,13 +225,13 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	err := createFn(req)
 	assert.NilError(t, err)
 
-	assert.Equal(t, 1, len(stageStore.stages))
-	s, exists := stageStore.stages[expStage.Name()]
+	assert.Equal(t, 1, len(stageStore.Stages))
+	s, exists := stageStore.Stages[expStage.Name()]
 	assert.Assert(t, exists)
 	assertEqualStage(t, expStage, s)
 
-	assert.Equal(t, 1, len(orchStore.orchs))
-	o, exists := orchStore.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(orchStore.Orchs))
+	o, exists := orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
@@ -241,36 +242,15 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	assert.Equal(t, "stage", alreadyExists.Type)
 	assert.Equal(t, req.Name, alreadyExists.Ident)
 
-	assert.Equal(t, 1, len(stageStore.stages))
-	s, exists = stageStore.stages[expStage.Name()]
+	assert.Equal(t, 1, len(stageStore.Stages))
+	s, exists = stageStore.Stages[expStage.Name()]
 	assert.Assert(t, exists)
 	assertEqualStage(t, expStage, s)
 
-	assert.Equal(t, 1, len(orchStore.orchs))
-	o, exists = orchStore.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(orchStore.Orchs))
+	o, exists = orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
-}
-
-type mockStageStorage struct {
-	stages map[internal.StageName]internal.Stage
-}
-
-func (m mockStageStorage) Save(s internal.Stage) error {
-	m.stages[s.Name()] = s
-	return nil
-}
-
-func (m mockStageStorage) Load(name internal.StageName) (
-	internal.Stage,
-	error,
-) {
-	s, exists := m.stages[name]
-	if !exists {
-		err := &internal.NotFound{Type: "stage", Ident: name.Unwrap()}
-		return internal.Stage{}, err
-	}
-	return s, nil
 }
 
 func createStage(
