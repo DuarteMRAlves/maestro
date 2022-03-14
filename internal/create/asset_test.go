@@ -3,6 +3,7 @@ package create
 import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -30,17 +31,17 @@ func TestCreateAsset(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				storage := mockAssetStorage{
-					assets: map[internal.AssetName]internal.Asset{},
+				storage := mock.AssetStorage{
+					Assets: map[internal.AssetName]internal.Asset{},
 				}
 
 				createFn := Asset(storage)
 				err := createFn(test.assetName, test.image)
 				assert.NilError(t, err)
 
-				assert.Equal(t, 1, len(storage.assets))
+				assert.Equal(t, 1, len(storage.Assets))
 
-				asset, exists := storage.assets[test.expected.Name()]
+				asset, exists := storage.Assets[test.expected.Name()]
 				assert.Assert(t, exists)
 				assertEqualAsset(t, test.expected, asset)
 			},
@@ -71,8 +72,8 @@ func TestCreateAsset_Err(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				storage := mockAssetStorage{
-					assets: map[internal.AssetName]internal.Asset{},
+				storage := mock.AssetStorage{
+					Assets: map[internal.AssetName]internal.Asset{},
 				}
 
 				createFn := Asset(storage)
@@ -80,7 +81,7 @@ func TestCreateAsset_Err(t *testing.T) {
 				assert.Assert(t, err != nil)
 				assert.Assert(t, errors.Is(err, test.isError))
 
-				assert.Equal(t, 0, len(storage.assets))
+				assert.Equal(t, 0, len(storage.Assets))
 			},
 		)
 	}
@@ -92,16 +93,16 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 	image1 := internal.NewEmptyImage()
 	image2 := internal.NewPresentImage(internal.NewImage("some-image"))
 	expected := createAsset(t, name, true)
-	storage := mockAssetStorage{
-		assets: map[internal.AssetName]internal.Asset{},
+	storage := mock.AssetStorage{
+		Assets: map[internal.AssetName]internal.Asset{},
 	}
 
 	createFn := Asset(storage)
 
 	err := createFn(assetName, image1)
 	assert.NilError(t, err, "first create")
-	assert.Equal(t, 1, len(storage.assets))
-	asset, exists := storage.assets[expected.Name()]
+	assert.Equal(t, 1, len(storage.Assets))
+	asset, exists := storage.Assets[expected.Name()]
 	assert.Assert(t, exists)
 	assertEqualAsset(t, expected, asset)
 
@@ -111,31 +112,10 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "asset", alreadyExists.Type)
 	assert.Equal(t, name, alreadyExists.Ident)
-	assert.Equal(t, 1, len(storage.assets))
-	asset, exists = storage.assets[expected.Name()]
+	assert.Equal(t, 1, len(storage.Assets))
+	asset, exists = storage.Assets[expected.Name()]
 	assert.Assert(t, exists)
 	assertEqualAsset(t, expected, asset)
-}
-
-type mockAssetStorage struct {
-	assets map[internal.AssetName]internal.Asset
-}
-
-func (m mockAssetStorage) Save(asset internal.Asset) error {
-	m.assets[asset.Name()] = asset
-	return nil
-}
-
-func (m mockAssetStorage) Load(name internal.AssetName) (
-	internal.Asset,
-	error,
-) {
-	asset, exists := m.assets[name]
-	if !exists {
-		err := &internal.NotFound{Type: "asset", Ident: name.Unwrap()}
-		return internal.Asset{}, err
-	}
-	return asset, nil
 }
 
 func createAssetName(t *testing.T, assetName string) internal.AssetName {

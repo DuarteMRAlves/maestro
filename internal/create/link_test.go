@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
+	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -88,17 +89,17 @@ func TestCreateLink(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				linkStore := mockLinkStorage{links: map[internal.LinkName]internal.Link{}}
+				linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
 
-				stageStore := mockStageStorage{
-					stages: map[internal.StageName]internal.Stage{},
+				stageStore := mock.StageStorage{
+					Stages: map[internal.StageName]internal.Stage{},
 				}
 				for _, s := range test.storedStages {
-					stageStore.stages[s.Name()] = s
+					stageStore.Stages[s.Name()] = s
 				}
 
-				orchStore := mockOrchestrationStorage{
-					orchs: map[internal.OrchestrationName]internal.Orchestration{
+				orchStore := mock.OrchestrationStorage{
+					Orchs: map[internal.OrchestrationName]internal.Orchestration{
 						test.loadOrchestration.Name(): test.loadOrchestration,
 					},
 				}
@@ -108,13 +109,13 @@ func TestCreateLink(t *testing.T) {
 
 				assert.NilError(t, err)
 
-				assert.Equal(t, 1, len(linkStore.links))
-				l, exists := linkStore.links[test.expLink.Name()]
+				assert.Equal(t, 1, len(linkStore.Links))
+				l, exists := linkStore.Links[test.expLink.Name()]
 				assert.Assert(t, exists)
 				assertEqualLink(t, test.expLink, l)
 
-				assert.Equal(t, 1, len(orchStore.orchs))
-				o, exists := orchStore.orchs[test.expOrchestration.Name()]
+				assert.Equal(t, 1, len(orchStore.Orchs))
+				o, exists := orchStore.Orchs[test.expOrchestration.Name()]
 				assert.Assert(t, exists)
 				assertEqualOrchestration(t, test.expOrchestration, o)
 			},
@@ -149,17 +150,17 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		createStage(t, "target", "orchestration", false),
 	}
 
-	linkStore := mockLinkStorage{links: map[internal.LinkName]internal.Link{}}
+	linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
 
-	stageStore := mockStageStorage{
-		stages: map[internal.StageName]internal.Stage{},
+	stageStore := mock.StageStorage{
+		Stages: map[internal.StageName]internal.Stage{},
 	}
 	for _, s := range storedStages {
-		stageStore.stages[s.Name()] = s
+		stageStore.Stages[s.Name()] = s
 	}
 
-	orchStore := mockOrchestrationStorage{
-		orchs: map[internal.OrchestrationName]internal.Orchestration{
+	orchStore := mock.OrchestrationStorage{
+		Orchs: map[internal.OrchestrationName]internal.Orchestration{
 			storedOrchestration.Name(): storedOrchestration,
 		},
 	}
@@ -169,13 +170,13 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 
 	assert.NilError(t, err)
 
-	assert.Equal(t, 1, len(linkStore.links))
-	l, exists := linkStore.links[expLink.Name()]
+	assert.Equal(t, 1, len(linkStore.Links))
+	l, exists := linkStore.Links[expLink.Name()]
 	assert.Assert(t, exists)
 	assertEqualLink(t, expLink, l)
 
-	assert.Equal(t, 1, len(orchStore.orchs))
-	o, exists := orchStore.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(orchStore.Orchs))
+	o, exists := orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
@@ -186,33 +187,15 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "link", alreadyExists.Type)
 	assert.Equal(t, req.Name, alreadyExists.Ident)
-	assert.Equal(t, 1, len(linkStore.links))
-	l, exists = linkStore.links[expLink.Name()]
+	assert.Equal(t, 1, len(linkStore.Links))
+	l, exists = linkStore.Links[expLink.Name()]
 	assert.Assert(t, exists)
 	assertEqualLink(t, expLink, l)
 
-	assert.Equal(t, 1, len(orchStore.orchs))
-	o, exists = orchStore.orchs[expOrchestration.Name()]
+	assert.Equal(t, 1, len(orchStore.Orchs))
+	o, exists = orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
-}
-
-type mockLinkStorage struct {
-	links map[internal.LinkName]internal.Link
-}
-
-func (m mockLinkStorage) Save(l internal.Link) error {
-	m.links[l.Name()] = l
-	return nil
-}
-
-func (m mockLinkStorage) Load(name internal.LinkName) (internal.Link, error) {
-	l, exists := m.links[name]
-	if !exists {
-		err := &internal.NotFound{Type: "link", Ident: name.Unwrap()}
-		return internal.Link{}, err
-	}
-	return l, nil
 }
 
 func createLink(
