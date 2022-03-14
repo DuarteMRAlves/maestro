@@ -2,7 +2,6 @@ package invoke
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 	"github.com/jhump/protoreflect/desc"
 )
 
@@ -63,11 +62,11 @@ func newMethodDescriptor(desc *desc.MethodDescriptor) (
 	method := newFullMethod(desc)
 	input, err := newMessageDescriptor(desc.GetInputType())
 	if err != nil {
-		return nil, errdefs.PrependMsg(err, "create method")
+		return nil, fmt.Errorf("create input message descriptor: %w", err)
 	}
 	output, err := newMessageDescriptor(desc.GetOutputType())
 	if err != nil {
-		return nil, errdefs.PrependMsg(err, "create method")
+		return nil, fmt.Errorf("create output message descriptor: %w", err)
 	}
 	isUnary := !desc.IsServerStreaming() && !desc.IsClientStreaming()
 	methodDesc := methodDescriptor{

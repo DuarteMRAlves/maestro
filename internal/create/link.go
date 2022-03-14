@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/domain"
-	"github.com/DuarteMRAlves/maestro/internal/errdefs"
 )
 
 type LinkSaver interface {
@@ -141,8 +140,8 @@ func Link(
 		updateFn := addLinkNameToOrchestration(name)
 		err = updateOrchestration(orchName, orchStorage, updateFn, orchStorage)
 		if err != nil {
-			format := "add link %s to orchestration %s"
-			return errdefs.PrependMsg(err, format, name, orchName)
+			format := "add link %s to orchestration %s: %w"
+			return fmt.Errorf(format, name, orchName, err)
 		}
 
 		sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
