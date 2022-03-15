@@ -112,9 +112,8 @@ func NewMethodContext(
 }
 
 type Stage struct {
-	name          StageName
-	methodCtx     MethodContext
-	orchestration OrchestrationName
+	name      StageName
+	methodCtx MethodContext
 }
 
 func (s Stage) Name() StageName {
@@ -125,18 +124,12 @@ func (s Stage) MethodContext() MethodContext {
 	return s.methodCtx
 }
 
-func (s Stage) Orchestration() OrchestrationName {
-	return s.orchestration
-}
-
 func NewStage(
 	name StageName,
 	methodCtx MethodContext,
-	orchestration OrchestrationName,
 ) Stage {
 	return Stage{
-		name:          name,
-		methodCtx:     methodCtx,
-		orchestration: orchestration,
+		name:      name,
+		methodCtx: methodCtx,
 	}
 }

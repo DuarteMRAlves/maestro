@@ -47,10 +47,9 @@ func NewLinkEndpoint(
 }
 
 type Link struct {
-	name          LinkName
-	source        LinkEndpoint
-	target        LinkEndpoint
-	orchestration OrchestrationName
+	name   LinkName
+	source LinkEndpoint
+	target LinkEndpoint
 }
 
 func (l Link) Name() LinkName {
@@ -65,19 +64,13 @@ func (l Link) Target() LinkEndpoint {
 	return l.target
 }
 
-func (l Link) Orchestration() OrchestrationName {
-	return l.orchestration
-}
-
 func NewLink(
 	name LinkName,
 	source, target LinkEndpoint,
-	orchestration OrchestrationName,
 ) Link {
 	return Link{
-		name:          name,
-		source:        source,
-		target:        target,
-		orchestration: orchestration,
+		name:   name,
+		source: source,
+		target: target,
 	}
 }

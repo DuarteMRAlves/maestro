@@ -128,7 +128,7 @@ func Link(
 			return fmt.Errorf(format, name, orchName, err)
 		}
 
-		l := internal.NewLink(name, source, target, orchName)
+		l := internal.NewLink(name, source, target)
 
 		return storage.Save(l)
 	}
