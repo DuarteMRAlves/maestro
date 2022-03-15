@@ -27,12 +27,7 @@ func TestCreateStage(t *testing.T) {
 				internal.NewEmptyMethod(),
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
-			expStage: createStage(
-				t,
-				"some-name",
-				"orchestration",
-				true,
-			),
+			expStage: createStage(t, "some-name", true),
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -55,12 +50,7 @@ func TestCreateStage(t *testing.T) {
 				internal.NewPresentMethod(internal.NewMethod("some-method")),
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
-			expStage: createStage(
-				t,
-				"some-name",
-				"orchestration",
-				false,
-			),
+			expStage: createStage(t, "some-name", false),
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -237,7 +227,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	)
 	orchName := createOrchestrationName(t, "orchestration")
 
-	expStage := createStage(t, "some-name", "orchestration", false)
+	expStage := createStage(t, "some-name", false)
 	storedOrchestration := createOrchestration(t, "orchestration", nil, nil)
 	expOrchestration := createOrchestration(
 		t,
@@ -297,14 +287,12 @@ func createStageName(t *testing.T, name string) internal.StageName {
 
 func createStage(
 	t *testing.T,
-	stageName, orchName string,
+	stageName string,
 	requiredOnly bool,
 ) internal.Stage {
 	name, err := internal.NewStageName(stageName)
 	assert.NilError(t, err, "create name for stage %s", stageName)
 	address := internal.NewAddress("some-address")
-	orchestration, err := internal.NewOrchestrationName(orchName)
-	assert.NilError(t, err, "create orchestration for stage %s", stageName)
 	serviceOpt := internal.NewEmptyService()
 	methodOpt := internal.NewEmptyMethod()
 	if !requiredOnly {
@@ -313,7 +301,7 @@ func createStage(
 		methodOpt = internal.NewPresentMethod(method)
 	}
 	ctx := internal.NewMethodContext(address, serviceOpt, methodOpt)
-	return internal.NewStage(name, ctx, orchestration)
+	return internal.NewStage(name, ctx)
 }
 
 func assertEqualStage(
@@ -322,11 +310,6 @@ func assertEqualStage(
 	actual internal.Stage,
 ) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-	assert.Equal(
-		t,
-		expected.Orchestration().Unwrap(),
-		actual.Orchestration().Unwrap(),
-	)
 	assertEqualMethodContext(
 		t,
 		expected.MethodContext(),

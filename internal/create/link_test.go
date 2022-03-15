@@ -35,7 +35,6 @@ func TestCreateLink(t *testing.T) {
 			expLink: createLink(
 				t,
 				"some-name",
-				"orchestration",
 				true,
 			),
 			loadOrchestration: createOrchestration(
@@ -51,8 +50,8 @@ func TestCreateLink(t *testing.T) {
 				[]string{"some-name"},
 			),
 			storedStages: []internal.Stage{
-				createStage(t, "source", "orchestration", true),
-				createStage(t, "target", "orchestration", true),
+				createStage(t, "source", true),
+				createStage(t, "target", true),
 			},
 		},
 		{
@@ -67,12 +66,7 @@ func TestCreateLink(t *testing.T) {
 				internal.NewPresentMessageField(internal.NewMessageField("target-field")),
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
-			expLink: createLink(
-				t,
-				"some-name",
-				"orchestration",
-				false,
-			),
+			expLink:  createLink(t, "some-name", false),
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -86,8 +80,8 @@ func TestCreateLink(t *testing.T) {
 				[]string{"some-name"},
 			),
 			storedStages: []internal.Stage{
-				createStage(t, "source", "orchestration", false),
-				createStage(t, "target", "orchestration", false),
+				createStage(t, "source", false),
+				createStage(t, "target", false),
 			},
 		},
 	}
@@ -145,7 +139,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		internal.NewPresentMessageField(internal.NewMessageField("target-field")),
 	)
 	orchName := createOrchestrationName(t, "orchestration")
-	expLink := createLink(t, "some-name", "orchestration", false)
+	expLink := createLink(t, "some-name", false)
 	storedOrchestration := createOrchestration(
 		t,
 		"orchestration",
@@ -159,8 +153,8 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		[]string{"some-name"},
 	)
 	storedStages := []internal.Stage{
-		createStage(t, "source", "orchestration", false),
-		createStage(t, "target", "orchestration", false),
+		createStage(t, "source", false),
+		createStage(t, "target", false),
 	}
 
 	linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
@@ -219,7 +213,7 @@ func createLinkName(t *testing.T, name string) internal.LinkName {
 
 func createLink(
 	t *testing.T,
-	linkName, orchestrationName string,
+	linkName string,
 	requiredOnly bool,
 ) internal.Link {
 	name, err := internal.NewLinkName(linkName)
@@ -243,17 +237,13 @@ func createLink(
 	}
 	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
 
-	orchestration, err := internal.NewOrchestrationName(orchestrationName)
-	assert.NilError(t, err, "create orchestration for link %s", linkName)
-
-	return internal.NewLink(name, sourceEndpoint, targetEndpoint, orchestration)
+	return internal.NewLink(name, sourceEndpoint, targetEndpoint)
 }
 
 func assertEqualLink(t *testing.T, expected, actual internal.Link) {
 	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
 	assertEqualEndpoint(t, expected.Source(), actual.Source())
 	assertEqualEndpoint(t, expected.Target(), actual.Target())
-	assert.Equal(t, expected.Orchestration(), actual.Orchestration())
 }
 
 func assertEqualEndpoint(t *testing.T, expected, actual internal.LinkEndpoint) {

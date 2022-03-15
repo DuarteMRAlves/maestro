@@ -80,7 +80,7 @@ func Stage(
 			format := "add stage %s to orchestration %s: %w"
 			return fmt.Errorf(format, name, orchName, err)
 		}
-		stage := internal.NewStage(name, ctx, orchName)
+		stage := internal.NewStage(name, ctx)
 		return stageStorage.Save(stage)
 	}
 }
