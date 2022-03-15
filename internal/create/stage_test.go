@@ -3,7 +3,6 @@ package create
 import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -12,20 +11,22 @@ import (
 func TestCreateStage(t *testing.T) {
 	tests := []struct {
 		name              string
-		req               StageRequest
+		stageName         internal.StageName
+		methodCtx         internal.MethodContext
+		orchName          internal.OrchestrationName
 		expStage          internal.Stage
 		loadOrchestration internal.Orchestration
 		expOrchestration  internal.Orchestration
 	}{
 		{
-			name: "required fields",
-			req: StageRequest{
-				Name:          "some-name",
-				Address:       "some-address",
-				Service:       domain.NewEmptyString(),
-				Method:        domain.NewEmptyString(),
-				Orchestration: "orchestration",
-			},
+			name:      "required fields",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewEmptyService(),
+				internal.NewEmptyMethod(),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
 			expStage: createStage(
 				t,
 				"some-name",
@@ -46,14 +47,14 @@ func TestCreateStage(t *testing.T) {
 			),
 		},
 		{
-			name: "all fields",
-			req: StageRequest{
-				Name:          "some-name",
-				Address:       "some-address",
-				Service:       domain.NewPresentString("some-service"),
-				Method:        domain.NewPresentString("some-method"),
-				Orchestration: "orchestration",
-			},
+			name:      "all fields",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewPresentService(internal.NewService("some-service")),
+				internal.NewPresentMethod(internal.NewMethod("some-method")),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
 			expStage: createStage(
 				t,
 				"some-name",
@@ -90,7 +91,7 @@ func TestCreateStage(t *testing.T) {
 
 				createFn := Stage(stageStore, orchStore)
 
-				err := createFn(test.req)
+				err := createFn(test.stageName, test.methodCtx, test.orchName)
 				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(stageStore.Stages))
@@ -110,14 +111,22 @@ func TestCreateStage(t *testing.T) {
 func TestCreateStage_Err(t *testing.T) {
 	tests := []struct {
 		name              string
-		req               StageRequest
+		stageName         internal.StageName
+		methodCtx         internal.MethodContext
+		orchName          internal.OrchestrationName
 		isError           error
 		loadOrchestration internal.Orchestration
 	}{
 		{
-			name:    "empty name",
-			req:     StageRequest{Name: ""},
-			isError: EmptyStageName,
+			name:      "empty name",
+			stageName: createStageName(t, ""),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewEmptyService(),
+				internal.NewEmptyMethod(),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
+			isError:  EmptyStageName,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -126,9 +135,15 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 		},
 		{
-			name:    "empty address",
-			req:     StageRequest{Name: "some-name", Address: ""},
-			isError: EmptyAddress,
+			name:      "empty address",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress(""),
+				internal.NewEmptyService(),
+				internal.NewEmptyMethod(),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
+			isError:  EmptyAddress,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -137,13 +152,15 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 		},
 		{
-			name: "empty service",
-			req: StageRequest{
-				Name:    "some-name",
-				Address: "some-address",
-				Service: domain.NewPresentString(""),
-			},
-			isError: EmptyService,
+			name:      "empty service",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewPresentService(internal.NewService("")),
+				internal.NewEmptyMethod(),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
+			isError:  EmptyService,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -152,14 +169,32 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 		},
 		{
-			name: "empty method",
-			req: StageRequest{
-				Name:    "some-name",
-				Address: "some-address",
-				Service: domain.NewEmptyString(),
-				Method:  domain.NewPresentString(""),
-			},
-			isError: EmptyMethod,
+			name:      "empty method",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewEmptyService(),
+				internal.NewPresentMethod(internal.NewMethod("")),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
+			isError:  EmptyMethod,
+			loadOrchestration: createOrchestration(
+				t,
+				"orchestration",
+				nil,
+				nil,
+			),
+		},
+		{
+			name:      "empty orchestration",
+			stageName: createStageName(t, "some-name"),
+			methodCtx: internal.NewMethodContext(
+				internal.NewAddress("some-address"),
+				internal.NewEmptyService(),
+				internal.NewEmptyMethod(),
+			),
+			orchName: createOrchestrationName(t, ""),
+			isError:  EmptyOrchestrationName,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -183,7 +218,7 @@ func TestCreateStage_Err(t *testing.T) {
 				}
 
 				createFn := Stage(stageStore, orchStore)
-				err := createFn(test.req)
+				err := createFn(test.stageName, test.methodCtx, test.orchName)
 				assert.Assert(t, err != nil)
 				assert.Assert(t, errors.Is(err, test.isError))
 
@@ -194,13 +229,14 @@ func TestCreateStage_Err(t *testing.T) {
 }
 
 func TestCreateStage_AlreadyExists(t *testing.T) {
-	req := StageRequest{
-		Name:          "some-name",
-		Address:       "some-address",
-		Service:       domain.NewPresentString("some-service"),
-		Method:        domain.NewPresentString("some-method"),
-		Orchestration: "orchestration",
-	}
+	stageName := createStageName(t, "some-name")
+	methodCtx := internal.NewMethodContext(
+		internal.NewAddress("some-address"),
+		internal.NewPresentService(internal.NewService("some-service")),
+		internal.NewPresentMethod(internal.NewMethod("some-method")),
+	)
+	orchName := createOrchestrationName(t, "orchestration")
+
 	expStage := createStage(t, "some-name", "orchestration", false)
 	storedOrchestration := createOrchestration(t, "orchestration", nil, nil)
 	expOrchestration := createOrchestration(
@@ -222,7 +258,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 
 	createFn := Stage(stageStore, orchStore)
 
-	err := createFn(req)
+	err := createFn(stageName, methodCtx, orchName)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(stageStore.Stages))
@@ -235,12 +271,12 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
-	err = createFn(req)
+	err = createFn(stageName, methodCtx, orchName)
 	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "stage", alreadyExists.Type)
-	assert.Equal(t, req.Name, alreadyExists.Ident)
+	assert.Equal(t, stageName.Unwrap(), alreadyExists.Ident)
 
 	assert.Equal(t, 1, len(stageStore.Stages))
 	s, exists = stageStore.Stages[expStage.Name()]
@@ -251,6 +287,12 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	o, exists = orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
+}
+
+func createStageName(t *testing.T, name string) internal.StageName {
+	stageName, err := internal.NewStageName(name)
+	assert.NilError(t, err, "create stage name %s", name)
+	return stageName
 }
 
 func createStage(

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
 type StageSaver interface {
@@ -20,16 +19,6 @@ type StageStorage interface {
 	StageLoader
 }
 
-type StageRequest struct {
-	Name string
-
-	Address string
-	Service domain.OptionalString
-	Method  domain.OptionalString
-
-	Orchestration string
-}
-
 var (
 	EmptyStageName = fmt.Errorf("empty stage name")
 	EmptyAddress   = fmt.Errorf("empty address")
@@ -40,47 +29,39 @@ var (
 func Stage(
 	stageStorage StageStorage,
 	orchStorage OrchestrationStorage,
-) func(StageRequest) error {
-	return func(req StageRequest) error {
-		serviceOpt := internal.NewEmptyService()
-		methodOpt := internal.NewEmptyMethod()
-
-		name, err := internal.NewStageName(req.Name)
-		if err != nil {
-			return err
-		}
+) func(
+	internal.StageName,
+	internal.MethodContext,
+	internal.OrchestrationName,
+) error {
+	return func(
+		name internal.StageName,
+		ctx internal.MethodContext,
+		orchName internal.OrchestrationName,
+	) error {
 		if name.IsEmpty() {
 			return EmptyStageName
 		}
-		addr := internal.NewAddress(req.Address)
+		addr := ctx.Address()
 		if addr.IsEmpty() {
 			return EmptyAddress
 		}
 
-		if req.Service.Present() {
-			service := internal.NewService(req.Service.Unwrap())
-			if service.IsEmpty() {
-				return EmptyService
-			}
-			serviceOpt = internal.NewPresentService(service)
+		service := ctx.Service()
+		if service.Present() && service.Unwrap().IsEmpty() {
+			return EmptyService
 		}
 
-		if req.Method.Present() {
-			method := internal.NewMethod(req.Method.Unwrap())
-			if method.IsEmpty() {
-				return EmptyMethod
-			}
-			methodOpt = internal.NewPresentMethod(method)
+		method := ctx.Method()
+		if method.Present() && method.Unwrap().IsEmpty() {
+			return EmptyMethod
 		}
 
-		ctx := internal.NewMethodContext(addr, serviceOpt, methodOpt)
-
-		orchestrationName, err := internal.NewOrchestrationName(req.Orchestration)
-		if err != nil {
-			return err
+		if orchName.IsEmpty() {
+			return EmptyOrchestrationName
 		}
 
-		_, err = stageStorage.Load(name)
+		_, err := stageStorage.Load(name)
 		if err == nil {
 			return &internal.AlreadyExists{Type: "stage", Ident: name.Unwrap()}
 		}
@@ -88,24 +69,18 @@ func Stage(
 		if !errors.As(err, &notFound) {
 			return err
 		}
-		_, err = orchStorage.Load(orchestrationName)
+
+		_, err = orchStorage.Load(orchName)
 		if err != nil {
 			return err
 		}
 		updateFn := addStageNameToOrchestration(name)
-		err = updateOrchestration(
-			orchestrationName,
-			orchStorage,
-			updateFn,
-			orchStorage,
-		)
+		err = updateOrchestration(orchName, orchStorage, updateFn, orchStorage)
 		if err != nil {
-			if err != nil {
-				format := "add stage %s to orchestration %s: %w"
-				return fmt.Errorf(format, name, orchestrationName, err)
-			}
+			format := "add stage %s to orchestration %s: %w"
+			return fmt.Errorf(format, name, orchName, err)
 		}
-		stage := internal.NewStage(name, ctx, orchestrationName)
+		stage := internal.NewStage(name, ctx, orchName)
 		return stageStorage.Save(stage)
 	}
 }
