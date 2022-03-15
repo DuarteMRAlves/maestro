@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 )
 
 type LinkSaver interface {
@@ -20,22 +19,13 @@ type LinkStorage interface {
 	LinkLoader
 }
 
-type LinkRequest struct {
-	Name string
-
-	SourceStage string
-	SourceField domain.OptionalString
-	TargetStage string
-	TargetField domain.OptionalString
-
-	Orchestration string
-}
-
 var (
-	EmptyLinkName        = fmt.Errorf("empty link name")
-	EmptySourceField     = fmt.Errorf("empty source field")
-	EmptyTargetField     = fmt.Errorf("empty target field")
-	EqualSourceAndTarget = fmt.Errorf("equal source and target stages")
+	EmptyLinkName        = errors.New("empty link name")
+	EmptySourceStage     = errors.New("empty source stage")
+	EmptySourceField     = errors.New("empty source field")
+	EmptyTargetStage     = errors.New("empty target stage")
+	EmptyTargetField     = errors.New("empty target field")
+	EqualSourceAndTarget = errors.New("equal source and target stages")
 )
 
 type StageNotInOrchestration struct {
@@ -52,48 +42,42 @@ func Link(
 	storage LinkStorage,
 	stageLoader StageLoader,
 	orchStorage OrchestrationStorage,
-) func(LinkRequest) error {
-	return func(req LinkRequest) error {
-		name, err := internal.NewLinkName(req.Name)
-		if err != nil {
-			return err
-		}
+) func(
+	internal.LinkName,
+	internal.LinkEndpoint,
+	internal.LinkEndpoint,
+	internal.OrchestrationName,
+) error {
+	return func(
+		name internal.LinkName,
+		source, target internal.LinkEndpoint,
+		orchName internal.OrchestrationName,
+	) error {
 		if name.IsEmpty() {
 			return EmptyLinkName
 		}
 
-		sourceStage, err := internal.NewStageName(req.SourceStage)
-		if err != nil {
-			return err
+		sourceStage := source.Stage()
+		if sourceStage.IsEmpty() {
+			return EmptySourceStage
 		}
-		sourceFieldOpt := internal.NewEmptyMessageField()
-		if req.SourceField.Present() {
-			sourceField := internal.NewMessageField(req.SourceField.Unwrap())
-			if sourceField.IsEmpty() {
-				return EmptySourceField
-			}
-			sourceFieldOpt = internal.NewPresentMessageField(sourceField)
+		if source.Field().Present() && source.Field().Unwrap().IsEmpty() {
+			return EmptySourceField
 		}
 
-		targetStage, err := internal.NewStageName(req.TargetStage)
-		if err != nil {
-			return err
+		targetStage := target.Stage()
+		if targetStage.IsEmpty() {
+			return EmptyTargetStage
 		}
-		targetFieldOpt := internal.NewEmptyMessageField()
-		if req.TargetField.Present() {
-			targetField := internal.NewMessageField(req.TargetField.Unwrap())
-			if targetField.IsEmpty() {
-				return EmptyTargetField
-			}
-			targetFieldOpt = internal.NewPresentMessageField(targetField)
+		if target.Field().Present() && target.Field().Unwrap().IsEmpty() {
+			return EmptyTargetField
 		}
 
-		orchName, err := internal.NewOrchestrationName(req.Orchestration)
-		if err != nil {
-			return err
+		if orchName.IsEmpty() {
+			return EmptyOrchestrationName
 		}
 
-		_, err = storage.Load(name)
+		_, err := storage.Load(name)
 		if err == nil {
 			return &internal.AlreadyExists{Type: "link", Ident: name.Unwrap()}
 		}
@@ -144,10 +128,7 @@ func Link(
 			return fmt.Errorf(format, name, orchName, err)
 		}
 
-		sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
-		targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
-
-		l := internal.NewLink(name, sourceEndpoint, targetEndpoint, orchName)
+		l := internal.NewLink(name, source, target, orchName)
 
 		return storage.Save(l)
 	}
