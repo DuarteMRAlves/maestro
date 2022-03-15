@@ -3,7 +3,6 @@ package create
 import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/domain"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"gotest.tools/v3/assert"
 	"testing"
@@ -12,22 +11,27 @@ import (
 func TestCreateLink(t *testing.T) {
 	tests := []struct {
 		name              string
-		req               LinkRequest
+		linkName          internal.LinkName
+		source            internal.LinkEndpoint
+		target            internal.LinkEndpoint
+		orchName          internal.OrchestrationName
 		expLink           internal.Link
 		loadOrchestration internal.Orchestration
 		expOrchestration  internal.Orchestration
 		storedStages      []internal.Stage
 	}{
 		{
-			name: "required fields",
-			req: LinkRequest{
-				Name:          "some-name",
-				SourceStage:   "source",
-				SourceField:   domain.NewEmptyString(),
-				TargetStage:   "target",
-				TargetField:   domain.NewEmptyString(),
-				Orchestration: "orchestration",
-			},
+			name:     "required fields",
+			linkName: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewEmptyMessageField(),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewEmptyMessageField(),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
 			expLink: createLink(
 				t,
 				"some-name",
@@ -52,15 +56,17 @@ func TestCreateLink(t *testing.T) {
 			},
 		},
 		{
-			name: "all fields",
-			req: LinkRequest{
-				Name:          "some-name",
-				SourceStage:   "source",
-				SourceField:   domain.NewPresentString("source-field"),
-				TargetStage:   "target",
-				TargetField:   domain.NewPresentString("target-field"),
-				Orchestration: "orchestration",
-			},
+			name:     "all fields",
+			linkName: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewPresentMessageField(internal.NewMessageField("source-field")),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewPresentMessageField(internal.NewMessageField("target-field")),
+			),
+			orchName: createOrchestrationName(t, "orchestration"),
 			expLink: createLink(
 				t,
 				"some-name",
@@ -105,7 +111,12 @@ func TestCreateLink(t *testing.T) {
 				}
 
 				createFn := Link(linkStore, stageStore, orchStore)
-				err := createFn(test.req)
+				err := createFn(
+					test.linkName,
+					test.source,
+					test.target,
+					test.orchName,
+				)
 
 				assert.NilError(t, err)
 
@@ -124,14 +135,16 @@ func TestCreateLink(t *testing.T) {
 }
 
 func TestCreateLink_AlreadyExists(t *testing.T) {
-	req := LinkRequest{
-		Name:          "some-name",
-		SourceStage:   "source",
-		SourceField:   domain.NewPresentString("source-field"),
-		TargetStage:   "target",
-		TargetField:   domain.NewPresentString("target-field"),
-		Orchestration: "orchestration",
-	}
+	linkName := createLinkName(t, "some-name")
+	source := internal.NewLinkEndpoint(
+		createStageName(t, "source"),
+		internal.NewPresentMessageField(internal.NewMessageField("source-field")),
+	)
+	target := internal.NewLinkEndpoint(
+		createStageName(t, "target"),
+		internal.NewPresentMessageField(internal.NewMessageField("target-field")),
+	)
+	orchName := createOrchestrationName(t, "orchestration")
 	expLink := createLink(t, "some-name", "orchestration", false)
 	storedOrchestration := createOrchestration(
 		t,
@@ -166,7 +179,7 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 
 	createFn := Link(linkStore, stageStore, orchStore)
-	err := createFn(req)
+	err := createFn(linkName, source, target, orchName)
 
 	assert.NilError(t, err)
 
@@ -180,13 +193,13 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
 
-	err = createFn(req)
+	err = createFn(linkName, source, target, orchName)
 
 	assert.Assert(t, err != nil)
 	var alreadyExists *internal.AlreadyExists
 	assert.Assert(t, errors.As(err, &alreadyExists))
 	assert.Equal(t, "link", alreadyExists.Type)
-	assert.Equal(t, req.Name, alreadyExists.Ident)
+	assert.Equal(t, linkName.Unwrap(), alreadyExists.Ident)
 	assert.Equal(t, 1, len(linkStore.Links))
 	l, exists = linkStore.Links[expLink.Name()]
 	assert.Assert(t, exists)
@@ -196,6 +209,12 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	o, exists = orchStore.Orchs[expOrchestration.Name()]
 	assert.Assert(t, exists)
 	assertEqualOrchestration(t, expOrchestration, o)
+}
+
+func createLinkName(t *testing.T, name string) internal.LinkName {
+	linkName, err := internal.NewLinkName(name)
+	assert.NilError(t, err, "create link name %s", name)
+	return linkName
 }
 
 func createLink(
