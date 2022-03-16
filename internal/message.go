@@ -37,4 +37,16 @@ type Message interface {
 
 type EmptyMessageGen func() Message
 
-type UnaryMethod func(ctx context.Context, req, rep Message) error
+type MessageDesc interface {
+	Compatible(MessageDesc) bool
+	EmptyGen() EmptyMessageGen
+	GetField(MessageField) (MessageDesc, error)
+}
+
+type UnaryMethodInvoke func(ctx context.Context, req Message) (Message, error)
+
+type UnaryMethod interface {
+	InvokeFn() UnaryMethodInvoke
+	Input() MessageDesc
+	Output() MessageDesc
+}

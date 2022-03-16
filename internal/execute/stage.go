@@ -7,14 +7,17 @@ import (
 	"time"
 )
 
+type Stage interface {
+	Run(context.Context) error
+}
+
 type unaryStage struct {
 	running bool
 
 	input  <-chan state
 	output chan<- state
 
-	gen    internal.EmptyMessageGen
-	method internal.UnaryMethod
+	method internal.UnaryMethodInvoke
 
 	mu sync.Mutex
 }
@@ -22,14 +25,12 @@ type unaryStage struct {
 func newUnaryStage(
 	input <-chan state,
 	output chan<- state,
-	gen internal.EmptyMessageGen,
-	method internal.UnaryMethod,
+	method internal.UnaryMethodInvoke,
 ) *unaryStage {
 	return &unaryStage{
 		running: false,
 		input:   input,
 		output:  output,
-		gen:     gen,
 		method:  method,
 		mu:      sync.Mutex{},
 	}
@@ -37,9 +38,8 @@ func newUnaryStage(
 
 func (s *unaryStage) Run(ctx context.Context) error {
 	var (
-		in, out  state
-		req, rep internal.Message
-		more     bool
+		in, out state
+		more    bool
 	)
 	for {
 		select {
@@ -53,10 +53,9 @@ func (s *unaryStage) Run(ctx context.Context) error {
 			close(s.output)
 			return nil
 		}
-		req = in.msg
-		rep = s.gen()
+		req := in.msg
 
-		err := s.call(ctx, req, rep)
+		rep, err := s.call(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -74,11 +73,11 @@ func (s *unaryStage) Run(ctx context.Context) error {
 
 func (s *unaryStage) call(
 	ctx context.Context,
-	req, rep internal.Message,
-) error {
+	req internal.Message,
+) (internal.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	return s.method(ctx, req, rep)
+	return s.method(ctx, req)
 }
 
 // sourceStage is the source of the orchestration. It defines the initial ids of
@@ -93,8 +92,8 @@ func newSourceStage(
 	start int32,
 	gen internal.EmptyMessageGen,
 	output chan<- state,
-) sourceStage {
-	return sourceStage{
+) *sourceStage {
+	return &sourceStage{
 		count:  start,
 		gen:    gen,
 		output: output,
@@ -118,8 +117,8 @@ type sinkStage struct {
 	input <-chan state
 }
 
-func newSinkStage(input <-chan state) sinkStage {
-	return sinkStage{input: input}
+func newSinkStage(input <-chan state) *sinkStage {
+	return &sinkStage{input: input}
 }
 
 func (s *sinkStage) Run(ctx context.Context) error {
@@ -151,8 +150,8 @@ func newMergeStage(
 	inputs []<-chan state,
 	output chan<- state,
 	gen internal.EmptyMessageGen,
-) mergeStage {
-	return mergeStage{
+) *mergeStage {
+	return &mergeStage{
 		fields: fields,
 		inputs: inputs,
 		output: output,
@@ -252,8 +251,8 @@ func newSplitStage(
 	fields []internal.OptionalMessageField,
 	input <-chan state,
 	outputs []chan<- state,
-) splitStage {
-	return splitStage{
+) *splitStage {
+	return &splitStage{
 		fields:  fields,
 		input:   input,
 		outputs: outputs,
