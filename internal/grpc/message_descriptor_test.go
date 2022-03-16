@@ -1,30 +1,25 @@
-package invoke
+package grpc
 
 import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/golang/protobuf/proto"
-	"github.com/jhump/protoreflect/desc"
 	"gotest.tools/v3/assert"
 	"testing"
 )
 
-func TestMessageDescriptor_MessageFields(t *testing.T) {
-	msgDesc, err := NewMessageDescriptor(&unit.TestMessage1{})
+func TestMessageDescriptor_GetField(t *testing.T) {
+	msgDesc, err := newMessageDescriptor(&unit.TestMessage1{})
 	assert.NilError(t, err, "create message descriptor")
 
-	fields := msgDesc.MessageFields()
-	assert.Equal(t, 1, len(fields))
-
 	field := internal.NewMessageField("field4")
-	fieldDesc, ok := fields[field]
-	assert.Assert(t, ok, "field4 exists")
 
-	innerMsg := fieldDesc.Message()
-	innerDesc, err := desc.LoadMessageDescriptorForMessage(innerMsg)
-	assert.NilError(t, err, "load inner desc")
+	fieldDesc, err := msgDesc.GetField(field)
+	assert.NilError(t, err, "get field")
 
-	assert.Equal(t, "InternalMessage1", innerDesc.GetName())
+	grpcFieldDesc, ok := fieldDesc.(messageDescriptor)
+	assert.Assert(t, ok, "cast to message descriptor")
+	assert.Equal(t, "InternalMessage1", grpcFieldDesc.desc.GetName())
 }
 
 func TestCompatibleDescriptors(t *testing.T) {
@@ -87,16 +82,13 @@ func TestCompatibleDescriptors(t *testing.T) {
 		t.Run(
 			test.name,
 			func(t *testing.T) {
-				desc1, err := NewMessageDescriptor(test.msg1)
+				desc1, err := newMessageDescriptor(test.msg1)
 				assert.NilError(t, err, "create message descriptor 1")
-				desc2, err := NewMessageDescriptor(test.msg2)
+				desc2, err := newMessageDescriptor(test.msg2)
 				assert.NilError(t, err, "create message descriptor 2")
 
-				assert.Equal(
-					t,
-					test.expected,
-					CompatibleDescriptors(desc1, desc2),
-				)
+				assert.Equal(t, test.expected, desc1.Compatible(desc2))
+				assert.Equal(t, test.expected, desc2.Compatible(desc1))
 			},
 		)
 	}
