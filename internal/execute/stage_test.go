@@ -29,7 +29,7 @@ func TestUnaryStage_Run(t *testing.T) {
 	output := make(chan state, len(requests))
 
 	method := testUnaryMethod(fieldName)
-	stage := newUnaryStage(input, output, mock.NewGen(), method)
+	stage := newUnaryStage(input, output, method)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -90,33 +90,27 @@ func testRequests(field internal.MessageField) []*mock.Message {
 	return []*mock.Message{msg1, msg2, msg3}
 }
 
-func testUnaryMethod(field internal.MessageField) func(
-	ctx context.Context,
-	req, rep internal.Message,
-) error {
-	return func(ctx context.Context, req, rep internal.Message) error {
+func testUnaryMethod(field internal.MessageField) internal.UnaryMethodInvoke {
+	return func(ctx context.Context, req internal.Message) (
+		internal.Message,
+		error,
+	) {
 		reqMock, ok := req.(*mock.Message)
 		if !ok {
-			return errors.New("request message is not *mock.Message")
-		}
-		repMock, ok := rep.(*mock.Message)
-		if !ok {
-			return errors.New("reply message is not *mock.Message")
-		}
-		if len(repMock.Fields) != 0 {
-			return errors.New("reply message is not empty")
+			return nil, errors.New("request message is not *mock.Message")
 		}
 		val1, ok := reqMock.Fields[field]
 		if !ok {
-			return errors.New("request message does not have field1 field")
+			return nil, errors.New("request message does not have field1 field")
 		}
 		val1AsString, ok := val1.(string)
 		if !ok {
-			return errors.New("request message field1 is not a string")
+			return nil, errors.New("request message field1 is not a string")
 		}
 		replyField := val1AsString + val1AsString
-		repMock.Fields[field] = replyField
-		return nil
+		repFields := map[internal.MessageField]interface{}{field: replyField}
+		repMock := &mock.Message{Fields: repFields}
+		return repMock, nil
 	}
 }
 
