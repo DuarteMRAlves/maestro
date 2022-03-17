@@ -38,11 +38,7 @@ func Orchestration(storage OrchestrationStorage) func(internal.OrchestrationName
 			return err
 		}
 
-		o := internal.NewOrchestration(
-			name,
-			[]internal.StageName{},
-			[]internal.LinkName{},
-		)
+		o := internal.NewOrchestration(name, nil, nil)
 		return storage.Save(o)
 	}
 }
