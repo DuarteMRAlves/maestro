@@ -17,61 +17,61 @@ type MethodLoader interface {
 	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
-type Builder func(orchestration internal.Orchestration) (execution, error)
+type Builder func(orchestration internal.Orchestration) (*execution, error)
 
 func NewBuilder(
 	stageLoader StageLoader,
 	linkLoader LinkLoader,
 	methodLoader MethodLoader,
 ) Builder {
-	return func(orchestration internal.Orchestration) (execution, error) {
+	return func(orchestration internal.Orchestration) (*execution, error) {
 		stageNames := orchestration.Stages()
-		stageCtxs := make(map[internal.StageName]stageContext, len(stageNames))
+		stageCtxs := make(map[internal.StageName]*stageContext, len(stageNames))
 		for _, n := range stageNames {
 			s, err := stageLoader.Load(n)
 			if err != nil {
-				return execution{}, err
+				return nil, err
 			}
 			m, err := methodLoader.Load(s.MethodContext())
 			if err != nil {
-				return execution{}, err
+				return nil, err
 			}
-			stageCtxs[n] = stageContext{stage: s, method: m}
+			stageCtxs[n] = &stageContext{stage: s, method: m}
 		}
 
 		linkNames := orchestration.Links()
-		links := make(map[internal.LinkName]linkContext, len(linkNames))
+		links := make(map[internal.LinkName]*linkContext, len(linkNames))
 		for _, n := range linkNames {
 			link, err := linkLoader.Load(n)
 			if err != nil {
-				return execution{}, err
+				return nil, err
 			}
-			linkCtx := linkContext{link: link, ch: make(chan state)}
+			linkCtx := &linkContext{link: link, ch: make(chan state)}
 			links[n] = linkCtx
 
 			source, ok := stageCtxs[link.Source().Stage()]
 			if !ok {
 				err = fmt.Errorf("stage not found %s", link.Source().Stage())
-				return execution{}, err
+				return nil, err
 			}
 			target, ok := stageCtxs[link.Target().Stage()]
 			if !ok {
 				err = fmt.Errorf("stage not found %s", link.Source().Stage())
-				return execution{}, err
+				return nil, err
 			}
 
 			sourceMsg := source.method.Output()
 			if link.Source().Field().Present() {
 				sourceMsg, err = sourceMsg.GetField(link.Source().Field().Unwrap())
 				if err != nil {
-					return execution{}, err
+					return nil, err
 				}
 			}
 			targetMsg := target.method.Input()
 			if link.Target().Field().Present() {
 				targetMsg, err = targetMsg.GetField(link.Target().Field().Unwrap())
 				if err != nil {
-					return execution{}, err
+					return nil, err
 				}
 			}
 			if !sourceMsg.Compatible(targetMsg) {
@@ -79,11 +79,10 @@ func NewBuilder(
 					A: sourceMsg,
 					B: targetMsg,
 				}
-				return execution{}, err
+				return nil, err
 			}
-
 			target.inputs = append(target.inputs, linkCtx)
-			source.outputs = append(target.outputs, linkCtx)
+			source.outputs = append(source.outputs, linkCtx)
 		}
 
 		stages := newStageMap()
@@ -95,7 +94,7 @@ func NewBuilder(
 			)
 			inChan, aux, err = stageCtx.buildInputResources()
 			if err != nil {
-				return execution{}, err
+				return nil, err
 			}
 			if aux != nil {
 				stages.addInputStage(name, aux)
@@ -117,8 +116,8 @@ func NewBuilder(
 type stageContext struct {
 	stage   internal.Stage
 	method  internal.UnaryMethod
-	inputs  []linkContext
-	outputs []linkContext
+	inputs  []*linkContext
+	outputs []*linkContext
 }
 
 type linkContext struct {
