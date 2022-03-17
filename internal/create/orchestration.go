@@ -42,29 +42,3 @@ func Orchestration(storage OrchestrationStorage) func(internal.OrchestrationName
 		return storage.Save(o)
 	}
 }
-
-func updateOrchestration(
-	name internal.OrchestrationName,
-	loader OrchestrationLoader,
-	updateFn func(internal.Orchestration) internal.Orchestration,
-	saver OrchestrationSaver,
-) error {
-	orch, err := loader.Load(name)
-	if err != nil {
-		return err
-	}
-	orch = updateFn(orch)
-	return saver.Save(orch)
-}
-
-func addLinkNameToOrchestration(l internal.LinkName) func(internal.Orchestration) internal.Orchestration {
-	return func(o internal.Orchestration) internal.Orchestration {
-		old := o.Links()
-		links := make([]internal.LinkName, 0, len(old)+1)
-		for _, name := range old {
-			links = append(links, name)
-		}
-		links = append(links, l)
-		return internal.NewOrchestration(o.Name(), o.Stages(), links)
-	}
-}
