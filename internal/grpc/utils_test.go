@@ -1,4 +1,4 @@
-package invoke
+package grpc
 
 import (
 	"context"

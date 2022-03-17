@@ -14,10 +14,12 @@ type Stage interface {
 type unaryStage struct {
 	running bool
 
+	address internal.Address
+
 	input  <-chan state
 	output chan<- state
 
-	method internal.UnaryMethodInvoke
+	clientBuilder internal.UnaryClientBuilder
 
 	mu sync.Mutex
 }
@@ -25,14 +27,16 @@ type unaryStage struct {
 func newUnaryStage(
 	input <-chan state,
 	output chan<- state,
-	method internal.UnaryMethodInvoke,
+	address internal.Address,
+	clientBuilder internal.UnaryClientBuilder,
 ) *unaryStage {
 	return &unaryStage{
-		running: false,
-		input:   input,
-		output:  output,
-		method:  method,
-		mu:      sync.Mutex{},
+		running:       false,
+		input:         input,
+		output:        output,
+		address:       address,
+		clientBuilder: clientBuilder,
+		mu:            sync.Mutex{},
 	}
 }
 
@@ -41,6 +45,11 @@ func (s *unaryStage) Run(ctx context.Context) error {
 		in, out state
 		more    bool
 	)
+	client, err := s.clientBuilder(s.address)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
 	for {
 		select {
 		case in, more = <-s.input:
@@ -55,7 +64,7 @@ func (s *unaryStage) Run(ctx context.Context) error {
 		}
 		req := in.msg
 
-		rep, err := s.call(ctx, req)
+		rep, err := s.call(ctx, client, req)
 		if err != nil {
 			return err
 		}
@@ -73,11 +82,12 @@ func (s *unaryStage) Run(ctx context.Context) error {
 
 func (s *unaryStage) call(
 	ctx context.Context,
+	client internal.UnaryClient,
 	req internal.Message,
 ) (internal.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	return s.method(ctx, req)
+	return client.Call(ctx, req)
 }
 
 // sourceStage is the source of the orchestration. It defines the initial ids of

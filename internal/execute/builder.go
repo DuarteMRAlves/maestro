@@ -104,8 +104,9 @@ func NewBuilder(
 			if aux != nil {
 				stages.addOutputStage(name, aux)
 			}
-			invokeFn := stageCtx.method.InvokeFn()
-			rpcStage := newUnaryStage(inChan, outChan, invokeFn)
+			address := stageCtx.stage.MethodContext().Address()
+			clientBuilder := stageCtx.method.ClientBuilder()
+			rpcStage := newUnaryStage(inChan, outChan, address, clientBuilder)
 			stages.addRpcStage(name, rpcStage)
 		}
 

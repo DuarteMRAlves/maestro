@@ -1,4 +1,4 @@
-package invoke
+package grpc
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,8 +31,7 @@ func TestReflectionClient_ListServices(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	listFn := listServices(conn)
-	services, err := listFn(ctx)
+	services, err := listServices(ctx, conn)
 	assert.NilError(t, err, "list services error")
 
 	assert.Equal(t, 2, len(services), "number of services")
@@ -73,9 +71,7 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	listFn := listServices(conn)
-	services, err := listFn(ctx)
-
+	services, err := listServices(ctx, conn)
 	assert.Assert(t, err != nil)
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
@@ -103,41 +99,37 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("unit.TestService")
-	resolveFn := resolveService(conn)
-	serv, err := resolveFn(ctx, serviceName)
+	serv, err := resolveService(ctx, conn, serviceName)
 	assert.NilError(t, err, "resolve service error")
 	assertTestService(t, serv)
 }
 
-func assertTestService(t *testing.T, descriptor Service) {
-	methods := descriptor.Methods()
+func assertTestService(t *testing.T, descriptor *desc.ServiceDescriptor) {
+	methods := descriptor.GetMethods()
 	assert.Equal(t, 4, len(methods), "number of methods")
 
+	names := []string{
+		"unit.TestService.Unary",
+		"unit.TestService.ClientStream",
+		"unit.TestService.ServerStream",
+		"unit.TestService.BidiStream",
+	}
 	for _, m := range methods {
-		switch m.FullMethod().Unwrap() {
-		case "/unit.TestService/Unary":
-			assert.Assert(t, m.IsUnary())
-		case "/unit.TestService/ClientStream":
-			assert.Assert(t, !m.IsUnary())
-		case "/unit.TestService/ServerStream":
-			assert.Assert(t, !m.IsUnary())
-		case "/unit.TestService/BidiStream":
-			assert.Assert(t, !m.IsUnary())
-		default:
-			t.Fatalf("unknown method name '%v'", m.FullMethod())
+		foundName := false
+		for _, n := range names {
+			if n == m.GetFullyQualifiedName() {
+				foundName = true
+			}
 		}
-		assertRequestType(t, m.Input())
-		assertReplyType(t, m.Output())
+		if !foundName {
+			t.Fatalf("unknown method name '%v'", m.GetFullyQualifiedName())
+		}
+		assertRequestType(t, m.GetInputType())
+		assertReplyType(t, m.GetOutputType())
 	}
 }
 
-func assertRequestType(t *testing.T, messageDesc MessageDescriptor) {
-	empty := messageDesc.MessageGenerator()()
-	dyn, err := dynamic.AsDynamicMessage(empty.GrpcMessage())
-	assert.NilError(t, err, "dynamic request")
-	descriptor := dyn.GetMessageDescriptor()
-	assert.Equal(t, "Request", descriptor.GetName())
-
+func assertRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	stringField := descriptor.FindFieldByName("stringField")
 	assert.Equal(t, int32(1), stringField.GetNumber())
 	assert.Equal(
@@ -169,11 +161,7 @@ func assertRequestType(t *testing.T, messageDesc MessageDescriptor) {
 	assertInnerMessageType(t, innerType)
 }
 
-func assertReplyType(t *testing.T, messageDesc MessageDescriptor) {
-	empty := messageDesc.MessageGenerator()()
-	dyn, err := dynamic.AsDynamicMessage(empty.GrpcMessage())
-	assert.NilError(t, err, "dynamic request")
-	descriptor := dyn.GetMessageDescriptor()
+func assertReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	doubleField := descriptor.FindFieldByName("doubleField")
 	assert.Equal(t, int32(1), doubleField.GetNumber())
 	assert.Equal(
@@ -223,27 +211,21 @@ func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("unit.ExtraService")
-	resolveFn := resolveService(conn)
-	serv, err := resolveFn(ctx, serviceName)
+	serv, err := resolveService(ctx, conn, serviceName)
 	assert.NilError(t, err, "resolve service error")
 	assertExtraService(t, serv)
 }
 
-func assertExtraService(t *testing.T, descriptor Service) {
-	methods := descriptor.Methods()
+func assertExtraService(t *testing.T, descriptor *desc.ServiceDescriptor) {
+	methods := descriptor.GetMethods()
 	assert.Equal(t, 1, len(methods), "number of methods")
 
 	m := methods[0]
-	assert.Assert(t, m.IsUnary())
-	assertExtraRequestType(t, m.Input())
-	assertExtraReplyType(t, m.Output())
+	assertExtraRequestType(t, m.GetInputType())
+	assertExtraReplyType(t, m.GetOutputType())
 }
 
-func assertExtraRequestType(t *testing.T, messageDesc MessageDescriptor) {
-	empty := messageDesc.MessageGenerator()()
-	dyn, err := dynamic.AsDynamicMessage(empty.GrpcMessage())
-	assert.NilError(t, err, "dynamic request")
-	descriptor := dyn.GetMessageDescriptor()
+func assertExtraRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	repeatedStringField := descriptor.FindFieldByName("repeatedStringField")
 	assert.Equal(t, int32(1), repeatedStringField.GetNumber())
 	assert.Equal(
@@ -266,11 +248,7 @@ func assertExtraRequestType(t *testing.T, messageDesc MessageDescriptor) {
 	assertExtraInnerMessageType(t, innerType)
 }
 
-func assertExtraReplyType(t *testing.T, messageDesc MessageDescriptor) {
-	empty := messageDesc.MessageGenerator()()
-	dyn, err := dynamic.AsDynamicMessage(empty.GrpcMessage())
-	assert.NilError(t, err, "dynamic request")
-	descriptor := dyn.GetMessageDescriptor()
+func assertExtraReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	oneOfs := descriptor.GetOneOfs()
 	assert.Equal(t, 1, len(oneOfs))
 
@@ -342,8 +320,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("pb.TestService")
-	resolveFn := resolveService(conn)
-	serv, err := resolveFn(ctx, serviceName)
+	serv, err := resolveService(ctx, conn, serviceName)
 
 	assert.Assert(t, err != nil)
 	cause, ok := errors.Unwrap(err).(interface {
@@ -372,8 +349,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("pb.UnknownService")
-	resolveFn := resolveService(conn)
-	serv, err := resolveFn(ctx, serviceName)
+	serv, err := resolveService(ctx, conn, serviceName)
 
 	var notFound *internal.NotFound
 	assert.Assert(t, errors.As(err, &notFound), "resolve service error")

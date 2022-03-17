@@ -28,8 +28,9 @@ func TestUnaryStage_Run(t *testing.T) {
 	input := make(chan state, len(requests))
 	output := make(chan state, len(requests))
 
-	method := testUnaryMethod(fieldName)
-	stage := newUnaryStage(input, output, method)
+	address := internal.NewAddress("some-address")
+	clientBuilder := testUnaryClientBuilder(fieldName)
+	stage := newUnaryStage(input, output, address, clientBuilder)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -90,29 +91,39 @@ func testRequests(field internal.MessageField) []*mock.Message {
 	return []*mock.Message{msg1, msg2, msg3}
 }
 
-func testUnaryMethod(field internal.MessageField) internal.UnaryMethodInvoke {
-	return func(ctx context.Context, req internal.Message) (
-		internal.Message,
-		error,
-	) {
-		reqMock, ok := req.(*mock.Message)
-		if !ok {
-			return nil, errors.New("request message is not *mock.Message")
-		}
-		val1, ok := reqMock.Fields[field]
-		if !ok {
-			return nil, errors.New("request message does not have field1 field")
-		}
-		val1AsString, ok := val1.(string)
-		if !ok {
-			return nil, errors.New("request message field1 is not a string")
-		}
-		replyField := val1AsString + val1AsString
-		repFields := map[internal.MessageField]interface{}{field: replyField}
-		repMock := &mock.Message{Fields: repFields}
-		return repMock, nil
+func testUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+	return func(_ internal.Address) (internal.UnaryClient, error) {
+		return unaryClient{field: field}, nil
 	}
 }
+
+type unaryClient struct {
+	field internal.MessageField
+}
+
+func (c unaryClient) Call(_ context.Context, req internal.Message) (
+	internal.Message,
+	error,
+) {
+	reqMock, ok := req.(*mock.Message)
+	if !ok {
+		return nil, errors.New("request message is not *mock.Message")
+	}
+	val1, ok := reqMock.Fields[c.field]
+	if !ok {
+		return nil, errors.New("request message does not have field1 field")
+	}
+	val1AsString, ok := val1.(string)
+	if !ok {
+		return nil, errors.New("request message field1 is not a string")
+	}
+	replyField := val1AsString + val1AsString
+	repFields := map[internal.MessageField]interface{}{c.field: replyField}
+	repMock := &mock.Message{Fields: repFields}
+	return repMock, nil
+}
+
+func (c unaryClient) Close() error { return nil }
 
 func TestSourceStage_Run(t *testing.T) {
 	start := int32(1)

@@ -1,6 +1,8 @@
 package internal
 
-import "context"
+import (
+	"context"
+)
 
 type MessageField struct{ val string }
 
@@ -43,10 +45,15 @@ type MessageDesc interface {
 	GetField(MessageField) (MessageDesc, error)
 }
 
-type UnaryMethodInvoke func(ctx context.Context, req Message) (Message, error)
+type UnaryClientBuilder func(Address) (UnaryClient, error)
+
+type UnaryClient interface {
+	Call(ctx context.Context, req Message) (Message, error)
+	Close() error
+}
 
 type UnaryMethod interface {
-	InvokeFn() UnaryMethodInvoke
+	ClientBuilder() UnaryClientBuilder
 	Input() MessageDesc
 	Output() MessageDesc
 }
