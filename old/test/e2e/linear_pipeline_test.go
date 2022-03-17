@@ -9,7 +9,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/storage"
 	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/create"
 	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/start"
-	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
+	"github.com/DuarteMRAlves/maestro/test/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -36,7 +36,7 @@ func TestE2E_Linear(t *testing.T) {
 	defer transformServer.Stop()
 
 	max := 3
-	collect := make([]*unit.LinearMessage, 0, max)
+	collect := make([]*protobuf.LinearMessage, 0, max)
 	done := make(chan struct{})
 
 	sinkServer := startLinearSink(t, max, &collect, done)
@@ -94,42 +94,42 @@ func runStartCmd(t *testing.T, maestroAddr string) {
 }
 
 type LinearSource struct {
-	unit.UnimplementedLinearSourceServer
+	protobuf.UnimplementedLinearSourceServer
 	counter int64
 }
 
 func (s *LinearSource) Process(
 	_ context.Context,
 	_ *emptypb.Empty,
-) (*unit.LinearMessage, error) {
-	msg := &unit.LinearMessage{Value: s.counter}
+) (*protobuf.LinearMessage, error) {
+	msg := &protobuf.LinearMessage{Value: s.counter}
 	atomic.AddInt64(&s.counter, 1)
 	return msg, nil
 }
 
 type LinearTransform struct {
-	unit.UnimplementedLinearTransformServer
+	protobuf.UnimplementedLinearTransformServer
 }
 
 func (_ *LinearTransform) Process(
 	_ context.Context,
-	msg *unit.LinearMessage,
-) (*unit.LinearMessage, error) {
+	msg *protobuf.LinearMessage,
+) (*protobuf.LinearMessage, error) {
 	msg.Value *= 2
 	return msg, nil
 }
 
 type LinearSink struct {
-	unit.UnimplementedLinearSinkServer
+	protobuf.UnimplementedLinearSinkServer
 	max     int
-	collect *[]*unit.LinearMessage
+	collect *[]*protobuf.LinearMessage
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
 func (s *LinearSink) Process(
 	_ context.Context,
-	msg *unit.LinearMessage,
+	msg *protobuf.LinearMessage,
 ) (*emptypb.Empty, error) {
 
 	s.mu.Lock()
@@ -151,7 +151,7 @@ func startLinearSource(t *testing.T) *grpc.Server {
 	lis, err := net.Listen("tcp", addr)
 	assert.NilError(t, err, "failed to listen source")
 	s := grpc.NewServer()
-	unit.RegisterLinearSourceServer(s, &LinearSource{counter: 1})
+	protobuf.RegisterLinearSourceServer(s, &LinearSource{counter: 1})
 	reflection.Register(s)
 
 	go func() {
@@ -167,7 +167,7 @@ func startLinearTransform(t *testing.T) *grpc.Server {
 	assert.NilError(t, err, "failed to listen transform")
 
 	s := grpc.NewServer()
-	unit.RegisterLinearTransformServer(s, &LinearTransform{})
+	protobuf.RegisterLinearTransformServer(s, &LinearTransform{})
 	reflection.Register(s)
 
 	go func() {
@@ -180,7 +180,7 @@ func startLinearTransform(t *testing.T) *grpc.Server {
 func startLinearSink(
 	t *testing.T,
 	max int,
-	collect *[]*unit.LinearMessage,
+	collect *[]*protobuf.LinearMessage,
 	done chan<- struct{},
 ) *grpc.Server {
 	addr := fmt.Sprintf("localhost:%d", sinkPort)
@@ -188,7 +188,7 @@ func startLinearSink(
 	assert.NilError(t, err, "failed to listen sink")
 
 	s := grpc.NewServer()
-	unit.RegisterLinearSinkServer(
+	protobuf.RegisterLinearSinkServer(
 		s,
 		&LinearSink{max: max, collect: collect, done: done},
 	)
