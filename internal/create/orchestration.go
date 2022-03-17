@@ -57,20 +57,6 @@ func updateOrchestration(
 	return saver.Save(orch)
 }
 
-func addStageNameToOrchestration(
-	s internal.StageName,
-) func(internal.Orchestration) internal.Orchestration {
-	return func(o internal.Orchestration) internal.Orchestration {
-		old := o.Stages()
-		stages := make([]internal.StageName, 0, len(old)+1)
-		for _, name := range old {
-			stages = append(stages, name)
-		}
-		stages = append(stages, s)
-		return internal.NewOrchestration(o.Name(), stages, o.Links())
-	}
-}
-
 func addLinkNameToOrchestration(l internal.LinkName) func(internal.Orchestration) internal.Orchestration {
 	return func(o internal.Orchestration) internal.Orchestration {
 		old := o.Links()
