@@ -88,7 +88,7 @@ func Link(
 
 		orch, err := orchStorage.Load(orchName)
 		if err != nil {
-			return err
+			return fmt.Errorf("add link %s: %w", name, err)
 		}
 
 		_, err = stageLoader.Load(sourceStage)
@@ -121,11 +121,13 @@ func Link(
 			return EqualSourceAndTarget
 		}
 
-		updateFn := addLinkNameToOrchestration(name)
-		err = updateOrchestration(orchName, orchStorage, updateFn, orchStorage)
+		links := orch.Links()
+		links = append(links, name)
+		orch = internal.NewOrchestration(orch.Name(), orch.Stages(), links)
+
+		err = orchStorage.Save(orch)
 		if err != nil {
-			format := "add link %s to orchestration %s: %w"
-			return fmt.Errorf(format, name, orchName, err)
+			return fmt.Errorf("add link %s: %w", name, err)
 		}
 
 		l := internal.NewLink(name, source, target)
