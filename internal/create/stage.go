@@ -70,15 +70,18 @@ func Stage(
 			return err
 		}
 
-		_, err = orchStorage.Load(orchName)
+		orch, err := orchStorage.Load(orchName)
 		if err != nil {
-			return err
+			return fmt.Errorf("add stage %s: %w", name, err)
 		}
-		updateFn := addStageNameToOrchestration(name)
-		err = updateOrchestration(orchName, orchStorage, updateFn, orchStorage)
+
+		stages := orch.Stages()
+		stages = append(stages, name)
+		orch = internal.NewOrchestration(orch.Name(), stages, orch.Links())
+
+		err = orchStorage.Save(orch)
 		if err != nil {
-			format := "add stage %s to orchestration %s: %w"
-			return fmt.Errorf(format, name, orchName, err)
+			return fmt.Errorf("add stage %s: %w", name, err)
 		}
 		stage := internal.NewStage(name, ctx)
 		return stageStorage.Save(stage)
