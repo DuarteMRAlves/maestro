@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/storage"
-	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
+	"github.com/DuarteMRAlves/maestro/test/protobuf"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -39,7 +39,7 @@ func TestExecution_Linear(t *testing.T) {
 	defer transformServer.Stop()
 
 	max := 3
-	collect := make([]*unit.LinearMessage, 0, max)
+	collect := make([]*protobuf.LinearMessage, 0, max)
 	done := make(chan struct{})
 
 	sinkLis, err := net.Listen("tcp", "localhost:0")
@@ -73,42 +73,42 @@ func TestExecution_Linear(t *testing.T) {
 }
 
 type LinearSource struct {
-	unit.UnimplementedLinearSourceServer
+	protobuf.UnimplementedLinearSourceServer
 	counter int64
 }
 
 func (s *LinearSource) Process(
 	_ context.Context,
 	_ *emptypb.Empty,
-) (*unit.LinearMessage, error) {
-	msg := &unit.LinearMessage{Value: s.counter}
+) (*protobuf.LinearMessage, error) {
+	msg := &protobuf.LinearMessage{Value: s.counter}
 	atomic.AddInt64(&s.counter, 1)
 	return msg, nil
 }
 
 type LinearTransform struct {
-	unit.UnimplementedLinearTransformServer
+	protobuf.UnimplementedLinearTransformServer
 }
 
 func (_ *LinearTransform) Process(
 	_ context.Context,
-	msg *unit.LinearMessage,
-) (*unit.LinearMessage, error) {
+	msg *protobuf.LinearMessage,
+) (*protobuf.LinearMessage, error) {
 	msg.Value *= 2
 	return msg, nil
 }
 
 type LinearSink struct {
-	unit.UnimplementedLinearSinkServer
+	protobuf.UnimplementedLinearSinkServer
 	max     int
-	collect *[]*unit.LinearMessage
+	collect *[]*protobuf.LinearMessage
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
 func (s *LinearSink) Process(
 	_ context.Context,
-	msg *unit.LinearMessage,
+	msg *protobuf.LinearMessage,
 ) (*emptypb.Empty, error) {
 
 	s.mu.Lock()
@@ -127,7 +127,7 @@ func (s *LinearSink) Process(
 
 func startLinearSource(t *testing.T, lis net.Listener) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterLinearSourceServer(s, &LinearSource{counter: 1})
+	protobuf.RegisterLinearSourceServer(s, &LinearSource{counter: 1})
 	reflection.Register(s)
 
 	go func() {
@@ -139,7 +139,7 @@ func startLinearSource(t *testing.T, lis net.Listener) *grpc.Server {
 
 func startLinearTransform(t *testing.T, lis net.Listener) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterLinearTransformServer(s, &LinearTransform{})
+	protobuf.RegisterLinearTransformServer(s, &LinearTransform{})
 	reflection.Register(s)
 
 	go func() {
@@ -153,11 +153,11 @@ func startLinearSink(
 	t *testing.T,
 	lis net.Listener,
 	max int,
-	collect *[]*unit.LinearMessage,
+	collect *[]*protobuf.LinearMessage,
 	done chan<- struct{},
 ) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterLinearSinkServer(
+	protobuf.RegisterLinearSinkServer(
 		s,
 		&LinearSink{max: max, collect: collect, done: done},
 	)
@@ -285,7 +285,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	defer transformServer.Stop()
 
 	max := 3
-	collect := make([]*unit.SplitAndMergePair, 0, max)
+	collect := make([]*protobuf.SplitAndMergePair, 0, max)
 	done := make(chan struct{})
 
 	sinkLis, err := net.Listen("tcp", "localhost:0")
@@ -321,42 +321,42 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 }
 
 type SplitAndMergeSource struct {
-	unit.UnimplementedSplitAndMergeSourceServer
+	protobuf.UnimplementedSplitAndMergeSourceServer
 	counter int64
 }
 
 func (s *SplitAndMergeSource) Process(
 	_ context.Context,
 	_ *emptypb.Empty,
-) (*unit.SplitAndMergeMessage, error) {
-	msg := &unit.SplitAndMergeMessage{Value: s.counter}
+) (*protobuf.SplitAndMergeMessage, error) {
+	msg := &protobuf.SplitAndMergeMessage{Value: s.counter}
 	atomic.AddInt64(&s.counter, 1)
 	return msg, nil
 }
 
 type SplitAndMergeTransform struct {
-	unit.UnimplementedSplitAndMergeTransformServer
+	protobuf.UnimplementedSplitAndMergeTransformServer
 }
 
 func (_ *SplitAndMergeTransform) Process(
 	_ context.Context,
-	msg *unit.SplitAndMergeMessage,
-) (*unit.SplitAndMergeMessage, error) {
+	msg *protobuf.SplitAndMergeMessage,
+) (*protobuf.SplitAndMergeMessage, error) {
 	msg.Value *= 2
 	return msg, nil
 }
 
 type SplitAndMergeSink struct {
-	unit.UnimplementedSplitAndMergeSinkServer
+	protobuf.UnimplementedSplitAndMergeSinkServer
 	max     int
-	collect *[]*unit.SplitAndMergePair
+	collect *[]*protobuf.SplitAndMergePair
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
 func (s *SplitAndMergeSink) Process(
 	_ context.Context,
-	msg *unit.SplitAndMergePair,
+	msg *protobuf.SplitAndMergePair,
 ) (*emptypb.Empty, error) {
 
 	s.mu.Lock()
@@ -375,7 +375,10 @@ func (s *SplitAndMergeSink) Process(
 
 func startSplitAndMergeSource(t *testing.T, lis net.Listener) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterSplitAndMergeSourceServer(s, &SplitAndMergeSource{counter: 1})
+	protobuf.RegisterSplitAndMergeSourceServer(
+		s,
+		&SplitAndMergeSource{counter: 1},
+	)
 	reflection.Register(s)
 
 	go func() {
@@ -387,7 +390,7 @@ func startSplitAndMergeSource(t *testing.T, lis net.Listener) *grpc.Server {
 
 func startSplitAndMergeTransform(t *testing.T, lis net.Listener) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterSplitAndMergeTransformServer(s, &SplitAndMergeTransform{})
+	protobuf.RegisterSplitAndMergeTransformServer(s, &SplitAndMergeTransform{})
 	reflection.Register(s)
 
 	go func() {
@@ -401,11 +404,11 @@ func startSplitAndMergeSink(
 	t *testing.T,
 	lis net.Listener,
 	max int,
-	collect *[]*unit.SplitAndMergePair,
+	collect *[]*protobuf.SplitAndMergePair,
 	done chan<- struct{},
 ) *grpc.Server {
 	s := grpc.NewServer()
-	unit.RegisterSplitAndMergeSinkServer(
+	protobuf.RegisterSplitAndMergeSinkServer(
 		s,
 		&SplitAndMergeSink{max: max, collect: collect, done: done},
 	)

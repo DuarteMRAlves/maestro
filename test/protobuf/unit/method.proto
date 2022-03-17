@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+service TestMethodService {
+  rpc CorrectMethod(TestMethodRequest) returns (TestMethodReply);
+  rpc UnimplementedMethod(TestMethodRequest) returns (TestMethodReply);
+}
+
+message TestMethodRequest {
+  string stringField = 1;
+  repeated int64 repeatedField = 2;
+  repeated TestMethodInnerMessage repeatedInnerMsg = 3;
+}
+
+message TestMethodReply {
+  double doubleField = 1;
+  TestMethodInnerMessage innerMsg = 2;
+}
+
+message TestMethodInnerMessage {
+  repeated string repeatedString = 1;
+}

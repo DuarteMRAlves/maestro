@@ -3,11 +3,14 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"gotest.tools/v3/assert"
 	"net"
@@ -34,11 +37,8 @@ func TestReflectionClient_ListServices(t *testing.T) {
 	services, err := listServices(ctx, conn)
 	assert.NilError(t, err, "list services error")
 
-	assert.Equal(t, 2, len(services), "number of services")
-	counts := map[string]int{
-		"unit.TestService":  0,
-		"unit.ExtraService": 0,
-	}
+	assert.Equal(t, 1, len(services), "number of services")
+	counts := map[string]int{"unit.MethodLoaderTestService": 0}
 	for _, s := range services {
 		_, serviceExists := counts[s.Unwrap()]
 		assert.Assert(t, serviceExists, "unexpected service %v", s)
@@ -98,7 +98,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		assert.NilError(t, err, "close connection")
 	}(conn)
 
-	serviceName := internal.NewService("unit.TestService")
+	serviceName := internal.NewService("unit.MethodLoaderTestService")
 	serv, err := resolveService(ctx, conn, serviceName)
 	assert.NilError(t, err, "resolve service error")
 	assertTestService(t, serv)
@@ -109,10 +109,10 @@ func assertTestService(t *testing.T, descriptor *desc.ServiceDescriptor) {
 	assert.Equal(t, 4, len(methods), "number of methods")
 
 	names := []string{
-		"unit.TestService.Unary",
-		"unit.TestService.ClientStream",
-		"unit.TestService.ServerStream",
-		"unit.TestService.BidiStream",
+		"unit.MethodLoaderTestService.Unary",
+		"unit.MethodLoaderTestService.ClientStream",
+		"unit.MethodLoaderTestService.ServerStream",
+		"unit.MethodLoaderTestService.BidiStream",
 	}
 	for _, m := range methods {
 		foundName := false
@@ -194,115 +194,6 @@ func assertInnerMessageType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	assert.Assert(t, repeatedString.IsRepeated())
 }
 
-func TestReflectionClient_ResolveService_ExtraService(t *testing.T) {
-	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
-	addr := lis.Addr().String()
-	testServer := startServer(t, lis, true)
-	defer testServer.GracefulStop()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
-	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
-	}(conn)
-
-	serviceName := internal.NewService("unit.ExtraService")
-	serv, err := resolveService(ctx, conn, serviceName)
-	assert.NilError(t, err, "resolve service error")
-	assertExtraService(t, serv)
-}
-
-func assertExtraService(t *testing.T, descriptor *desc.ServiceDescriptor) {
-	methods := descriptor.GetMethods()
-	assert.Equal(t, 1, len(methods), "number of methods")
-
-	m := methods[0]
-	assertExtraRequestType(t, m.GetInputType())
-	assertExtraReplyType(t, m.GetOutputType())
-}
-
-func assertExtraRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
-	repeatedStringField := descriptor.FindFieldByName("repeatedStringField")
-	assert.Equal(t, int32(1), repeatedStringField.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedStringField.GetType(),
-	)
-	assert.Assert(t, repeatedStringField.IsRepeated())
-
-	innerMsg := descriptor.FindFieldByName("innerMsg")
-	assert.Equal(t, int32(2), innerMsg.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		innerMsg.GetType(),
-	)
-
-	innerType := innerMsg.GetMessageType()
-	assert.Assert(t, innerType != nil)
-	assertExtraInnerMessageType(t, innerType)
-}
-
-func assertExtraReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
-	oneOfs := descriptor.GetOneOfs()
-	assert.Equal(t, 1, len(oneOfs))
-
-	oneOf := oneOfs[0]
-	assert.Equal(t, "oneOfField", oneOf.GetName())
-	oneOfChoices := oneOf.GetChoices()
-	assert.Equal(t, 2, len(oneOfChoices))
-
-	oneOfChoice1 := oneOfChoices[0]
-	assert.Equal(t, "intOpt", oneOfChoice1.GetName())
-	assert.Equal(t, int32(1), oneOfChoice1.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_INT64,
-		oneOfChoice1.GetType(),
-	)
-
-	oneOfChoice2 := oneOfChoices[1]
-	assert.Equal(t, "extraInnerMsg", oneOfChoice2.GetName())
-	assert.Equal(t, int32(2), oneOfChoice2.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		oneOfChoice2.GetType(),
-	)
-
-	extraInnerMsg := oneOfChoice2.GetMessageType()
-	assert.Assert(t, extraInnerMsg != nil)
-	assertExtraInnerMessageType(t, extraInnerMsg)
-
-	repeatedDoubleField := descriptor.FindFieldByName("repeatedDoubleField")
-	assert.Equal(t, int32(3), repeatedDoubleField.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_DOUBLE,
-		repeatedDoubleField.GetType(),
-	)
-	assert.Assert(t, repeatedDoubleField.IsRepeated())
-}
-
-func assertExtraInnerMessageType(
-	t *testing.T,
-	descriptor *desc.MessageDescriptor,
-) {
-	repeatedString := descriptor.FindFieldByName("repeatedString")
-	assert.Equal(t, int32(1), repeatedString.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedString.GetType(),
-	)
-	assert.Assert(t, repeatedString.IsRepeated())
-}
-
 func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
 	assert.NilError(t, err, "failed to listen")
@@ -356,4 +247,64 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	assert.Equal(t, "service", notFound.Type)
 	assert.Equal(t, serviceName.Unwrap(), notFound.Ident)
 	assert.Assert(t, serv == nil, "service is not nil")
+}
+
+var dummyErr = fmt.Errorf("dummy error")
+
+type testService struct {
+	unit.UnimplementedMethodLoaderTestServiceServer
+}
+
+func (s *testService) Unary(
+	ctx context.Context,
+	request *unit.MethodLoaderRequest,
+) (*unit.MethodLoaderReply, error) {
+
+	if request.StringField == "error" {
+		return nil, dummyErr
+	} else {
+		return replyFromRequest(request), nil
+	}
+}
+
+func replyFromRequest(request *unit.MethodLoaderRequest) *unit.MethodLoaderReply {
+	doubleField := float64(len(request.StringField))
+	for _, val := range request.RepeatedField {
+		doubleField += float64(val)
+	}
+
+	innerMsg := &unit.MethodLoaderInnerMessage{RepeatedString: []string{}}
+	for _, inner := range request.RepeatedInnerMsg {
+		repeatedString := ""
+		for _, str := range inner.RepeatedString {
+			repeatedString += str
+		}
+		innerMsg.RepeatedString = append(
+			innerMsg.RepeatedString,
+			repeatedString,
+		)
+	}
+	return &unit.MethodLoaderReply{
+		DoubleField: doubleField,
+		InnerMsg:    innerMsg,
+	}
+}
+
+func startServer(
+	t *testing.T,
+	lis net.Listener,
+	reflectionFlag bool,
+) *grpc.Server {
+	testServer := grpc.NewServer()
+	unit.RegisterMethodLoaderTestServiceServer(testServer, &testService{})
+
+	if reflectionFlag {
+		reflection.Register(testServer)
+	}
+
+	go func() {
+		err := testServer.Serve(lis)
+		assert.NilError(t, err, "test server error")
+	}()
+	return testServer
 }

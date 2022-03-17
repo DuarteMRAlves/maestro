@@ -138,7 +138,7 @@ func findMethod(
 		if len(available) == 1 {
 			return newUnaryMethodFromDescriptor(available[0]), nil
 		}
-		return unaryMethod{}, notOneService
+		return unaryMethod{}, notOneMethod
 	} else {
 		search := searchOpt.Unwrap()
 		for _, m := range available {
