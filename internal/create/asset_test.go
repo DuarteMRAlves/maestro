@@ -2,9 +2,11 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -34,13 +36,19 @@ func TestCreateAsset(t *testing.T) {
 
 				createFn := Asset(storage)
 				err := createFn(tc.name, tc.image)
-				assert.NilError(t, err)
+				if err != nil {
+					t.Fatalf("create error: %s", err)
+				}
 
-				assert.Equal(t, 1, len(storage.Assets))
+				if diff := cmp.Diff(1, len(storage.Assets)); diff != "" {
+					t.Fatalf("number of assets mismatch:\n%s", diff)
+				}
 
 				asset, exists := storage.Assets[tc.expected.Name()]
-				assert.Assert(t, exists)
-				assertEqualAsset(t, tc.expected, asset)
+				if !exists {
+					t.Fatalf("created asset does not exist in storage")
+				}
+				cmpAsset(t, tc.expected, asset, "created asset")
 			},
 		)
 	}
@@ -69,10 +77,16 @@ func TestCreateAsset_Err(t *testing.T) {
 
 				createFn := Asset(storage)
 				err := createFn(tc.name, tc.image)
-				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, tc.isError))
-
-				assert.Equal(t, 0, len(storage.Assets))
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				}
+				if !errors.Is(err, tc.isError) {
+					format := "Wrong error: expected %s, got %s"
+					t.Fatalf(format, tc.isError, err)
+				}
+				if diff := cmp.Diff(0, len(storage.Assets)); diff != "" {
+					t.Fatalf("number of assets mismatch:\n%s", diff)
+				}
 			},
 		)
 	}
@@ -91,37 +105,51 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 	createFn := Asset(storage)
 
 	err := createFn(assetName, image1)
-	assert.NilError(t, err, "first create")
-	assert.Equal(t, 1, len(storage.Assets))
+	if err != nil {
+		t.Fatalf("first create error: %s", err)
+	}
+	if diff := cmp.Diff(1, len(storage.Assets)); diff != "" {
+		t.Fatalf("first create number of assets mismatch:\n%s", diff)
+	}
 	asset, exists := storage.Assets[expected.Name()]
-	assert.Assert(t, exists)
-	assertEqualAsset(t, expected, asset)
+	if !exists {
+		t.Fatalf("first created asset does not exist in storage")
+	}
+	cmpAsset(t, expected, asset, "first created asset")
 
 	err = createFn(assetName, image2)
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected create error but got none")
+	}
 	var alreadyExists *internal.AlreadyExists
-	assert.Assert(t, errors.As(err, &alreadyExists))
-	assert.Equal(t, "asset", alreadyExists.Type)
-	assert.Equal(t, name, alreadyExists.Ident)
-	assert.Equal(t, 1, len(storage.Assets))
+	if !errors.As(err, &alreadyExists) {
+		format := "Wrong error type: expected *internal.AlreadyExists, got %s"
+		t.Fatalf(format, reflect.TypeOf(err))
+	}
+	expError := &internal.AlreadyExists{Type: "asset", Ident: name}
+	if diff := cmp.Diff(expError, alreadyExists); diff != "" {
+		t.Fatalf("error mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(1, len(storage.Assets)); diff != "" {
+		t.Fatalf("second create number of assets mismatch:\n%s", diff)
+	}
 	asset, exists = storage.Assets[expected.Name()]
-	assert.Assert(t, exists)
-	assertEqualAsset(t, expected, asset)
+	if !exists {
+		t.Fatalf("second created asset does not exist in storage")
+	}
+	cmpAsset(t, expected, asset, "second created asset")
 }
 
 func createAssetName(t *testing.T, assetName string) internal.AssetName {
 	name, err := internal.NewAssetName(assetName)
-	assert.NilError(t, err, "create asset name %s", assetName)
+	if err != nil {
+		t.Fatalf("create asset name %s: %s", assetName, err)
+	}
 	return name
 }
 
-func createAsset(
-	t *testing.T,
-	assetName string,
-	requiredOnly bool,
-) internal.Asset {
-	name, err := internal.NewAssetName(assetName)
-	assert.NilError(t, err, "create name for asset %s", assetName)
+func createAsset(t *testing.T, assetName string, requiredOnly bool) internal.Asset {
+	name := createAssetName(t, assetName)
 	imgOpt := internal.NewEmptyImage()
 	if !requiredOnly {
 		img := internal.NewImage("some-image")
@@ -130,14 +158,15 @@ func createAsset(
 	return internal.NewAsset(name, imgOpt)
 }
 
-func assertEqualAsset(t *testing.T, expected, actual internal.Asset) {
-	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-	assert.Equal(t, expected.Image().Present(), actual.Image().Present())
-	if expected.Image().Present() {
-		assert.Equal(
-			t,
-			expected.Image().Unwrap().Unwrap(),
-			actual.Image().Unwrap().Unwrap(),
-		)
+func cmpAsset(t *testing.T, x, y internal.Asset, msg string, args ...interface{}) {
+	cmpOpts := cmp.AllowUnexported(
+		internal.Asset{},
+		internal.AssetName{},
+		internal.OptionalImage{},
+		internal.Image{},
+	)
+	if diff := cmp.Diff(x, y, cmpOpts); diff != "" {
+		prepend := fmt.Sprintf(msg, args...)
+		t.Fatalf("%s:\n%s", prepend, diff)
 	}
 }
