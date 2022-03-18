@@ -23,64 +23,55 @@ func TestMessageDescriptor_GetField(t *testing.T) {
 }
 
 func TestCompatibleDescriptors(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		msg1     proto.Message
 		msg2     proto.Message
 		expected bool
 	}{
-		{
-			name:     "equal messages",
+		"equal messages": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestMessage1{},
 			expected: true,
 		},
-		{
-			name:     "different message names",
+		"different message names": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestMessage2{},
 			expected: true,
 		},
-		{
-			name:     "different field names",
+		"different field names": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestMessageDiffNames{},
 			expected: true,
 		},
-		{
-			name:     "different non common fields",
+		"different non common fields": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestMessageDiffFields{},
 			expected: true,
 		},
-		{
-			name:     "outer message wrong cardinality",
+		"outer message wrong cardinality": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestWrongOuterCardinality{},
 			expected: false,
 		},
-		{
-			name:     "inner message wrong cardinality",
+		"inner message wrong cardinality": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestWrongInnerCardinality{},
 			expected: false,
 		},
-		{
-			name:     "outer message wrong field type",
+		"outer message wrong field type": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestWrongOuterFieldType{},
 			expected: false,
 		},
-		{
-			name:     "inner message wrong field type",
+		"inner message wrong field type": {
 			msg1:     &unit.TestMessage1{},
 			msg2:     &unit.TestWrongInnerFieldType{},
 			expected: false,
 		},
 	}
-	for _, test := range tests {
+	for name, test := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				desc1, err := newMessageDescriptor(test.msg1)
 				assert.NilError(t, err, "create message descriptor 1")
