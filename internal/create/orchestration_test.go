@@ -27,29 +27,27 @@ func TestCreateOrchestration(t *testing.T) {
 }
 
 func TestCreateOrchestration_Err(t *testing.T) {
-	tests := []struct {
-		name     string
-		orchName internal.OrchestrationName
-		isError  error
+	tests := map[string]struct {
+		name    internal.OrchestrationName
+		isError error
 	}{
-		{
-			name:     "empty name",
-			orchName: createOrchestrationName(t, ""),
-			isError:  EmptyOrchestrationName,
+		"empty name": {
+			name:    createOrchestrationName(t, ""),
+			isError: EmptyOrchestrationName,
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				storage := mock.OrchestrationStorage{
 					Orchs: map[internal.OrchestrationName]internal.Orchestration{},
 				}
 
 				createFn := Orchestration(storage)
-				err := createFn(test.orchName)
+				err := createFn(tc.name)
 				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, test.isError))
+				assert.Assert(t, errors.Is(err, tc.isError))
 
 				assert.Equal(t, 0, len(storage.Orchs))
 			},

@@ -9,9 +9,8 @@ import (
 )
 
 func TestCreateLink(t *testing.T) {
-	tests := []struct {
-		name              string
-		linkName          internal.LinkName
+	tests := map[string]struct {
+		name              internal.LinkName
 		source            internal.LinkEndpoint
 		target            internal.LinkEndpoint
 		orchName          internal.OrchestrationName
@@ -20,9 +19,8 @@ func TestCreateLink(t *testing.T) {
 		expOrchestration  internal.Orchestration
 		storedStages      []internal.Stage
 	}{
-		{
-			name:     "required fields",
-			linkName: createLinkName(t, "some-name"),
+		"required fields": {
+			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
 				createStageName(t, "source"),
 				internal.NewEmptyMessageField(),
@@ -54,9 +52,8 @@ func TestCreateLink(t *testing.T) {
 				createStage(t, "target", true),
 			},
 		},
-		{
-			name:     "all fields",
-			linkName: createLinkName(t, "some-name"),
+		"all fields": {
+			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
 				createStageName(t, "source"),
 				internal.NewPresentMessageField(internal.NewMessageField("source-field")),
@@ -85,44 +82,39 @@ func TestCreateLink(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
 
 				stageStore := mock.StageStorage{
 					Stages: map[internal.StageName]internal.Stage{},
 				}
-				for _, s := range test.storedStages {
+				for _, s := range tc.storedStages {
 					stageStore.Stages[s.Name()] = s
 				}
 
 				orchStore := mock.OrchestrationStorage{
 					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						test.loadOrchestration.Name(): test.loadOrchestration,
+						tc.loadOrchestration.Name(): tc.loadOrchestration,
 					},
 				}
 
 				createFn := Link(linkStore, stageStore, orchStore)
-				err := createFn(
-					test.linkName,
-					test.source,
-					test.target,
-					test.orchName,
-				)
+				err := createFn(tc.name, tc.source, tc.target, tc.orchName)
 
 				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(linkStore.Links))
-				l, exists := linkStore.Links[test.expLink.Name()]
+				l, exists := linkStore.Links[tc.expLink.Name()]
 				assert.Assert(t, exists)
-				assertEqualLink(t, test.expLink, l)
+				assertEqualLink(t, tc.expLink, l)
 
 				assert.Equal(t, 1, len(orchStore.Orchs))
-				o, exists := orchStore.Orchs[test.expOrchestration.Name()]
+				o, exists := orchStore.Orchs[tc.expOrchestration.Name()]
 				assert.Assert(t, exists)
-				assertEqualOrchestration(t, test.expOrchestration, o)
+				assertEqualOrchestration(t, tc.expOrchestration, o)
 			},
 		)
 	}
