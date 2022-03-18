@@ -5,12 +5,12 @@ import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"gotest.tools/v3/assert"
 	"net"
 	"testing"
 	"time"
@@ -52,122 +52,182 @@ var (
 
 func TestUnaryClient_Invoke(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := testMethodStartServer(t, lis)
 	defer testServer.Stop()
 
 	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	assert.NilError(t, err, "create input message descriptor")
+	if err != nil {
+		t.Fatalf("create input message descriptor: %s", err)
+	}
 	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	assert.NilError(t, err, "create output message descriptor")
+	if err != nil {
+		t.Fatalf("create output message descriptor: %s", err)
+	}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
 	client, err := clientBuilder(internal.NewAddress(addr))
-	assert.NilError(t, err, "build client")
+	if err != nil {
+		t.Fatalf("build client: %s", err)
+	}
 	defer func() {
-		assert.NilError(t, client.Close())
+		if err := client.Close(); err != nil {
+			t.Fatalf("close client: %s", err)
+		}
 	}()
 
 	req, err := newMessage(correctRequest)
-	assert.NilError(t, err, "create request")
+	if err != nil {
+		t.Fatalf("create request: %s", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	reply, err := client.Call(ctx, req)
-	assert.NilError(t, err, "invoke error not nil")
+	if err != nil {
+		t.Fatalf("call method: %s", err)
+	}
 
 	grpcMsg, ok := reply.(*message)
-	assert.Assert(t, ok, "cast reply to grpc message")
+	if !ok {
+		t.Fatalf("cast reply to grpcMsg")
+	}
 
 	pbReply := &unit.TestMethodReply{}
 	err = grpcMsg.dynMsg.ConvertTo(pbReply)
-	assert.NilError(t, err, "convert dynamic replay to message")
+	if err != nil {
+		t.Fatalf("convert grpcMsg to pbReply: %s", err)
+	}
 
 	cmpOpts := cmpopts.IgnoreUnexported(
 		unit.TestMethodReply{},
 		unit.TestMethodInnerMessage{},
 	)
-	assert.DeepEqual(t, expectedReply, pbReply, cmpOpts)
+	if diff := cmp.Diff(expectedReply, pbReply, cmpOpts); diff != "" {
+		t.Fatalf("reply mismatch:\n%s", diff)
+	}
 }
 
 func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := testMethodStartServer(t, lis)
 	defer testServer.Stop()
 
 	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	assert.NilError(t, err, "create input message descriptor")
+	if err != nil {
+		t.Fatalf("create input message descriptor: %s", err)
+	}
 	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	assert.NilError(t, err, "create output message descriptor")
+	if err != nil {
+		t.Fatalf("create input output descriptor: %s", err)
+	}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
 	client, err := clientBuilder(internal.NewAddress(addr))
-	assert.NilError(t, err, "build client")
+	if err != nil {
+		t.Fatalf("build client: %s", err)
+	}
 	defer func() {
-		assert.NilError(t, client.Close())
+		if err := client.Close(); err != nil {
+			t.Fatalf("close client: %s", err)
+		}
 	}()
 
 	req, err := newMessage(errorRequest)
-	assert.NilError(t, err, "create request")
+	if err != nil {
+		t.Fatalf("create request: %s", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	reply, err := client.Call(ctx, req)
-	assert.Assert(t, reply == nil)
-	assert.Assert(t, err != nil)
+	if reply != nil {
+		t.Fatalf("replay is not nil")
+	}
+	if err == nil {
+		t.Fatalf("expected error but received nil")
+	}
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
 	})
+	if !ok {
+		t.Fatalf("error does not implement grpc interface")
+	}
 	st := cause.GRPCStatus()
-	assert.Assert(t, ok, "correct type")
-	assert.Equal(t, codes.Unknown, st.Code())
+	if diff := cmp.Diff(codes.Unknown, st.Code()); diff != "" {
+		t.Fatalf("code mismatch:\n%s", diff)
+	}
 }
 
 func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.Stop()
 
 	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	assert.NilError(t, err, "create input message descriptor")
+	if err != nil {
+		t.Fatalf("create input input descriptor: %s", err)
+	}
 	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	assert.NilError(t, err, "create output message descriptor")
+	if err != nil {
+		t.Fatalf("create input output descriptor: %s", err)
+	}
 
 	methodName := "unit.TestMethodService/UnimplementedMethod"
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
 	client, err := clientBuilder(internal.NewAddress(addr))
-	assert.NilError(t, err, "build client")
+	if err != nil {
+		t.Fatalf("build client: %s", err)
+	}
 	defer func() {
-		assert.NilError(t, client.Close())
+		if err := client.Close(); err != nil {
+			t.Fatalf("close client: %s", err)
+		}
 	}()
 
 	req, err := newMessage(errorRequest)
-	assert.NilError(t, err, "create request")
+	if err != nil {
+		t.Fatalf("create request: %s", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	reply, err := client.Call(ctx, req)
-	assert.Assert(t, reply == nil)
-	assert.Assert(t, err != nil)
+	if reply != nil {
+		t.Fatalf("replay is not nil")
+	}
+	if err == nil {
+		t.Fatalf("expected error but received nil")
+	}
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
 	})
+	if !ok {
+		t.Fatalf("error does not implement grpc interface")
+	}
 	st := cause.GRPCStatus()
-	assert.Assert(t, ok, "correct type")
-	assert.Equal(t, codes.Unimplemented, st.Code())
+	if diff := cmp.Diff(codes.Unimplemented, st.Code()); diff != "" {
+		t.Fatalf("code mismatch:\n%s", diff)
+	}
 }
 
 var dummyErr = errors.New("dummy error")
@@ -215,8 +275,9 @@ func testMethodStartServer(t *testing.T, lis net.Listener) *grpc.Server {
 	unit.RegisterTestMethodServiceServer(testServer, &testMethodService{})
 	reflection.Register(testServer)
 	go func() {
-		err := testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
+		if err := testServer.Serve(lis); err != nil {
+			t.Errorf("test server: %s", err)
+		}
 	}()
 	return testServer
 }

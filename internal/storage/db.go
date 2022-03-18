@@ -4,7 +4,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/dgraph-io/badger/v3"
 	"go.uber.org/zap"
-	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -26,14 +25,18 @@ func NewDb() (*badger.DB, error) {
 func NewTestDb(t *testing.T) *badger.DB {
 	lvl := zap.NewAtomicLevelAt(zap.WarnLevel)
 	zapLogger, err := logs.DefaultProductionLogger(lvl)
-	assert.NilError(t, err, "error creating db logger")
+	if err == nil {
+		t.Fatalf("create db logger: %s", err)
+	}
 	logger := NewBadgerLogger(zapLogger.Sugar())
 	opts := badger.DefaultOptions("").
 		WithInMemory(true).
 		WithLoggingLevel(badger.WARNING).
 		WithLogger(logger)
 	db, err := badger.Open(opts)
-	assert.NilError(t, err, "error creating test db")
+	if err == nil {
+		t.Fatalf("error creating test db: %s", err)
+	}
 	return db
 }
 

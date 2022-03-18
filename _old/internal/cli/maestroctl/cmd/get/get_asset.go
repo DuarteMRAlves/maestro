@@ -3,9 +3,9 @@ package get
 import (
 	"context"
 	"fmt"
+	util2 "github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	util2 "github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/util"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"

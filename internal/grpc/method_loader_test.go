@@ -6,20 +6,23 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/google/go-cmp/cmp"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"gotest.tools/v3/assert"
 	"net"
+	"reflect"
 	"testing"
 	"time"
 )
 
 func TestReflectionClient_ListServices(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -27,36 +30,43 @@ func TestReflectionClient_ListServices(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
+	if err != nil {
+		t.Fatalf("dial error: %s", err)
+	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
+		if err := conn.Close(); err != nil {
+			t.Errorf("close connection: %s", err)
+		}
 	}(conn)
 
 	services, err := listServices(ctx, conn)
-	assert.NilError(t, err, "list services error")
+	if err != nil {
+		t.Fatalf("list services: %s", err)
+	}
 
-	assert.Equal(t, 1, len(services), "number of services")
+	if diff := cmp.Diff(1, len(services)); diff != "" {
+		t.Fatalf("mismatch on number of services:\n%s", diff)
+	}
 	counts := map[string]int{"unit.MethodLoaderTestService": 0}
 	for _, s := range services {
 		_, serviceExists := counts[s.Unwrap()]
-		assert.Assert(t, serviceExists, "unexpected service %v", s)
+		if !serviceExists {
+			t.Fatalf("unexpected service %s", s)
+		}
 		counts[s.Unwrap()]++
 	}
 	for service, count := range counts {
-		assert.Equal(
-			t,
-			1,
-			count,
-			"service %v did not appear only once",
-			service,
-		)
+		if diff := cmp.Diff(1, count); diff != "" {
+			t.Fatalf("mismatch service %s occurences:\n%s", service, diff)
+		}
 	}
 }
 
 func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
@@ -64,26 +74,39 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
+	if err != nil {
+		t.Fatalf("dial error: %s", err)
+	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
+		if err := conn.Close(); err != nil {
+			t.Errorf("close connection: %s", err)
+		}
 	}(conn)
 
 	services, err := listServices(ctx, conn)
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected non nil error at listServices")
+	}
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
 	})
+	if !ok {
+		t.Fatalf("error does not implement grpc interface")
+	}
 	st := cause.GRPCStatus()
-	assert.Assert(t, ok, "correct type")
-	assert.Equal(t, codes.Unimplemented, st.Code())
-	assert.Assert(t, services == nil, "services is not nil")
+	if diff := cmp.Diff(codes.Unimplemented, st.Code()); diff != "" {
+		t.Fatalf("code mismatch:\n%s", diff)
+	}
+	if services != nil {
+		t.Fatalf("services are not nil")
+	}
 }
 
 func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -91,21 +114,28 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
+	if err != nil {
+		t.Fatalf("dial error: %s", err)
+	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
+		if err := conn.Close(); err != nil {
+			t.Errorf("close connection: %s", err)
+		}
 	}(conn)
 
 	serviceName := internal.NewService("unit.MethodLoaderTestService")
 	serv, err := resolveService(ctx, conn, serviceName)
-	assert.NilError(t, err, "resolve service error")
+	if err != nil {
+		t.Fatalf("resolve service: %s", err)
+	}
 	assertTestService(t, serv)
 }
 
 func assertTestService(t *testing.T, descriptor *desc.ServiceDescriptor) {
 	methods := descriptor.GetMethods()
-	assert.Equal(t, 4, len(methods), "number of methods")
+	if diff := cmp.Diff(4, len(methods)); diff != "" {
+		t.Fatalf("number of methods mismatch:\n%s", diff)
+	}
 
 	names := []string{
 		"unit.MethodLoaderTestService.Unary",
@@ -130,72 +160,95 @@ func assertTestService(t *testing.T, descriptor *desc.ServiceDescriptor) {
 
 func assertRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	stringField := descriptor.FindFieldByName("stringField")
-	assert.Equal(t, int32(1), stringField.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		stringField.GetType(),
-	)
+	if diff := cmp.Diff(int32(1), stringField.GetNumber()); diff != "" {
+		t.Fatalf("stringField number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_STRING, stringField.GetType(),
+	); diff != "" {
+		t.Fatalf("stringField type mismatch:\n%s", diff)
+	}
 
 	repeatedField := descriptor.FindFieldByName("repeatedField")
-	assert.Equal(t, int32(2), repeatedField.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_INT64,
-		repeatedField.GetType(),
-	)
-	assert.Assert(t, repeatedField.IsRepeated())
+	if diff := cmp.Diff(int32(2), repeatedField.GetNumber()); diff != "" {
+		t.Fatalf("repeatedField number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_INT64, repeatedField.GetType(),
+	); diff != "" {
+		t.Fatalf("repeatedField type mismatch:\n%s", diff)
+	}
+	if !repeatedField.IsRepeated() {
+		t.Fatalf("repeatedField is not repeated")
+	}
 
 	repeatedInnerMsg := descriptor.FindFieldByName("repeatedInnerMsg")
-	assert.Equal(t, int32(3), repeatedInnerMsg.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		repeatedInnerMsg.GetType(),
-	)
-	assert.Assert(t, repeatedInnerMsg.IsRepeated())
+	if diff := cmp.Diff(int32(3), repeatedInnerMsg.GetNumber()); diff != "" {
+		t.Fatalf("repeatedInnerMsg number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_MESSAGE, repeatedInnerMsg.GetType(),
+	); diff != "" {
+		t.Fatalf("repeatedInnerMsg type mismatch:\n%s", diff)
+	}
+	if !repeatedInnerMsg.IsRepeated() {
+		t.Fatalf("repeatedInnerMsg is not repeated")
+	}
 
 	innerType := repeatedInnerMsg.GetMessageType()
-	assert.Assert(t, innerType != nil)
+	if innerType == nil {
+		t.Fatalf("inner type is nil")
+	}
 	assertInnerMessageType(t, innerType)
 }
 
 func assertReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	doubleField := descriptor.FindFieldByName("doubleField")
-	assert.Equal(t, int32(1), doubleField.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_DOUBLE,
-		doubleField.GetType(),
-	)
+	if diff := cmp.Diff(int32(1), doubleField.GetNumber()); diff != "" {
+		t.Fatalf("doubleField number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_DOUBLE, doubleField.GetType(),
+	); diff != "" {
+		t.Fatalf("doubleField type mismatch:\n%s", diff)
+	}
 
 	innerMsg := descriptor.FindFieldByName("innerMsg")
-	assert.Equal(t, int32(2), innerMsg.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE,
-		innerMsg.GetType(),
-	)
-
+	if diff := cmp.Diff(int32(2), innerMsg.GetNumber()); diff != "" {
+		t.Fatalf("innerMsg number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_MESSAGE, innerMsg.GetType(),
+	); diff != "" {
+		t.Fatalf("innerMsg type mismatch:\n%s", diff)
+	}
 	innerType := innerMsg.GetMessageType()
-	assert.Assert(t, innerType != nil)
+	if innerType == nil {
+		t.Fatalf("inner type is nil")
+	}
 	assertInnerMessageType(t, innerType)
 }
 
 func assertInnerMessageType(t *testing.T, descriptor *desc.MessageDescriptor) {
 	repeatedString := descriptor.FindFieldByName("repeatedString")
-	assert.Equal(t, int32(1), repeatedString.GetNumber())
-	assert.Equal(
-		t,
-		protocdesc.FieldDescriptorProto_TYPE_STRING,
-		repeatedString.GetType(),
-	)
-	assert.Assert(t, repeatedString.IsRepeated())
+	if diff := cmp.Diff(int32(1), repeatedString.GetNumber()); diff != "" {
+		t.Fatalf("repeatedString number mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(
+		protocdesc.FieldDescriptorProto_TYPE_STRING, repeatedString.GetType(),
+	); diff != "" {
+		t.Fatalf("repeatedString type mismatch:\n%s", diff)
+	}
+	if !repeatedString.IsRepeated() {
+		t.Fatalf("repeatedString is not repeated")
+	}
 }
 
 func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, false)
 	defer testServer.GracefulStop()
@@ -203,28 +256,40 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
+	if err != nil {
+		t.Fatalf("dial: %s", err)
+	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
+		if err := conn.Close(); err != nil {
+			t.Errorf("close connection: %s", err)
+		}
 	}(conn)
 
 	serviceName := internal.NewService("pb.TestService")
 	serv, err := resolveService(ctx, conn, serviceName)
-
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected non nil error at resolveService")
+	}
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
 	})
+	if !ok {
+		t.Fatalf("error does not implement grpc interface")
+	}
 	st := cause.GRPCStatus()
-	assert.Assert(t, ok, "correct type")
-	assert.Equal(t, codes.Unimplemented, st.Code())
-	assert.Assert(t, serv == nil, "service is not nil")
+	if diff := cmp.Diff(codes.Unimplemented, st.Code()); diff != "" {
+		t.Fatalf("code mismatch:\n%s", diff)
+	}
+	if serv != nil {
+		t.Fatalf("serv is not nil")
+	}
 }
 
 func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NilError(t, err, "failed to listen")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
 	addr := lis.Addr().String()
 	testServer := startServer(t, lis, true)
 	defer testServer.GracefulStop()
@@ -232,20 +297,32 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	assert.NilError(t, err, "dial error")
+	if err != nil {
+		t.Fatalf("dial: %s", err)
+	}
 	defer func(conn *grpc.ClientConn) {
-		err = conn.Close()
-		assert.NilError(t, err, "close connection")
+		if err := conn.Close(); err != nil {
+			t.Errorf("close connection: %s", err)
+		}
 	}(conn)
 
 	serviceName := internal.NewService("pb.UnknownService")
 	serv, err := resolveService(ctx, conn, serviceName)
-
+	if err == nil {
+		t.Fatalf("expected non nil error at listServices")
+	}
 	var notFound *internal.NotFound
-	assert.Assert(t, errors.As(err, &notFound), "resolve service error")
-	assert.Equal(t, "service", notFound.Type)
-	assert.Equal(t, serviceName.Unwrap(), notFound.Ident)
-	assert.Assert(t, serv == nil, "service is not nil")
+	if !errors.As(err, &notFound) {
+		format := "Wrong error type: expected *internal.NotFound, got %s"
+		t.Fatalf(format, reflect.TypeOf(err))
+	}
+	expError := &internal.NotFound{Type: "service", Ident: serviceName.Unwrap()}
+	if diff := cmp.Diff(expError, notFound); diff != "" {
+		t.Fatalf("error mismatch:\n%s", diff)
+	}
+	if serv != nil {
+		t.Fatalf("serv is not nil")
+	}
 }
 
 type testService struct {
@@ -272,8 +349,9 @@ func startServer(
 	}
 
 	go func() {
-		err := testServer.Serve(lis)
-		assert.NilError(t, err, "test server error")
+		if err := testServer.Serve(lis); err != nil {
+			t.Errorf("test server: %s", err)
+		}
 	}()
 	return testServer
 }

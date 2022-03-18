@@ -3,10 +3,10 @@ package get
 import (
 	"context"
 	"fmt"
+	util2 "github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/util"
 	"github.com/DuarteMRAlves/maestro/api/pb"
 	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/errdefs"
-	util2 "github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/util"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -15,34 +15,36 @@ import (
 	"time"
 )
 
-// OrchestrationOpts stores the necessary information to execute a get
-// orchestration command.
-type OrchestrationOpts struct {
+type StageOpts struct {
 	// address for the maestro server
 	maestro string
 
-	name  string
-	phase string
+	name    string
+	phase   string
+	asset   string
+	service string
+	rpc     string
+	address string
 
-	// Output for the cobra.command
+	// Output for the cobra.Command to be executed in order to verify outputs.
 	outWriter io.Writer
 }
 
-func NewCmdGetOrchestration() *cobra.Command {
-	o := &OrchestrationOpts{}
+func NewCmdGetStage() *cobra.Command {
+	o := &StageOpts{}
 
 	cmd := &cobra.Command{
-		Use:                   "orchestration [NAME] [FLAGS]",
+		Use:                   "stage [NAME] [FLAGS]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Display orchestrations",
-		Long: `Display relevant information related to orchestrations.
+		Short:                 "Display stages",
+		Long: `Display relevant information related to stages.
 
-The displayed orchestrations can be filtered by specifying flags. When a flag is specified, 
-only the orchestrations with the flag value are displayed.
+The displayed stages can be filtered by specifying flags. When a flag is specified, 
+only the stages with the flag value are displayed.
 
-If a name is provided, only that orchestration is displayed.`,
+If a name is provided, only that stage is displayed.`,
 		Args:    cobra.MaximumNArgs(1),
-		Aliases: []string{"orchestrations"},
+		Aliases: []string{"stages"},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := o.complete(cmd, args)
 			if err != nil {
@@ -69,18 +71,19 @@ If a name is provided, only that orchestration is displayed.`,
 
 // addFlags adds the necessary flags to the cobra.Command instance that will
 // execute
-func (o *OrchestrationOpts) addFlags(cmd *cobra.Command) {
+func (o *StageOpts) addFlags(cmd *cobra.Command) {
 	util2.AddMaestroFlag(cmd, &o.maestro)
 
 	cmd.Flags().StringVar(&o.phase, "phase", "", "phase to search")
+	cmd.Flags().StringVar(&o.asset, "asset", "", "asset name to search")
+	cmd.Flags().StringVar(&o.service, "service", "", "service name to search")
+	cmd.Flags().StringVar(&o.rpc, "rpc", "", "rpc name to search")
+	cmd.Flags().StringVar(&o.address, "address", "", "address to search")
 }
 
 // complete fills any remaining information for the runner that is not specified
 // by the flags.
-func (o *OrchestrationOpts) complete(
-	cmd *cobra.Command,
-	args []string,
-) error {
+func (o *StageOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		o.name = args[0]
 	}
@@ -90,15 +93,15 @@ func (o *OrchestrationOpts) complete(
 
 // validate checks if the user options are compatible and the command can
 // be executed
-func (o *OrchestrationOpts) validate() error {
+func (o *StageOpts) validate() error {
 	if o.phase != "" {
-		phase := api.OrchestrationPhase(o.phase)
+		phase := api.StagePhase(o.phase)
 		switch phase {
 		case
-			api.OrchestrationPending,
-			api.OrchestrationRunning,
-			api.OrchestrationSucceeded,
-			api.OrchestrationFailed:
+			api.StagePending,
+			api.StageRunning,
+			api.StageFailed,
+			api.StageSucceeded:
 			// Do nothing
 		default:
 			return errdefs.InvalidArgumentWithMsg("unknown phase: %v", phase)
@@ -108,10 +111,14 @@ func (o *OrchestrationOpts) validate() error {
 }
 
 // run executes the get link command
-func (o *OrchestrationOpts) run() error {
-	req := &pb.GetOrchestrationRequest{
-		Name:  o.name,
-		Phase: o.phase,
+func (o *StageOpts) run() error {
+	req := &pb.GetStageRequest{
+		Name:    o.name,
+		Phase:   o.phase,
+		Asset:   o.asset,
+		Service: o.service,
+		Rpc:     o.rpc,
+		Address: o.address,
 	}
 
 	conn, err := grpc.Dial(o.maestro, grpc.WithInsecure())
@@ -124,52 +131,64 @@ func (o *OrchestrationOpts) run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := stub.GetOrchestration(ctx, req)
+	stream, err := stub.GetStage(ctx, req)
 	if err != nil {
 		return util2.ErrorFromGrpcError(err)
 	}
-	orchestrations := make([]*pb.Orchestration, 0)
+	stages := make([]*pb.Stage, 0)
 	for {
-		o, err := stream.Recv()
+		s, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return util2.ErrorFromGrpcError(err)
 		}
-		orchestrations = append(orchestrations, o)
+		stages = append(stages, s)
 	}
-	return o.displayOrchestrations(orchestrations)
+
+	return o.displayStages(stages)
 }
 
-func (o *OrchestrationOpts) displayOrchestrations(
-	orchestrations []*pb.Orchestration,
-) error {
+func (o *StageOpts) displayStages(stages []*pb.Stage) error {
 	sort.Slice(
-		orchestrations,
+		stages,
 		func(i, j int) bool {
-			return orchestrations[i].Name < orchestrations[j].Name
+			return stages[i].Name < stages[j].Name
 		},
 	)
-	numOrchestrations := len(orchestrations)
+	numStages := len(stages)
 	// Add space for all assets plus the header
-	data := make([][]string, 0, numOrchestrations+1)
+	data := make([][]string, 0, numStages+1)
 
-	headers := []string{NameText, PhaseText}
-	data = append(data, headers)
-
-	for _, orchestration := range orchestrations {
-		orchestrationData := []string{orchestration.Name, orchestration.Phase}
-		data = append(data, orchestrationData)
+	head := []string{
+		NameText,
+		PhaseText,
+		AssetText,
+		ServiceText,
+		RpcText,
+		AddressText,
+	}
+	data = append(data, head)
+	for _, s := range stages {
+		stageData := []string{
+			s.Name,
+			s.Phase,
+			s.Asset,
+			s.Service,
+			s.Rpc,
+			s.Address,
+		}
+		data = append(data, stageData)
 	}
 
 	output, err := pterm.DefaultTable.WithHasHeader().WithData(data).Srender()
 	if err != nil {
-		return errdefs.UnknownWithMsg("display orchestrations: %v", err)
+		return errdefs.UnknownWithMsg("display stages: %v", err)
 	}
 	_, err = fmt.Fprintln(o.outWriter, output)
 	if err != nil {
-		return errdefs.UnknownWithMsg("display orchestrations: %v", err)
+		return errdefs.UnknownWithMsg("display stages: %v", err)
 	}
 	return nil
 }

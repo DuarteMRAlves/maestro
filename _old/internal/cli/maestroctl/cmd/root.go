@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/attach"
-	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/create"
-	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/get"
-	"github.com/DuarteMRAlves/maestro/old/internal/cli/maestroctl/cmd/start"
+	"github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/attach"
+	"github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/create"
+	"github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/get"
+	"github.com/DuarteMRAlves/maestro/_old/internal/cli/maestroctl/cmd/start"
 	"github.com/spf13/cobra"
 )
 
