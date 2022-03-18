@@ -170,6 +170,8 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	assert.Equal(t, codes.Unimplemented, st.Code())
 }
 
+var dummyErr = errors.New("dummy error")
+
 type testMethodService struct {
 	unit.UnimplementedTestMethodServiceServer
 }
