@@ -7,7 +7,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
-	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -37,8 +36,10 @@ func TestUnaryStage_Run(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		err := stage.Run(ctx)
-		assert.NilError(t, err)
+		if err := stage.Run(ctx); err != nil {
+			t.Errorf("run error: %s", err)
+			return
+		}
 		close(stageDone)
 	}()
 
@@ -138,7 +139,10 @@ func TestSourceStage_Run(t *testing.T) {
 	done := make(chan struct{})
 
 	go func() {
-		_ = s.Run(ctx)
+		if err := s.Run(ctx); err != nil {
+			t.Errorf("run error: %s", err)
+			return
+		}
 		close(done)
 	}()
 
