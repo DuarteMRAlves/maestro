@@ -3,49 +3,77 @@ package grpc
 import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jhump/protoreflect/dynamic"
-	"gotest.tools/v3/assert"
 	"testing"
 )
 
 func TestNewFieldSetter(t *testing.T) {
 	field := internal.NewMessageField("inner")
+	pbInner := &unit.TestMessageInner{Val: "val"}
 
 	msg, err := newMessage(&unit.TestMessage{})
-	assert.NilError(t, err, "create outer message")
+	if err != nil {
+		t.Fatalf("create outer message: %s", err)
+	}
 
-	inner, err := newMessage(&unit.TestMessageInner{Val: "val"})
-	assert.NilError(t, err, "create inner message")
+	inner, err := newMessage(pbInner)
+	if err != nil {
+		t.Fatalf("create inner message: %s", err)
+	}
 
 	err = msg.SetField(field, inner)
-	assert.NilError(t, err, "set error")
+	if err != nil {
+		t.Fatalf("set field error: %s", err)
+	}
 
-	fieldVal, ok := msg.dynMsg.GetFieldByName(field.Unwrap()).(*dynamic.Message)
-	assert.Assert(t, ok, "cast to dynamic message on inner message")
+	fieldDyn, ok := msg.dynMsg.GetFieldByName(field.Unwrap()).(*dynamic.Message)
+	if !ok {
+		t.Fatalf("unable to cast to dynamic message on fieldDyn")
+	}
 
-	pbInner := &unit.TestMessageInner{}
-	err = fieldVal.ConvertTo(pbInner)
-	assert.NilError(t, err, "convert dynamic to inner")
-	assert.Equal(t, "val", pbInner.Val)
+	pbField := &unit.TestMessageInner{}
+	err = fieldDyn.ConvertTo(pbField)
+	if err != nil {
+		t.Fatalf("convert fieldDyn to pbField: %s", err)
+	}
+
+	cmpOpts := cmpopts.IgnoreUnexported(unit.TestMessageInner{})
+	if diff := cmp.Diff(pbInner, pbField, cmpOpts); diff != "" {
+		t.Fatalf("mismatch on original and retreived:\n%s", diff)
+	}
 }
 
 func TestNewFieldGetter(t *testing.T) {
 	field := internal.NewMessageField("inner")
 
-	pbMsg := &unit.TestMessage{Inner: &unit.TestMessageInner{Val: "val"}}
+	pbInner := &unit.TestMessageInner{Val: "val"}
+	pbMsg := &unit.TestMessage{Inner: pbInner}
 
 	msg, err := newMessage(pbMsg)
-	assert.NilError(t, err, "create dynamic message")
+	if err != nil {
+		t.Fatalf("create message: %s", err)
+	}
 
-	inner, err := msg.GetField(field)
-	assert.NilError(t, err, "get inner error")
+	fieldVal, err := msg.GetField(field)
+	if err != nil {
+		t.Fatalf("get field: %s", err)
+	}
 
-	innerGrpc, ok := inner.(*message)
-	assert.Assert(t, ok, "cast inner to *grpc.message")
+	fieldGrpc, ok := fieldVal.(*message)
+	if !ok {
+		t.Fatalf("unable to cast to fieldVal to fieldGrpc")
+	}
 
-	pbInner := &unit.TestMessageInner{}
-	err = innerGrpc.dynMsg.ConvertTo(pbInner)
-	assert.NilError(t, err, "convert dynamic to inner")
+	pbField := &unit.TestMessageInner{}
+	err = fieldGrpc.dynMsg.ConvertTo(pbField)
+	if err != nil {
+		t.Fatalf("convert fieldGrpc to pbField: %s", err)
+	}
 
-	assert.Equal(t, "val", pbInner.Val)
+	cmpOpts := cmpopts.IgnoreUnexported(unit.TestMessageInner{})
+	if diff := cmp.Diff(pbInner, pbField, cmpOpts); diff != "" {
+		t.Fatalf("mismatch on original and retreived:\n%s", diff)
+	}
 }

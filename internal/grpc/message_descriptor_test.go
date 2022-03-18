@@ -4,22 +4,30 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/golang/protobuf/proto"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 )
 
 func TestMessageDescriptor_GetField(t *testing.T) {
 	msgDesc, err := newMessageDescriptor(&unit.TestMessage1{})
-	assert.NilError(t, err, "create message descriptor")
+	if err != nil {
+		t.Fatalf("create message descriptor: %s", err)
+	}
 
 	field := internal.NewMessageField("field4")
 
 	fieldDesc, err := msgDesc.GetField(field)
-	assert.NilError(t, err, "get field")
+	if err != nil {
+		t.Fatalf("get field: %s", err)
+	}
 
 	grpcFieldDesc, ok := fieldDesc.(messageDescriptor)
-	assert.Assert(t, ok, "cast to message descriptor")
-	assert.Equal(t, "InternalMessage1", grpcFieldDesc.desc.GetName())
+	if !ok {
+		t.Fatalf("unable to cast to fieldDesc to grpcFieldDesc")
+	}
+	if diff := cmp.Diff("InternalMessage1", grpcFieldDesc.desc.GetName()); diff != "" {
+		t.Fatalf("mismatch on original and retreived names:\n%s", diff)
+	}
 }
 
 func TestCompatibleDescriptors(t *testing.T) {
@@ -74,12 +82,20 @@ func TestCompatibleDescriptors(t *testing.T) {
 			name,
 			func(t *testing.T) {
 				desc1, err := newMessageDescriptor(tc.msg1)
-				assert.NilError(t, err, "create message descriptor 1")
+				if err != nil {
+					t.Fatalf("create message descriptor 1: %s", err)
+				}
 				desc2, err := newMessageDescriptor(tc.msg2)
-				assert.NilError(t, err, "create message descriptor 2")
+				if err != nil {
+					t.Fatalf("create message descriptor 2: %s", err)
+				}
 
-				assert.Equal(t, tc.expected, desc1.Compatible(desc2))
-				assert.Equal(t, tc.expected, desc2.Compatible(desc1))
+				if diff := cmp.Diff(tc.expected, desc1.Compatible(desc2)); diff != "" {
+					t.Fatalf("mismatch on desc1.Compatible(desc2):\n%s", diff)
+				}
+				if diff := cmp.Diff(tc.expected, desc2.Compatible(desc1)); diff != "" {
+					t.Fatalf("mismatch on desc2.Compatible(desc1):\n%s", diff)
+				}
 			},
 		)
 	}
