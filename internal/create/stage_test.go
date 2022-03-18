@@ -2,9 +2,11 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -15,7 +17,7 @@ func TestCreateStage(t *testing.T) {
 		orchName          internal.OrchestrationName
 		expStage          internal.Stage
 		loadOrchestration internal.Orchestration
-		expOrchestration  internal.Orchestration
+		expOrch           internal.Orchestration
 	}{
 		"required fields": {
 			name: createStageName(t, "some-name"),
@@ -32,7 +34,7 @@ func TestCreateStage(t *testing.T) {
 				nil,
 				nil,
 			),
-			expOrchestration: createOrchestration(
+			expOrch: createOrchestration(
 				t,
 				"orchestration",
 				[]string{"some-name"},
@@ -54,7 +56,7 @@ func TestCreateStage(t *testing.T) {
 				nil,
 				nil,
 			),
-			expOrchestration: createOrchestration(
+			expOrch: createOrchestration(
 				t,
 				"orchestration",
 				[]string{"some-name"},
@@ -79,17 +81,27 @@ func TestCreateStage(t *testing.T) {
 				createFn := Stage(stageStore, orchStore)
 
 				err := createFn(tc.name, tc.methodCtx, tc.orchName)
-				assert.NilError(t, err)
+				if err != nil {
+					t.Fatalf("create error: %s", err)
+				}
 
-				assert.Equal(t, 1, len(stageStore.Stages))
+				if diff := cmp.Diff(1, len(stageStore.Stages)); diff != "" {
+					t.Fatalf("number of stages mismatch:\n%s", diff)
+				}
 				s, exists := stageStore.Stages[tc.expStage.Name()]
-				assert.Assert(t, exists)
-				assertEqualStage(t, tc.expStage, s)
+				if !exists {
+					t.Fatalf("created stage does not exist in storage")
+				}
+				cmpStage(t, tc.expStage, s, "created stage")
 
-				assert.Equal(t, 1, len(orchStore.Orchs))
-				o, exists := orchStore.Orchs[tc.expOrchestration.Name()]
-				assert.Assert(t, exists)
-				assertEqualOrchestration(t, tc.expOrchestration, o)
+				if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+					t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+				}
+				o, exists := orchStore.Orchs[tc.expOrch.Name()]
+				if !exists {
+					t.Fatalf("updated orchestration does not exist in storage")
+				}
+				cmpOrchestration(t, tc.expOrch, o, "updated orchestration")
 			},
 		)
 	}
@@ -200,10 +212,16 @@ func TestCreateStage_Err(t *testing.T) {
 
 				createFn := Stage(stageStore, orchStore)
 				err := createFn(tc.stageName, tc.methodCtx, tc.orchName)
-				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, tc.isError))
-
-				assert.Equal(t, 0, len(stageStore.Stages))
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				}
+				if !errors.Is(err, tc.isError) {
+					format := "Wrong error: expected %s, got %s"
+					t.Fatalf(format, tc.isError, err)
+				}
+				if diff := cmp.Diff(0, len(stageStore.Stages)); diff != "" {
+					t.Fatalf("number of stages mismatch:\n%s", diff)
+				}
 			},
 		)
 	}
@@ -240,39 +258,65 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	createFn := Stage(stageStore, orchStore)
 
 	err := createFn(stageName, methodCtx, orchName)
-	assert.NilError(t, err)
-
-	assert.Equal(t, 1, len(stageStore.Stages))
+	if err != nil {
+		t.Fatalf("first create error: %s", err)
+	}
+	if diff := cmp.Diff(1, len(stageStore.Stages)); diff != "" {
+		t.Fatalf("first create number of stages mismatch:\n%s", diff)
+	}
 	s, exists := stageStore.Stages[expStage.Name()]
-	assert.Assert(t, exists)
-	assertEqualStage(t, expStage, s)
+	if !exists {
+		t.Fatalf("first created stage does not exist in storage")
+	}
+	cmpStage(t, expStage, s, "first stage create")
 
-	assert.Equal(t, 1, len(orchStore.Orchs))
+	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+		t.Fatalf("first number of orchestrations mismatch:\n%s", diff)
+	}
 	o, exists := orchStore.Orchs[expOrchestration.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expOrchestration, o)
+	if !exists {
+		t.Fatalf("first updated orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expOrchestration, o, "first update orchestration")
 
 	err = createFn(stageName, methodCtx, orchName)
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected create error but got none")
+	}
 	var alreadyExists *internal.AlreadyExists
-	assert.Assert(t, errors.As(err, &alreadyExists))
-	assert.Equal(t, "stage", alreadyExists.Type)
-	assert.Equal(t, stageName.Unwrap(), alreadyExists.Ident)
+	if !errors.As(err, &alreadyExists) {
+		format := "Wrong error type: expected *internal.AlreadyExists, got %s"
+		t.Fatalf(format, reflect.TypeOf(err))
+	}
+	expError := &internal.AlreadyExists{Type: "stage", Ident: stageName.Unwrap()}
+	if diff := cmp.Diff(expError, alreadyExists); diff != "" {
+		t.Fatalf("error mismatch:\n%s", diff)
+	}
 
-	assert.Equal(t, 1, len(stageStore.Stages))
+	if diff := cmp.Diff(1, len(stageStore.Stages)); diff != "" {
+		t.Fatalf("second create number of stages mismatch:\n%s", diff)
+	}
 	s, exists = stageStore.Stages[expStage.Name()]
-	assert.Assert(t, exists)
-	assertEqualStage(t, expStage, s)
+	if !exists {
+		t.Fatalf("second created stage does not exist in storage")
+	}
+	cmpStage(t, expStage, s, "second stage create")
 
-	assert.Equal(t, 1, len(orchStore.Orchs))
+	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+		t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+	}
 	o, exists = orchStore.Orchs[expOrchestration.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expOrchestration, o)
+	if !exists {
+		t.Fatalf("second updated orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
 }
 
 func createStageName(t *testing.T, name string) internal.StageName {
 	stageName, err := internal.NewStageName(name)
-	assert.NilError(t, err, "create stage name %s", name)
+	if err != nil {
+		t.Fatalf("create stage name %s: %s", name, err)
+	}
 	return stageName
 }
 
@@ -281,8 +325,7 @@ func createStage(
 	stageName string,
 	requiredOnly bool,
 ) internal.Stage {
-	name, err := internal.NewStageName(stageName)
-	assert.NilError(t, err, "create name for stage %s", stageName)
+	name := createStageName(t, stageName)
 	address := internal.NewAddress("some-address")
 	serviceOpt := internal.NewEmptyService()
 	methodOpt := internal.NewEmptyMethod()
@@ -295,31 +338,19 @@ func createStage(
 	return internal.NewStage(name, ctx)
 }
 
-func assertEqualStage(
-	t *testing.T,
-	expected internal.Stage,
-	actual internal.Stage,
-) {
-	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-	assertEqualMethodContext(
-		t,
-		expected.MethodContext(),
-		actual.MethodContext(),
+func cmpStage(t *testing.T, x, y internal.Stage, msg string, args ...interface{}) {
+	stageCmpOpts := cmp.AllowUnexported(
+		internal.Stage{},
+		internal.StageName{},
+		internal.MethodContext{},
+		internal.Address{},
+		internal.OptionalService{},
+		internal.Service{},
+		internal.OptionalMethod{},
+		internal.Method{},
 	)
-}
-
-func assertEqualMethodContext(
-	t *testing.T,
-	expected internal.MethodContext,
-	actual internal.MethodContext,
-) {
-	assert.Equal(t, expected.Address().Unwrap(), actual.Address().Unwrap())
-	assert.Equal(t, expected.Service().Present(), actual.Service().Present())
-	if expected.Service().Present() {
-		assert.Equal(t, expected.Service().Unwrap(), actual.Service().Unwrap())
-	}
-	assert.Equal(t, expected.Method().Present(), actual.Method().Present())
-	if expected.Method().Present() {
-		assert.Equal(t, expected.Method().Present(), actual.Method().Present())
+	if diff := cmp.Diff(x, y, stageCmpOpts); diff != "" {
+		prepend := fmt.Sprintf(msg, args...)
+		t.Fatalf("%s:\n%s", prepend, diff)
 	}
 }

@@ -2,9 +2,11 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -16,7 +18,7 @@ func TestCreateLink(t *testing.T) {
 		orchName          internal.OrchestrationName
 		expLink           internal.Link
 		loadOrchestration internal.Orchestration
-		expOrchestration  internal.Orchestration
+		expOrch           internal.Orchestration
 		storedStages      []internal.Stage
 	}{
 		"required fields": {
@@ -41,7 +43,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{},
 			),
-			expOrchestration: createOrchestration(
+			expOrch: createOrchestration(
 				t,
 				"orchestration",
 				[]string{"source", "target"},
@@ -70,7 +72,7 @@ func TestCreateLink(t *testing.T) {
 				[]string{"source", "target"},
 				[]string{},
 			),
-			expOrchestration: createOrchestration(
+			expOrch: createOrchestration(
 				t,
 				"orchestration",
 				[]string{"source", "target"},
@@ -103,18 +105,27 @@ func TestCreateLink(t *testing.T) {
 
 				createFn := Link(linkStore, stageStore, orchStore)
 				err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+				if err != nil {
+					t.Fatalf("create error: %s", err)
+				}
 
-				assert.NilError(t, err)
-
-				assert.Equal(t, 1, len(linkStore.Links))
+				if diff := cmp.Diff(1, len(linkStore.Links)); diff != "" {
+					t.Fatalf("number of links mismatch:\n%s", diff)
+				}
 				l, exists := linkStore.Links[tc.expLink.Name()]
-				assert.Assert(t, exists)
-				assertEqualLink(t, tc.expLink, l)
+				if !exists {
+					t.Fatalf("created stage does not exist in storage")
+				}
+				cmpLink(t, tc.expLink, l, "created link")
 
-				assert.Equal(t, 1, len(orchStore.Orchs))
-				o, exists := orchStore.Orchs[tc.expOrchestration.Name()]
-				assert.Assert(t, exists)
-				assertEqualOrchestration(t, tc.expOrchestration, o)
+				if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+					t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+				}
+				o, exists := orchStore.Orchs[tc.expOrch.Name()]
+				if !exists {
+					t.Fatalf("updated orchestration does not exist in storage")
+				}
+				cmpOrchestration(t, tc.expOrch, o, "updated orchestration")
 			},
 		)
 	}
@@ -166,40 +177,65 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 
 	createFn := Link(linkStore, stageStore, orchStore)
 	err := createFn(linkName, source, target, orchName)
-
-	assert.NilError(t, err)
-
-	assert.Equal(t, 1, len(linkStore.Links))
+	if err != nil {
+		t.Fatalf("first create error: %s", err)
+	}
+	if diff := cmp.Diff(1, len(linkStore.Links)); diff != "" {
+		t.Fatalf("first create number of links mismatch:\n%s", diff)
+	}
 	l, exists := linkStore.Links[expLink.Name()]
-	assert.Assert(t, exists)
-	assertEqualLink(t, expLink, l)
+	if !exists {
+		t.Fatalf("first created link does not exist in storage")
+	}
+	cmpLink(t, expLink, l, "first create link")
 
-	assert.Equal(t, 1, len(orchStore.Orchs))
+	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+		t.Fatalf("first number of orchestrations mismatch:\n%s", diff)
+	}
 	o, exists := orchStore.Orchs[expOrchestration.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expOrchestration, o)
+	if !exists {
+		t.Fatalf("first updated orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expOrchestration, o, "first update orchestration")
 
 	err = createFn(linkName, source, target, orchName)
-
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected create error but got none")
+	}
 	var alreadyExists *internal.AlreadyExists
-	assert.Assert(t, errors.As(err, &alreadyExists))
-	assert.Equal(t, "link", alreadyExists.Type)
-	assert.Equal(t, linkName.Unwrap(), alreadyExists.Ident)
-	assert.Equal(t, 1, len(linkStore.Links))
-	l, exists = linkStore.Links[expLink.Name()]
-	assert.Assert(t, exists)
-	assertEqualLink(t, expLink, l)
+	if !errors.As(err, &alreadyExists) {
+		format := "Wrong error type: expected *internal.AlreadyExists, got %s"
+		t.Fatalf(format, reflect.TypeOf(err))
+	}
+	expError := &internal.AlreadyExists{Type: "link", Ident: linkName.Unwrap()}
+	if diff := cmp.Diff(expError, alreadyExists); diff != "" {
+		t.Fatalf("error mismatch:\n%s", diff)
+	}
 
-	assert.Equal(t, 1, len(orchStore.Orchs))
+	if diff := cmp.Diff(1, len(linkStore.Links)); diff != "" {
+		t.Fatalf("second create number of links mismatch:\n%s", diff)
+	}
+	l, exists = linkStore.Links[expLink.Name()]
+	if !exists {
+		t.Fatalf("second created link does not exist in storage")
+	}
+	cmpLink(t, expLink, l, "second create link")
+
+	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+		t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+	}
 	o, exists = orchStore.Orchs[expOrchestration.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expOrchestration, o)
+	if !exists {
+		t.Fatalf("second updated orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
 }
 
 func createLinkName(t *testing.T, name string) internal.LinkName {
 	linkName, err := internal.NewLinkName(name)
-	assert.NilError(t, err, "create link name %s", name)
+	if err != nil {
+		t.Fatalf("create link name %s: %s", name, err)
+	}
 	return linkName
 }
 
@@ -208,11 +244,8 @@ func createLink(
 	linkName string,
 	requiredOnly bool,
 ) internal.Link {
-	name, err := internal.NewLinkName(linkName)
-	assert.NilError(t, err, "create name for link %s", linkName)
-
-	sourceStage, err := internal.NewStageName("source")
-	assert.NilError(t, err, "create source stage for link %s", linkName)
+	name := createLinkName(t, linkName)
+	sourceStage := createStageName(t, "source")
 	sourceFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
 		sourceField := internal.NewMessageField("source-field")
@@ -220,8 +253,7 @@ func createLink(
 	}
 	sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
 
-	targetStage, err := internal.NewStageName("target")
-	assert.NilError(t, err, "create target stage for link %s", linkName)
+	targetStage := createStageName(t, "target")
 	targetFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
 		targetField := internal.NewMessageField("target-field")
@@ -232,16 +264,17 @@ func createLink(
 	return internal.NewLink(name, sourceEndpoint, targetEndpoint)
 }
 
-func assertEqualLink(t *testing.T, expected, actual internal.Link) {
-	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-	assertEqualEndpoint(t, expected.Source(), actual.Source())
-	assertEqualEndpoint(t, expected.Target(), actual.Target())
-}
-
-func assertEqualEndpoint(t *testing.T, expected, actual internal.LinkEndpoint) {
-	assert.Equal(t, expected.Stage().Unwrap(), actual.Stage().Unwrap())
-	assert.Equal(t, expected.Field().Present(), actual.Field().Present())
-	if expected.Field().Present() {
-		assert.Equal(t, expected.Field().Unwrap(), actual.Field().Unwrap())
+func cmpLink(t *testing.T, x, y internal.Link, msg string, args ...interface{}) {
+	cmpOpts := cmp.AllowUnexported(
+		internal.Link{},
+		internal.LinkName{},
+		internal.LinkEndpoint{},
+		internal.StageName{},
+		internal.OptionalMessageField{},
+		internal.MessageField{},
+	)
+	if diff := cmp.Diff(x, y, cmpOpts); diff != "" {
+		prepend := fmt.Sprintf(msg, args...)
+		t.Fatalf("%s:\n%s", prepend, diff)
 	}
 }

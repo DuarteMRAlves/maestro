@@ -2,9 +2,11 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -17,13 +19,19 @@ func TestCreateOrchestration(t *testing.T) {
 	createFn := Orchestration(storage)
 
 	err := createFn(orchName)
-	assert.NilError(t, err)
+	if err != nil {
+		t.Fatalf("create error: %s", err)
+	}
 
-	assert.Equal(t, 1, len(storage.Orchs))
+	if diff := cmp.Diff(1, len(storage.Orchs)); diff != "" {
+		t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+	}
 
 	o, exists := storage.Orchs[expected.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expected, o)
+	if !exists {
+		t.Fatalf("created orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expected, o, "created orchestration")
 }
 
 func TestCreateOrchestration_Err(t *testing.T) {
@@ -46,10 +54,16 @@ func TestCreateOrchestration_Err(t *testing.T) {
 
 				createFn := Orchestration(storage)
 				err := createFn(tc.name)
-				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, tc.isError))
-
-				assert.Equal(t, 0, len(storage.Orchs))
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				}
+				if !errors.Is(err, tc.isError) {
+					format := "Wrong error: expected %s, got %s"
+					t.Fatalf(format, tc.isError, err)
+				}
+				if diff := cmp.Diff(0, len(storage.Orchs)); diff != "" {
+					t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+				}
 			},
 		)
 	}
@@ -64,24 +78,41 @@ func TestCreateOrchestration_AlreadyExists(t *testing.T) {
 	createFn := Orchestration(storage)
 
 	err := createFn(orchName)
-	assert.NilError(t, err)
-	assert.Equal(t, 1, len(storage.Orchs))
+	if err != nil {
+		t.Fatalf("first create error: %s", err)
+	}
+	if diff := cmp.Diff(1, len(storage.Orchs)); diff != "" {
+		t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+	}
 
 	o, exists := storage.Orchs[expected.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expected, o)
+	if !exists {
+		t.Fatalf("created orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expected, o, "first create orchestration")
 
 	err = createFn(orchName)
-	assert.Assert(t, err != nil)
+	if err == nil {
+		t.Fatalf("expected create error but got none")
+	}
 	var alreadyExists *internal.AlreadyExists
-	assert.Assert(t, errors.As(err, &alreadyExists))
-	assert.Equal(t, "orchestration", alreadyExists.Type)
-	assert.Equal(t, name, alreadyExists.Ident)
-	assert.Equal(t, 1, len(storage.Orchs))
+	if !errors.As(err, &alreadyExists) {
+		format := "Wrong error type: expected *internal.AlreadyExists, got %s"
+		t.Fatalf(format, reflect.TypeOf(err))
+	}
+	expError := &internal.AlreadyExists{Type: "orchestration", Ident: name}
+	if diff := cmp.Diff(expError, alreadyExists); diff != "" {
+		t.Fatalf("error mismatch:\n%s", diff)
+	}
+	if diff := cmp.Diff(1, len(storage.Orchs)); diff != "" {
+		t.Fatalf("second create number of orchestrations mismatch:\n%s", diff)
+	}
 
 	o, exists = storage.Orchs[expected.Name()]
-	assert.Assert(t, exists)
-	assertEqualOrchestration(t, expected, o)
+	if !exists {
+		t.Fatalf("second created orchestration does not exist in storage")
+	}
+	cmpOrchestration(t, expected, o, "second create orchestration")
 }
 
 func createOrchestrationName(
@@ -89,7 +120,9 @@ func createOrchestrationName(
 	orchName string,
 ) internal.OrchestrationName {
 	name, err := internal.NewOrchestrationName(orchName)
-	assert.NilError(t, err, "create orchestration name %s", orchName)
+	if err != nil {
+		t.Fatalf("create orchestration name %s: %s", orchName, err)
+	}
 	return name
 }
 
@@ -98,36 +131,31 @@ func createOrchestration(
 	orchName string,
 	stages, links []string,
 ) internal.Orchestration {
-	name, err := internal.NewOrchestrationName(orchName)
-	assert.NilError(t, err, "create name for orchestration %s", orchName)
-	stageNames := make([]internal.StageName, 0, len(stages))
+	var (
+		stageNames []internal.StageName
+		linkNames  []internal.LinkName
+	)
+	name := createOrchestrationName(t, orchName)
 	for _, s := range stages {
-		sName, err := internal.NewStageName(s)
-		assert.NilError(t, err, "create stage for orchestration %s", orchName)
-		stageNames = append(stageNames, sName)
+		stageNames = append(stageNames, createStageName(t, s))
 	}
-	linkNames := make([]internal.LinkName, 0, len(links))
 	for _, l := range links {
-		lName, err := internal.NewLinkName(l)
-		assert.NilError(t, err, "create link for orchestration %s", orchName)
-		linkNames = append(linkNames, lName)
+		linkNames = append(linkNames, createLinkName(t, l))
 	}
 	return internal.NewOrchestration(name, stageNames, linkNames)
 }
 
-func assertEqualOrchestration(
-	t *testing.T,
-	expected, actual internal.Orchestration,
+func cmpOrchestration(
+	t *testing.T, x, y internal.Orchestration, msg string, args ...interface{},
 ) {
-	assert.Equal(t, expected.Name().Unwrap(), actual.Name().Unwrap())
-
-	assert.Equal(t, len(expected.Stages()), len(actual.Stages()))
-	for i, s := range expected.Stages() {
-		assert.Equal(t, s.Unwrap(), actual.Stages()[i].Unwrap())
-	}
-
-	assert.Equal(t, len(expected.Links()), len(actual.Links()))
-	for i, l := range expected.Links() {
-		assert.Equal(t, l.Unwrap(), actual.Links()[i].Unwrap())
+	orchCmpOpts := cmp.AllowUnexported(
+		internal.Orchestration{},
+		internal.OrchestrationName{},
+		internal.StageName{},
+		internal.LinkName{},
+	)
+	if diff := cmp.Diff(x, y, orchCmpOpts); diff != "" {
+		prepend := fmt.Sprintf(msg, args...)
+		t.Fatalf("%s:\n%s", prepend, diff)
 	}
 }
