@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
+	"github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/assert"
 	"testing"
 )
@@ -57,24 +58,23 @@ func TestUnaryStage_Run(t *testing.T) {
 	<-stageDone
 	close(input)
 
-	assert.Assert(t, len(received) == len(states))
+	if diff := cmp.Diff(len(states), len(received)); diff != "" {
+		t.Fatalf("mismatch on number of received states:\n%s", diff)
+	}
 	for i, rcv := range received {
 		in := states[i]
-		assert.Equal(t, in.id, rcv.id, "correct received id")
-
-		reqMock, ok := in.msg.(*mock.Message)
-		assert.Assert(t, ok, "request mock message")
-
-		assert.Equal(t, 1, len(reqMock.Fields))
-		reqVal, ok := reqMock.Fields[fieldName]
-		assert.Assert(t, ok, "field exists")
-		assert.Equal(t, fmt.Sprintf("val%d", i+1), reqVal.(string))
-
-		repMock, ok := rcv.msg.(*mock.Message)
-		assert.Assert(t, ok, "reply mock message")
-		repVal, ok := repMock.Fields[fieldName]
-		assert.Assert(t, ok, "field exists")
-		assert.Equal(t, fmt.Sprintf("val%dval%d", i+1, i+1), repVal.(string))
+		exp := state{
+			id: in.id,
+			msg: &mock.Message{
+				Fields: map[internal.MessageField]interface{}{
+					fieldName: fmt.Sprintf("val%dval%d", i+1, i+1),
+				},
+			},
+		}
+		cmpOpts := cmp.AllowUnexported(state{})
+		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		}
 	}
 }
 
@@ -150,7 +150,13 @@ func TestSourceStage_Run(t *testing.T) {
 	<-done
 
 	for i, g := range generated {
-		assert.Equal(t, int32(g.id), int32(i+1))
+		m := &mock.Message{Fields: map[internal.MessageField]interface{}{}}
+		exp := state{id: id(i + 1), msg: m}
+
+		cmpOpts := cmp.AllowUnexported(state{})
+		if diff := cmp.Diff(exp, g, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		}
 	}
 }
 
@@ -209,19 +215,19 @@ func TestMergeStage_Run(t *testing.T) {
 	done := make(chan struct{})
 
 	go func() {
-		err := s.Run(ctx)
-		assert.NilError(t, err, "run error")
+		if err := s.Run(ctx); err != nil {
+			t.Errorf("run error: %s", err)
+			return
+		}
 		close(done)
 	}()
 
 	for i, exp := range expected {
 		out := <-output
-		assert.Equal(t, exp.id, out.id, "id at iter %d", i)
-		expMock, ok := exp.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for exp at iter %d", i)
-		outMock, ok := out.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for out at iter %d", i)
-		assert.DeepEqual(t, expMock, outMock)
+		cmpOpts := cmp.AllowUnexported(state{})
+		if diff := cmp.Diff(exp, out, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		}
 	}
 	cancel()
 	<-done
@@ -292,38 +298,32 @@ func TestSplitStage_Run(t *testing.T) {
 	done := make(chan struct{})
 
 	go func() {
-		err := s.Run(ctx)
-		assert.NilError(t, err, "run error")
+		if err := s.Run(ctx); err != nil {
+			t.Errorf("run error: %s", err)
+			return
+		}
 		close(done)
 	}()
 
+	cmpOpts := cmp.AllowUnexported(state{})
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]
 		out1 := <-output1
-		assert.Equal(t, exp1.id, out1.id, "id 1 at iter %d", i)
-		expMock1, ok := exp1.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for exp 1 at iter %d", i)
-		outMock1, ok := out1.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for out 1 at iter %d", i)
-		assert.DeepEqual(t, expMock1, outMock1)
+		if diff := cmp.Diff(exp1, out1, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on state 1 %d:\n%s", i, diff)
+		}
 
 		exp2 := expected2[i]
 		out2 := <-output2
-		assert.Equal(t, exp2.id, out2.id, "id 2 at iter %d", i)
-		expMock2, ok := exp2.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for exp 2 at iter %d", i)
-		outMock2, ok := out2.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for out 2 at iter %d", i)
-		assert.DeepEqual(t, expMock2, outMock2)
+		if diff := cmp.Diff(exp2, out2, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on state 2 %d:\n%s", i, diff)
+		}
 
 		exp3 := expected3[i]
 		out3 := <-output3
-		assert.Equal(t, exp3.id, out3.id, "id 3 at iter %d", i)
-		expMock3, ok := exp3.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for exp 3 at iter %d", i)
-		outMock3, ok := out3.msg.(*mock.Message)
-		assert.Assert(t, ok, "cast for out 3 at iter %d", i)
-		assert.DeepEqual(t, expMock3, outMock3)
+		if diff := cmp.Diff(exp3, out3, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on state 3 %d:\n%s", i, diff)
+		}
 	}
 	cancel()
 	<-done

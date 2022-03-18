@@ -7,7 +7,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
-	"gotest.tools/v3/assert"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -105,38 +104,51 @@ func TestExecution_Linear(t *testing.T) {
 	)
 
 	e, err := executionBuilder(orchestration)
-	assert.NilError(t, err, "build error")
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
 
 	e.Start()
 	<-done
-	assert.NilError(t, e.Stop(), "stop error")
-	assert.Equal(t, 3, len(collect), "invalid length")
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(3, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
 
 	for i, msg := range collect {
-		expected := int64(i)
-		val, ok := msg.Fields[fieldName]
-		assert.Assert(t, ok, "message does not have field %s", fieldName)
-		valAsInt64, ok := val.(int64)
-		assert.Assert(t, ok, "val is not an int64")
-		assert.Equal(t, valAsInt64, (expected+1)*2)
+		counter := int64(i) + 1
+		expected := &mock.Message{
+			Fields: map[internal.MessageField]interface{}{fieldName: counter * 2},
+		}
+		if diff := cmp.Diff(expected, msg); diff != "" {
+			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		}
 	}
 }
 
 func createOrchName(t *testing.T, name string) internal.OrchestrationName {
 	orchName, err := internal.NewOrchestrationName(name)
-	assert.NilError(t, err, "create stage name %s", name)
+	if err != nil {
+		t.Fatalf("create orchestration name %s: %s", name, err)
+	}
 	return orchName
 }
 
 func createStageName(t *testing.T, name string) internal.StageName {
 	stageName, err := internal.NewStageName(name)
-	assert.NilError(t, err, "create stage name %s", name)
+	if err != nil {
+		t.Fatalf("create stage name %s: %s", name, err)
+	}
 	return stageName
 }
 
 func createLinkName(t *testing.T, name string) internal.LinkName {
 	linkName, err := internal.NewLinkName(name)
-	assert.NilError(t, err, "create link name %s", name)
+	if err != nil {
+		t.Fatalf("create link name %s: %s", name, err)
+	}
 	return linkName
 }
 
@@ -374,7 +386,9 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	)
 
 	e, err := executionBuilder(orchestration)
-	assert.NilError(t, err, "build error")
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
 
 	e.Start()
 	<-done
