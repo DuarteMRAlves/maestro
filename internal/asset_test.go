@@ -2,7 +2,8 @@ package internal
 
 import (
 	"errors"
-	"gotest.tools/v3/assert"
+	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -27,14 +28,36 @@ func TestNewAssetName(t *testing.T) {
 			func(t *testing.T) {
 				created, err := NewAssetName(tc.name)
 				if tc.valid {
-					assert.NilError(t, err, "create error")
-					assert.Equal(t, tc.name, created.Unwrap())
+					if err != nil {
+						t.Fatalf("error not nil in valid test: %s", err)
+					}
+					if diff := cmp.Diff(tc.name, created.Unwrap()); diff != "" {
+						t.Fatalf("names mismatch:\n%s", diff)
+					}
 				} else {
-					assert.Assert(t, created.IsEmpty())
+					if !created.IsEmpty() {
+						t.Fatalf("created is not empty: %s", created.Unwrap())
+					}
 					var invalidIdentifier *InvalidIdentifier
-					assert.Assert(t, errors.As(err, &invalidIdentifier))
-					assert.Equal(t, "asset", invalidIdentifier.Type)
-					assert.Equal(t, tc.name, invalidIdentifier.Ident)
+					if !errors.As(err, &invalidIdentifier) {
+						errTyp := reflect.TypeOf(err)
+						t.Fatalf(
+							"error type mismatch: expected *InvalidIdentifier, got %s",
+							errTyp,
+						)
+					}
+					if diff := cmp.Diff(
+						"asset",
+						invalidIdentifier.Type,
+					); diff != "" {
+						t.Fatalf("error type mismatch:\n%s", diff)
+					}
+					if diff := cmp.Diff(
+						tc.name,
+						invalidIdentifier.Ident,
+					); diff != "" {
+						t.Fatalf("error identifier mismatch:\n%s", diff)
+					}
 				}
 			},
 		)
