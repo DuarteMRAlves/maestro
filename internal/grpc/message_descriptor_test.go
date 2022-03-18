@@ -69,17 +69,17 @@ func TestCompatibleDescriptors(t *testing.T) {
 			expected: false,
 		},
 	}
-	for name, test := range tests {
+	for name, tc := range tests {
 		t.Run(
 			name,
 			func(t *testing.T) {
-				desc1, err := newMessageDescriptor(test.msg1)
+				desc1, err := newMessageDescriptor(tc.msg1)
 				assert.NilError(t, err, "create message descriptor 1")
-				desc2, err := newMessageDescriptor(test.msg2)
+				desc2, err := newMessageDescriptor(tc.msg2)
 				assert.NilError(t, err, "create message descriptor 2")
 
-				assert.Equal(t, test.expected, desc1.Compatible(desc2))
-				assert.Equal(t, test.expected, desc2.Compatible(desc1))
+				assert.Equal(t, tc.expected, desc1.Compatible(desc2))
+				assert.Equal(t, tc.expected, desc2.Compatible(desc1))
 			},
 		)
 	}
