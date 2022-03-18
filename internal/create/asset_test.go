@@ -9,77 +9,68 @@ import (
 )
 
 func TestCreateAsset(t *testing.T) {
-	tests := []struct {
-		name      string
-		assetName internal.AssetName
-		image     internal.OptionalImage
-		expected  internal.Asset
+	tests := map[string]struct {
+		name     internal.AssetName
+		image    internal.OptionalImage
+		expected internal.Asset
 	}{
-		{
-			name:      "required fields",
-			assetName: createAssetName(t, "some-name"),
-			expected:  createAsset(t, "some-name", true),
+		"required fields": {
+			name:     createAssetName(t, "some-name"),
+			expected: createAsset(t, "some-name", true),
 		},
-		{
-			name:      "all fields",
-			assetName: createAssetName(t, "some-name"),
-			image:     internal.NewPresentImage(internal.NewImage("some-image")),
-			expected:  createAsset(t, "some-name", false),
+		"all fields": {
+			name:     createAssetName(t, "some-name"),
+			image:    internal.NewPresentImage(internal.NewImage("some-image")),
+			expected: createAsset(t, "some-name", false),
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				storage := mock.AssetStorage{
 					Assets: map[internal.AssetName]internal.Asset{},
 				}
 
 				createFn := Asset(storage)
-				err := createFn(test.assetName, test.image)
+				err := createFn(tc.name, tc.image)
 				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(storage.Assets))
 
-				asset, exists := storage.Assets[test.expected.Name()]
+				asset, exists := storage.Assets[tc.expected.Name()]
 				assert.Assert(t, exists)
-				assertEqualAsset(t, test.expected, asset)
+				assertEqualAsset(t, tc.expected, asset)
 			},
 		)
 	}
 }
 
 func TestCreateAsset_Err(t *testing.T) {
-	tests := []struct {
-		name      string
-		assetName internal.AssetName
-		image     internal.OptionalImage
-		isError   error
+	tests := map[string]struct {
+		name    internal.AssetName
+		image   internal.OptionalImage
+		isError error
 	}{
-		{
-			name:      "empty name",
-			assetName: createAssetName(t, ""),
-			isError:   EmptyAssetName,
-		},
-		{
-			name:      "empty image",
-			assetName: createAssetName(t, "some-name"),
-			image:     internal.NewPresentImage(internal.NewImage("")),
-			isError:   EmptyImageName,
+		"empty name": {name: createAssetName(t, ""), isError: EmptyAssetName},
+		"empty image": {
+			name:    createAssetName(t, "some-name"),
+			image:   internal.NewPresentImage(internal.NewImage("")),
+			isError: EmptyImageName,
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				storage := mock.AssetStorage{
 					Assets: map[internal.AssetName]internal.Asset{},
 				}
 
 				createFn := Asset(storage)
-				err := createFn(test.assetName, test.image)
+				err := createFn(tc.name, tc.image)
 				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, test.isError))
+				assert.Assert(t, errors.Is(err, tc.isError))
 
 				assert.Equal(t, 0, len(storage.Assets))
 			},

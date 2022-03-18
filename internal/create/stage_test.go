@@ -9,18 +9,16 @@ import (
 )
 
 func TestCreateStage(t *testing.T) {
-	tests := []struct {
-		name              string
-		stageName         internal.StageName
+	tests := map[string]struct {
+		name              internal.StageName
 		methodCtx         internal.MethodContext
 		orchName          internal.OrchestrationName
 		expStage          internal.Stage
 		loadOrchestration internal.Orchestration
 		expOrchestration  internal.Orchestration
 	}{
-		{
-			name:      "required fields",
-			stageName: createStageName(t, "some-name"),
+		"required fields": {
+			name: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.NewEmptyService(),
@@ -41,9 +39,8 @@ func TestCreateStage(t *testing.T) {
 				[]string{},
 			),
 		},
-		{
-			name:      "all fields",
-			stageName: createStageName(t, "some-name"),
+		"all fields": {
+			name: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.NewPresentService(internal.NewService("some-service")),
@@ -65,9 +62,9 @@ func TestCreateStage(t *testing.T) {
 			),
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				stageStore := mock.StageStorage{
 					Stages: map[internal.StageName]internal.Stage{},
@@ -75,40 +72,38 @@ func TestCreateStage(t *testing.T) {
 
 				orchStore := mock.OrchestrationStorage{
 					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						test.loadOrchestration.Name(): test.loadOrchestration,
+						tc.loadOrchestration.Name(): tc.loadOrchestration,
 					},
 				}
 
 				createFn := Stage(stageStore, orchStore)
 
-				err := createFn(test.stageName, test.methodCtx, test.orchName)
+				err := createFn(tc.name, tc.methodCtx, tc.orchName)
 				assert.NilError(t, err)
 
 				assert.Equal(t, 1, len(stageStore.Stages))
-				s, exists := stageStore.Stages[test.expStage.Name()]
+				s, exists := stageStore.Stages[tc.expStage.Name()]
 				assert.Assert(t, exists)
-				assertEqualStage(t, test.expStage, s)
+				assertEqualStage(t, tc.expStage, s)
 
 				assert.Equal(t, 1, len(orchStore.Orchs))
-				o, exists := orchStore.Orchs[test.expOrchestration.Name()]
+				o, exists := orchStore.Orchs[tc.expOrchestration.Name()]
 				assert.Assert(t, exists)
-				assertEqualOrchestration(t, test.expOrchestration, o)
+				assertEqualOrchestration(t, tc.expOrchestration, o)
 			},
 		)
 	}
 }
 
 func TestCreateStage_Err(t *testing.T) {
-	tests := []struct {
-		name              string
+	tests := map[string]struct {
 		stageName         internal.StageName
 		methodCtx         internal.MethodContext
 		orchName          internal.OrchestrationName
 		isError           error
 		loadOrchestration internal.Orchestration
 	}{
-		{
-			name:      "empty name",
+		"empty name": {
 			stageName: createStageName(t, ""),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
@@ -124,8 +119,7 @@ func TestCreateStage_Err(t *testing.T) {
 				nil,
 			),
 		},
-		{
-			name:      "empty address",
+		"empty address": {
 			stageName: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress(""),
@@ -141,8 +135,7 @@ func TestCreateStage_Err(t *testing.T) {
 				nil,
 			),
 		},
-		{
-			name:      "empty service",
+		"empty service": {
 			stageName: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
@@ -158,8 +151,7 @@ func TestCreateStage_Err(t *testing.T) {
 				nil,
 			),
 		},
-		{
-			name:      "empty method",
+		"empty method": {
 			stageName: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
@@ -175,8 +167,7 @@ func TestCreateStage_Err(t *testing.T) {
 				nil,
 			),
 		},
-		{
-			name:      "empty orchestration",
+		"empty orchestration": {
 			stageName: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
@@ -193,9 +184,9 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 		},
 	}
-	for _, test := range tests {
+	for name, tc := range tests {
 		t.Run(
-			test.name,
+			name,
 			func(t *testing.T) {
 				stageStore := mock.StageStorage{
 					Stages: map[internal.StageName]internal.Stage{},
@@ -203,14 +194,14 @@ func TestCreateStage_Err(t *testing.T) {
 
 				orchStore := mock.OrchestrationStorage{
 					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						test.loadOrchestration.Name(): test.loadOrchestration,
+						tc.loadOrchestration.Name(): tc.loadOrchestration,
 					},
 				}
 
 				createFn := Stage(stageStore, orchStore)
-				err := createFn(test.stageName, test.methodCtx, test.orchName)
+				err := createFn(tc.stageName, tc.methodCtx, tc.orchName)
 				assert.Assert(t, err != nil)
-				assert.Assert(t, errors.Is(err, test.isError))
+				assert.Assert(t, errors.Is(err, tc.isError))
 
 				assert.Equal(t, 0, len(stageStore.Stages))
 			},
