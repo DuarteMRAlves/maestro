@@ -22,7 +22,6 @@ type StageStorage interface {
 var (
 	EmptyStageName = fmt.Errorf("empty stage name")
 	EmptyAddress   = fmt.Errorf("empty address")
-	EmptyMethod    = fmt.Errorf("empty method")
 )
 
 func Stage(
@@ -44,11 +43,6 @@ func Stage(
 		addr := ctx.Address()
 		if addr.IsEmpty() {
 			return EmptyAddress
-		}
-
-		method := ctx.Method()
-		if method.Present() && method.Unwrap().IsEmpty() {
-			return EmptyMethod
 		}
 
 		if orchName.IsEmpty() {

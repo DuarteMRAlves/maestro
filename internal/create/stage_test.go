@@ -24,7 +24,7 @@ func TestCreateStage(t *testing.T) {
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.Service{},
-				internal.NewEmptyMethod(),
+				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			expStage: createStage(t, "some-name", true),
@@ -46,7 +46,7 @@ func TestCreateStage(t *testing.T) {
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.NewService("some-service"),
-				internal.NewPresentMethod(internal.NewMethod("some-method")),
+				internal.NewMethod("some-method"),
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			expStage: createStage(t, "some-name", false),
@@ -120,7 +120,7 @@ func TestCreateStage_Err(t *testing.T) {
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.Service{},
-				internal.NewEmptyMethod(),
+				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			isError:  EmptyStageName,
@@ -136,26 +136,10 @@ func TestCreateStage_Err(t *testing.T) {
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress(""),
 				internal.Service{},
-				internal.NewEmptyMethod(),
+				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			isError:  EmptyAddress,
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
-		},
-		"empty method": {
-			stageName: createStageName(t, "some-name"),
-			methodCtx: internal.NewMethodContext(
-				internal.NewAddress("some-address"),
-				internal.Service{},
-				internal.NewPresentMethod(internal.NewMethod("")),
-			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			isError:  EmptyMethod,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -168,7 +152,7 @@ func TestCreateStage_Err(t *testing.T) {
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.Service{},
-				internal.NewEmptyMethod(),
+				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, ""),
 			isError:  EmptyOrchestrationName,
@@ -216,7 +200,7 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	methodCtx := internal.NewMethodContext(
 		internal.NewAddress("some-address"),
 		internal.NewService("some-service"),
-		internal.NewPresentMethod(internal.NewMethod("some-method")),
+		internal.NewMethod("some-method"),
 	)
 	orchName := createOrchestrationName(t, "orchestration")
 
@@ -309,16 +293,17 @@ func createStage(
 	stageName string,
 	requiredOnly bool,
 ) internal.Stage {
-	var service internal.Service
+	var (
+		service internal.Service
+		method  internal.Method
+	)
 	name := createStageName(t, stageName)
 	address := internal.NewAddress("some-address")
-	methodOpt := internal.NewEmptyMethod()
 	if !requiredOnly {
 		service = internal.NewService("some-service")
-		method := internal.NewMethod("some-method")
-		methodOpt = internal.NewPresentMethod(method)
+		method = internal.NewMethod("some-method")
 	}
-	ctx := internal.NewMethodContext(address, service, methodOpt)
+	ctx := internal.NewMethodContext(address, service, method)
 	return internal.NewStage(name, ctx)
 }
 
@@ -329,7 +314,6 @@ func cmpStage(t *testing.T, x, y internal.Stage, msg string, args ...interface{}
 		internal.MethodContext{},
 		internal.Address{},
 		internal.Service{},
-		internal.OptionalMethod{},
 		internal.Method{},
 	)
 	if diff := cmp.Diff(x, y, stageCmpOpts); diff != "" {

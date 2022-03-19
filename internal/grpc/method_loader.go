@@ -68,7 +68,7 @@ func findService(
 	available []internal.Service,
 	search internal.Service,
 ) (internal.Service, error) {
-	if !search.IsEmpty() {
+	if search.IsEmpty() {
 		if len(available) == 1 {
 			return available[0], nil
 		}
@@ -131,15 +131,14 @@ func isProtocolError(err error) bool {
 
 func findMethod(
 	available []*desc.MethodDescriptor,
-	searchOpt internal.OptionalMethod,
+	search internal.Method,
 ) (unaryMethod, error) {
-	if !searchOpt.Present() {
+	if search.IsEmpty() {
 		if len(available) == 1 {
 			return newUnaryMethodFromDescriptor(available[0]), nil
 		}
 		return unaryMethod{}, notOneMethod
 	} else {
-		search := searchOpt.Unwrap()
 		for _, m := range available {
 			if search.Unwrap() == m.GetName() {
 				return newUnaryMethodFromDescriptor(m), nil
