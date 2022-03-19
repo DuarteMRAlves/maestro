@@ -45,23 +45,6 @@ func (m Method) IsEmpty() bool { return m.val == "" }
 
 func NewMethod(m string) Method { return Method{val: m} }
 
-type OptionalMethod struct {
-	val     Method
-	present bool
-}
-
-func (m OptionalMethod) Unwrap() Method { return m.val }
-
-func (m OptionalMethod) Present() bool { return m.present }
-
-func NewPresentMethod(m Method) OptionalMethod {
-	return OptionalMethod{val: m, present: true}
-}
-
-func NewEmptyMethod() OptionalMethod {
-	return OptionalMethod{}
-}
-
 type Address struct{ val string }
 
 func (a Address) Unwrap() string { return a.val }
@@ -73,19 +56,19 @@ func NewAddress(a string) Address { return Address{val: a} }
 type MethodContext struct {
 	address Address
 	service Service
-	method  OptionalMethod
+	method  Method
 }
 
 func (m MethodContext) Address() Address { return m.address }
 
 func (m MethodContext) Service() Service { return m.service }
 
-func (m MethodContext) Method() OptionalMethod { return m.method }
+func (m MethodContext) Method() Method { return m.method }
 
 func NewMethodContext(
 	address Address,
 	service Service,
-	method OptionalMethod,
+	method Method,
 ) MethodContext {
 	return MethodContext{
 		address: address,

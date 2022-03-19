@@ -155,7 +155,7 @@ func createLinkName(t *testing.T, name string) internal.LinkName {
 func createMethodContext(addr internal.Address) internal.MethodContext {
 	var (
 		emptyService internal.Service
-		emptyMethod  internal.OptionalMethod
+		emptyMethod  internal.Method
 	)
 	return internal.NewMethodContext(addr, emptyService, emptyMethod)
 }
