@@ -25,11 +25,11 @@ func TestCreateLink(t *testing.T) {
 			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
 				createStageName(t, "source"),
-				internal.NewEmptyMessageField(),
+				internal.MessageField{},
 			),
 			target: internal.NewLinkEndpoint(
 				createStageName(t, "target"),
-				internal.NewEmptyMessageField(),
+				internal.MessageField{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			expLink: createLink(
@@ -58,11 +58,11 @@ func TestCreateLink(t *testing.T) {
 			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
 				createStageName(t, "source"),
-				internal.NewPresentMessageField(internal.NewMessageField("source-field")),
+				internal.NewMessageField("source-field"),
 			),
 			target: internal.NewLinkEndpoint(
 				createStageName(t, "target"),
-				internal.NewPresentMessageField(internal.NewMessageField("target-field")),
+				internal.NewMessageField("target-field"),
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
 			expLink:  createLink(t, "some-name", false),
@@ -135,11 +135,11 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	linkName := createLinkName(t, "some-name")
 	source := internal.NewLinkEndpoint(
 		createStageName(t, "source"),
-		internal.NewPresentMessageField(internal.NewMessageField("source-field")),
+		internal.NewMessageField("source-field"),
 	)
 	target := internal.NewLinkEndpoint(
 		createStageName(t, "target"),
-		internal.NewPresentMessageField(internal.NewMessageField("target-field")),
+		internal.NewMessageField("target-field"),
 	)
 	orchName := createOrchestrationName(t, "orchestration")
 	expLink := createLink(t, "some-name", false)
@@ -359,22 +359,22 @@ func createLink(
 	linkName string,
 	requiredOnly bool,
 ) internal.Link {
+	var (
+		sourceField internal.MessageField
+		targetField internal.MessageField
+	)
 	name := createLinkName(t, linkName)
 	sourceStage := createStageName(t, "source")
-	sourceFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
-		sourceField := internal.NewMessageField("source-field")
-		sourceFieldOpt = internal.NewPresentMessageField(sourceField)
+		sourceField = internal.NewMessageField("source-field")
 	}
-	sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceFieldOpt)
+	sourceEndpoint := internal.NewLinkEndpoint(sourceStage, sourceField)
 
 	targetStage := createStageName(t, "target")
-	targetFieldOpt := internal.NewEmptyMessageField()
 	if !requiredOnly {
-		targetField := internal.NewMessageField("target-field")
-		targetFieldOpt = internal.NewPresentMessageField(targetField)
+		targetField = internal.NewMessageField("target-field")
 	}
-	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetFieldOpt)
+	targetEndpoint := internal.NewLinkEndpoint(targetStage, targetField)
 
 	return internal.NewLink(name, sourceEndpoint, targetEndpoint)
 }
@@ -385,7 +385,6 @@ func cmpLink(t *testing.T, x, y internal.Link, msg string, args ...interface{}) 
 		internal.LinkName{},
 		internal.LinkEndpoint{},
 		internal.StageName{},
-		internal.OptionalMessageField{},
 		internal.MessageField{},
 	)
 	if diff := cmp.Diff(x, y, cmpOpts); diff != "" {

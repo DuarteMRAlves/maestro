@@ -65,21 +65,15 @@ func TestExecution_Linear(t *testing.T) {
 	sourceToTransformName := createLinkName(t, "link-source-transform")
 	sourceToTransform := internal.NewLink(
 		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.NewEmptyMessageField()),
-		internal.NewLinkEndpoint(
-			transformName,
-			internal.NewEmptyMessageField(),
-		),
+		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
+		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
 	)
 
 	transformToSinkName := createLinkName(t, "link-transform-sink")
 	transformToSink := internal.NewLink(
 		transformToSinkName,
-		internal.NewLinkEndpoint(
-			transformName,
-			internal.NewEmptyMessageField(),
-		),
-		internal.NewLinkEndpoint(sinkName, internal.NewEmptyMessageField()),
+		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
 	)
 
 	links := map[internal.LinkName]internal.Link{
@@ -341,26 +335,22 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	sourceToTransformName := createLinkName(t, "link-source-transform")
 	sourceToTransform := internal.NewLink(
 		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.NewEmptyMessageField()),
-		internal.NewLinkEndpoint(transformName, internal.NewEmptyMessageField()),
+		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
+		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
 	)
 
 	sourceToSinkName := createLinkName(t, "link-source-sink")
 	sourceToSink := internal.NewLink(
 		sourceToSinkName,
-		internal.NewLinkEndpoint(sourceName, internal.NewEmptyMessageField()),
-		internal.NewLinkEndpoint(
-			sinkName, internal.NewPresentMessageField(originalField),
-		),
+		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, originalField),
 	)
 
 	transformToSinkName := createLinkName(t, "link-transform-sink")
 	transformToSink := internal.NewLink(
 		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.NewEmptyMessageField()),
-		internal.NewLinkEndpoint(
-			sinkName, internal.NewPresentMessageField(transformField),
-		),
+		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, transformField),
 	)
 
 	links := map[internal.LinkName]internal.Link{

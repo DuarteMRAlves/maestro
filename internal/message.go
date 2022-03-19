@@ -14,23 +14,6 @@ func NewMessageField(field string) MessageField {
 	return MessageField{val: field}
 }
 
-type OptionalMessageField struct {
-	val     MessageField
-	present bool
-}
-
-func (p OptionalMessageField) Unwrap() MessageField { return p.val }
-
-func (p OptionalMessageField) Present() bool { return p.present }
-
-func NewPresentMessageField(m MessageField) OptionalMessageField {
-	return OptionalMessageField{val: m, present: true}
-}
-
-func NewEmptyMessageField() OptionalMessageField {
-	return OptionalMessageField{}
-}
-
 // Message specifies an interface to send messages for the several stages.
 type Message interface {
 	SetField(MessageField, Message) error

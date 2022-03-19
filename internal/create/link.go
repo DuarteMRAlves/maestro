@@ -22,9 +22,7 @@ type LinkStorage interface {
 var (
 	EmptyLinkName        = errors.New("empty link name")
 	EmptySourceStage     = errors.New("empty source stage")
-	EmptySourceField     = errors.New("empty source field")
 	EmptyTargetStage     = errors.New("empty target stage")
-	EmptyTargetField     = errors.New("empty target field")
 	EqualSourceAndTarget = errors.New("equal source and target stages")
 )
 
@@ -69,16 +67,10 @@ func Link(
 		if sourceStage.IsEmpty() {
 			return EmptySourceStage
 		}
-		if source.Field().Present() && source.Field().Unwrap().IsEmpty() {
-			return EmptySourceField
-		}
 
 		targetStage := target.Stage()
 		if targetStage.IsEmpty() {
 			return EmptyTargetStage
-		}
-		if target.Field().Present() && target.Field().Unwrap().IsEmpty() {
-			return EmptyTargetField
 		}
 
 		if orchName.IsEmpty() {
@@ -129,8 +121,8 @@ func Link(
 			// 1. Target receives entire message from this link but another exists.
 			// 2. Target already receives entire message from existing link.
 			// 3. Target receives same field from both links.
-			if !target.Field().Present() ||
-				!l.Target().Field().Present() ||
+			if target.Field().IsEmpty() ||
+				l.Target().Field().IsEmpty() ||
 				target.Field().Unwrap() == l.Target().Field().Unwrap() {
 				return &IncompatibleLinks{A: name.Unwrap(), B: l.Name().Unwrap()}
 			}
