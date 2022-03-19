@@ -35,23 +35,6 @@ func NewService(s string) Service {
 	return Service{val: s}
 }
 
-type OptionalService struct {
-	val     Service
-	present bool
-}
-
-func (o OptionalService) Unwrap() Service { return o.val }
-
-func (o OptionalService) Present() bool { return o.present }
-
-func NewPresentService(s Service) OptionalService {
-	return OptionalService{val: s, present: true}
-}
-
-func NewEmptyService() OptionalService {
-	return OptionalService{}
-}
-
 type Method struct{ val string }
 
 func (m Method) Unwrap() string {
@@ -89,19 +72,19 @@ func NewAddress(a string) Address { return Address{val: a} }
 
 type MethodContext struct {
 	address Address
-	service OptionalService
+	service Service
 	method  OptionalMethod
 }
 
 func (m MethodContext) Address() Address { return m.address }
 
-func (m MethodContext) Service() OptionalService { return m.service }
+func (m MethodContext) Service() Service { return m.service }
 
 func (m MethodContext) Method() OptionalMethod { return m.method }
 
 func NewMethodContext(
 	address Address,
-	service OptionalService,
+	service Service,
 	method OptionalMethod,
 ) MethodContext {
 	return MethodContext{

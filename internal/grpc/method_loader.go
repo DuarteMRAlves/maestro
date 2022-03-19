@@ -66,15 +66,14 @@ func listServices(ctx context.Context, conn grpc.ClientConnInterface) (
 
 func findService(
 	available []internal.Service,
-	searchOpt internal.OptionalService,
+	search internal.Service,
 ) (internal.Service, error) {
-	if !searchOpt.Present() {
+	if !search.IsEmpty() {
 		if len(available) == 1 {
 			return available[0], nil
 		}
 		return internal.Service{}, notOneService
 	} else {
-		search := searchOpt.Unwrap()
 		for _, s := range available {
 			if search == s {
 				return search, nil
