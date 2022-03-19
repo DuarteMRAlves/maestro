@@ -38,8 +38,16 @@ func (err *StageNotInOrchestration) Error() string {
 	return fmt.Sprintf(format, err.Stage, err.Orch)
 }
 
+type IncompatibleLinks struct {
+	A, B string
+}
+
+func (err *IncompatibleLinks) Error() string {
+	return fmt.Sprintf("incompatible links: %s, %s", err.A, err.B)
+}
+
 func Link(
-	storage LinkStorage,
+	linkStorage LinkStorage,
 	stageLoader StageLoader,
 	orchStorage OrchestrationStorage,
 ) func(
@@ -77,7 +85,7 @@ func Link(
 			return EmptyOrchestrationName
 		}
 
-		_, err := storage.Load(name)
+		_, err := linkStorage.Load(name)
 		if err == nil {
 			return &internal.AlreadyExists{Type: "link", Ident: name.Unwrap()}
 		}
@@ -101,24 +109,31 @@ func Link(
 			return err
 		}
 
-		foundTarget := false
-		foundSource := false
-		for _, s := range orch.Stages() {
-			if s == sourceStage {
-				foundSource = true
-			} else if s == targetStage {
-				foundTarget = true
-			}
-		}
-		if !foundSource {
+		if !existsStage(sourceStage, orch.Stages()...) {
 			return &StageNotInOrchestration{Orch: orchName, Stage: sourceStage}
 		}
-		if !foundTarget {
+		if !existsStage(targetStage, orch.Stages()...) {
 			return &StageNotInOrchestration{Orch: orchName, Stage: targetStage}
 		}
 
 		if sourceStage == targetStage {
 			return EqualSourceAndTarget
+		}
+
+		targetLinks, err := linksForTarget(linkStorage, targetStage, orch.Links()...)
+		if err != nil {
+			return fmt.Errorf("create link %s: %w", name, err)
+		}
+
+		for _, l := range targetLinks {
+			// 1. Target receives entire message from this link but another exists.
+			// 2. Target already receives entire message from existing link.
+			// 3. Target receives same field from both links.
+			if !target.Field().Present() ||
+				!l.Target().Field().Present() ||
+				target.Field().Unwrap() == l.Target().Field().Unwrap() {
+				return &IncompatibleLinks{A: name.Unwrap(), B: l.Name().Unwrap()}
+			}
 		}
 
 		links := orch.Links()
@@ -132,6 +147,32 @@ func Link(
 
 		l := internal.NewLink(name, source, target)
 
-		return storage.Save(l)
+		return linkStorage.Save(l)
 	}
+}
+
+func existsStage(name internal.StageName, ss ...internal.StageName) bool {
+	for _, s := range ss {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+// Retrieves the links that have a specific target stage.
+func linksForTarget(
+	linkLoader LinkLoader, target internal.StageName, links ...internal.LinkName,
+) ([]internal.Link, error) {
+	var ret []internal.Link
+	for _, n := range links {
+		l, err := linkLoader.Load(n)
+		if err != nil {
+			return nil, err
+		}
+		if l.Target().Stage() == target {
+			ret = append(ret, l)
+		}
+	}
+	return ret, nil
 }

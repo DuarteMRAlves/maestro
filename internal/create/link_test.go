@@ -231,6 +231,121 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
 }
 
+func TestCreateLink_IncompatibleLinks(t *testing.T) {
+	tests := map[string]struct {
+		first, second internal.Link
+	}{
+		"first entire, second entire": {
+			first:  createLink(t, "first", true),
+			second: createLink(t, "second", true),
+		},
+		"first entire, second field": {
+			first:  createLink(t, "first", true),
+			second: createLink(t, "second", false),
+		},
+		"first field, second entire": {
+			first:  createLink(t, "first", false),
+			second: createLink(t, "second", true),
+		},
+		"first field, second field": {
+			first:  createLink(t, "first", false),
+			second: createLink(t, "second", false),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			initialOrch := createOrchestration(
+				t, "orchestration", []string{"source", "target"}, nil,
+			)
+			expOrch := createOrchestration(
+				t, "orchestration", []string{"source", "target"}, []string{"first"},
+			)
+			orchStore := mock.OrchestrationStorage{
+				Orchs: map[internal.OrchestrationName]internal.Orchestration{
+					initialOrch.Name(): initialOrch,
+				},
+			}
+
+			sourceStage := createStage(t, "source", true)
+			targetStage := createStage(t, "target", true)
+			stageStore := mock.StageStorage{
+				Stages: map[internal.StageName]internal.Stage{
+					sourceStage.Name(): sourceStage,
+					targetStage.Name(): targetStage,
+				},
+			}
+
+			linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
+			createFn := Link(linkStore, stageStore, orchStore)
+			err := createFn(
+				tc.first.Name(),
+				tc.first.Source(),
+				tc.first.Target(),
+				initialOrch.Name(),
+			)
+			if err != nil {
+				t.Fatalf("first create error: %s", err)
+			}
+			if diff := cmp.Diff(1, len(linkStore.Links)); diff != "" {
+				t.Fatalf("first create number of links mismatch:\n%s", diff)
+			}
+			l, exists := linkStore.Links[tc.first.Name()]
+			if !exists {
+				t.Fatalf("first create stage does not exist in storage")
+			}
+			cmpLink(t, tc.first, l, "first create link")
+
+			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			}
+			o, exists := orchStore.Orchs[expOrch.Name()]
+			if !exists {
+				t.Fatalf("first create updated orchestration does not exist in storage")
+			}
+			cmpOrchestration(t, expOrch, o, "first create updated orchestration")
+
+			err = createFn(
+				tc.second.Name(),
+				tc.second.Source(),
+				tc.second.Target(),
+				initialOrch.Name(),
+			)
+			if err == nil {
+				t.Fatalf("second create expected create error but got nil")
+			}
+			var incompatibleLinks *IncompatibleLinks
+			if !errors.As(err, &incompatibleLinks) {
+				format := "second create wrong error type: expected *IncompatibleLinks, got %s"
+				t.Fatalf(format, reflect.TypeOf(err))
+			}
+			expError := &IncompatibleLinks{
+				A: tc.second.Name().Unwrap(), B: tc.first.Name().Unwrap(),
+			}
+			if diff := cmp.Diff(expError, incompatibleLinks); diff != "" {
+				t.Fatalf("second create error mismatch:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(1, len(linkStore.Links)); diff != "" {
+				t.Fatalf("second create number of links mismatch:\n%s", diff)
+			}
+			l, exists = linkStore.Links[tc.first.Name()]
+			if !exists {
+				t.Fatalf("second created link does not exist in storage")
+			}
+			cmpLink(t, tc.first, l, "second create link")
+
+			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+				t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+			}
+			o, exists = orchStore.Orchs[expOrch.Name()]
+			if !exists {
+				t.Fatalf("second create updated orchestration does not exist in storage")
+			}
+			cmpOrchestration(t, expOrch, o, "second create update orchestration")
+		})
+	}
+}
+
 func createLinkName(t *testing.T, name string) internal.LinkName {
 	linkName, err := internal.NewLinkName(name)
 	if err != nil {
