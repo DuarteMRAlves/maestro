@@ -43,39 +43,20 @@ func (i Image) IsEmpty() bool {
 
 func NewImage(img string) Image { return Image{val: img} }
 
-type OptionalImage struct {
-	val     Image
-	present bool
-}
-
-func (o OptionalImage) Unwrap() Image {
-	return o.val
-}
-
-func (o OptionalImage) Present() bool { return o.present }
-
-func NewPresentImage(i Image) OptionalImage {
-	return OptionalImage{val: i, present: true}
-}
-
-func NewEmptyImage() OptionalImage {
-	return OptionalImage{}
-}
-
 type Asset struct {
 	name  AssetName
-	image OptionalImage
+	image Image
 }
 
 func (a Asset) Name() AssetName {
 	return a.name
 }
 
-func (a Asset) Image() OptionalImage {
+func (a Asset) Image() Image {
 	return a.image
 }
 
-func NewAsset(name AssetName, image OptionalImage) Asset {
+func NewAsset(name AssetName, image Image) Asset {
 	return Asset{
 		name:  name,
 		image: image,
