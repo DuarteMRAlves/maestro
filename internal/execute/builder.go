@@ -61,15 +61,15 @@ func NewBuilder(
 			}
 
 			sourceMsg := source.method.Output()
-			if link.Source().Field().Present() {
-				sourceMsg, err = sourceMsg.GetField(link.Source().Field().Unwrap())
+			if !link.Source().Field().IsEmpty() {
+				sourceMsg, err = sourceMsg.GetField(link.Source().Field())
 				if err != nil {
 					return nil, err
 				}
 			}
 			targetMsg := target.method.Input()
-			if link.Target().Field().Present() {
-				targetMsg, err = targetMsg.GetField(link.Target().Field().Unwrap())
+			if !link.Target().Field().IsEmpty() {
+				targetMsg, err = targetMsg.GetField(link.Target().Field())
 				if err != nil {
 					return nil, err
 				}
@@ -132,7 +132,7 @@ func (ctx stageContext) buildInputResources() (chan state, Stage, error) {
 		s := newSourceStage(1, ctx.method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
-		if ctx.inputs[0].link.Target().Field().Present() {
+		if !ctx.inputs[0].link.Target().Field().IsEmpty() {
 			output, s := ctx.buildMergeStage()
 			return output, s, nil
 		}
@@ -150,7 +150,7 @@ func (ctx stageContext) buildMergeStage() (chan state, *mergeStage) {
 	// channel where the stage will send the constructed messages.
 	outputChan := make(chan state)
 	for _, l := range ctx.inputs {
-		fields = append(fields, l.link.Target().Field().Unwrap())
+		fields = append(fields, l.link.Target().Field())
 		inputs = append(inputs, l.ch)
 	}
 	gen := ctx.method.Input().EmptyGen()
@@ -167,7 +167,7 @@ func (ctx stageContext) buildOutputResources() (chan state, Stage) {
 		// We have only one link, but we want a sub message. We can use the
 		// split stage with just one output that retrieves the desired message
 		// part.
-		if ctx.outputs[0].link.Source().Field().Present() {
+		if !ctx.outputs[0].link.Source().Field().IsEmpty() {
 			return ctx.buildSplitStage()
 		}
 		return ctx.outputs[0].ch, nil
@@ -177,7 +177,7 @@ func (ctx stageContext) buildOutputResources() (chan state, Stage) {
 }
 
 func (ctx stageContext) buildSplitStage() (chan state, Stage) {
-	fields := make([]internal.OptionalMessageField, 0, len(ctx.outputs))
+	fields := make([]internal.MessageField, 0, len(ctx.outputs))
 	// channel where the stage will send the produced states.
 	inputChan := make(chan state)
 	// channels to split the received states.

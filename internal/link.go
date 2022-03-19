@@ -25,21 +25,18 @@ func isValidLinkName(name string) bool {
 
 type LinkEndpoint struct {
 	stage StageName
-	field OptionalMessageField
+	field MessageField
 }
 
 func (e LinkEndpoint) Stage() StageName {
 	return e.stage
 }
 
-func (e LinkEndpoint) Field() OptionalMessageField {
+func (e LinkEndpoint) Field() MessageField {
 	return e.field
 }
 
-func NewLinkEndpoint(
-	stage StageName,
-	field OptionalMessageField,
-) LinkEndpoint {
+func NewLinkEndpoint(stage StageName, field MessageField) LinkEndpoint {
 	return LinkEndpoint{
 		stage: stage,
 		field: field,

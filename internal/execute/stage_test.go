@@ -256,13 +256,10 @@ func TestSplitStage_Run(t *testing.T) {
 	inner := []internal.MessageField{inner1, inner3}
 
 	f1 := internal.NewMessageField("f1")
+	f2 := internal.MessageField{}
 	f3 := internal.NewMessageField("f3")
 
-	fields := []internal.OptionalMessageField{
-		internal.NewPresentMessageField(f1),
-		internal.NewEmptyMessageField(),
-		internal.NewPresentMessageField(f3),
-	}
+	fields := []internal.MessageField{f1, f2, f3}
 
 	input := make(chan state)
 
@@ -334,15 +331,15 @@ func TestSplitStage_Run(t *testing.T) {
 }
 
 func testSplitOuterMessage(
-	inner []internal.MessageField, fields []internal.OptionalMessageField,
+	inner []internal.MessageField, fields []internal.MessageField,
 	val int32,
 ) *mock.Message {
 	msgFields := map[internal.MessageField]interface{}{}
 	innerIdx := 0
 	for _, f := range fields {
-		if f.Present() {
+		if !f.IsEmpty() {
 			innerMsg := testInnerMessage(inner[innerIdx], val)
-			msgFields[f.Unwrap()] = innerMsg
+			msgFields[f] = innerMsg
 			innerIdx++
 		}
 	}

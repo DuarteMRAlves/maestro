@@ -250,7 +250,7 @@ type splitStage struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []internal.OptionalMessageField
+	fields []internal.MessageField
 	// input is the channel from which to receive the messages.
 	input <-chan state
 	// outputs are the several channels where to send messages.
@@ -258,7 +258,7 @@ type splitStage struct {
 }
 
 func newSplitStage(
-	fields []internal.OptionalMessageField,
+	fields []internal.MessageField,
 	input <-chan state,
 	outputs []chan<- state,
 ) *splitStage {
@@ -283,13 +283,13 @@ func (s *splitStage) Run(ctx context.Context) error {
 		msg := currState.msg
 		for i, out := range s.outputs {
 			send := msg
-			optField := s.fields[i]
-			if optField.Present() {
-				field, err := msg.GetField(optField.Unwrap())
+			field := s.fields[i]
+			if !field.IsEmpty() {
+				fieldMsg, err := msg.GetField(field)
 				if err != nil {
 					return err
 				}
-				send = field
+				send = fieldMsg
 			}
 			sendState := newState(currState.id, send)
 			select {
