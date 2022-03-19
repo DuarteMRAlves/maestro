@@ -25,13 +25,13 @@ var (
 
 func Asset(storage AssetStorage) func(
 	internal.AssetName,
-	internal.OptionalImage,
+	internal.Image,
 ) error {
-	return func(name internal.AssetName, image internal.OptionalImage) error {
+	return func(name internal.AssetName, image internal.Image) error {
 		if name.IsEmpty() {
 			return EmptyAssetName
 		}
-		if image.Present() && image.Unwrap().IsEmpty() {
+		if image.IsEmpty() {
 			return EmptyImageName
 		}
 		// Expect key not found

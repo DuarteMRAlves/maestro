@@ -13,17 +13,13 @@ import (
 func TestCreateAsset(t *testing.T) {
 	tests := map[string]struct {
 		name     internal.AssetName
-		image    internal.OptionalImage
+		image    internal.Image
 		expected internal.Asset
 	}{
-		"required fields": {
-			name:     createAssetName(t, "some-name"),
-			expected: createAsset(t, "some-name", true),
-		},
 		"all fields": {
 			name:     createAssetName(t, "some-name"),
-			image:    internal.NewPresentImage(internal.NewImage("some-image")),
-			expected: createAsset(t, "some-name", false),
+			image:    internal.NewImage("some-image"),
+			expected: createAsset(t, "some-name", "some-image"),
 		},
 	}
 	for name, tc := range tests {
@@ -57,13 +53,13 @@ func TestCreateAsset(t *testing.T) {
 func TestCreateAsset_Err(t *testing.T) {
 	tests := map[string]struct {
 		name    internal.AssetName
-		image   internal.OptionalImage
+		image   internal.Image
 		isError error
 	}{
 		"empty name": {name: createAssetName(t, ""), isError: EmptyAssetName},
 		"empty image": {
 			name:    createAssetName(t, "some-name"),
-			image:   internal.NewPresentImage(internal.NewImage("")),
+			image:   internal.NewImage(""),
 			isError: EmptyImageName,
 		},
 	}
@@ -95,9 +91,9 @@ func TestCreateAsset_Err(t *testing.T) {
 func TestCreateAsset_AlreadyExists(t *testing.T) {
 	name := "some-name"
 	assetName := createAssetName(t, name)
-	image1 := internal.NewEmptyImage()
-	image2 := internal.NewPresentImage(internal.NewImage("some-image"))
-	expected := createAsset(t, name, true)
+	image1 := internal.NewImage("some-image-1")
+	image2 := internal.NewImage("some-image-2")
+	expected := internal.NewAsset(assetName, image1)
 	storage := mock.AssetStorage{
 		Assets: map[internal.AssetName]internal.Asset{},
 	}
@@ -148,21 +144,16 @@ func createAssetName(t *testing.T, assetName string) internal.AssetName {
 	return name
 }
 
-func createAsset(t *testing.T, assetName string, requiredOnly bool) internal.Asset {
+func createAsset(t *testing.T, assetName, image string) internal.Asset {
 	name := createAssetName(t, assetName)
-	imgOpt := internal.NewEmptyImage()
-	if !requiredOnly {
-		img := internal.NewImage("some-image")
-		imgOpt = internal.NewPresentImage(img)
-	}
-	return internal.NewAsset(name, imgOpt)
+	img := internal.NewImage(image)
+	return internal.NewAsset(name, img)
 }
 
 func cmpAsset(t *testing.T, x, y internal.Asset, msg string, args ...interface{}) {
 	cmpOpts := cmp.AllowUnexported(
 		internal.Asset{},
 		internal.AssetName{},
-		internal.OptionalImage{},
 		internal.Image{},
 	)
 	if diff := cmp.Diff(x, y, cmpOpts); diff != "" {
