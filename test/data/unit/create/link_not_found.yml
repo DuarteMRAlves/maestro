@@ -1,6 +1,0 @@
-kind: orchestration
-spec:
-  name: orchestration-unknown-link
-  links:
-    - link-1
-    - unknown-link
