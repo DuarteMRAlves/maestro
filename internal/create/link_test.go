@@ -131,6 +131,121 @@ func TestCreateLink(t *testing.T) {
 	}
 }
 
+func TestCreateLink_Err(t *testing.T) {
+	tests := map[string]struct {
+		name     internal.LinkName
+		source   internal.LinkEndpoint
+		target   internal.LinkEndpoint
+		orchName internal.OrchestrationName
+		expErr   error
+	}{
+		"empty name": {
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expErr:   EmptyLinkName},
+		"empty source stage": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, ""),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expErr:   EmptySourceStage,
+		},
+		"empty target stage": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, ""),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expErr:   EmptyTargetStage,
+		},
+		"empty orchestration": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewMessageField(""),
+			),
+			expErr: EmptyOrchestrationName,
+		},
+		"equal source and target": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expErr:   EqualSourceAndTarget,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
+
+			stageStore := mock.StageStorage{
+				Stages: map[internal.StageName]internal.Stage{
+					createStageName(t, "source"): createStage(t, "source", true),
+					createStageName(t, "target"): createStage(t, "target", true),
+				},
+			}
+
+			orch := createOrchestration(t, "orch", []string{"source", "target"}, nil)
+			orchStore := mock.OrchestrationStorage{
+				Orchs: map[internal.OrchestrationName]internal.Orchestration{
+					createOrchestrationName(t, "orch"): orch,
+				},
+			}
+
+			createFn := Link(linkStore, stageStore, orchStore)
+			err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+			if err == nil {
+				t.Fatalf("expected error but got nil")
+			}
+
+			if !errors.Is(err, tc.expErr) {
+				t.Fatalf("Wrong error: expected %s, got %s", tc.expErr, err)
+			}
+
+			if diff := cmp.Diff(0, len(linkStore.Links)); diff != "" {
+				t.Fatalf("number of links mismatch:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			}
+			o, exists := orchStore.Orchs[orch.Name()]
+			if !exists {
+				t.Fatalf("orchestration does not exist in storage")
+			}
+			cmpOrchestration(t, orch, o, "orchestration is not updated")
+		})
+	}
+}
+
 func TestCreateLink_AlreadyExists(t *testing.T) {
 	linkName := createLinkName(t, "some-name")
 	source := internal.NewLinkEndpoint(
@@ -229,6 +344,95 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		t.Fatalf("second updated orchestration does not exist in storage")
 	}
 	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
+}
+
+func TestStageNotInOrchestration_Error(t *testing.T) {
+	tests := map[string]struct {
+		name     internal.LinkName
+		source   internal.LinkEndpoint
+		target   internal.LinkEndpoint
+		orchName internal.OrchestrationName
+		expStage internal.StageName
+	}{
+		"source": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "unknown"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "target"),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expStage: createStageName(t, "unknown"),
+		},
+		"target": {
+			name: createLinkName(t, "some-name"),
+			source: internal.NewLinkEndpoint(
+				createStageName(t, "source"),
+				internal.NewMessageField(""),
+			),
+			target: internal.NewLinkEndpoint(
+				createStageName(t, "unknown"),
+				internal.NewMessageField(""),
+			),
+			orchName: createOrchestrationName(t, "orch"),
+			expStage: createStageName(t, "unknown"),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
+
+			stageStore := mock.StageStorage{
+				Stages: map[internal.StageName]internal.Stage{
+					createStageName(t, "source"):  createStage(t, "source", true),
+					createStageName(t, "target"):  createStage(t, "target", true),
+					createStageName(t, "unknown"): createStage(t, "unknown", true),
+				},
+			}
+
+			orch := createOrchestration(t, "orch", []string{"source", "target"}, nil)
+			orchStore := mock.OrchestrationStorage{
+				Orchs: map[internal.OrchestrationName]internal.Orchestration{
+					createOrchestrationName(t, "orch"): orch,
+				},
+			}
+
+			createFn := Link(linkStore, stageStore, orchStore)
+			err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+			if err == nil {
+				t.Fatalf("expected error but got nil")
+			}
+
+			var concreteErr *StageNotInOrchestration
+			if !errors.As(err, &concreteErr) {
+				format := "Wrong error type: expected *StageNotInOrchestration, got %s"
+				t.Fatalf(format, reflect.TypeOf(err))
+			}
+			expErr := &StageNotInOrchestration{Stage: tc.expStage, Orch: tc.orchName}
+			cmpOpts := cmp.AllowUnexported(
+				internal.StageName{}, internal.OrchestrationName{},
+			)
+			if diff := cmp.Diff(expErr, concreteErr, cmpOpts); diff != "" {
+				t.Fatalf("error mismatch:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(0, len(linkStore.Links)); diff != "" {
+				t.Fatalf("number of links mismatch:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
+				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			}
+			o, exists := orchStore.Orchs[orch.Name()]
+			if !exists {
+				t.Fatalf("orchestration does not exist in storage")
+			}
+			cmpOrchestration(t, orch, o, "orchestration is not updated")
+		})
+	}
 }
 
 func TestCreateLink_IncompatibleLinks(t *testing.T) {
