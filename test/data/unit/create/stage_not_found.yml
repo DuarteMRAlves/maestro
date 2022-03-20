@@ -1,5 +1,0 @@
-kind: link
-spec:
-  name: link-unknown-stage
-  source_stage: stage-1
-  target_stage: unknown-stage

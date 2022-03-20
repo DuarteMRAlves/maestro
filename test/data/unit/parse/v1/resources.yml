@@ -6,9 +6,8 @@ spec:
 kind: stage
 spec:
   name: stage-1
-  asset: asset-1
   service: Service1
-  rpc: Rpc1
+  method: Method1
   address: address-1
   orchestration: orchestration-1
 ---
@@ -22,20 +21,15 @@ spec:
 kind: stage
 spec:
   name: stage-2
-  asset: asset-2
   service: Service2
-  rpc: Rpc2
   address: address-2
   orchestration: orchestration-1
 ---
 kind: stage
 spec:
   name: stage-3
-  asset: asset-3
-  service: Service3
-  rpc: Rpc3
-  host: host-3
-  port: 33333
+  address: address-3
+  method: Method3
   orchestration: orchestration-1
 ---
 kind: orchestration
@@ -45,7 +39,6 @@ spec:
 kind: asset
 spec:
   name: asset-2
-  image: image-2
 ---
 kind: link
 spec:

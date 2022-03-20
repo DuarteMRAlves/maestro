@@ -6,7 +6,6 @@ spec:
 kind: asset
 spec:
   name: asset-5
-  image: image-5
 ---
 kind: asset
 spec:

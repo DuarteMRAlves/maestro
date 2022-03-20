@@ -1,29 +1,27 @@
 kind: stage
 spec:
   name: stage-4
-  asset: asset-4
+  address: address-4
   orchestration: orchestration-4
 ---
 kind: stage
 spec:
   name: stage-5
+  address: address-5
+  method: Method5
   orchestration: orchestration-3
 ---
 kind: stage
 spec:
   name: stage-6
-  asset: asset-6
   service: Service6
-  rpc: Rpc6
-  address: stage-address
+  method: Method6
+  address: address-6
   orchestration: orchestration-3
 ---
 kind: stage
 spec:
   name: stage-7
-  asset: asset-7
   service: Service7
-  rpc: Rpc7
-  host: stage-host
-  port: 7777
+  address: address-7
   orchestration: orchestration-4
