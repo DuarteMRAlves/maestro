@@ -1,4 +1,4 @@
-kind: invalid-kind
+kind: unknown-kind
 spec:
   name: some-name
   image: some-image
