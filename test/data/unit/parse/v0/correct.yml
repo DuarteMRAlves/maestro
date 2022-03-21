@@ -1,0 +1,38 @@
+stages:
+  - name: stage-1
+    host: host-1
+    port: 1
+  - name: stage-2
+    host: host-2
+    port: 2
+    service: Service2
+  - name: stage-3
+    host: host-3
+    port: 3
+    method: Method3
+  - name: stage-4
+    host: host-4
+    port: 4
+    service: Service4
+    method: Method4
+links:
+  - source:
+      stage: stage-1
+    target:
+      stage: stage-2
+  - source:
+      stage: stage-2
+      field: Field2
+    target:
+      stage: stage-3
+  - source:
+      stage: stage-3
+    target:
+      stage: stage-4
+      field: Field4
+  - source:
+      stage: stage-4
+      field: Field4
+    target:
+      stage: stage-1
+      field: Field1
