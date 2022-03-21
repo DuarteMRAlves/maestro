@@ -1,5 +1,0 @@
-kind: asset
-spec:
-  name: some-name
-  invalid_spec_1: invalid-spec-1
-  invalid_spec_2: invalid-spec-2

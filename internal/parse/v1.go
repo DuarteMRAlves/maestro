@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	KindNotSpecified = errors.New("kind not specified")
-	EmptySpec        = errors.New("empty spec")
+	MissingKind = errors.New("kind not specified")
+	EmptySpec   = errors.New("empty spec")
 )
 
 type UnknownKind struct {
@@ -251,7 +251,7 @@ func (r *v1Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	r.Kind = obj.Kind
 	if r.Kind == "" {
-		return KindNotSpecified
+		return MissingKind
 	}
 	switch r.Kind {
 	case stageKind:

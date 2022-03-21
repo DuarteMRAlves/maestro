@@ -1,8 +1,10 @@
 package parse
 
 import (
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -12,7 +14,7 @@ func TestFromV1(t *testing.T) {
 		expected ResourceSet
 	}{
 		"single file": {
-			files: []string{"../../test/data/unit/parse/v1/resources.yml"},
+			files: []string{"../../test/data/unit/parse/v1/single_file.yml"},
 			expected: ResourceSet{
 				Orchestrations: []Orchestration{
 					createOrchestration(t, "orchestration-2"),
@@ -57,10 +59,10 @@ func TestFromV1(t *testing.T) {
 		},
 		"multiple files": {
 			files: []string{
-				"../../test/data/unit/parse/v1/orchestrations.yml",
-				"../../test/data/unit/parse/v1/stages.yml",
-				"../../test/data/unit/parse/v1/links.yml",
-				"../../test/data/unit/parse/v1/assets.yml",
+				"../../test/data/unit/parse/v1/multi_file1.yml",
+				"../../test/data/unit/parse/v1/multi_file2.yml",
+				"../../test/data/unit/parse/v1/multi_file3.yml",
+				"../../test/data/unit/parse/v1/multi_file4.yml",
 			},
 			expected: ResourceSet{
 				Orchestrations: []Orchestration{
@@ -138,6 +140,87 @@ func TestFromV1(t *testing.T) {
 			if diff := cmp.Diff(tc.expected, resources, cmpOpts); diff != "" {
 				t.Fatalf("parsed resources mismatch:\n%s", diff)
 			}
+		})
+	}
+}
+
+func TestFromV1_Err(t *testing.T) {
+	tests := map[string]struct {
+		files     []string
+		verifyErr func(t *testing.T, err error)
+	}{
+		"missing kind": {
+			files: []string{"../../test/data/unit/parse/v1/err_missing_kind.yml"},
+			verifyErr: func(t *testing.T, err error) {
+				expErr := MissingKind
+				if !errors.Is(err, expErr) {
+					t.Fatalf("Wrong error: expected '%s', got '%s'", expErr, err)
+				}
+			},
+		},
+		"empty spec": {
+			files: []string{"../../test/data/unit/parse/v1/err_empty_spec.yml"},
+			verifyErr: func(t *testing.T, err error) {
+				expErr := EmptySpec
+				if !errors.Is(err, expErr) {
+					t.Fatalf("Wrong error: expected '%s', got '%s'", expErr, err)
+				}
+			},
+		},
+		"unknown kind": {
+			files: []string{"../../test/data/unit/parse/v1/err_unknown_kind.yml"},
+			verifyErr: func(t *testing.T, err error) {
+				var actual *UnknownKind
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *UnknownKind, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &UnknownKind{Kind: "unknown-kind"}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+		"missing required field": {
+			files: []string{"../../test/data/unit/parse/v1/err_missing_req_field.yml"},
+			verifyErr: func(t *testing.T, err error) {
+				var actual *MissingRequiredField
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &MissingRequiredField{Field: "address"}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+		"unknown fields": {
+			files: []string{"../../test/data/unit/parse/v1/err_unknown_fields.yml"},
+			verifyErr: func(t *testing.T, err error) {
+				var actual *UnknownFields
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *UnknownFields, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &UnknownFields{Fields: []string{"unknown_1", "unknown_2"}}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var emptyResources ResourceSet
+			resources, err := FromV1(tc.files...)
+			if err == nil {
+				t.Fatalf("expected error but got nil")
+			}
+			if diff := cmp.Diff(emptyResources, resources); diff != "" {
+				t.Fatalf("resources not empty:\n%s", diff)
+			}
+			tc.verifyErr(t, err)
 		})
 	}
 }
