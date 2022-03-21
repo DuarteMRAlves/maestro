@@ -1,4 +1,4 @@
-ARG GO=1.17.7
+ARG GO=1.18.0
 ARG PROTOC="3.19.4"
 
 FROM debian:bullseye-slim AS builder
