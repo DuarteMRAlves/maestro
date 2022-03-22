@@ -1,8 +1,10 @@
 package parse
 
 import (
+	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/google/go-cmp/cmp"
+	"reflect"
 	"testing"
 )
 
@@ -74,5 +76,70 @@ func TestFromV0(t *testing.T) {
 	)
 	if diff := cmp.Diff(expected, resources, cmpOpts); diff != "" {
 		t.Fatalf("parsed resources mismatch:\n%s", diff)
+	}
+}
+
+func TestFromV0_Err(t *testing.T) {
+	tests := map[string]struct {
+		file      string
+		verifyErr func(t *testing.T, err error)
+	}{
+		"unknown fields": {
+			file: "../../test/data/unit/parse/v0/err_unk_file_tag.yml",
+			verifyErr: func(t *testing.T, err error) {
+				var actual *UnknownFields
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *UnknownFields, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &UnknownFields{
+					Fields: []string{"unknown_base", "unknown_link", "unknown_stage"},
+				}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+		"missing required stage field": {
+			file: "../../test/data/unit/parse/v0/err_missing_req_stage_field.yml",
+			verifyErr: func(t *testing.T, err error) {
+				var actual *MissingRequiredField
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &MissingRequiredField{Field: "host"}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+		"missing required link field": {
+			file: "../../test/data/unit/parse/v0/err_missing_req_link_field.yml",
+			verifyErr: func(t *testing.T, err error) {
+				var actual *MissingRequiredField
+				if !errors.As(err, &actual) {
+					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					t.Fatalf(format, reflect.TypeOf(err))
+				}
+				expected := &MissingRequiredField{Field: "stage"}
+				if diff := cmp.Diff(expected, actual); diff != "" {
+					t.Fatalf("error mismatch:\n%s", diff)
+				}
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var emptyResources ResourceSet
+			resources, err := FromV0(tc.file)
+			if err == nil {
+				t.Fatalf("expected error but got nil")
+			}
+			if diff := cmp.Diff(emptyResources, resources); diff != "" {
+				t.Fatalf("resources not empty:\n%s", diff)
+			}
+			tc.verifyErr(t, err)
+		})
 	}
 }
