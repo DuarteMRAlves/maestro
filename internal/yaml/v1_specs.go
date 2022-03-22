@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 type v1OrchestrationSpec struct {
 	// Name that should be associated with the orchestration.

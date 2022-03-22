@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 import (
 	"fmt"
@@ -7,10 +7,10 @@ import (
 	"io/ioutil"
 )
 
-// FromV0 parses configuration files for the orchestrator
+// ReadV0 reads configuration files for the orchestrator
 // https://github.com/DuarteMRAlves/Pipeline-Orchestrator for compatibility
 // purposes.
-func FromV0(file string) (ResourceSet, error) {
+func ReadV0(file string) (ResourceSet, error) {
 	var (
 		resources ResourceSet
 		fileSpec  v0FileSpec
@@ -18,7 +18,7 @@ func FromV0(file string) (ResourceSet, error) {
 
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
 
 	err = yaml.UnmarshalStrict(data, &fileSpec)
@@ -26,16 +26,16 @@ func FromV0(file string) (ResourceSet, error) {
 		if typeErr, ok := err.(*yaml.TypeError); ok {
 			err = typeErrorToError(typeErr)
 		}
-		return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
 	err = valV0FileSpec(fileSpec)
 	if err != nil {
-		return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
 
 	orchName, err := internal.NewOrchestrationName("v0-orchestration")
 	if err != nil {
-		return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
 	orch := Orchestration{Name: orchName}
 	resources.Orchestrations = append(resources.Orchestrations, orch)
@@ -43,7 +43,7 @@ func FromV0(file string) (ResourceSet, error) {
 	for _, spec := range fileSpec.Stages {
 		name, err := internal.NewStageName(spec.Name)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 		}
 		addr := internal.NewAddress(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
 		serv := internal.NewService(spec.Service)
@@ -60,18 +60,18 @@ func FromV0(file string) (ResourceSet, error) {
 		)
 		linkName, err := internal.NewLinkName(name)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 		}
 
 		srcStage, err := internal.NewStageName(spec.Source.Stage)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 		}
 		srcField := internal.NewMessageField(spec.Source.Field)
 
 		tgtStage, err := internal.NewStageName(spec.Target.Stage)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("parse v0: %w", err)
+			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 		}
 		tgtField := internal.NewMessageField(spec.Target.Field)
 
