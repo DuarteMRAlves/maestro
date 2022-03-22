@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 import (
 	"errors"
@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-func TestFromV1(t *testing.T) {
+func TestReadV1(t *testing.T) {
 	tests := map[string]struct {
 		files    []string
 		expected ResourceSet
 	}{
 		"single file": {
-			files: []string{"../../test/data/unit/parse/v1/single_file.yml"},
+			files: []string{"../../test/data/unit/read/v1/single_file.yml"},
 			expected: ResourceSet{
 				Orchestrations: []Orchestration{
 					createOrchestration(t, "orchestration-2"),
@@ -60,10 +60,10 @@ func TestFromV1(t *testing.T) {
 		},
 		"multiple files": {
 			files: []string{
-				"../../test/data/unit/parse/v1/multi_file1.yml",
-				"../../test/data/unit/parse/v1/multi_file2.yml",
-				"../../test/data/unit/parse/v1/multi_file3.yml",
-				"../../test/data/unit/parse/v1/multi_file4.yml",
+				"../../test/data/unit/read/v1/multi_file1.yml",
+				"../../test/data/unit/read/v1/multi_file2.yml",
+				"../../test/data/unit/read/v1/multi_file3.yml",
+				"../../test/data/unit/read/v1/multi_file4.yml",
 			},
 			expected: ResourceSet{
 				Orchestrations: []Orchestration{
@@ -123,9 +123,9 @@ func TestFromV1(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			resources, err := FromV1(tc.files...)
+			resources, err := ReadV1(tc.files...)
 			if err != nil {
-				t.Fatalf("parse error: %s", err)
+				t.Fatalf("read error: %s", err)
 			}
 			cmpOpts := cmp.AllowUnexported(
 				internal.AssetName{},
@@ -139,19 +139,19 @@ func TestFromV1(t *testing.T) {
 				internal.OrchestrationName{},
 			)
 			if diff := cmp.Diff(tc.expected, resources, cmpOpts); diff != "" {
-				t.Fatalf("parsed resources mismatch:\n%s", diff)
+				t.Fatalf("read resources mismatch:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestFromV1_Err(t *testing.T) {
+func TestReadV1_Err(t *testing.T) {
 	tests := map[string]struct {
 		files     []string
 		verifyErr func(t *testing.T, err error)
 	}{
 		"missing kind": {
-			files: []string{"../../test/data/unit/parse/v1/err_missing_kind.yml"},
+			files: []string{"../../test/data/unit/read/v1/err_missing_kind.yml"},
 			verifyErr: func(t *testing.T, err error) {
 				expErr := MissingKind
 				if !errors.Is(err, expErr) {
@@ -160,7 +160,7 @@ func TestFromV1_Err(t *testing.T) {
 			},
 		},
 		"empty spec": {
-			files: []string{"../../test/data/unit/parse/v1/err_empty_spec.yml"},
+			files: []string{"../../test/data/unit/read/v1/err_empty_spec.yml"},
 			verifyErr: func(t *testing.T, err error) {
 				expErr := EmptySpec
 				if !errors.Is(err, expErr) {
@@ -169,7 +169,7 @@ func TestFromV1_Err(t *testing.T) {
 			},
 		},
 		"unknown kind": {
-			files: []string{"../../test/data/unit/parse/v1/err_unknown_kind.yml"},
+			files: []string{"../../test/data/unit/read/v1/err_unknown_kind.yml"},
 			verifyErr: func(t *testing.T, err error) {
 				var actual *UnknownKind
 				if !errors.As(err, &actual) {
@@ -183,7 +183,7 @@ func TestFromV1_Err(t *testing.T) {
 			},
 		},
 		"missing required field": {
-			files: []string{"../../test/data/unit/parse/v1/err_missing_req_field.yml"},
+			files: []string{"../../test/data/unit/read/v1/err_missing_req_field.yml"},
 			verifyErr: func(t *testing.T, err error) {
 				var actual *MissingRequiredField
 				if !errors.As(err, &actual) {
@@ -197,7 +197,7 @@ func TestFromV1_Err(t *testing.T) {
 			},
 		},
 		"unknown fields": {
-			files: []string{"../../test/data/unit/parse/v1/err_unknown_fields.yml"},
+			files: []string{"../../test/data/unit/read/v1/err_unknown_fields.yml"},
 			verifyErr: func(t *testing.T, err error) {
 				var actual *UnknownFields
 				if !errors.As(err, &actual) {
@@ -214,7 +214,7 @@ func TestFromV1_Err(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var emptyResources ResourceSet
-			resources, err := FromV1(tc.files...)
+			resources, err := ReadV1(tc.files...)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
@@ -261,7 +261,7 @@ func TestWriteV1(t *testing.T) {
 	}
 	writeContent := string(writeData)
 
-	expFile := "../../test/data/unit/parse/v1/write_single_file.yml"
+	expFile := "../../test/data/unit/read/v1/write_single_file.yml"
 	expData, err := ioutil.ReadFile(expFile)
 	expContent := string(expData)
 

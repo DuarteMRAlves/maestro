@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 import (
 	"bytes"
@@ -33,14 +33,14 @@ func (err *UnknownKind) Error() string {
 	return fmt.Sprintf("unknown kind '%s'", err.Kind)
 }
 
-// FromV1 parses a set of files in the Maestro V1 format and returns the
+// ReadV1 reads a set of files in the Maestro V1 format and returns the
 // discovered resources.
-func FromV1(files ...string) (ResourceSet, error) {
+func ReadV1(files ...string) (ResourceSet, error) {
 	var resources ResourceSet
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+			return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 		}
 		reader := bytes.NewReader(data)
 
@@ -57,25 +57,25 @@ func FromV1(files ...string) (ResourceSet, error) {
 			case orchestrationKind:
 				o, err := resourceToOrchestration(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
 				resources.Orchestrations = append(resources.Orchestrations, o)
 			case stageKind:
 				s, err := resourceToStage(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
 				resources.Stages = append(resources.Stages, s)
 			case linkKind:
 				l, err := resourceToLink(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
 				resources.Links = append(resources.Links, l)
 			case assetKind:
 				a, err := resourceToAsset(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
 				resources.Assets = append(resources.Assets, a)
 			}
@@ -84,9 +84,9 @@ func FromV1(files ...string) (ResourceSet, error) {
 			switch err.(type) {
 			case *yaml.TypeError:
 				err = typeErrorToError(err.(*yaml.TypeError))
-				return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+				return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 			default:
-				return ResourceSet{}, fmt.Errorf("parse v1: %w", err)
+				return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 			}
 		}
 	}

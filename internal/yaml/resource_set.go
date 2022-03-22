@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 import "github.com/DuarteMRAlves/maestro/internal"
 

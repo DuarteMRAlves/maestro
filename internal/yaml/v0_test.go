@@ -1,4 +1,4 @@
-package parse
+package yaml
 
 import (
 	"errors"
@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-func TestFromV0(t *testing.T) {
-	file := "../../test/data/unit/parse/v0/correct.yml"
-	resources, err := FromV0(file)
+func TestReadV0(t *testing.T) {
+	file := "../../test/data/unit/read/v0/correct.yml"
+	resources, err := ReadV0(file)
 	if err != nil {
-		t.Fatalf("parse error: %s", err)
+		t.Fatalf("read error: %s", err)
 	}
 
 	expected := ResourceSet{
@@ -75,17 +75,17 @@ func TestFromV0(t *testing.T) {
 		internal.OrchestrationName{},
 	)
 	if diff := cmp.Diff(expected, resources, cmpOpts); diff != "" {
-		t.Fatalf("parsed resources mismatch:\n%s", diff)
+		t.Fatalf("read resources mismatch:\n%s", diff)
 	}
 }
 
-func TestFromV0_Err(t *testing.T) {
+func TestReadV0_Err(t *testing.T) {
 	tests := map[string]struct {
 		file      string
 		verifyErr func(t *testing.T, err error)
 	}{
 		"unknown fields": {
-			file: "../../test/data/unit/parse/v0/err_unk_file_tag.yml",
+			file: "../../test/data/unit/read/v0/err_unk_file_tag.yml",
 			verifyErr: func(t *testing.T, err error) {
 				var actual *UnknownFields
 				if !errors.As(err, &actual) {
@@ -101,7 +101,7 @@ func TestFromV0_Err(t *testing.T) {
 			},
 		},
 		"missing required stage field": {
-			file: "../../test/data/unit/parse/v0/err_missing_req_stage_field.yml",
+			file: "../../test/data/unit/read/v0/err_missing_req_stage_field.yml",
 			verifyErr: func(t *testing.T, err error) {
 				var actual *MissingRequiredField
 				if !errors.As(err, &actual) {
@@ -115,7 +115,7 @@ func TestFromV0_Err(t *testing.T) {
 			},
 		},
 		"missing required link field": {
-			file: "../../test/data/unit/parse/v0/err_missing_req_link_field.yml",
+			file: "../../test/data/unit/read/v0/err_missing_req_link_field.yml",
 			verifyErr: func(t *testing.T, err error) {
 				var actual *MissingRequiredField
 				if !errors.As(err, &actual) {
@@ -132,7 +132,7 @@ func TestFromV0_Err(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var emptyResources ResourceSet
-			resources, err := FromV0(tc.file)
+			resources, err := ReadV0(tc.file)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
