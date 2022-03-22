@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/google/go-cmp/cmp"
+	"io/ioutil"
 	"reflect"
 	"testing"
 )
@@ -222,6 +223,50 @@ func TestFromV1_Err(t *testing.T) {
 			}
 			tc.verifyErr(t, err)
 		})
+	}
+}
+
+func TestWriteV1(t *testing.T) {
+	var resources ResourceSet
+	resources.Orchestrations = []Orchestration{
+		createOrchestration(t, "orchestration-2"),
+		createOrchestration(t, "orchestration-1"),
+	}
+	resources.Stages = []Stage{
+		createStage(t, "stage-1", "address-1", "Service1", "Method1", "orchestration-1"),
+		createStage(t, "stage-2", "address-2", "Service2", "", "orchestration-1"),
+		createStage(t, "stage-3", "address-3", "", "Method3", "orchestration-1"),
+	}
+	resources.Links = []Link{
+		createLink(
+			t, "link-stage-2-stage-1", "stage-2", "", "stage-1", "", "orchestration-1",
+		),
+		createLink(
+			t, "link-stage-1-stage-2", "stage-1", "Field1", "stage-2", "Field2", "orchestration-1",
+		),
+	}
+	resources.Assets = []Asset{
+		createAsset(t, "asset-1", "image-1"),
+		createAsset(t, "asset-2", ""),
+	}
+	tempDir := t.TempDir()
+	outFile := tempDir + "/to_v1.yml"
+	err := WriteV1(resources, outFile, 777)
+	if err != nil {
+		t.Fatalf("write v1: %s", err)
+	}
+	writeData, err := ioutil.ReadFile(outFile)
+	if err != nil {
+		t.Fatalf("read new file: %s", err)
+	}
+	writeContent := string(writeData)
+
+	expFile := "../../test/data/unit/parse/v1/write_single_file.yml"
+	expData, err := ioutil.ReadFile(expFile)
+	expContent := string(expData)
+
+	if diff := cmp.Diff(expContent, writeContent); diff != "" {
+		t.Fatalf("content mismatch:\n%s", diff)
 	}
 }
 
