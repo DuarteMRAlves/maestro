@@ -66,7 +66,8 @@ pb: pb/api pb/test
 
 .PHONY: pb/api
 pb/api:
-	cd ./api/pb && protoc $(PROTOC_FLAGS) ./*.proto
+	@#cd ./api/pb && protoc $(PROTOC_FLAGS) ./*.proto
+	@echo "Skipping api proto generation"
 
 .PHONY: pb/test
 pb/test:
