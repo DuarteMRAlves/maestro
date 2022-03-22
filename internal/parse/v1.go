@@ -7,6 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"gopkg.in/yaml.v2"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -47,7 +48,7 @@ func FromV1(files ...string) (ResourceSet, error) {
 		dec.SetStrict(true)
 
 		for {
-			var r v1Resource
+			var r v1ReadResource
 			if err = dec.Decode(&r); err != nil {
 				break
 			}
@@ -92,7 +93,7 @@ func FromV1(files ...string) (ResourceSet, error) {
 	return resources, nil
 }
 
-func resourceToOrchestration(r v1Resource) (Orchestration, error) {
+func resourceToOrchestration(r v1ReadResource) (Orchestration, error) {
 	spec, ok := r.Spec.(*v1OrchestrationSpec)
 	if !ok {
 		return Orchestration{}, errors.New("orchestration spec cast error")
@@ -104,7 +105,7 @@ func resourceToOrchestration(r v1Resource) (Orchestration, error) {
 	return Orchestration{Name: name}, nil
 }
 
-func resourceToStage(r v1Resource) (Stage, error) {
+func resourceToStage(r v1ReadResource) (Stage, error) {
 	spec, ok := r.Spec.(*v1StageSpec)
 	if !ok {
 		return Stage{}, errors.New("stage spec cast error")
@@ -131,7 +132,7 @@ func resourceToStage(r v1Resource) (Stage, error) {
 	return s, err
 }
 
-func resourceToLink(r v1Resource) (Link, error) {
+func resourceToLink(r v1ReadResource) (Link, error) {
 	spec, ok := r.Spec.(*v1LinkSpec)
 	if !ok {
 		return Link{}, errors.New("link spec cast error")
@@ -168,7 +169,7 @@ func resourceToLink(r v1Resource) (Link, error) {
 	return l, nil
 }
 
-func resourceToAsset(r v1Resource) (Asset, error) {
+func resourceToAsset(r v1ReadResource) (Asset, error) {
 	spec, ok := r.Spec.(*v1AssetSpec)
 	if !ok {
 		return Asset{}, errors.New("asset spec cast error")
@@ -181,13 +182,13 @@ func resourceToAsset(r v1Resource) (Asset, error) {
 	return Asset{Name: name, Image: image}, nil
 }
 
-type v1Resource struct {
+type v1ReadResource struct {
 	Kind string      `yaml:"kind"`
 	Spec interface{} `yaml:"-"`
 }
 
-func (r *v1Resource) String() string {
-	return fmt.Sprintf("v1Resource{Kind:%v,Spec:%v}", r.Kind, r.Spec)
+func (r *v1ReadResource) String() string {
+	return fmt.Sprintf("v1ReadResource{Kind:%v,Spec:%v}", r.Kind, r.Spec)
 }
 
 type yamlNode struct {
@@ -201,7 +202,7 @@ func (n *yamlNode) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // UnmarshalYAML changes the default unmarshalling behaviour for the Resource
 // unmarshalling to account for the dynamic unmarshalling of the spec field.
-func (r *v1Resource) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	obj := &struct {
 		Kind string `yaml:"kind"`
 		// This field will not be decoded into a specific type but the
@@ -297,4 +298,95 @@ func yamlName(f reflect.StructField) string {
 		}
 	}
 	return f.Name
+}
+
+// WriteV1 stores the resources set in a single file as a
+func WriteV1(resources ResourceSet, file string, perm fs.FileMode) error {
+	var (
+		buf bytes.Buffer
+		err error
+	)
+	enc := yaml.NewEncoder(&buf)
+	err = encodeResources(enc, orchestrationToResource, resources.Orchestrations...)
+	if err != nil {
+		return fmt.Errorf("write v1: %w", err)
+	}
+	err = encodeResources(enc, stageToResource, resources.Stages...)
+	if err != nil {
+		return fmt.Errorf("write v1: %w", err)
+	}
+	err = encodeResources(enc, linkToResource, resources.Links...)
+	if err != nil {
+		return fmt.Errorf("write v1: %w", err)
+	}
+	err = encodeResources(enc, assetToResource, resources.Assets...)
+	if err != nil {
+		return fmt.Errorf("write v1: %w", err)
+	}
+	err = ioutil.WriteFile(file, buf.Bytes(), perm)
+	if err != nil {
+		return fmt.Errorf("write v1: %w", err)
+	}
+	return nil
+}
+
+func encodeResources[T any](
+	enc *yaml.Encoder, encodeFn func(*v1WriteResource, T), resources ...T,
+) error {
+	for _, r := range resources {
+		var w v1WriteResource
+		encodeFn(&w, r)
+		err := enc.Encode(w)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type v1WriteResource struct {
+	Kind string      `yaml:"kind"`
+	Spec interface{} `yaml:"spec"`
+}
+
+func orchestrationToResource(r *v1WriteResource, o Orchestration) {
+	var spec v1OrchestrationSpec
+	spec.Name = o.Name.Unwrap()
+
+	r.Kind = orchestrationKind
+	r.Spec = spec
+}
+
+func stageToResource(r *v1WriteResource, s Stage) {
+	var spec v1StageSpec
+	spec.Name = s.Name.Unwrap()
+	spec.Address = s.Method.Address.Unwrap()
+	spec.Service = s.Method.Service.Unwrap()
+	spec.Method = s.Method.Method.Unwrap()
+	spec.Orchestration = s.Orchestration.Unwrap()
+
+	r.Kind = stageKind
+	r.Spec = spec
+}
+
+func linkToResource(r *v1WriteResource, l Link) {
+	var spec v1LinkSpec
+	spec.Name = l.Name.Unwrap()
+	spec.SourceStage = l.Source.Stage.Unwrap()
+	spec.SourceField = l.Source.Field.Unwrap()
+	spec.TargetStage = l.Target.Stage.Unwrap()
+	spec.TargetField = l.Target.Field.Unwrap()
+	spec.Orchestration = l.Orchestration.Unwrap()
+
+	r.Kind = linkKind
+	r.Spec = spec
+}
+
+func assetToResource(r *v1WriteResource, a Asset) {
+	var spec v1AssetSpec
+	spec.Name = a.Name.Unwrap()
+	spec.Image = a.Image.Unwrap()
+
+	r.Kind = assetKind
+	r.Spec = spec
 }

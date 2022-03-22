@@ -10,18 +10,18 @@ type v1StageSpec struct {
 	// Name that should be associated with the stage.
 	// (required, unique)
 	Name string `yaml:"name" info:"required"`
-	// Name of the grpc service that contains the rpc to execute. May be
-	// omitted if the target grpc server only has one service.
-	// (optional)
-	Service string `yaml:"service"`
-	// Name of the grpc method to execute. May be omitted if the service has
-	// only a single method.
-	// (optional)
-	Method string `yaml:"method"`
 	// Address where to connect to the grpc server. If not specified, will be
 	// inferred from Host and Port as {Host}:{Port}.
 	// (optional)
 	Address string `yaml:"address" info:"required"`
+	// Name of the grpc service that contains the rpc to execute. May be
+	// omitted if the target grpc server only has one service.
+	// (optional)
+	Service string `yaml:"service,omitempty"`
+	// Name of the grpc method to execute. May be omitted if the service has
+	// only a single method.
+	// (optional)
+	Method string `yaml:"method,omitempty"`
 	// Orchestration specifies the name of the Orchestration where this stage
 	// should be inserted.
 	// (required)
@@ -42,7 +42,7 @@ type v1LinkSpec struct {
 	// is the field with the given name from the message returned by SourceStage.
 	// If not specified, the entire message from SourceStage is used.
 	// (optional)
-	SourceField string `yaml:"source_field"`
+	SourceField string `yaml:"source_field,omitempty"`
 	// TargetStage defines the name of the stage that is the target of the link.
 	// The messages that are transferred through this link are used as input for
 	// the rpc method in this stage.
@@ -54,7 +54,7 @@ type v1LinkSpec struct {
 	// the messages received through this link. If not specified, the entire
 	// message is sent as input to the TargetStage.
 	// (optional)
-	TargetField string `yaml:"target_field"`
+	TargetField string `yaml:"target_field,omitempty"`
 	// Orchestration specifies the orchestration where this link should be
 	// inserted.
 	// (required)
@@ -69,5 +69,5 @@ type v1AssetSpec struct {
 	// Image specifies the container image that should be associated with this
 	// asset
 	// (optional)
-	Image string `yaml:"image"`
+	Image string `yaml:"image,omitempty"`
 }
