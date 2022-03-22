@@ -48,7 +48,7 @@ docker/build:
 
 go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
-	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestroctl ./cmd/maestroctl/maestroctl.go
+	@#GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestroctl ./cmd/maestroctl/maestroctl.go
 
 go/test: pb/api pb/test go/test/unit go/test/e2e
 
