@@ -9,8 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"reflect"
-	"regexp"
-	"sort"
 	"strings"
 )
 
@@ -32,22 +30,6 @@ type UnknownKind struct {
 
 func (err *UnknownKind) Error() string {
 	return fmt.Sprintf("unknown kind '%s'", err.Kind)
-}
-
-type MissingRequiredField struct {
-	Field string
-}
-
-func (err *MissingRequiredField) Error() string {
-	return fmt.Sprintf("missing required field '%s'", err.Field)
-}
-
-type UnknownFields struct {
-	Fields []string
-}
-
-func (err *UnknownFields) Error() string {
-	return fmt.Sprintf("unknown fields '%s'", strings.Join(err.Fields, ","))
 }
 
 // FromV1 parses a set of files in the Maestro V1 format and returns the
@@ -197,26 +179,6 @@ func resourceToAsset(r v1Resource) (Asset, error) {
 	}
 	image := internal.NewImage(spec.Image)
 	return Asset{Name: name, Image: image}, nil
-}
-
-func typeErrorToError(typeErr *yaml.TypeError) error {
-	var unknownFields []string
-	unknownRegex := regexp.MustCompile(
-		`line \d+: field (?P<field>[\w\W_]+) not found in type [\w\W_.]+`,
-	)
-	for _, errMsg := range typeErr.Errors {
-		unknownMatch := unknownRegex.FindStringSubmatch(errMsg)
-		if len(unknownMatch) > 0 {
-			unknownFields = append(
-				unknownFields, unknownMatch[unknownRegex.SubexpIndex("field")],
-			)
-		}
-	}
-	if len(unknownFields) > 0 {
-		sort.Strings(unknownFields)
-		return &UnknownFields{Fields: unknownFields}
-	}
-	return typeErr
 }
 
 type v1Resource struct {

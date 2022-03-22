@@ -1,0 +1,12 @@
+stages:
+  - name: stage-1
+    host: addr-1
+    port: 1
+    unknown_stage: val
+links:
+  - source:
+      stage: stage-1
+    target:
+      stage: stage-2
+    unknown_link: val
+unknown_base:
