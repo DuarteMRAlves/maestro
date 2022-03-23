@@ -601,7 +601,7 @@ func TestExecution_Slow(t *testing.T) {
 	if diff := cmp.Diff(max, len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
-	
+
 	prev := int64(0)
 	for i, msg := range collect {
 		val, ok := msg.Fields[fieldName]
