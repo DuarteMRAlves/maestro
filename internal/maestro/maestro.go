@@ -8,6 +8,6 @@ func RootCmd() *cobra.Command {
 		Short: "maestro is a tool to execute grpc pipelines",
 	}
 
-	cmd.AddCommand(NewRunCmd())
+	cmd.AddCommand(NewRunCmd(), NewConvertCmd())
 	return cmd
 }
