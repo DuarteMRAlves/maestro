@@ -9,7 +9,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,7 +25,7 @@ func TestLinear(t *testing.T) {
 		sink   linearSink
 	)
 
-	max := 3
+	max := 100
 	collect := make([]*integration.LinearMessage, 0, max)
 	done := make(chan struct{})
 
@@ -128,15 +127,20 @@ func TestLinear(t *testing.T) {
 			t.Fatalf("stop error code mismatch:\n%s", diff)
 		}
 	}
-	expected := []*integration.LinearMessage{{Val: 3}, {Val: 6}, {Val: 9}}
 
-	if diff := cmp.Diff(len(expected), len(collect)); diff != "" {
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
 
-	cmpOpts := cmpopts.IgnoreUnexported(integration.LinearMessage{})
-	if diff := cmp.Diff(expected, collect, cmpOpts); diff != "" {
-		t.Fatalf("mismatch on collected messages:\n%s", diff)
+	prev := int64(0)
+	for i, msg := range collect {
+		if prev >= msg.Val {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
+		}
+		if msg.Val%3 != 0 {
+			t.Fatalf("value %d is not divisible by 3: %d", i, msg.Val)
+		}
+		prev = msg.Val
 	}
 }
 

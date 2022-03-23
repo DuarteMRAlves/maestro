@@ -9,7 +9,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,7 +25,7 @@ func TestSplitAndMerge(t *testing.T) {
 		sink   splitAndMergeSink
 	)
 
-	max := 3
+	max := 100
 	collect := make([]*integration.JoinMessage, 0, max)
 	done := make(chan struct{})
 
@@ -136,25 +135,22 @@ func TestSplitAndMerge(t *testing.T) {
 			t.Fatalf("stop error code mismatch:\n%s", diff)
 		}
 	}
-	expected := make([]*integration.JoinMessage, 0, max)
-	for i := 0; i < max; i++ {
-		counter := int64(i + 1)
-		msg := &integration.JoinMessage{
-			Original:    &integration.SplitAndMergeMessage{Val: counter},
-			Transformed: &integration.SplitAndMergeMessage{Val: 3 * counter},
-		}
-		expected = append(expected, msg)
-	}
 
-	if diff := cmp.Diff(len(expected), len(collect)); diff != "" {
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
 
-	cmpOpts := cmpopts.IgnoreUnexported(
-		integration.JoinMessage{}, integration.SplitAndMergeMessage{},
-	)
-	if diff := cmp.Diff(expected, collect, cmpOpts); diff != "" {
-		t.Fatalf("mismatch on collected messages:\n%s", diff)
+	prev := int64(0)
+	for i, msg := range collect {
+		orig := msg.Original
+		trans := msg.Transformed
+		if prev >= orig.Val {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, orig.Val)
+		}
+		if trans.Val != 3*orig.Val {
+			t.Fatalf("transformed != 3 * original at %d: orig is %d and transf is %d", i, orig.Val, trans.Val)
+		}
+		prev = orig.Val
 	}
 }
 
