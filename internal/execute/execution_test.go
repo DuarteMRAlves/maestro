@@ -17,7 +17,7 @@ import (
 func TestExecution_Linear(t *testing.T) {
 	fieldName := internal.NewMessageField("field")
 
-	max := 3
+	max := 100
 	collect := make([]*mock.Message, 0, max)
 	done := make(chan struct{})
 
@@ -112,18 +112,28 @@ func TestExecution_Linear(t *testing.T) {
 	if err := e.Stop(); err != nil {
 		t.Fatalf("stop error: %s", err)
 	}
-	if diff := cmp.Diff(3, len(collect)); diff != "" {
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
 
+	prev := int64(0)
 	for i, msg := range collect {
-		counter := int64(i) + 1
-		expected := &mock.Message{
-			Fields: map[internal.MessageField]interface{}{fieldName: counter * 2},
+		val, ok := msg.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
 		}
-		if diff := cmp.Diff(expected, msg); diff != "" {
-			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		curr, ok := val.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(val))
 		}
+		if prev >= curr {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
+		}
+		if curr%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, curr)
+		}
+		prev = curr
 	}
 }
 
@@ -252,7 +262,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	originalField := internal.NewMessageField("original")
 	transformField := internal.NewMessageField("transform")
 
-	max := 3
+	max := 100
 	collect := make([]*mock.Message, 0, max)
 	done := make(chan struct{})
 
@@ -361,26 +371,54 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	if err := e.Stop(); err != nil {
 		t.Fatalf("stop error: %s", err)
 	}
-	if diff := cmp.Diff(3, len(collect)); diff != "" {
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
+
+	prev := int64(0)
 	for i, msg := range collect {
-		counter := int64(i) + 1
-		origMsg := &mock.Message{
-			Fields: map[internal.MessageField]interface{}{fieldName: counter},
+		orig, ok := msg.Fields[originalField]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", originalField, i)
 		}
-		transfMsg := &mock.Message{
-			Fields: map[internal.MessageField]interface{}{fieldName: counter * 2},
+		origMock, ok := orig.(*mock.Message)
+		if !ok {
+			t.Fatalf("orig %d is not a *mock.Message", i)
 		}
-		expected := &mock.Message{
-			Fields: map[internal.MessageField]interface{}{
-				originalField:  origMsg,
-				transformField: transfMsg,
-			},
+		origVal, ok := origMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
 		}
-		if diff := cmp.Diff(expected, msg); diff != "" {
-			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		origCurr, ok := origVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(origVal))
 		}
+		if prev >= origCurr {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origCurr)
+		}
+
+		transf, ok := msg.Fields[transformField]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", transformField, i)
+		}
+		transfMock, ok := transf.(*mock.Message)
+		if !ok {
+			t.Fatalf("transf %d is not a *mock.Message", i)
+		}
+		transfVal, ok := transfMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
+		}
+		transfCurr, ok := transfVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(transfVal))
+		}
+		if transfCurr != 2*origCurr {
+			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origCurr, transfCurr)
+		}
+		prev = origCurr
 	}
 }
 
