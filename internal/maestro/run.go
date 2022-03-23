@@ -39,7 +39,7 @@ a single orchestration, that will be executed.`,
 			var err error
 			if err = opts.complete(cmd, args); err != nil {
 				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
-					log.Fatalln("write error at run command")
+					log.Fatalf("write error at run command: %s\n", writeErr)
 				}
 				return
 			}
