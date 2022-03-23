@@ -19,15 +19,15 @@ import (
 	"testing"
 )
 
-func TestLinear(t *testing.T) {
+func TestSplitAndMerge(t *testing.T) {
 	var (
-		source linearSource
-		transf linearTransform
-		sink   linearSink
+		source splitAndMergeSource
+		transf splitAndMergeTransform
+		sink   splitAndMergeSink
 	)
 
 	max := 3
-	collect := make([]*integration.LinearMessage, 0, max)
+	collect := make([]*integration.JoinMessage, 0, max)
 	done := make(chan struct{})
 
 	sink.max = max
@@ -41,7 +41,7 @@ func TestLinear(t *testing.T) {
 	sourceAddr, sourceStart, sourceStop := createGrpcServer(
 		t,
 		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearSourceServer(registrar, &source)
+			integration.RegisterSplitAndMergeSourceServer(registrar, &source)
 		},
 	)
 	defer sourceStop()
@@ -50,7 +50,7 @@ func TestLinear(t *testing.T) {
 	transfAddr, transfStart, transfStop := createGrpcServer(
 		t,
 		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearTransformServer(registrar, &transf)
+			integration.RegisterSplitAndMergeTransformServer(registrar, &transf)
 		},
 	)
 	defer transfStop()
@@ -59,7 +59,7 @@ func TestLinear(t *testing.T) {
 	sinkAddr, sinkStart, sinkStop := createGrpcServer(
 		t,
 		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearSinkServer(registrar, &sink)
+			integration.RegisterSplitAndMergeSinkServer(registrar, &sink)
 		},
 	)
 	defer sinkStop()
@@ -87,15 +87,23 @@ func TestLinear(t *testing.T) {
 		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
 	)
 
+	sourceToSinkName := createLinkName(t, "link-source-sink")
+	sourceToSink := internal.NewLink(
+		sourceToSinkName,
+		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("original")),
+	)
+
 	transformToSinkName := createLinkName(t, "link-transform-sink")
 	transformToSink := internal.NewLink(
 		transformToSinkName,
 		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("transformed")),
 	)
 
 	links := map[internal.LinkName]internal.Link{
 		sourceToTransformName: sourceToTransform,
+		sourceToSinkName:      sourceToSink,
 		transformToSinkName:   transformToSink,
 	}
 	linkLoader := &mock.LinkStorage{Links: links}
@@ -105,7 +113,7 @@ func TestLinear(t *testing.T) {
 	orchestration := internal.NewOrchestration(
 		createOrchName(t, "orchestration"),
 		[]internal.StageName{sourceName, transfName, sinkName},
-		[]internal.LinkName{sourceToTransformName, transformToSinkName},
+		[]internal.LinkName{sourceToTransformName, sourceToSinkName, transformToSinkName},
 	)
 
 	e, err := executionBuilder(orchestration)
@@ -128,50 +136,60 @@ func TestLinear(t *testing.T) {
 			t.Fatalf("stop error code mismatch:\n%s", diff)
 		}
 	}
-	expected := []*integration.LinearMessage{{Val: 3}, {Val: 6}, {Val: 9}}
+	expected := make([]*integration.JoinMessage, 0, max)
+	for i := 0; i < max; i++ {
+		counter := int64(i + 1)
+		msg := &integration.JoinMessage{
+			Original:    &integration.SplitAndMergeMessage{Val: counter},
+			Transformed: &integration.SplitAndMergeMessage{Val: 3 * counter},
+		}
+		expected = append(expected, msg)
+	}
 
 	if diff := cmp.Diff(len(expected), len(collect)); diff != "" {
 		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
 	}
 
-	cmpOpts := cmpopts.IgnoreUnexported(integration.LinearMessage{})
+	cmpOpts := cmpopts.IgnoreUnexported(
+		integration.JoinMessage{}, integration.SplitAndMergeMessage{},
+	)
 	if diff := cmp.Diff(expected, collect, cmpOpts); diff != "" {
 		t.Fatalf("mismatch on collected messages:\n%s", diff)
 	}
 }
 
-type linearSource struct {
-	integration.LinearSourceServer
+type splitAndMergeSource struct {
+	integration.SplitAndMergeSourceServer
 	counter int64
 }
 
-func (s *linearSource) Generate(
+func (s *splitAndMergeSource) Generate(
 	_ context.Context, _ *emptypb.Empty,
-) (*integration.LinearMessage, error) {
+) (*integration.SplitAndMergeMessage, error) {
 	val := atomic.AddInt64(&s.counter, 1)
-	return &integration.LinearMessage{Val: val}, nil
+	return &integration.SplitAndMergeMessage{Val: val}, nil
 }
 
-type linearTransform struct {
-	integration.LinearTransformServer
+type splitAndMergeTransform struct {
+	integration.SplitAndMergeTransformServer
 }
 
-func (t *linearTransform) Process(
-	_ context.Context, req *integration.LinearMessage,
-) (*integration.LinearMessage, error) {
-	return &integration.LinearMessage{Val: 3 * req.Val}, nil
+func (t *splitAndMergeTransform) Process(
+	_ context.Context, req *integration.SplitAndMergeMessage,
+) (*integration.SplitAndMergeMessage, error) {
+	return &integration.SplitAndMergeMessage{Val: 3 * req.Val}, nil
 }
 
-type linearSink struct {
-	integration.LinearSinkServer
+type splitAndMergeSink struct {
+	integration.SplitAndMergeSinkServer
 	max     int
-	collect *[]*integration.LinearMessage
+	collect *[]*integration.JoinMessage
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
-func (s *linearSink) Collect(
-	_ context.Context, req *integration.LinearMessage,
+func (s *splitAndMergeSink) Collect(
+	_ context.Context, req *integration.JoinMessage,
 ) (*emptypb.Empty, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
