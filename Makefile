@@ -27,19 +27,20 @@ help:
 	@echo "  make command [options]"
 	@echo
 	@echo "Commands:"
-	@echo "  go/build        builds all project binaries."
-	@echo "  go/test         runs automated tests."
-	@echo "  go/test/unit    runs automated unit tests."
-	@echo "  go/test/e2e     runs automated e2e tests."
+	@echo "  go/build             builds all project binaries."
+	@echo "  go/test              runs automated tests."
+	@echo "  go/test/unit         runs automated unit tests."
+	@echo "  go/test/integration  runs automated integration tests."
+	@echo "  go/test/e2e          runs automated e2e tests."
 	@echo
-	@echo "  docker/build    builds maestro docker image."
+	@echo "  docker/build         builds maestro docker image."
 	@echo
-	@echo "  pb              generates the all .pb.go files for this project."
-	@echo "  pb/api          generates the .pb.go files for the grpc api."
-	@echo "  pb/test         generates the .pb.go files for the grpc tests."
-	@echo "  pb/clean        removes all generated .pb.go files."
+	@echo "  pb                   generates the all .pb.go files for this project."
+	@echo "  pb/api               generates the .pb.go files for the grpc api."
+	@echo "  pb/test              generates the .pb.go files for the grpc tests."
+	@echo "  pb/clean             removes all generated .pb.go files."
 	@echo
-	@echo "  ci-cd/build     builds the docker image for the build workflow."
+	@echo "  ci-cd/build          builds the docker image for the build workflow."
 
 
 .PHONY: docker/build
@@ -50,11 +51,15 @@ go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go
 	@#GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestroctl ./cmd/maestroctl/maestroctl.go
 
-go/test: pb/api pb/test go/test/unit go/test/e2e
+go/test: pb/api pb/test go/test/unit go/test/integration go/test/e2e
 
 .PHONY: go/test/unit
 go/test/unit: pb/api pb/test
 	go test $(UNIT_TEST_FLAGS) $(UNIT_TEST_DIR)
+
+.PHONT: go/test/integration
+go/test/integration: pb/api pb/test
+	go test ./test/integration/...
 
 .PHONE: go/go/test/e2e
 go/test/e2e: pb/api pb/test
@@ -72,6 +77,7 @@ pb/api:
 .PHONY: pb/test
 pb/test:
 	cd ./test/protobuf/unit && protoc $(PROTOC_FLAGS) ./*.proto
+	cd ./test/protobuf/integration && protoc $(PROTOC_FLAGS) ./*.proto
 
 pb/clean:
 	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go

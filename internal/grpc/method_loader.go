@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
@@ -14,9 +15,11 @@ import (
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
-type ReflectionMethodLoader struct{}
+var ReflectionMethodLoader execute.MethodLoader = &reflectionMethodLoader{}
 
-func (m *ReflectionMethodLoader) Load(methodCtx internal.MethodContext) (
+type reflectionMethodLoader struct{}
+
+func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 	internal.UnaryMethod,
 	error,
 ) {
