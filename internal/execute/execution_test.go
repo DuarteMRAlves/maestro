@@ -101,6 +101,9 @@ func TestExecution_Linear(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build error: %s", err)
 	}
+	if diff := cmp.Diff(4, len(e.chans)); diff != "" {
+		t.Fatalf("mismatch on number of channels:\n%s", diff)
+	}
 
 	e.Start()
 	<-done
@@ -378,6 +381,9 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	e, err := executionBuilder(orchestration)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
+	}
+	if diff := cmp.Diff(7, len(e.chans)); diff != "" {
+		t.Fatalf("mismatch on number of channels:\n%s", diff)
 	}
 
 	e.Start()
