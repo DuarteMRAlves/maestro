@@ -1,0 +1,29 @@
+// This file defines messages to be used in tests for exec stages.
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/integration";
+
+package integration;
+
+import "google/protobuf/empty.proto";
+
+service SplitAndMergeSource {
+  rpc Generate(google.protobuf.Empty) returns (SplitAndMergeMessage);
+}
+
+service SplitAndMergeTransform {
+  rpc Process(SplitAndMergeMessage) returns (SplitAndMergeMessage);
+}
+
+service SplitAndMergeSink {
+  rpc Collect(JoinMessage) returns (google.protobuf.Empty);
+}
+
+message SplitAndMergeMessage {
+  int64 val = 1;
+}
+
+message JoinMessage {
+  SplitAndMergeMessage original = 1;
+  SplitAndMergeMessage transformed = 2;
+}
