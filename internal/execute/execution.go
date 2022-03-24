@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-type execution struct {
+type Execution struct {
 	stages *stageMap
 	chans  []chan state
 	wg     *errgroup.Group
 	cancel context.CancelFunc
 }
 
-func newExecution(stages *stageMap, chans []chan state) *execution {
-	return &execution{stages: stages, chans: chans}
+func newExecution(stages *stageMap, chans []chan state) *Execution {
+	return &Execution{stages: stages, chans: chans}
 }
 
-func (e *execution) Start() {
+func (e *Execution) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
 
@@ -41,7 +41,7 @@ func (e *execution) Start() {
 	e.wg = wg
 }
 
-func (e *execution) Stop() error {
+func (e *Execution) Stop() error {
 	e.cancel()
 	return e.wg.Wait()
 }

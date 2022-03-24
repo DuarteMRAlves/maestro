@@ -32,8 +32,6 @@ WORKDIR /
 
 COPY --from=builder --chown=nonroot:nonroot ${WORKSPACE}/target/maestro /maestro
 
-EXPOSE 50051
-
 USER nonroot:nonroot
 
-CMD ["/maestro"]
+CMD ["/maestro", "run", "-f", "config.yaml"]
