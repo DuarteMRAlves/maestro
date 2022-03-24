@@ -26,9 +26,10 @@ const (
 )
 
 type RunOpts struct {
-	files      []string
-	versionArg string
-	orchName   string
+	files    []string
+	orchName string
+	v0       bool
+	v1       bool
 
 	outWriter io.Writer
 	version   configVersion
@@ -68,9 +69,8 @@ a single orchestration, that will be executed.`,
 		},
 	}
 
-	cmd.Flags().StringVar(
-		&opts.versionArg, "conf-version", string(v1), "version for the config yaml format",
-	)
+	cmd.Flags().BoolVar(&opts.v0, "v0", false, "use version 0 for config yaml format")
+	cmd.Flags().BoolVar(&opts.v1, "v1", false, "use version 1 for config yaml format")
 	cmd.Flags().StringArrayVarP(&opts.files, "file", "f", nil, "config files")
 
 	return &cmd
@@ -84,14 +84,13 @@ func (opts *RunOpts) complete(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		opts.orchName = args[0]
 	}
-	opts.version = configVersion(opts.versionArg)
-	switch opts.version {
-	case v0:
-	case v1:
-	default:
-		return fmt.Errorf(
-			"unknown config version: expected %s or %s but found %s", v0, v1, opts.versionArg,
-		)
+	if opts.v0 && opts.v1 {
+		return errors.New("v0 and v1 options are incompatible")
+	}
+	// Defaults to v1
+	opts.version = v1
+	if opts.v0 {
+		opts.version = v0
 	}
 	return nil
 }
@@ -117,8 +116,9 @@ func (opts *RunOpts) run() error {
 	case v1:
 		resources, err = yaml.ReadV1(opts.files...)
 	default:
+		// Should never happen if command was completed and validated.
 		return fmt.Errorf(
-			"unknown config version: expected %s or %s but found %s", v0, v1, opts.versionArg,
+			"unknown config version: expected %s or %s but found %s", v0, v1, opts.version,
 		)
 	}
 	if err != nil {
