@@ -13,9 +13,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestSplitAndMerge(t *testing.T) {
@@ -162,6 +164,8 @@ type splitAndMergeSource struct {
 func (s *splitAndMergeSource) Generate(
 	_ context.Context, _ *emptypb.Empty,
 ) (*integration.SplitAndMergeMessage, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	val := atomic.AddInt64(&s.counter, 1)
 	return &integration.SplitAndMergeMessage{Val: val}, nil
 }
@@ -173,6 +177,8 @@ type splitAndMergeTransform struct {
 func (t *splitAndMergeTransform) Process(
 	_ context.Context, req *integration.SplitAndMergeMessage,
 ) (*integration.SplitAndMergeMessage, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	return &integration.SplitAndMergeMessage{Val: 3 * req.Val}, nil
 }
 
@@ -187,6 +193,8 @@ type splitAndMergeSink struct {
 func (s *splitAndMergeSink) Collect(
 	_ context.Context, req *integration.JoinMessage,
 ) (*emptypb.Empty, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// Receive while not at full capacity
