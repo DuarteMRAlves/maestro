@@ -13,9 +13,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestLinear(t *testing.T) {
@@ -152,6 +154,8 @@ type linearSource struct {
 func (s *linearSource) Generate(
 	_ context.Context, _ *emptypb.Empty,
 ) (*integration.LinearMessage, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	val := atomic.AddInt64(&s.counter, 1)
 	return &integration.LinearMessage{Val: val}, nil
 }
@@ -163,6 +167,8 @@ type linearTransform struct {
 func (t *linearTransform) Process(
 	_ context.Context, req *integration.LinearMessage,
 ) (*integration.LinearMessage, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	return &integration.LinearMessage{Val: 3 * req.Val}, nil
 }
 
@@ -177,6 +183,8 @@ type linearSink struct {
 func (s *linearSink) Collect(
 	_ context.Context, req *integration.LinearMessage,
 ) (*emptypb.Empty, error) {
+	delay := time.Duration(rand.Int63n(5))
+	time.Sleep(delay * time.Millisecond)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// Receive while not at full capacity
