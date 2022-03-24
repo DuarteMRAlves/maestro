@@ -19,14 +19,14 @@ type MethodLoader interface {
 	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
-type Builder func(orchestration internal.Orchestration) (*execution, error)
+type Builder func(orchestration internal.Orchestration) (*Execution, error)
 
 func NewBuilder(
 	stageLoader StageLoader,
 	linkLoader LinkLoader,
 	methodLoader MethodLoader,
 ) Builder {
-	return func(orchestration internal.Orchestration) (*execution, error) {
+	return func(orchestration internal.Orchestration) (*Execution, error) {
 		var chans []chan state
 
 		stageNames := orchestration.Stages()

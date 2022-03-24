@@ -3,10 +3,19 @@ package maestro
 import (
 	"errors"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/arrays"
+	"github.com/DuarteMRAlves/maestro/internal/create"
+	"github.com/DuarteMRAlves/maestro/internal/execute"
+	"github.com/DuarteMRAlves/maestro/internal/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/mapstore"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type configVersion string
@@ -67,54 +76,140 @@ a single orchestration, that will be executed.`,
 	return &cmd
 }
 
-func (o *RunOpts) complete(cmd *cobra.Command, args []string) error {
-	o.outWriter = cmd.OutOrStdout()
+func (opts *RunOpts) complete(cmd *cobra.Command, args []string) error {
+	opts.outWriter = cmd.OutOrStdout()
 	if len(args) > 1 {
 		return errors.New("too many arguments: expected at most one")
 	}
 	if len(args) == 1 {
-		o.orchName = args[0]
+		opts.orchName = args[0]
 	}
-	o.version = configVersion(o.versionArg)
-	switch o.version {
+	opts.version = configVersion(opts.versionArg)
+	switch opts.version {
 	case v0:
 	case v1:
 	default:
 		return fmt.Errorf(
-			"unknown config version: expected %s or %s but found %s", v0, v1, o.versionArg,
+			"unknown config version: expected %s or %s but found %s", v0, v1, opts.versionArg,
 		)
 	}
 	return nil
 }
 
-func (o *RunOpts) validate() error {
-	if len(o.files) == 0 {
+func (opts *RunOpts) validate() error {
+	if len(opts.files) == 0 {
 		return errors.New("specify at least one configuration file")
 	}
-	if o.version == v0 && len(o.files) > 1 {
+	if opts.version == v0 && len(opts.files) > 1 {
 		return errors.New("only one configuration file allowed for v0 file specification")
 	}
 	return nil
 }
 
-func (o *RunOpts) run() error {
+func (opts *RunOpts) run() error {
 	var (
 		resources yaml.ResourceSet
 		err       error
 	)
-	switch o.version {
+	switch opts.version {
 	case v0:
-		resources, err = yaml.ReadV0(o.files[0])
+		resources, err = yaml.ReadV0(opts.files[0])
 	case v1:
-		resources, err = yaml.ReadV1(o.files...)
+		resources, err = yaml.ReadV1(opts.files...)
 	default:
 		return fmt.Errorf(
-			"unknown config version: expected %s or %s but found %s", v0, v1, o.versionArg,
+			"unknown config version: expected %s or %s but found %s", v0, v1, opts.versionArg,
 		)
 	}
 	if err != nil {
 		return err
 	}
-	fmt.Println(resources)
-	return nil
+
+	orchStore := make(mapstore.Orchestrations, len(resources.Orchestrations))
+	stageStore := make(mapstore.Stages, len(resources.Stages))
+	linkStore := make(mapstore.Links, len(resources.Links))
+
+	createOrchestration := create.Orchestration(orchStore)
+	createStage := create.Stage(stageStore, orchStore)
+	createLink := create.Link(linkStore, stageStore, orchStore)
+
+	for _, o := range resources.Orchestrations {
+		if err := createOrchestration(o.Name); err != nil {
+			return err
+		}
+	}
+	for _, s := range resources.Stages {
+		m := internal.NewMethodContext(
+			s.Method.Address, s.Method.Service, s.Method.Method,
+		)
+		if err := createStage(s.Name, m, s.Orchestration); err != nil {
+			return err
+		}
+	}
+	for _, l := range resources.Links {
+		s := internal.NewLinkEndpoint(l.Source.Stage, l.Source.Field)
+		t := internal.NewLinkEndpoint(l.Target.Stage, l.Target.Field)
+		if err := createLink(l.Name, s, t, l.Orchestration); err != nil {
+			return err
+		}
+	}
+
+	availableOrchs := arrays.Map(
+		func(o yaml.Orchestration) internal.OrchestrationName { return o.Name },
+		resources.Orchestrations...,
+	)
+
+	orchName, err := opts.orchToRun(availableOrchs...)
+	if err != nil {
+		return err
+	}
+
+	orch, err := orchStore.Load(orchName)
+	if err != nil {
+		return err
+	}
+
+	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader)
+	execution, err := b(orch)
+	if err != nil {
+		return err
+	}
+
+	errs := make(chan error, 1)
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		errs <- execution.Stop()
+	}()
+
+	execution.Start()
+
+	err = <-errs
+	return err
+}
+
+func (opts *RunOpts) orchToRun(
+	available ...internal.OrchestrationName,
+) (internal.OrchestrationName, error) {
+	if opts.orchName != "" {
+		pred := func(v internal.OrchestrationName) bool {
+			return v.Unwrap() == opts.orchName
+		}
+		available = arrays.Filter(pred, available...)
+	}
+	switch len(available) {
+	case 0:
+		var err error
+		if opts.orchName != "" {
+			err = fmt.Errorf("orchestration %s not found", opts.orchName)
+		} else {
+			err = errors.New("no orchestrations defined")
+		}
+		return internal.OrchestrationName{}, err
+	case 1:
+		return available[0], nil
+	default:
+		err := fmt.Errorf("only one orchestration can be executed but found %s", available)
+		return internal.OrchestrationName{}, err
+	}
 }
