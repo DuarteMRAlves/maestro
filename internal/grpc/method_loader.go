@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
+	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
 	"time"
@@ -15,9 +17,14 @@ import (
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
-var ReflectionMethodLoader execute.MethodLoader = &reflectionMethodLoader{}
+var ReflectionMethodLoader execute.MethodLoader = &reflectionMethodLoader{
+	timeout: 5 * time.Minute,
+}
 
-type reflectionMethodLoader struct{}
+type reflectionMethodLoader struct {
+	timeout    time.Duration
+	expBackoff retry.ExponentialBackoff
+}
 
 func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 	internal.UnaryMethod,
@@ -28,10 +35,10 @@ func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 		return nil, err
 	}
 	defer conn.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), m.timeout)
 	defer cancel()
 
-	services, err := listServices(ctx, conn)
+	services, err := m.listServices(ctx, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -39,23 +46,31 @@ func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 	if err != nil {
 		return nil, err
 	}
-	serviceDesc, err := resolveService(ctx, conn, service)
+	serviceDesc, err := m.resolveService(ctx, conn, service)
 	if err != nil {
 		return nil, err
 	}
 	return findMethod(serviceDesc.GetMethods(), methodCtx.Method())
 }
 
-func listServices(ctx context.Context, conn grpc.ClientConnInterface) (
-	[]internal.Service,
-	error,
-) {
+func (m *reflectionMethodLoader) listServices(
+	ctx context.Context, conn grpc.ClientConnInterface,
+) ([]internal.Service, error) {
+	var (
+		all []string
+		err error
+	)
 	stub := gr.NewServerReflectionClient(conn)
 	c := grpcreflect.NewClient(ctx, stub)
-	all, err := c.ListServices()
-	if err != nil {
+
+	retry.WhileTrue(func() bool {
+		all, err = c.ListServices()
 		st, _ := status.FromError(err)
-		return nil, fmt.Errorf("list services: %w", st.Err())
+		err = st.Err()
+		return st.Code() == codes.Unavailable
+	}, &m.expBackoff)
+	if err != nil {
+		return nil, fmt.Errorf("list services: %w", err)
 	}
 	// Filter the reflection service
 	services := make([]internal.Service, 0, len(all)-1)
@@ -87,14 +102,24 @@ func findService(
 	}
 }
 
-func resolveService(
+func (m *reflectionMethodLoader) resolveService(
 	ctx context.Context,
 	conn grpc.ClientConnInterface,
 	service internal.Service,
 ) (*desc.ServiceDescriptor, error) {
+	var (
+		descriptor *desc.ServiceDescriptor
+		err        error
+	)
 	stub := gr.NewServerReflectionClient(conn)
 	c := grpcreflect.NewClient(ctx, stub)
-	descriptor, err := c.ResolveService(service.Unwrap())
+
+	retry.WhileTrue(func() bool {
+		descriptor, err = c.ResolveService(service.Unwrap())
+		st, _ := status.FromError(err)
+		return st.Code() == codes.Unavailable
+	}, &m.expBackoff)
+
 	if err != nil {
 		switch {
 		case isGrpcErr(err):

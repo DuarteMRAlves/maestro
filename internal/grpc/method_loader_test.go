@@ -39,7 +39,8 @@ func TestReflectionClient_ListServices(t *testing.T) {
 		}
 	}(conn)
 
-	services, err := listServices(ctx, conn)
+	m := reflectionMethodLoader{timeout: 5 * time.Second}
+	services, err := m.listServices(ctx, conn)
 	if err != nil {
 		t.Fatalf("list services: %s", err)
 	}
@@ -83,7 +84,8 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	services, err := listServices(ctx, conn)
+	m := reflectionMethodLoader{timeout: 5 * time.Second}
+	services, err := m.listServices(ctx, conn)
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
 	}
@@ -124,7 +126,8 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("unit.MethodLoaderTestService")
-	serv, err := resolveService(ctx, conn, serviceName)
+	m := reflectionMethodLoader{timeout: 5 * time.Second}
+	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
 		t.Fatalf("resolve service: %s", err)
 	}
@@ -266,7 +269,8 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("pb.TestService")
-	serv, err := resolveService(ctx, conn, serviceName)
+	m := reflectionMethodLoader{timeout: 5 * time.Second}
+	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
 		t.Fatalf("expected non nil error at resolveService")
 	}
@@ -307,7 +311,8 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	}(conn)
 
 	serviceName := internal.NewService("pb.UnknownService")
-	serv, err := resolveService(ctx, conn, serviceName)
+	m := reflectionMethodLoader{timeout: 5 * time.Second}
+	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
 	}

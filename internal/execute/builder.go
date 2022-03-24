@@ -38,6 +38,7 @@ func NewBuilder(
 			}
 			m, err := methodLoader.Load(s.MethodContext())
 			if err != nil {
+				err = fmt.Errorf("build stage %s in %s: %w", n, orchestration.Name(), err)
 				return nil, err
 			}
 			stageCtxs[n] = &stageContext{stage: s, method: m}

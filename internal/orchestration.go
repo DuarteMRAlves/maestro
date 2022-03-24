@@ -14,6 +14,10 @@ func (o OrchestrationName) Unwrap() string { return o.val }
 
 func (o OrchestrationName) IsEmpty() bool { return o.val == emptyOrchestrationName.val }
 
+func (o OrchestrationName) String() string {
+	return o.val
+}
+
 func NewOrchestrationName(name string) (OrchestrationName, error) {
 	if isValidOrchestrationName(name) {
 		return OrchestrationName{name}, nil

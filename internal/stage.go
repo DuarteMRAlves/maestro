@@ -12,6 +12,10 @@ func (s StageName) Unwrap() string { return s.val }
 
 func (s StageName) IsEmpty() bool { return s.val == "" }
 
+func (s StageName) String() string {
+	return s.val
+}
+
 func NewStageName(name string) (StageName, error) {
 	if !isValidStageName(name) {
 		return StageName{}, &InvalidIdentifier{Type: "stage", Ident: name}

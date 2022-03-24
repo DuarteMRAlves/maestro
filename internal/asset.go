@@ -18,6 +18,10 @@ func (a AssetName) IsEmpty() bool {
 	return a.val == emptyAssetName.val
 }
 
+func (a AssetName) String() string {
+	return a.val
+}
+
 func NewAssetName(name string) (AssetName, error) {
 	if isValidAssetName(name) {
 		return AssetName{name}, nil
