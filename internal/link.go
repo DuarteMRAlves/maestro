@@ -8,9 +8,13 @@ var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
 
 type LinkName struct{ val string }
 
-func (s LinkName) Unwrap() string { return s.val }
+func (l LinkName) Unwrap() string { return l.val }
 
-func (s LinkName) IsEmpty() bool { return s.val == "" }
+func (l LinkName) IsEmpty() bool { return l.val == "" }
+
+func (l LinkName) String() string {
+	return l.val
+}
 
 func NewLinkName(name string) (LinkName, error) {
 	if !isValidLinkName(name) {
