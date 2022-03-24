@@ -3,6 +3,7 @@ package maestro
 import (
 	"errors"
 	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
@@ -15,7 +16,7 @@ const (
 	v1 configVersion = "v1"
 )
 
-type RunOptions struct {
+type RunOpts struct {
 	files      []string
 	versionArg string
 	orchName   string
@@ -25,7 +26,7 @@ type RunOptions struct {
 }
 
 func NewRunCmd() *cobra.Command {
-	var opts RunOptions
+	var opts RunOpts
 
 	cmd := cobra.Command{
 		Use:                   "run [OPTIONS] [ORCHESTRATION]",
@@ -43,6 +44,18 @@ a single orchestration, that will be executed.`,
 				}
 				return
 			}
+			if err = opts.validate(); err != nil {
+				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
+					log.Fatalf("write error at run command: %s\n", writeErr)
+				}
+				return
+			}
+			if err = opts.run(); err != nil {
+				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
+					log.Fatalf("write error at run command: %s\n", writeErr)
+				}
+				return
+			}
 		},
 	}
 
@@ -54,7 +67,7 @@ a single orchestration, that will be executed.`,
 	return &cmd
 }
 
-func (o *RunOptions) complete(cmd *cobra.Command, args []string) error {
+func (o *RunOpts) complete(cmd *cobra.Command, args []string) error {
 	o.outWriter = cmd.OutOrStdout()
 	if len(args) > 1 {
 		return errors.New("too many arguments: expected at most one")
@@ -71,5 +84,37 @@ func (o *RunOptions) complete(cmd *cobra.Command, args []string) error {
 			"unknown config version: expected %s or %s but found %s", v0, v1, o.versionArg,
 		)
 	}
+	return nil
+}
+
+func (o *RunOpts) validate() error {
+	if len(o.files) == 0 {
+		return errors.New("specify at least one configuration file")
+	}
+	if o.version == v0 && len(o.files) > 1 {
+		return errors.New("only one configuration file allowed for v0 file specification")
+	}
+	return nil
+}
+
+func (o *RunOpts) run() error {
+	var (
+		resources yaml.ResourceSet
+		err       error
+	)
+	switch o.version {
+	case v0:
+		resources, err = yaml.ReadV0(o.files[0])
+	case v1:
+		resources, err = yaml.ReadV1(o.files...)
+	default:
+		return fmt.Errorf(
+			"unknown config version: expected %s or %s but found %s", v0, v1, o.versionArg,
+		)
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Println(resources)
 	return nil
 }
