@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 	"reflect"
@@ -90,7 +91,7 @@ func TestExecution_Linear(t *testing.T) {
 		sinkContext:      sinkMethod,
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
-	logger := &mock.Logger{DebugActive: true}
+	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(
@@ -350,7 +351,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	logger := &mock.Logger{DebugActive: true}
+	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(
@@ -616,7 +617,7 @@ func TestExecution_Slow(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	logger := &mock.Logger{DebugActive: true}
+	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(

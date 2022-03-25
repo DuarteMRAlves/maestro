@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 	"testing"
@@ -31,7 +32,7 @@ func TestUnaryStage_Run(t *testing.T) {
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
-	logger := &mock.Logger{DebugActive: true}
+	logger := logs.New(true)
 	stage := newUnaryStage(name, input, output, address, clientBuilder, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
