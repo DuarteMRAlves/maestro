@@ -12,7 +12,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/mapstore"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 	"io"
 	"log"
 	"os"
@@ -171,12 +170,8 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.InfoLevel))
-	if err != nil {
-		return fmt.Errorf("build %s: %w", orchName, err)
-	}
-
-	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, logger.Sugar())
+	logger := logs.New(false)
+	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, logger)
 	execution, err := b(orch)
 	if err != nil {
 		return err
