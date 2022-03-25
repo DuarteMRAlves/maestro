@@ -6,6 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
@@ -101,9 +102,8 @@ func TestLinear(t *testing.T) {
 	}
 	linkLoader := &mock.LinkStorage{Links: links}
 
-	logger := &mock.Logger{DebugActive: true}
 	executionBuilder := execute.NewBuilder(
-		stageLoader, linkLoader, igrpc.ReflectionMethodLoader, logger,
+		stageLoader, linkLoader, igrpc.ReflectionMethodLoader, logs.New(true),
 	)
 
 	orchestration := internal.NewOrchestration(

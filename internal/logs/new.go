@@ -3,9 +3,8 @@ package logs
 import "log"
 
 // Logger provides a simple wrapper around log.Logger to print messages at two
-// levels:
-// - info for information for the user
-// - debug for information for the developer
+// levels: info or debug. info displays information for the user and debug for
+// displays information for the developer.
 type Logger struct {
 	logger *log.Logger
 	debug  bool
@@ -37,8 +36,8 @@ func (l Logger) Infof(format string, args ...any) {
 }
 
 func (l Logger) writef(format string, args ...any) {
-	var logger *log.Logger
-	if l.logger == nil {
+	logger := l.logger
+	if logger == nil {
 		logger = defaultLogger()
 	}
 	logger.Printf(format, args...)
