@@ -3,7 +3,6 @@ package execute
 import (
 	"context"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"sync"
 	"time"
 )
 
@@ -12,8 +11,7 @@ type Stage interface {
 }
 
 type unaryStage struct {
-	running bool
-
+	name    internal.StageName
 	address internal.Address
 
 	input  <-chan state
@@ -21,22 +19,24 @@ type unaryStage struct {
 
 	clientBuilder internal.UnaryClientBuilder
 
-	mu sync.Mutex
+	logger Logger
 }
 
 func newUnaryStage(
+	name internal.StageName,
 	input <-chan state,
 	output chan<- state,
 	address internal.Address,
 	clientBuilder internal.UnaryClientBuilder,
+	logger Logger,
 ) *unaryStage {
 	return &unaryStage{
-		running:       false,
+		name:          name,
 		input:         input,
 		output:        output,
 		address:       address,
 		clientBuilder: clientBuilder,
-		mu:            sync.Mutex{},
+		logger:        logger,
 	}
 }
 
@@ -50,31 +50,35 @@ func (s *unaryStage) Run(ctx context.Context) error {
 		return err
 	}
 	defer client.Close()
+	s.logger.Infof("'%s': started\n", s.name)
 	for {
 		select {
 		case in, more = <-s.input:
 		case <-ctx.Done():
 			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
 		// channel is closed
 		if !more {
 			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
+		s.logger.Debugf("'%s': recv id: %d, msg: %#v\n", s.name, in.id, in.msg)
 		req := in.msg
-
 		rep, err := s.call(ctx, client, req)
 		if err != nil {
 			return err
 		}
 
 		out = updateStateMsg(in, rep)
-
+		s.logger.Debugf("'%s': send id: %d, msg: %#v\n", s.name, out.id, out.msg)
 		select {
 		case s.output <- out:
 		case <-ctx.Done():
 			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
 	}

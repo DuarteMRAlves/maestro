@@ -25,6 +25,7 @@ func NewBuilder(
 	stageLoader StageLoader,
 	linkLoader LinkLoader,
 	methodLoader MethodLoader,
+	logger Logger,
 ) Builder {
 	return func(orchestration internal.Orchestration) (*Execution, error) {
 		var chans []chan state
@@ -112,11 +113,13 @@ func NewBuilder(
 			}
 			address := stageCtx.stage.MethodContext().Address()
 			clientBuilder := stageCtx.method.ClientBuilder()
-			rpcStage := newUnaryStage(inChan, outChan, address, clientBuilder)
+			rpcStage := newUnaryStage(
+				name, inChan, outChan, address, clientBuilder, logger,
+			)
 			stages.addRpcStage(name, rpcStage)
 		}
 
-		return newExecution(stages, chans), nil
+		return newExecution(stages, chans, logger), nil
 	}
 }
 

@@ -109,7 +109,10 @@ func TestSplitAndMerge(t *testing.T) {
 	}
 	linkLoader := &mock.LinkStorage{Links: links}
 
-	executionBuilder := execute.NewBuilder(stageLoader, linkLoader, igrpc.ReflectionMethodLoader)
+	logger := &mock.Logger{DebugActive: true}
+	executionBuilder := execute.NewBuilder(
+		stageLoader, linkLoader, igrpc.ReflectionMethodLoader, logger,
+	)
 
 	orchestration := internal.NewOrchestration(
 		createOrchName(t, "orchestration"),

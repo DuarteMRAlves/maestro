@@ -90,8 +90,8 @@ func TestExecution_Linear(t *testing.T) {
 		sinkContext:      sinkMethod,
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
-
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader)
+	logger := &mock.Logger{DebugActive: true}
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(
 		createOrchName(t, "orchestration"),
@@ -350,7 +350,8 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader)
+	logger := &mock.Logger{DebugActive: true}
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(
 		createOrchName(t, "orchestration"),
@@ -615,7 +616,8 @@ func TestExecution_Slow(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader)
+	logger := &mock.Logger{DebugActive: true}
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	orchestration := internal.NewOrchestration(
 		createOrchName(t, "orchestration"),

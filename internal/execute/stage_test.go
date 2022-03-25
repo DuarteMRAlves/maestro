@@ -28,9 +28,11 @@ func TestUnaryStage_Run(t *testing.T) {
 	input := make(chan state, len(requests))
 	output := make(chan state, len(requests))
 
+	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
-	stage := newUnaryStage(input, output, address, clientBuilder)
+	logger := &mock.Logger{DebugActive: true}
+	stage := newUnaryStage(name, input, output, address, clientBuilder, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
