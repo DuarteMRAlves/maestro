@@ -8,9 +8,11 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/create"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mapstore"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"io"
 	"log"
 	"os"
@@ -169,7 +171,12 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader)
+	logger, err := logs.DefaultProductionLogger(zap.NewAtomicLevelAt(zap.InfoLevel))
+	if err != nil {
+		return fmt.Errorf("build %s: %w", orchName, err)
+	}
+
+	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, logger.Sugar())
 	execution, err := b(orch)
 	if err != nil {
 		return err

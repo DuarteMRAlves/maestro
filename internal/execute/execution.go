@@ -6,15 +6,22 @@ import (
 	"time"
 )
 
+type Logger interface {
+	Debugf(format string, args ...any)
+	Infof(format string, args ...any)
+}
+
 type Execution struct {
 	stages *stageMap
 	chans  []chan state
 	wg     *errgroup.Group
 	cancel context.CancelFunc
+
+	logger Logger
 }
 
-func newExecution(stages *stageMap, chans []chan state) *Execution {
-	return &Execution{stages: stages, chans: chans}
+func newExecution(stages *stageMap, chans []chan state, logger Logger) *Execution {
+	return &Execution{stages: stages, chans: chans, logger: logger}
 }
 
 func (e *Execution) Start() {
@@ -39,9 +46,12 @@ func (e *Execution) Start() {
 
 	e.cancel = cancel
 	e.wg = wg
+	e.logger.Debugf("Execution started\n")
 }
 
 func (e *Execution) Stop() error {
 	e.cancel()
-	return e.wg.Wait()
+	err := e.wg.Wait()
+	e.logger.Debugf("Execution stopped\n")
+	return err
 }
