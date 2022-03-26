@@ -13,7 +13,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,9 +30,11 @@ type RunOpts struct {
 	orchName string
 	v0       bool
 	v1       bool
+	verbose  bool
 
 	outWriter io.Writer
 	version   configVersion
+	logger    logs.Logger
 }
 
 func NewRunCmd() *cobra.Command {
@@ -50,22 +51,16 @@ a single orchestration, that will be executed.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			if err = opts.complete(cmd, args); err != nil {
-				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
-					log.Fatalf("write error at run command: %s\n", writeErr)
-				}
-				return
+				opts.logger.Infof("fatal: %s\n", err)
+				os.Exit(1)
 			}
 			if err = opts.validate(); err != nil {
-				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
-					log.Fatalf("write error at run command: %s\n", writeErr)
-				}
-				return
+				opts.logger.Infof("fatal: %s\n", err)
+				os.Exit(1)
 			}
 			if err = opts.run(); err != nil {
-				if _, writeErr := fmt.Fprintln(opts.outWriter, err); writeErr != nil {
-					log.Fatalf("write error at run command: %s\n", writeErr)
-				}
-				return
+				opts.logger.Infof("fatal: %s\n", err)
+				os.Exit(1)
 			}
 		},
 	}
@@ -73,14 +68,16 @@ a single orchestration, that will be executed.`,
 	cmd.Flags().BoolVar(&opts.v0, "v0", false, "use version 0 for config yaml format")
 	cmd.Flags().BoolVar(&opts.v1, "v1", false, "use version 1 for config yaml format")
 	cmd.Flags().StringArrayVarP(&opts.files, "file", "f", nil, "config files")
+	cmd.Flags().BoolVarP(&opts.verbose, "verbose", "v", false, "increase verbosity")
 
 	return &cmd
 }
 
 func (opts *RunOpts) complete(cmd *cobra.Command, args []string) error {
 	opts.outWriter = cmd.OutOrStdout()
+	opts.logger = logs.NewWithOutput(opts.outWriter, opts.verbose)
 	if len(args) > 1 {
-		return errors.New("too many arguments: expected at most one")
+		return errors.New("too many arguments: expected at most one positional argument")
 	}
 	if len(args) == 1 {
 		opts.orchName = args[0]
@@ -113,8 +110,10 @@ func (opts *RunOpts) run() error {
 	)
 	switch opts.version {
 	case v0:
+		opts.logger.Debugf("read v0 from file %s", opts.files[0])
 		resources, err = yaml.ReadV0(opts.files[0])
 	case v1:
+		opts.logger.Debugf("read v1 from files %s", opts.files)
 		resources, err = yaml.ReadV1(opts.files...)
 	default:
 		// Should never happen if command was completed and validated.
@@ -170,8 +169,7 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	logger := logs.New(false)
-	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, logger)
+	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, opts.logger)
 	execution, err := b(orch)
 	if err != nil {
 		return err
