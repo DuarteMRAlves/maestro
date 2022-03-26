@@ -1,6 +1,9 @@
 package logs
 
-import "log"
+import (
+	"io"
+	"log"
+)
 
 // Logger provides a simple wrapper around log.Logger to print messages at two
 // levels: info or debug. info displays information for the user and debug for
@@ -14,6 +17,11 @@ type Logger struct {
 // debug messages should be output or not.
 func New(debug bool) Logger {
 	return NewWithLogger(defaultLogger(), debug)
+}
+
+// NewWithOutput is equivalent to New with a custom out writer.
+func NewWithOutput(w io.Writer, debug bool) Logger {
+	return NewWithLogger(log.New(w, "", log.LstdFlags), debug)
 }
 
 // NewWithLogger is equivalent to New with a custom logger. If logger is nil
