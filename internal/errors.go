@@ -39,11 +39,3 @@ type InvalidIdentifier struct {
 func (err *InvalidIdentifier) Error() string {
 	return fmt.Sprintf("invalid %s identifier: '%s'.", err.Type, err.Ident)
 }
-
-type IncompatibleMessageDesc struct {
-	A, B MessageDesc
-}
-
-func (err *IncompatibleMessageDesc) Error() string {
-	return fmt.Sprintf("incompatible message descriptors: %s, %s", err.A, err.B)
-}
