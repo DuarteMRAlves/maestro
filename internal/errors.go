@@ -27,15 +27,3 @@ type AlreadyExists struct {
 func (err *AlreadyExists) Error() string {
 	return fmt.Sprintf("%s '%s' already exists.", err.Type, err.Ident)
 }
-
-type InvalidIdentifier struct {
-	// Type defines the resource type (e.g.: file, orchestration, image, etc.).
-	Type string
-	// Ident is the concrete resource identifier for the resource. (e.g.
-	// file.tsv, orchestration-1, etc.).
-	Ident string
-}
-
-func (err *InvalidIdentifier) Error() string {
-	return fmt.Sprintf("invalid %s identifier: '%s'.", err.Type, err.Ident)
-}

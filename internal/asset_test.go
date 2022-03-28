@@ -38,24 +38,15 @@ func TestNewAssetName(t *testing.T) {
 					if !created.IsEmpty() {
 						t.Fatalf("created is not empty: %s", created.Unwrap())
 					}
-					var invalidIdentifier *InvalidIdentifier
-					if !errors.As(err, &invalidIdentifier) {
+					var invalidName *invalidAssetName
+					if !errors.As(err, &invalidName) {
 						errTyp := reflect.TypeOf(err)
 						t.Fatalf(
-							"error type mismatch: expected *InvalidIdentifier, got %s",
+							"error type mismatch: expected *invalidAssetName, got %s",
 							errTyp,
 						)
 					}
-					if diff := cmp.Diff(
-						"asset",
-						invalidIdentifier.Type,
-					); diff != "" {
-						t.Fatalf("error type mismatch:\n%s", diff)
-					}
-					if diff := cmp.Diff(
-						tc.name,
-						invalidIdentifier.Ident,
-					); diff != "" {
+					if diff := cmp.Diff(tc.name, invalidName.name); diff != "" {
 						t.Fatalf("error identifier mismatch:\n%s", diff)
 					}
 				}
