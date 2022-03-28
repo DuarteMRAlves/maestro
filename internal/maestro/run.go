@@ -180,15 +180,18 @@ func (opts *RunOpts) run() error {
 	}
 
 	errs := make(chan error, 1)
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
+		sig := <-sigs
+		opts.logger.Infof("Received signal: %v", sig)
 		errs <- execution.Stop()
 	}()
 
 	execution.Start()
 
 	err = <-errs
+	opts.logger.Debugf("Execution terminated with error: %s", err)
 	return err
 }
 
