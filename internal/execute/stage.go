@@ -89,7 +89,7 @@ func (s *unaryStage) call(
 	client internal.UnaryClient,
 	req internal.Message,
 ) (internal.Message, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return client.Call(ctx, req)
 }
