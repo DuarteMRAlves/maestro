@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
@@ -17,19 +16,33 @@ import (
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
-var ReflectionMethodLoader execute.MethodLoader = &reflectionMethodLoader{
-	timeout: 5 * time.Minute,
+type Logger interface {
+	Debugf(format string, args ...any)
+	Infof(format string, args ...any)
 }
 
-type reflectionMethodLoader struct {
+type ReflectionMethodLoader struct {
 	timeout    time.Duration
 	expBackoff retry.ExponentialBackoff
+
+	logger Logger
 }
 
-func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
+func NewReflectionMethodLoader(
+	timeout time.Duration, backoff retry.ExponentialBackoff, logger Logger,
+) *ReflectionMethodLoader {
+	return &ReflectionMethodLoader{
+		timeout:    timeout,
+		expBackoff: backoff,
+		logger:     logger,
+	}
+}
+
+func (m *ReflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 	internal.UnaryMethod,
 	error,
 ) {
+	m.logger.Debugf("Load method with reflection: %#v", methodCtx)
 	conn, err := grpc.Dial(methodCtx.Address().Unwrap(), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
@@ -53,7 +66,7 @@ func (m *reflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 	return findMethod(serviceDesc.GetMethods(), methodCtx.Method())
 }
 
-func (m *reflectionMethodLoader) listServices(
+func (m *ReflectionMethodLoader) listServices(
 	ctx context.Context, conn grpc.ClientConnInterface,
 ) ([]internal.Service, error) {
 	var (
@@ -102,7 +115,7 @@ func findService(
 	}
 }
 
-func (m *reflectionMethodLoader) resolveService(
+func (m *ReflectionMethodLoader) resolveService(
 	ctx context.Context,
 	conn grpc.ClientConnInterface,
 	service internal.Service,
