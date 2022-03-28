@@ -83,11 +83,7 @@ func NewBuilder(
 				}
 			}
 			if !sourceMsg.Compatible(targetMsg) {
-				err = &internal.IncompatibleMessageDesc{
-					A: sourceMsg,
-					B: targetMsg,
-				}
-				return nil, err
+				return nil, &incompatibleMessageDesc{A: sourceMsg, B: targetMsg}
 			}
 			target.inputs = append(target.inputs, linkCtx)
 			source.outputs = append(source.outputs, linkCtx)
@@ -201,4 +197,12 @@ func (ctx stageContext) buildSplitStage(chans *[]chan state) (chan state, Stage)
 		outputs = append(outputs, l.ch)
 	}
 	return inputChan, newSplitStage(fields, inputChan, outputs)
+}
+
+type incompatibleMessageDesc struct {
+	A, B internal.MessageDesc
+}
+
+func (err *incompatibleMessageDesc) Error() string {
+	return fmt.Sprintf("incompatible message descriptors: %s, %s", err.A, err.B)
 }
