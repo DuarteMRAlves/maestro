@@ -10,12 +10,14 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/grpc"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mapstore"
+	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 type configVersion string
@@ -107,6 +109,7 @@ func (opts *RunOpts) run() error {
 	var (
 		resources yaml.ResourceSet
 		err       error
+		backoff   retry.ExponentialBackoff
 	)
 	switch opts.version {
 	case v0:
@@ -169,7 +172,8 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	b := execute.NewBuilder(stageStore, linkStore, grpc.ReflectionMethodLoader, opts.logger)
+	r := grpc.NewReflectionMethodLoader(5*time.Minute, backoff, opts.logger)
+	b := execute.NewBuilder(stageStore, linkStore, r, opts.logger)
 	execution, err := b(orch)
 	if err != nil {
 		return err

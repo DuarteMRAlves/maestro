@@ -8,6 +8,7 @@ import (
 	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
+	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -23,9 +24,10 @@ import (
 
 func TestLinear(t *testing.T) {
 	var (
-		source linearSource
-		transf linearTransform
-		sink   linearSink
+		source  linearSource
+		transf  linearTransform
+		sink    linearSink
+		backoff retry.ExponentialBackoff
 	)
 
 	max := 100
@@ -102,8 +104,9 @@ func TestLinear(t *testing.T) {
 	}
 	linkLoader := &mock.LinkStorage{Links: links}
 
+	r := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
 	executionBuilder := execute.NewBuilder(
-		stageLoader, linkLoader, igrpc.ReflectionMethodLoader, logs.New(true),
+		stageLoader, linkLoader, r, logs.New(true),
 	)
 
 	orchestration := internal.NewOrchestration(
