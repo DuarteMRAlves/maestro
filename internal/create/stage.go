@@ -24,6 +24,12 @@ var (
 	EmptyAddress   = fmt.Errorf("empty address")
 )
 
+type stageAlreadyExists struct{ name string }
+
+func (err *stageAlreadyExists) Error() string {
+	return fmt.Sprintf("stage '%s' already exists", err.name)
+}
+
 func Stage(
 	stageStorage StageStorage,
 	orchStorage OrchestrationStorage,
@@ -51,7 +57,7 @@ func Stage(
 
 		_, err := stageStorage.Load(name)
 		if err == nil {
-			return &internal.AlreadyExists{Type: "stage", Ident: name.Unwrap()}
+			return &stageAlreadyExists{name: name.Unwrap()}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {

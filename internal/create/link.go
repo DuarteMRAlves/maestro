@@ -26,6 +26,12 @@ var (
 	EqualSourceAndTarget = errors.New("equal source and target stages")
 )
 
+type linkAlreadyExists struct{ name string }
+
+func (err *linkAlreadyExists) Error() string {
+	return fmt.Sprintf("link '%s' already exists", err.name)
+}
+
 type StageNotInOrchestration struct {
 	Orch  internal.OrchestrationName
 	Stage internal.StageName
@@ -79,7 +85,7 @@ func Link(
 
 		_, err := linkStorage.Load(name)
 		if err == nil {
-			return &internal.AlreadyExists{Type: "link", Ident: name.Unwrap()}
+			return &linkAlreadyExists{name: name.Unwrap()}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {

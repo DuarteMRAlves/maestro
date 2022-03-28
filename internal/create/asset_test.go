@@ -117,14 +117,13 @@ func TestCreateAsset_AlreadyExists(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected create error but got none")
 	}
-	var alreadyExists *internal.AlreadyExists
+	var alreadyExists *assetAlreadyExists
 	if !errors.As(err, &alreadyExists) {
-		format := "Wrong error type: expected *internal.AlreadyExists, got %s"
-		t.Fatalf(format, reflect.TypeOf(err))
+		format := "Wrong error type: expected *%s, got %s"
+		t.Fatalf(format, reflect.TypeOf(alreadyExists), reflect.TypeOf(err))
 	}
-	expError := &internal.AlreadyExists{Type: "asset", Ident: name}
-	if diff := cmp.Diff(expError, alreadyExists); diff != "" {
-		t.Fatalf("error mismatch:\n%s", diff)
+	if diff := cmp.Diff(name, alreadyExists.name); diff != "" {
+		t.Fatalf("name mismatch:\n%s", diff)
 	}
 	if diff := cmp.Diff(1, len(storage.Assets)); diff != "" {
 		t.Fatalf("second create number of assets mismatch:\n%s", diff)

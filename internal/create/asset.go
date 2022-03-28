@@ -2,6 +2,7 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
@@ -23,6 +24,12 @@ var (
 	EmptyImageName = errors.New("empty image name")
 )
 
+type assetAlreadyExists struct{ name string }
+
+func (err *assetAlreadyExists) Error() string {
+	return fmt.Sprintf("asset '%s' already exists", err.name)
+}
+
 func Asset(storage AssetStorage) func(
 	internal.AssetName,
 	internal.Image,
@@ -37,7 +44,7 @@ func Asset(storage AssetStorage) func(
 		// Expect key not found
 		_, err := storage.Load(name)
 		if err == nil {
-			return &internal.AlreadyExists{Type: "asset", Ident: name.Unwrap()}
+			return &assetAlreadyExists{name: name.Unwrap()}
 		}
 		var notFound *internal.NotFound
 		if !errors.As(err, &notFound) {
