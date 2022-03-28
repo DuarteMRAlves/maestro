@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -18,13 +19,19 @@ func (s StageName) String() string {
 
 func NewStageName(name string) (StageName, error) {
 	if !isValidStageName(name) {
-		return StageName{}, &InvalidIdentifier{Type: "stage", Ident: name}
+		return StageName{}, &invalidStageName{name: name}
 	}
 	return StageName{val: name}, nil
 }
 
 func isValidStageName(name string) bool {
 	return nameRegExp.MatchString(name)
+}
+
+type invalidStageName struct{ name string }
+
+func (err *invalidStageName) Error() string {
+	return fmt.Sprintf("invalid stage name: '%s'", err.name)
 }
 
 type Service struct{ val string }

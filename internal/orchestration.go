@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -22,12 +23,17 @@ func NewOrchestrationName(name string) (OrchestrationName, error) {
 	if isValidOrchestrationName(name) {
 		return OrchestrationName{name}, nil
 	}
-	err := &InvalidIdentifier{Type: "orchestration", Ident: name}
-	return emptyOrchestrationName, err
+	return emptyOrchestrationName, &invalidOrchestrationName{name: name}
 }
 
 func isValidOrchestrationName(name string) bool {
 	return orchestrationNameReqExp.MatchString(name)
+}
+
+type invalidOrchestrationName struct{ name string }
+
+func (err *invalidOrchestrationName) Error() string {
+	return fmt.Sprintf("invalid orchestration name: '%s'", err.name)
 }
 
 type Orchestration struct {

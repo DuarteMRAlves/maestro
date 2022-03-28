@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -18,9 +19,15 @@ func (l LinkName) String() string {
 
 func NewLinkName(name string) (LinkName, error) {
 	if !isValidLinkName(name) {
-		return LinkName{}, &InvalidIdentifier{Type: "link", Ident: name}
+		return LinkName{}, &invalidLinkName{name: name}
 	}
 	return LinkName{val: name}, nil
+}
+
+type invalidLinkName struct{ name string }
+
+func (err *invalidLinkName) Error() string {
+	return fmt.Sprintf("invalid link name: '%s'", err.name)
 }
 
 func isValidLinkName(name string) bool {

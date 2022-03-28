@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -26,11 +27,17 @@ func NewAssetName(name string) (AssetName, error) {
 	if isValidAssetName(name) {
 		return AssetName{name}, nil
 	}
-	return emptyAssetName, &InvalidIdentifier{Type: "asset", Ident: name}
+	return emptyAssetName, &invalidAssetName{name: name}
 }
 
 func isValidAssetName(name string) bool {
 	return assetNameRegExp.MatchString(name)
+}
+
+type invalidAssetName struct{ name string }
+
+func (err *invalidAssetName) Error() string {
+	return fmt.Sprintf("invalid asset name: '%s'", err.name)
 }
 
 type Image struct{ val string }
