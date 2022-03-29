@@ -41,7 +41,7 @@ func TestCreateOrchestration_Err(t *testing.T) {
 	}{
 		"empty name": {
 			name:    createOrchestrationName(t, ""),
-			isError: EmptyOrchestrationName,
+			isError: emptyOrchestrationName,
 		},
 	}
 	for name, tc := range tests {

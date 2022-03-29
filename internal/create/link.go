@@ -20,10 +20,10 @@ type LinkStorage interface {
 }
 
 var (
-	EmptyLinkName        = errors.New("empty link name")
-	EmptySourceStage     = errors.New("empty source stage")
-	EmptyTargetStage     = errors.New("empty target stage")
-	EqualSourceAndTarget = errors.New("equal source and target stages")
+	emptyLinkName        = errors.New("empty link name")
+	emptySourceStage     = errors.New("empty source stage")
+	emptyTargetStage     = errors.New("empty target stage")
+	equalSourceAndTarget = errors.New("equal source and target stages")
 )
 
 type linkAlreadyExists struct{ name string }
@@ -66,21 +66,21 @@ func Link(
 		orchName internal.OrchestrationName,
 	) error {
 		if name.IsEmpty() {
-			return EmptyLinkName
+			return emptyLinkName
 		}
 
 		sourceStage := source.Stage()
 		if sourceStage.IsEmpty() {
-			return EmptySourceStage
+			return emptySourceStage
 		}
 
 		targetStage := target.Stage()
 		if targetStage.IsEmpty() {
-			return EmptyTargetStage
+			return emptyTargetStage
 		}
 
 		if orchName.IsEmpty() {
-			return EmptyOrchestrationName
+			return emptyOrchestrationName
 		}
 
 		_, err := linkStorage.Load(name)
@@ -115,7 +115,7 @@ func Link(
 		}
 
 		if sourceStage == targetStage {
-			return EqualSourceAndTarget
+			return equalSourceAndTarget
 		}
 
 		targetLinks, err := linksForTarget(linkStorage, targetStage, orch.Links()...)

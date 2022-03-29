@@ -19,7 +19,7 @@ type OrchestrationStorage interface {
 	OrchestrationLoader
 }
 
-var EmptyOrchestrationName = errors.New("empty orchestration name")
+var emptyOrchestrationName = errors.New("empty orchestration name")
 
 type orchestrationAlreadyExists struct{ name string }
 
@@ -30,7 +30,7 @@ func (err *orchestrationAlreadyExists) Error() string {
 func Orchestration(storage OrchestrationStorage) func(internal.OrchestrationName) error {
 	return func(name internal.OrchestrationName) error {
 		if name.IsEmpty() {
-			return EmptyOrchestrationName
+			return emptyOrchestrationName
 		}
 
 		_, err := storage.Load(name)

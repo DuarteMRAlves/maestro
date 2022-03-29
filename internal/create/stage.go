@@ -20,8 +20,8 @@ type StageStorage interface {
 }
 
 var (
-	EmptyStageName = fmt.Errorf("empty stage name")
-	EmptyAddress   = fmt.Errorf("empty address")
+	emptyStageName = errors.New("empty stage name")
+	emptyAddress   = errors.New("empty address")
 )
 
 type stageAlreadyExists struct{ name string }
@@ -44,15 +44,15 @@ func Stage(
 		orchName internal.OrchestrationName,
 	) error {
 		if name.IsEmpty() {
-			return EmptyStageName
+			return emptyStageName
 		}
 		addr := ctx.Address()
 		if addr.IsEmpty() {
-			return EmptyAddress
+			return emptyAddress
 		}
 
 		if orchName.IsEmpty() {
-			return EmptyOrchestrationName
+			return emptyOrchestrationName
 		}
 
 		_, err := stageStorage.Load(name)
