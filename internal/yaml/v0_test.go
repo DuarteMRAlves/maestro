@@ -87,12 +87,12 @@ func TestReadV0_Err(t *testing.T) {
 		"unknown fields": {
 			file: "../../test/data/unit/read/v0/err_unk_file_tag.yml",
 			verifyErr: func(t *testing.T, err error) {
-				var actual *UnknownFields
+				var actual *unknownFields
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *UnknownFields, got %s"
+					format := "Wrong error type: expected *unknownFields, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &UnknownFields{
+				expected := &unknownFields{
 					Fields: []string{"unknown_base", "unknown_link", "unknown_stage"},
 				}
 				if diff := cmp.Diff(expected, actual); diff != "" {
@@ -103,12 +103,12 @@ func TestReadV0_Err(t *testing.T) {
 		"missing required stage field": {
 			file: "../../test/data/unit/read/v0/err_missing_req_stage_field.yml",
 			verifyErr: func(t *testing.T, err error) {
-				var actual *MissingRequiredField
+				var actual *missingRequiredField
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					format := "Wrong error type: expected *missingRequiredField, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &MissingRequiredField{Field: "host"}
+				expected := &missingRequiredField{Field: "host"}
 				if diff := cmp.Diff(expected, actual); diff != "" {
 					t.Fatalf("error mismatch:\n%s", diff)
 				}
@@ -117,12 +117,12 @@ func TestReadV0_Err(t *testing.T) {
 		"missing required link field": {
 			file: "../../test/data/unit/read/v0/err_missing_req_link_field.yml",
 			verifyErr: func(t *testing.T, err error) {
-				var actual *MissingRequiredField
+				var actual *missingRequiredField
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					format := "Wrong error type: expected *missingRequiredField, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &MissingRequiredField{Field: "stage"}
+				expected := &missingRequiredField{Field: "stage"}
 				if diff := cmp.Diff(expected, actual); diff != "" {
 					t.Fatalf("error mismatch:\n%s", diff)
 				}

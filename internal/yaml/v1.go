@@ -25,11 +25,11 @@ var (
 	EmptySpec   = errors.New("empty spec")
 )
 
-type UnknownKind struct {
+type unknownKind struct {
 	Kind string
 }
 
-func (err *UnknownKind) Error() string {
+func (err *unknownKind) Error() string {
 	return fmt.Sprintf("unknown kind '%s'", err.Kind)
 }
 
@@ -226,7 +226,7 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	case assetKind:
 		r.Spec = new(v1AssetSpec)
 	default:
-		return &UnknownKind{Kind: r.Kind}
+		return &unknownKind{Kind: r.Kind}
 	}
 	if obj.Spec.unmarshal == nil {
 		return EmptySpec
@@ -281,7 +281,7 @@ func validateField(
 			switch opt {
 			case "required":
 				if fieldValue.IsZero() {
-					return &MissingRequiredField{Field: yamlName(objTypeField)}
+					return &missingRequiredField{Field: yamlName(objTypeField)}
 				}
 			}
 		}
