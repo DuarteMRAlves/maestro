@@ -110,8 +110,7 @@ func findService(
 				return search, nil
 			}
 		}
-		err := &internal.NotFound{Type: "service", Ident: search.Unwrap()}
-		return internal.Service{}, err
+		return internal.Service{}, &serviceNotFound{srv: search.Unwrap()}
 	}
 }
 
@@ -141,7 +140,7 @@ func (m *ReflectionMethodLoader) resolveService(
 			err = fmt.Errorf("resolve service %s: %w", service.Unwrap(), err)
 			return nil, err
 		case isElementNotFoundErr(err):
-			err := &internal.NotFound{Type: "service", Ident: service.Unwrap()}
+			err := &serviceNotFound{srv: service.Unwrap()}
 			return nil, fmt.Errorf("resolve service: %w", err)
 		case isProtocolError(err):
 			err := fmt.Errorf("resolve service %s: %w", service.Unwrap(), err)
@@ -185,7 +184,6 @@ func findMethod(
 				return newUnaryMethodFromDescriptor(m), nil
 			}
 		}
-		err := &internal.NotFound{Type: "method", Ident: search.Unwrap()}
-		return unaryMethod{}, err
+		return unaryMethod{}, &methodNotFound{meth: search.Unwrap()}
 	}
 }

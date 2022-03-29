@@ -87,8 +87,8 @@ func Link(
 		if err == nil {
 			return &linkAlreadyExists{name: name.Unwrap()}
 		}
-		var notFound *internal.NotFound
-		if !errors.As(err, &notFound) {
+		var nf interface{ NotFound() }
+		if !errors.As(err, &nf) {
 			return err
 		}
 

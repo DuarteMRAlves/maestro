@@ -1,6 +1,9 @@
 package mapstore
 
-import "github.com/DuarteMRAlves/maestro/internal"
+import (
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
+)
 
 type Assets map[internal.AssetName]internal.Asset
 
@@ -12,8 +15,15 @@ func (s Assets) Save(o internal.Asset) error {
 func (s Assets) Load(n internal.AssetName) (internal.Asset, error) {
 	o, exists := s[n]
 	if !exists {
-		err := &internal.NotFound{Type: "asset", Ident: n.Unwrap()}
-		return internal.Asset{}, err
+		return internal.Asset{}, &assetNotFound{name: n.Unwrap()}
 	}
 	return o, nil
+}
+
+type assetNotFound struct{ name string }
+
+func (err *assetNotFound) NotFound() {}
+
+func (err *assetNotFound) Error() string {
+	return fmt.Sprintf("asset not found: %s", err.name)
 }

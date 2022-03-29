@@ -29,7 +29,10 @@ func (d messageDescriptor) GetField(name internal.MessageField) (
 ) {
 	field := d.desc.FindFieldByName(name.Unwrap())
 	if field == nil {
-		return nil, &internal.NotFound{Type: "field", Ident: name.Unwrap()}
+		err := &fieldNotFound{
+			msgType: d.desc.GetFullyQualifiedName(), field: name.Unwrap(),
+		}
+		return nil, err
 	}
 	if field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 		return nil, &fieldNotMessage{

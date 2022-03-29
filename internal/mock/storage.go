@@ -17,8 +17,7 @@ func (m AssetStorage) Load(name internal.AssetName) (
 ) {
 	asset, exists := m.Assets[name]
 	if !exists {
-		err := &internal.NotFound{Type: "asset", Ident: name.Unwrap()}
-		return internal.Asset{}, err
+		return internal.Asset{}, &notFound{typ: "asset", name: name.Unwrap()}
 	}
 	return asset, nil
 }
@@ -38,7 +37,7 @@ func (m OrchestrationStorage) Load(name internal.OrchestrationName) (
 ) {
 	o, exists := m.Orchs[name]
 	if !exists {
-		err := &internal.NotFound{Type: "orchestration", Ident: name.Unwrap()}
+		err := &notFound{typ: "orchestration", name: name.Unwrap()}
 		return internal.Orchestration{}, err
 	}
 	return o, nil
@@ -59,8 +58,7 @@ func (m StageStorage) Load(name internal.StageName) (
 ) {
 	s, exists := m.Stages[name]
 	if !exists {
-		err := &internal.NotFound{Type: "stage", Ident: name.Unwrap()}
-		return internal.Stage{}, err
+		return internal.Stage{}, &notFound{typ: "stage", name: name.Unwrap()}
 	}
 	return s, nil
 }
@@ -77,8 +75,7 @@ func (m LinkStorage) Save(l internal.Link) error {
 func (m LinkStorage) Load(name internal.LinkName) (internal.Link, error) {
 	l, exists := m.Links[name]
 	if !exists {
-		err := &internal.NotFound{Type: "link", Ident: name.Unwrap()}
-		return internal.Link{}, err
+		return internal.Link{}, &notFound{typ: "link", name: name.Unwrap()}
 	}
 	return l, nil
 }

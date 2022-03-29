@@ -316,13 +316,19 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
 	}
-	var notFound *internal.NotFound
-	if !errors.As(err, &notFound) {
-		format := "Wrong error type: expected *internal.NotFound, got %s"
-		t.Fatalf(format, reflect.TypeOf(err))
+
+	var notFoundErr interface{ NotFound() }
+	if !errors.As(err, &notFoundErr) {
+		t.Fatalf("error does not implement not found")
 	}
-	expError := &internal.NotFound{Type: "service", Ident: serviceName.Unwrap()}
-	if diff := cmp.Diff(expError, notFound); diff != "" {
+	var nf *serviceNotFound
+	if !errors.As(err, &nf) {
+		format := "Wrong error type: expected %s, got %s"
+		t.Fatalf(format, reflect.TypeOf(nf), reflect.TypeOf(err))
+	}
+	expError := &serviceNotFound{srv: serviceName.Unwrap()}
+	cmpOpts := cmp.AllowUnexported(serviceNotFound{})
+	if diff := cmp.Diff(expError, nf, cmpOpts); diff != "" {
 		t.Fatalf("error mismatch:\n%s", diff)
 	}
 	if serv != nil {

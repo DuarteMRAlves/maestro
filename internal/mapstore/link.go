@@ -1,6 +1,9 @@
 package mapstore
 
-import "github.com/DuarteMRAlves/maestro/internal"
+import (
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
+)
 
 type Links map[internal.LinkName]internal.Link
 
@@ -12,8 +15,15 @@ func (s Links) Save(o internal.Link) error {
 func (s Links) Load(n internal.LinkName) (internal.Link, error) {
 	o, exists := s[n]
 	if !exists {
-		err := &internal.NotFound{Type: "link", Ident: n.Unwrap()}
-		return internal.Link{}, err
+		return internal.Link{}, &linkNotFound{name: n.Unwrap()}
 	}
 	return o, nil
+}
+
+type linkNotFound struct{ name string }
+
+func (err *linkNotFound) NotFound() {}
+
+func (err *linkNotFound) Error() string {
+	return fmt.Sprintf("link not found: %s", err.name)
 }

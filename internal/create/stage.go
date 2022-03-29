@@ -59,8 +59,8 @@ func Stage(
 		if err == nil {
 			return &stageAlreadyExists{name: name.Unwrap()}
 		}
-		var notFound *internal.NotFound
-		if !errors.As(err, &notFound) {
+		var nf interface{ NotFound() }
+		if !errors.As(err, &nf) {
 			return err
 		}
 
