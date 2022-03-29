@@ -46,8 +46,8 @@ func Asset(storage AssetStorage) func(
 		if err == nil {
 			return &assetAlreadyExists{name: name.Unwrap()}
 		}
-		var notFound *internal.NotFound
-		if !errors.As(err, &notFound) {
+		var nf interface{ NotFound() }
+		if !errors.As(err, &nf) {
 			return err
 		}
 		asset := internal.NewAsset(name, image)

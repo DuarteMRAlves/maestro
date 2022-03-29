@@ -39,8 +39,7 @@ func (ml MethodLoader) Load(methodCtx internal.MethodContext) (
 			methodCtx.Service(),
 			methodCtx.Method(),
 		)
-		err := &internal.NotFound{Type: "stage", Ident: ident}
-		return nil, err
+		return nil, &notFound{typ: "stage", name: ident}
 	}
 	return m, nil
 }

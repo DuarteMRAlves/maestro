@@ -37,8 +37,8 @@ func Orchestration(storage OrchestrationStorage) func(internal.OrchestrationName
 		if err == nil {
 			return &orchestrationAlreadyExists{name: name.Unwrap()}
 		}
-		var notFound *internal.NotFound
-		if !errors.As(err, &notFound) {
+		var nf interface{ NotFound() }
+		if !errors.As(err, &nf) {
 			return err
 		}
 

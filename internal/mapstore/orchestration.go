@@ -1,6 +1,9 @@
 package mapstore
 
-import "github.com/DuarteMRAlves/maestro/internal"
+import (
+	"fmt"
+	"github.com/DuarteMRAlves/maestro/internal"
+)
 
 type Orchestrations map[internal.OrchestrationName]internal.Orchestration
 
@@ -14,8 +17,15 @@ func (s Orchestrations) Load(
 ) (internal.Orchestration, error) {
 	o, exists := s[n]
 	if !exists {
-		err := &internal.NotFound{Type: "orchestration", Ident: n.Unwrap()}
-		return internal.Orchestration{}, err
+		return internal.Orchestration{}, &orchestrationNotFound{name: n.Unwrap()}
 	}
 	return o, nil
+}
+
+type orchestrationNotFound struct{ name string }
+
+func (err *orchestrationNotFound) NotFound() {}
+
+func (err *orchestrationNotFound) Error() string {
+	return fmt.Sprintf("orchestration not found: %s", err.name)
 }
