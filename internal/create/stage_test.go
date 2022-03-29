@@ -123,7 +123,7 @@ func TestCreateStage_Err(t *testing.T) {
 				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
-			isError:  EmptyStageName,
+			isError:  emptyStageName,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -139,7 +139,7 @@ func TestCreateStage_Err(t *testing.T) {
 				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, "orchestration"),
-			isError:  EmptyAddress,
+			isError:  emptyAddress,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",
@@ -155,7 +155,7 @@ func TestCreateStage_Err(t *testing.T) {
 				internal.Method{},
 			),
 			orchName: createOrchestrationName(t, ""),
-			isError:  EmptyOrchestrationName,
+			isError:  emptyOrchestrationName,
 			loadOrchestration: createOrchestration(
 				t,
 				"orchestration",

@@ -149,7 +149,7 @@ func TestCreateLink_Err(t *testing.T) {
 				internal.NewMessageField(""),
 			),
 			orchName: createOrchestrationName(t, "orch"),
-			expErr:   EmptyLinkName},
+			expErr:   emptyLinkName},
 		"empty source stage": {
 			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
@@ -161,7 +161,7 @@ func TestCreateLink_Err(t *testing.T) {
 				internal.NewMessageField(""),
 			),
 			orchName: createOrchestrationName(t, "orch"),
-			expErr:   EmptySourceStage,
+			expErr:   emptySourceStage,
 		},
 		"empty target stage": {
 			name: createLinkName(t, "some-name"),
@@ -174,7 +174,7 @@ func TestCreateLink_Err(t *testing.T) {
 				internal.NewMessageField(""),
 			),
 			orchName: createOrchestrationName(t, "orch"),
-			expErr:   EmptyTargetStage,
+			expErr:   emptyTargetStage,
 		},
 		"empty orchestration": {
 			name: createLinkName(t, "some-name"),
@@ -186,7 +186,7 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField(""),
 			),
-			expErr: EmptyOrchestrationName,
+			expErr: emptyOrchestrationName,
 		},
 		"equal source and target": {
 			name: createLinkName(t, "some-name"),
@@ -199,7 +199,7 @@ func TestCreateLink_Err(t *testing.T) {
 				internal.NewMessageField(""),
 			),
 			orchName: createOrchestrationName(t, "orch"),
-			expErr:   EqualSourceAndTarget,
+			expErr:   equalSourceAndTarget,
 		},
 	}
 	for name, tc := range tests {

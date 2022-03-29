@@ -56,11 +56,11 @@ func TestCreateAsset_Err(t *testing.T) {
 		image   internal.Image
 		isError error
 	}{
-		"empty name": {name: createAssetName(t, ""), isError: EmptyAssetName},
+		"empty name": {name: createAssetName(t, ""), isError: emptyAssetName},
 		"empty image": {
 			name:    createAssetName(t, "some-name"),
 			image:   internal.NewImage(""),
-			isError: EmptyImageName,
+			isError: emptyImageName,
 		},
 	}
 	for name, tc := range tests {

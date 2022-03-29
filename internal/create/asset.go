@@ -20,8 +20,8 @@ type AssetStorage interface {
 }
 
 var (
-	EmptyAssetName = errors.New("empty asset name")
-	EmptyImageName = errors.New("empty image name")
+	emptyAssetName = errors.New("empty asset name")
+	emptyImageName = errors.New("empty image name")
 )
 
 type assetAlreadyExists struct{ name string }
@@ -36,10 +36,10 @@ func Asset(storage AssetStorage) func(
 ) error {
 	return func(name internal.AssetName, image internal.Image) error {
 		if name.IsEmpty() {
-			return EmptyAssetName
+			return emptyAssetName
 		}
 		if image.IsEmpty() {
-			return EmptyImageName
+			return emptyImageName
 		}
 		// Expect key not found
 		_, err := storage.Load(name)
