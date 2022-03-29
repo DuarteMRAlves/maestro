@@ -32,7 +32,7 @@ func (d messageDescriptor) GetField(name internal.MessageField) (
 		return nil, &internal.NotFound{Type: "field", Ident: name.Unwrap()}
 	}
 	if field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-		return nil, &FieldNotMessage{
+		return nil, &fieldNotMessage{
 			MsgType: d.desc.GetFullyQualifiedName(),
 			Field:   name.Unwrap(),
 		}

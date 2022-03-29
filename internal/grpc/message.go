@@ -45,7 +45,7 @@ func (dm *message) GetField(name internal.MessageField) (
 	}
 	msg, ok := field.(proto.Message)
 	if !ok {
-		return nil, &FieldNotMessage{
+		return nil, &fieldNotMessage{
 			MsgType: dm.dynMsg.XXX_MessageName(),
 			Field:   name.Unwrap(),
 		}

@@ -32,21 +32,21 @@ func (err *linkAlreadyExists) Error() string {
 	return fmt.Sprintf("link '%s' already exists", err.name)
 }
 
-type StageNotInOrchestration struct {
+type stageNotInOrchestration struct {
 	Orch  internal.OrchestrationName
 	Stage internal.StageName
 }
 
-func (err *StageNotInOrchestration) Error() string {
+func (err *stageNotInOrchestration) Error() string {
 	format := "stage '%s' not found in orchestration '%s'."
 	return fmt.Sprintf(format, err.Stage, err.Orch)
 }
 
-type IncompatibleLinks struct {
+type incompatibleLinks struct {
 	A, B string
 }
 
-func (err *IncompatibleLinks) Error() string {
+func (err *incompatibleLinks) Error() string {
 	return fmt.Sprintf("incompatible links: %s, %s", err.A, err.B)
 }
 
@@ -108,10 +108,10 @@ func Link(
 		}
 
 		if !existsStage(sourceStage, orch.Stages()...) {
-			return &StageNotInOrchestration{Orch: orchName, Stage: sourceStage}
+			return &stageNotInOrchestration{Orch: orchName, Stage: sourceStage}
 		}
 		if !existsStage(targetStage, orch.Stages()...) {
-			return &StageNotInOrchestration{Orch: orchName, Stage: targetStage}
+			return &stageNotInOrchestration{Orch: orchName, Stage: targetStage}
 		}
 
 		if sourceStage == targetStage {
@@ -130,7 +130,7 @@ func Link(
 			if target.Field().IsEmpty() ||
 				l.Target().Field().IsEmpty() ||
 				target.Field().Unwrap() == l.Target().Field().Unwrap() {
-				return &IncompatibleLinks{A: name.Unwrap(), B: l.Name().Unwrap()}
+				return &incompatibleLinks{A: name.Unwrap(), B: l.Name().Unwrap()}
 			}
 		}
 

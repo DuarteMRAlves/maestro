@@ -405,12 +405,12 @@ func TestStageNotInOrchestration_Error(t *testing.T) {
 				t.Fatalf("expected error but got nil")
 			}
 
-			var concreteErr *StageNotInOrchestration
+			var concreteErr *stageNotInOrchestration
 			if !errors.As(err, &concreteErr) {
-				format := "Wrong error type: expected *StageNotInOrchestration, got %s"
+				format := "Wrong error type: expected *stageNotInOrchestration, got %s"
 				t.Fatalf(format, reflect.TypeOf(err))
 			}
-			expErr := &StageNotInOrchestration{Stage: tc.expStage, Orch: tc.orchName}
+			expErr := &stageNotInOrchestration{Stage: tc.expStage, Orch: tc.orchName}
 			cmpOpts := cmp.AllowUnexported(
 				internal.StageName{}, internal.OrchestrationName{},
 			)
@@ -516,15 +516,15 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 			if err == nil {
 				t.Fatalf("second create expected create error but got nil")
 			}
-			var incompatibleLinks *IncompatibleLinks
-			if !errors.As(err, &incompatibleLinks) {
-				format := "second create wrong error type: expected *IncompatibleLinks, got %s"
-				t.Fatalf(format, reflect.TypeOf(err))
+			var incompatibleErr *incompatibleLinks
+			if !errors.As(err, &incompatibleErr) {
+				format := "second create wrong error type: expected %s, got %s"
+				t.Fatalf(format, reflect.TypeOf(incompatibleErr), reflect.TypeOf(err))
 			}
-			expError := &IncompatibleLinks{
+			expError := &incompatibleLinks{
 				A: tc.second.Name().Unwrap(), B: tc.first.Name().Unwrap(),
 			}
-			if diff := cmp.Diff(expError, incompatibleLinks); diff != "" {
+			if diff := cmp.Diff(expError, incompatibleErr); diff != "" {
 				t.Fatalf("second create error mismatch:\n%s", diff)
 			}
 

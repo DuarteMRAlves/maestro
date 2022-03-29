@@ -171,12 +171,12 @@ func TestReadV1_Err(t *testing.T) {
 		"unknown kind": {
 			files: []string{"../../test/data/unit/read/v1/err_unknown_kind.yml"},
 			verifyErr: func(t *testing.T, err error) {
-				var actual *UnknownKind
+				var actual *unknownKind
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *UnknownKind, got %s"
+					format := "Wrong error type: expected *unknownKind, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &UnknownKind{Kind: "unknown-kind"}
+				expected := &unknownKind{Kind: "unknown-kind"}
 				if diff := cmp.Diff(expected, actual); diff != "" {
 					t.Fatalf("error mismatch:\n%s", diff)
 				}
@@ -185,12 +185,12 @@ func TestReadV1_Err(t *testing.T) {
 		"missing required field": {
 			files: []string{"../../test/data/unit/read/v1/err_missing_req_field.yml"},
 			verifyErr: func(t *testing.T, err error) {
-				var actual *MissingRequiredField
+				var actual *missingRequiredField
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *MissingRequiredField, got %s"
+					format := "Wrong error type: expected *missingRequiredField, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &MissingRequiredField{Field: "address"}
+				expected := &missingRequiredField{Field: "address"}
 				if diff := cmp.Diff(expected, actual); diff != "" {
 					t.Fatalf("error mismatch:\n%s", diff)
 				}
@@ -199,12 +199,12 @@ func TestReadV1_Err(t *testing.T) {
 		"unknown fields": {
 			files: []string{"../../test/data/unit/read/v1/err_unknown_fields.yml"},
 			verifyErr: func(t *testing.T, err error) {
-				var actual *UnknownFields
+				var actual *unknownFields
 				if !errors.As(err, &actual) {
-					format := "Wrong error type: expected *UnknownFields, got %s"
+					format := "Wrong error type: expected *unknownFields, got %s"
 					t.Fatalf(format, reflect.TypeOf(err))
 				}
-				expected := &UnknownFields{Fields: []string{"unknown_1", "unknown_2"}}
+				expected := &unknownFields{Fields: []string{"unknown_1", "unknown_2"}}
 				if diff := cmp.Diff(expected, actual); diff != "" {
 					t.Fatalf("error mismatch:\n%s", diff)
 				}

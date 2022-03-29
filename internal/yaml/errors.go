@@ -8,38 +8,36 @@ import (
 	"strings"
 )
 
-type MissingRequiredField struct {
+type missingRequiredField struct {
 	Field string
 }
 
-func (err *MissingRequiredField) Error() string {
+func (err *missingRequiredField) Error() string {
 	return fmt.Sprintf("missing required field '%s'", err.Field)
 }
 
-type UnknownFields struct {
+type unknownFields struct {
 	Fields []string
 }
 
-func (err *UnknownFields) Error() string {
+func (err *unknownFields) Error() string {
 	return fmt.Sprintf("unknown fields '%s'", strings.Join(err.Fields, ","))
 }
 
 func typeErrorToError(typeErr *yaml.TypeError) error {
-	var unknownFields []string
-	unknownRegex := regexp.MustCompile(
+	var unkFields []string
+	unkRegex := regexp.MustCompile(
 		`line \d+: field (?P<field>[\w\W_]+) not found in type [\w\W_.]+`,
 	)
 	for _, errMsg := range typeErr.Errors {
-		unknownMatch := unknownRegex.FindStringSubmatch(errMsg)
-		if len(unknownMatch) > 0 {
-			unknownFields = append(
-				unknownFields, unknownMatch[unknownRegex.SubexpIndex("field")],
-			)
+		match := unkRegex.FindStringSubmatch(errMsg)
+		if len(match) > 0 {
+			unkFields = append(unkFields, match[unkRegex.SubexpIndex("field")])
 		}
 	}
-	if len(unknownFields) > 0 {
-		sort.Strings(unknownFields)
-		return &UnknownFields{Fields: unknownFields}
+	if len(unkFields) > 0 {
+		sort.Strings(unkFields)
+		return &unknownFields{Fields: unkFields}
 	}
 	return typeErr
 }

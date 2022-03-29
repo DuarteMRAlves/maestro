@@ -89,10 +89,10 @@ func ReadV0(file string) (ResourceSet, error) {
 
 func valV0FileSpec(spec v0FileSpec) error {
 	if spec.Stages == nil {
-		return &MissingRequiredField{Field: "stages"}
+		return &missingRequiredField{Field: "stages"}
 	}
 	if spec.Links == nil {
-		return &MissingRequiredField{Field: "links"}
+		return &missingRequiredField{Field: "links"}
 	}
 	for _, s := range spec.Stages {
 		if err := valV0StageSpec(s); err != nil {
@@ -109,13 +109,13 @@ func valV0FileSpec(spec v0FileSpec) error {
 
 func valV0StageSpec(spec v0StageSpec) error {
 	if spec.Name == "" {
-		return &MissingRequiredField{Field: "name"}
+		return &missingRequiredField{Field: "name"}
 	}
 	if spec.Host == "" {
-		return &MissingRequiredField{Field: "host"}
+		return &missingRequiredField{Field: "host"}
 	}
 	if spec.Port == 0 {
-		return &MissingRequiredField{Field: "port"}
+		return &missingRequiredField{Field: "port"}
 	}
 	return nil
 }
@@ -132,7 +132,7 @@ func valV0LinkSpec(spec v0LinkSpec) error {
 
 func valV0LinkEndpointSpec(spec v0LinkEndpoint) error {
 	if spec.Stage == "" {
-		return &MissingRequiredField{Field: "stage"}
+		return &missingRequiredField{Field: "stage"}
 	}
 	return nil
 }
