@@ -36,10 +36,30 @@ func (err *invalidOrchestrationName) Error() string {
 	return fmt.Sprintf("invalid orchestration name: '%s'", err.name)
 }
 
+type ExecutionMode int
+
+const (
+	// OfflineExecution is the default execution mode.
+	OfflineExecution ExecutionMode = iota
+	OnlineExecution
+)
+
+func (e ExecutionMode) String() string {
+	switch e {
+	case OfflineExecution:
+		return "OfflineExecution"
+	case OnlineExecution:
+		return "OnlineExecution"
+	default:
+		return "UnknownExecutionMode"
+	}
+}
+
 type Orchestration struct {
 	name   OrchestrationName
 	stages []StageName
 	links  []LinkName
+	mode   ExecutionMode
 }
 
 func (o Orchestration) Name() OrchestrationName {
@@ -52,6 +72,10 @@ func (o Orchestration) Stages() []StageName {
 
 func (o Orchestration) Links() []LinkName {
 	return o.links
+}
+
+func (o Orchestration) Mode() ExecutionMode {
+	return o.mode
 }
 
 func NewOrchestration(
