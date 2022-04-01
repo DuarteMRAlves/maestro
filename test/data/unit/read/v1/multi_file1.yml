@@ -1,7 +1,7 @@
-kind: orchestration
+kind: pipeline
 spec:
-  name: orchestration-3
+  name: pipeline-3
 ---
-kind: orchestration
+kind: pipeline
 spec:
-  name: orchestration-4
+  name: pipeline-4

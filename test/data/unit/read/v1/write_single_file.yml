@@ -1,10 +1,10 @@
-kind: orchestration
+kind: pipeline
 spec:
-  name: orchestration-2
+  name: pipeline-2
 ---
-kind: orchestration
+kind: pipeline
 spec:
-  name: orchestration-1
+  name: pipeline-1
 ---
 kind: stage
 spec:
@@ -12,28 +12,28 @@ spec:
   address: address-1
   service: Service1
   method: Method1
-  orchestration: orchestration-1
+  pipeline: pipeline-1
 ---
 kind: stage
 spec:
   name: stage-2
   address: address-2
   service: Service2
-  orchestration: orchestration-1
+  pipeline: pipeline-1
 ---
 kind: stage
 spec:
   name: stage-3
   address: address-3
   method: Method3
-  orchestration: orchestration-1
+  pipeline: pipeline-1
 ---
 kind: link
 spec:
   name: link-stage-2-stage-1
   source_stage: stage-2
   target_stage: stage-1
-  orchestration: orchestration-1
+  pipeline: pipeline-1
 ---
 kind: link
 spec:
@@ -42,7 +42,7 @@ spec:
   source_field: Field1
   target_stage: stage-2
   target_field: Field2
-  orchestration: orchestration-1
+  pipeline: pipeline-1
 ---
 kind: asset
 spec:

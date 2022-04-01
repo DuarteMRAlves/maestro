@@ -28,11 +28,11 @@ const (
 )
 
 type RunOpts struct {
-	files    []string
-	orchName string
-	v0       bool
-	v1       bool
-	verbose  bool
+	files        []string
+	pipelineName string
+	v0           bool
+	v1           bool
+	verbose      bool
 
 	outWriter io.Writer
 	version   configVersion
@@ -43,13 +43,13 @@ func NewRunCmd() *cobra.Command {
 	var opts RunOpts
 
 	cmd := cobra.Command{
-		Use:                   "run [OPTIONS] [ORCHESTRATION]",
+		Use:                   "run [OPTIONS] [PIPELINE]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Execute a single orchestration",
-		Long: `Execute a single orchestration from configuration files.
+		Short:                 "Execute a single pipeline",
+		Long: `Execute a single pipeline from configuration files.
 
-If no orchestration is specified, the configuration files should only contain
-a single orchestration, that will be executed.`,
+If no pipeline is specified, the configuration files should only contain
+a single pipeline, that will be executed.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			if err = opts.complete(cmd, args); err != nil {
@@ -82,7 +82,7 @@ func (opts *RunOpts) complete(cmd *cobra.Command, args []string) error {
 		return errors.New("too many arguments: expected at most one positional argument")
 	}
 	if len(args) == 1 {
-		opts.orchName = args[0]
+		opts.pipelineName = args[0]
 	}
 	if opts.v0 && opts.v1 {
 		return errors.New("v0 and v1 options are incompatible")
@@ -128,16 +128,16 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	orchStore := make(mapstore.Orchestrations, len(resources.Orchestrations))
+	pipelineStore := make(mapstore.Pipelines, len(resources.Pipelines))
 	stageStore := make(mapstore.Stages, len(resources.Stages))
 	linkStore := make(mapstore.Links, len(resources.Links))
 
-	createOrchestration := create.Orchestration(orchStore)
-	createStage := create.Stage(stageStore, orchStore)
-	createLink := create.Link(linkStore, stageStore, orchStore)
+	createPipeline := create.Pipeline(pipelineStore)
+	createStage := create.Stage(stageStore, pipelineStore)
+	createLink := create.Link(linkStore, stageStore, pipelineStore)
 
-	for _, o := range resources.Orchestrations {
-		if err := createOrchestration(o.Name); err != nil {
+	for _, o := range resources.Pipelines {
+		if err := createPipeline(o.Name); err != nil {
 			return err
 		}
 	}
@@ -145,36 +145,36 @@ func (opts *RunOpts) run() error {
 		m := internal.NewMethodContext(
 			s.Method.Address, s.Method.Service, s.Method.Method,
 		)
-		if err := createStage(s.Name, m, s.Orchestration); err != nil {
+		if err := createStage(s.Name, m, s.Pipeline); err != nil {
 			return err
 		}
 	}
 	for _, l := range resources.Links {
 		s := internal.NewLinkEndpoint(l.Source.Stage, l.Source.Field)
 		t := internal.NewLinkEndpoint(l.Target.Stage, l.Target.Field)
-		if err := createLink(l.Name, s, t, l.Orchestration); err != nil {
+		if err := createLink(l.Name, s, t, l.Pipeline); err != nil {
 			return err
 		}
 	}
 
-	availableOrchs := arrays.Map(
-		func(o yaml.Orchestration) internal.OrchestrationName { return o.Name },
-		resources.Orchestrations...,
+	availablePipelines := arrays.Map(
+		func(o yaml.Pipeline) internal.PipelineName { return o.Name },
+		resources.Pipelines...,
 	)
 
-	orchName, err := opts.orchToRun(availableOrchs...)
+	pipelineName, err := opts.pipelineToRun(availablePipelines...)
 	if err != nil {
 		return err
 	}
 
-	orch, err := orchStore.Load(orchName)
+	pipeline, err := pipelineStore.Load(pipelineName)
 	if err != nil {
 		return err
 	}
 
 	r := grpc.NewReflectionMethodLoader(5*time.Minute, backoff, opts.logger)
 	b := execute.NewBuilder(stageStore, linkStore, r, opts.logger)
-	execution, err := b(orch)
+	execution, err := b(pipeline)
 	if err != nil {
 		return err
 	}
@@ -195,28 +195,28 @@ func (opts *RunOpts) run() error {
 	return err
 }
 
-func (opts *RunOpts) orchToRun(
-	available ...internal.OrchestrationName,
-) (internal.OrchestrationName, error) {
-	if opts.orchName != "" {
-		pred := func(v internal.OrchestrationName) bool {
-			return v.Unwrap() == opts.orchName
+func (opts *RunOpts) pipelineToRun(
+	available ...internal.PipelineName,
+) (internal.PipelineName, error) {
+	if opts.pipelineName != "" {
+		pred := func(v internal.PipelineName) bool {
+			return v.Unwrap() == opts.pipelineName
 		}
 		available = arrays.Filter(pred, available...)
 	}
 	switch len(available) {
 	case 0:
 		var err error
-		if opts.orchName != "" {
-			err = fmt.Errorf("orchestration %s not found", opts.orchName)
+		if opts.pipelineName != "" {
+			err = fmt.Errorf("pipeline %s not found", opts.pipelineName)
 		} else {
-			err = errors.New("no orchestrations defined")
+			err = errors.New("no pipelines defined")
 		}
-		return internal.OrchestrationName{}, err
+		return internal.PipelineName{}, err
 	case 1:
 		return available[0], nil
 	default:
-		err := fmt.Errorf("only one orchestration can be executed but found %s", available)
-		return internal.OrchestrationName{}, err
+		err := fmt.Errorf("only one pipeline can be executed but found %s", available)
+		return internal.PipelineName{}, err
 	}
 }

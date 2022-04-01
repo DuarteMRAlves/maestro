@@ -12,14 +12,14 @@ import (
 
 func TestCreateLink(t *testing.T) {
 	tests := map[string]struct {
-		name              internal.LinkName
-		source            internal.LinkEndpoint
-		target            internal.LinkEndpoint
-		orchName          internal.OrchestrationName
-		expLink           internal.Link
-		loadOrchestration internal.Orchestration
-		expOrch           internal.Orchestration
-		storedStages      []internal.Stage
+		name         internal.LinkName
+		source       internal.LinkEndpoint
+		target       internal.LinkEndpoint
+		pipelineName internal.PipelineName
+		expLink      internal.Link
+		loadPipeline internal.Pipeline
+		expPipeline  internal.Pipeline
+		storedStages []internal.Stage
 	}{
 		"required fields": {
 			name: createLinkName(t, "some-name"),
@@ -31,21 +31,21 @@ func TestCreateLink(t *testing.T) {
 				createStageName(t, "target"),
 				internal.MessageField{},
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
+			pipelineName: createPipelineName(t, "pipeline"),
 			expLink: createLink(
 				t,
 				"some-name",
 				true,
 			),
-			loadOrchestration: createOrchestration(
+			loadPipeline: createPipeline(
 				t,
-				"orchestration",
+				"pipeline",
 				[]string{"source", "target"},
 				[]string{},
 			),
-			expOrch: createOrchestration(
+			expPipeline: createPipeline(
 				t,
-				"orchestration",
+				"pipeline",
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
@@ -64,17 +64,17 @@ func TestCreateLink(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField("target-field"),
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			expLink:  createLink(t, "some-name", false),
-			loadOrchestration: createOrchestration(
+			pipelineName: createPipelineName(t, "pipeline"),
+			expLink:      createLink(t, "some-name", false),
+			loadPipeline: createPipeline(
 				t,
-				"orchestration",
+				"pipeline",
 				[]string{"source", "target"},
 				[]string{},
 			),
-			expOrch: createOrchestration(
+			expPipeline: createPipeline(
 				t,
-				"orchestration",
+				"pipeline",
 				[]string{"source", "target"},
 				[]string{"some-name"},
 			),
@@ -97,14 +97,14 @@ func TestCreateLink(t *testing.T) {
 					stageStore.Stages[s.Name()] = s
 				}
 
-				orchStore := mock.OrchestrationStorage{
-					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						tc.loadOrchestration.Name(): tc.loadOrchestration,
+				pipelineStore := mock.PipelineStorage{
+					Pipelines: map[internal.PipelineName]internal.Pipeline{
+						tc.loadPipeline.Name(): tc.loadPipeline,
 					},
 				}
 
-				createFn := Link(linkStore, stageStore, orchStore)
-				err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+				createFn := Link(linkStore, stageStore, pipelineStore)
+				err := createFn(tc.name, tc.source, tc.target, tc.pipelineName)
 				if err != nil {
 					t.Fatalf("create error: %s", err)
 				}
@@ -118,14 +118,14 @@ func TestCreateLink(t *testing.T) {
 				}
 				cmpLink(t, tc.expLink, l, "created link")
 
-				if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-					t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+				if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+					t.Fatalf("number of pipelines mismatch:\n%s", diff)
 				}
-				o, exists := orchStore.Orchs[tc.expOrch.Name()]
+				p, exists := pipelineStore.Pipelines[tc.expPipeline.Name()]
 				if !exists {
-					t.Fatalf("updated orchestration does not exist in storage")
+					t.Fatalf("updated pipeline does not exist in storage")
 				}
-				cmpOrchestration(t, tc.expOrch, o, "updated orchestration")
+				cmpPipeline(t, tc.expPipeline, p, "updated pipeline")
 			},
 		)
 	}
@@ -133,11 +133,11 @@ func TestCreateLink(t *testing.T) {
 
 func TestCreateLink_Err(t *testing.T) {
 	tests := map[string]struct {
-		name     internal.LinkName
-		source   internal.LinkEndpoint
-		target   internal.LinkEndpoint
-		orchName internal.OrchestrationName
-		expErr   error
+		name         internal.LinkName
+		source       internal.LinkEndpoint
+		target       internal.LinkEndpoint
+		pipelineName internal.PipelineName
+		expErr       error
 	}{
 		"empty name": {
 			source: internal.NewLinkEndpoint(
@@ -148,8 +148,8 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expErr:   emptyLinkName},
+			pipelineName: createPipelineName(t, "pipeline"),
+			expErr:       emptyLinkName},
 		"empty source stage": {
 			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
@@ -160,8 +160,8 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expErr:   emptySourceStage,
+			pipelineName: createPipelineName(t, "pipeline"),
+			expErr:       emptySourceStage,
 		},
 		"empty target stage": {
 			name: createLinkName(t, "some-name"),
@@ -173,10 +173,10 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, ""),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expErr:   emptyTargetStage,
+			pipelineName: createPipelineName(t, "pipeline"),
+			expErr:       emptyTargetStage,
 		},
-		"empty orchestration": {
+		"empty pipeline": {
 			name: createLinkName(t, "some-name"),
 			source: internal.NewLinkEndpoint(
 				createStageName(t, "source"),
@@ -186,7 +186,7 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField(""),
 			),
-			expErr: emptyOrchestrationName,
+			expErr: emptyPipelineName,
 		},
 		"equal source and target": {
 			name: createLinkName(t, "some-name"),
@@ -198,8 +198,8 @@ func TestCreateLink_Err(t *testing.T) {
 				createStageName(t, "source"),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expErr:   equalSourceAndTarget,
+			pipelineName: createPipelineName(t, "pipeline"),
+			expErr:       equalSourceAndTarget,
 		},
 	}
 	for name, tc := range tests {
@@ -213,15 +213,15 @@ func TestCreateLink_Err(t *testing.T) {
 				},
 			}
 
-			orch := createOrchestration(t, "orch", []string{"source", "target"}, nil)
-			orchStore := mock.OrchestrationStorage{
-				Orchs: map[internal.OrchestrationName]internal.Orchestration{
-					createOrchestrationName(t, "orch"): orch,
+			pipeline := createPipeline(t, "pipeline", []string{"source", "target"}, nil)
+			pipelineStore := mock.PipelineStorage{
+				Pipelines: map[internal.PipelineName]internal.Pipeline{
+					createPipelineName(t, "pipeline"): pipeline,
 				},
 			}
 
-			createFn := Link(linkStore, stageStore, orchStore)
-			err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+			createFn := Link(linkStore, stageStore, pipelineStore)
+			err := createFn(tc.name, tc.source, tc.target, tc.pipelineName)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
@@ -234,14 +234,14 @@ func TestCreateLink_Err(t *testing.T) {
 				t.Fatalf("number of links mismatch:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+				t.Fatalf("number of pipelines mismatch:\n%s", diff)
 			}
-			o, exists := orchStore.Orchs[orch.Name()]
+			p, exists := pipelineStore.Pipelines[pipeline.Name()]
 			if !exists {
-				t.Fatalf("orchestration does not exist in storage")
+				t.Fatalf("pipeline does not exist in storage")
 			}
-			cmpOrchestration(t, orch, o, "orchestration is not updated")
+			cmpPipeline(t, pipeline, p, "pipeline is not updated")
 		})
 	}
 }
@@ -256,17 +256,17 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		createStageName(t, "target"),
 		internal.NewMessageField("target-field"),
 	)
-	orchName := createOrchestrationName(t, "orchestration")
+	pipelineName := createPipelineName(t, "pipeline")
 	expLink := createLink(t, "some-name", false)
-	storedOrchestration := createOrchestration(
+	storedPipeline := createPipeline(
 		t,
-		"orchestration",
+		"pipeline",
 		[]string{"source", "target"},
 		[]string{},
 	)
-	expOrchestration := createOrchestration(
+	expPipeline := createPipeline(
 		t,
-		"orchestration",
+		"pipeline",
 		[]string{"source", "target"},
 		[]string{"some-name"},
 	)
@@ -284,14 +284,14 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 		stageStore.Stages[s.Name()] = s
 	}
 
-	orchStore := mock.OrchestrationStorage{
-		Orchs: map[internal.OrchestrationName]internal.Orchestration{
-			storedOrchestration.Name(): storedOrchestration,
+	pipelineStore := mock.PipelineStorage{
+		Pipelines: map[internal.PipelineName]internal.Pipeline{
+			storedPipeline.Name(): storedPipeline,
 		},
 	}
 
-	createFn := Link(linkStore, stageStore, orchStore)
-	err := createFn(linkName, source, target, orchName)
+	createFn := Link(linkStore, stageStore, pipelineStore)
+	err := createFn(linkName, source, target, pipelineName)
 	if err != nil {
 		t.Fatalf("first create error: %s", err)
 	}
@@ -304,16 +304,16 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 	cmpLink(t, expLink, l, "first create link")
 
-	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-		t.Fatalf("first number of orchestrations mismatch:\n%s", diff)
+	if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+		t.Fatalf("first number of pipelines mismatch:\n%s", diff)
 	}
-	o, exists := orchStore.Orchs[expOrchestration.Name()]
+	p, exists := pipelineStore.Pipelines[expPipeline.Name()]
 	if !exists {
-		t.Fatalf("first updated orchestration does not exist in storage")
+		t.Fatalf("first updated pipeline does not exist in storage")
 	}
-	cmpOrchestration(t, expOrchestration, o, "first update orchestration")
+	cmpPipeline(t, expPipeline, p, "first update pipeline")
 
-	err = createFn(linkName, source, target, orchName)
+	err = createFn(linkName, source, target, pipelineName)
 	if err == nil {
 		t.Fatalf("expected create error but got none")
 	}
@@ -335,23 +335,23 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	}
 	cmpLink(t, expLink, l, "second create link")
 
-	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-		t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+	if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+		t.Fatalf("second number of pipelines mismatch:\n%s", diff)
 	}
-	o, exists = orchStore.Orchs[expOrchestration.Name()]
+	p, exists = pipelineStore.Pipelines[expPipeline.Name()]
 	if !exists {
-		t.Fatalf("second updated orchestration does not exist in storage")
+		t.Fatalf("second updated pipeline does not exist in storage")
 	}
-	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
+	cmpPipeline(t, expPipeline, p, "second update pipeline")
 }
 
-func TestStageNotInOrchestration_Error(t *testing.T) {
+func TestStageNotInPipeline_Error(t *testing.T) {
 	tests := map[string]struct {
-		name     internal.LinkName
-		source   internal.LinkEndpoint
-		target   internal.LinkEndpoint
-		orchName internal.OrchestrationName
-		expStage internal.StageName
+		name         internal.LinkName
+		source       internal.LinkEndpoint
+		target       internal.LinkEndpoint
+		pipelineName internal.PipelineName
+		expStage     internal.StageName
 	}{
 		"source": {
 			name: createLinkName(t, "some-name"),
@@ -363,8 +363,8 @@ func TestStageNotInOrchestration_Error(t *testing.T) {
 				createStageName(t, "target"),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expStage: createStageName(t, "unknown"),
+			pipelineName: createPipelineName(t, "pipeline"),
+			expStage:     createStageName(t, "unknown"),
 		},
 		"target": {
 			name: createLinkName(t, "some-name"),
@@ -376,8 +376,8 @@ func TestStageNotInOrchestration_Error(t *testing.T) {
 				createStageName(t, "unknown"),
 				internal.NewMessageField(""),
 			),
-			orchName: createOrchestrationName(t, "orch"),
-			expStage: createStageName(t, "unknown"),
+			pipelineName: createPipelineName(t, "pipeline"),
+			expStage:     createStageName(t, "unknown"),
 		},
 	}
 	for name, tc := range tests {
@@ -392,27 +392,27 @@ func TestStageNotInOrchestration_Error(t *testing.T) {
 				},
 			}
 
-			orch := createOrchestration(t, "orch", []string{"source", "target"}, nil)
-			orchStore := mock.OrchestrationStorage{
-				Orchs: map[internal.OrchestrationName]internal.Orchestration{
-					createOrchestrationName(t, "orch"): orch,
+			pipeline := createPipeline(t, "pipeline", []string{"source", "target"}, nil)
+			pipelineStore := mock.PipelineStorage{
+				Pipelines: map[internal.PipelineName]internal.Pipeline{
+					createPipelineName(t, "pipeline"): pipeline,
 				},
 			}
 
-			createFn := Link(linkStore, stageStore, orchStore)
-			err := createFn(tc.name, tc.source, tc.target, tc.orchName)
+			createFn := Link(linkStore, stageStore, pipelineStore)
+			err := createFn(tc.name, tc.source, tc.target, tc.pipelineName)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
 
-			var concreteErr *stageNotInOrchestration
+			var concreteErr *stageNotInPipeline
 			if !errors.As(err, &concreteErr) {
-				format := "Wrong error type: expected *stageNotInOrchestration, got %s"
+				format := "Wrong error type: expected *stageNotInPipeline, got %s"
 				t.Fatalf(format, reflect.TypeOf(err))
 			}
-			expErr := &stageNotInOrchestration{Stage: tc.expStage, Orch: tc.orchName}
+			expErr := &stageNotInPipeline{Stage: tc.expStage, Pipeline: tc.pipelineName}
 			cmpOpts := cmp.AllowUnexported(
-				internal.StageName{}, internal.OrchestrationName{},
+				internal.StageName{}, internal.PipelineName{},
 			)
 			if diff := cmp.Diff(expErr, concreteErr, cmpOpts); diff != "" {
 				t.Fatalf("error mismatch:\n%s", diff)
@@ -422,14 +422,14 @@ func TestStageNotInOrchestration_Error(t *testing.T) {
 				t.Fatalf("number of links mismatch:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+				t.Fatalf("number of pipelines mismatch:\n%s", diff)
 			}
-			o, exists := orchStore.Orchs[orch.Name()]
+			p, exists := pipelineStore.Pipelines[pipeline.Name()]
 			if !exists {
-				t.Fatalf("orchestration does not exist in storage")
+				t.Fatalf("pipeline does not exist in storage")
 			}
-			cmpOrchestration(t, orch, o, "orchestration is not updated")
+			cmpPipeline(t, pipeline, p, "pipeline is not updated")
 		})
 	}
 }
@@ -457,15 +457,15 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			initialOrch := createOrchestration(
-				t, "orchestration", []string{"source", "target"}, nil,
+			initialPipeline := createPipeline(
+				t, "pipeline", []string{"source", "target"}, nil,
 			)
-			expOrch := createOrchestration(
-				t, "orchestration", []string{"source", "target"}, []string{"first"},
+			expPipeline := createPipeline(
+				t, "pipeline", []string{"source", "target"}, []string{"first"},
 			)
-			orchStore := mock.OrchestrationStorage{
-				Orchs: map[internal.OrchestrationName]internal.Orchestration{
-					initialOrch.Name(): initialOrch,
+			pipelineStore := mock.PipelineStorage{
+				Pipelines: map[internal.PipelineName]internal.Pipeline{
+					initialPipeline.Name(): initialPipeline,
 				},
 			}
 
@@ -479,12 +479,12 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 			}
 
 			linkStore := mock.LinkStorage{Links: map[internal.LinkName]internal.Link{}}
-			createFn := Link(linkStore, stageStore, orchStore)
+			createFn := Link(linkStore, stageStore, pipelineStore)
 			err := createFn(
 				tc.first.Name(),
 				tc.first.Source(),
 				tc.first.Target(),
-				initialOrch.Name(),
+				initialPipeline.Name(),
 			)
 			if err != nil {
 				t.Fatalf("first create error: %s", err)
@@ -498,20 +498,20 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 			}
 			cmpLink(t, tc.first, l, "first create link")
 
-			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-				t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+			if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+				t.Fatalf("number of pipelines mismatch:\n%s", diff)
 			}
-			o, exists := orchStore.Orchs[expOrch.Name()]
+			p, exists := pipelineStore.Pipelines[expPipeline.Name()]
 			if !exists {
-				t.Fatalf("first create updated orchestration does not exist in storage")
+				t.Fatalf("first create updated pipeline does not exist in storage")
 			}
-			cmpOrchestration(t, expOrch, o, "first create updated orchestration")
+			cmpPipeline(t, expPipeline, p, "first create updated pipeline")
 
 			err = createFn(
 				tc.second.Name(),
 				tc.second.Source(),
 				tc.second.Target(),
-				initialOrch.Name(),
+				initialPipeline.Name(),
 			)
 			if err == nil {
 				t.Fatalf("second create expected create error but got nil")
@@ -537,14 +537,14 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 			}
 			cmpLink(t, tc.first, l, "second create link")
 
-			if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-				t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+			if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+				t.Fatalf("second number of pipelines mismatch:\n%s", diff)
 			}
-			o, exists = orchStore.Orchs[expOrch.Name()]
+			p, exists = pipelineStore.Pipelines[expPipeline.Name()]
 			if !exists {
-				t.Fatalf("second create updated orchestration does not exist in storage")
+				t.Fatalf("second create updated pipeline does not exist in storage")
 			}
-			cmpOrchestration(t, expOrch, o, "second create update orchestration")
+			cmpPipeline(t, expPipeline, p, "second create update pipeline")
 		})
 	}
 }

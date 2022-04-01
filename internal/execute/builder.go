@@ -19,7 +19,7 @@ type MethodLoader interface {
 	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
-type Builder func(orchestration internal.Orchestration) (*Execution, error)
+type Builder func(pipeline internal.Pipeline) (*Execution, error)
 
 func NewBuilder(
 	stageLoader StageLoader,
@@ -27,10 +27,10 @@ func NewBuilder(
 	methodLoader MethodLoader,
 	logger Logger,
 ) Builder {
-	return func(orchestration internal.Orchestration) (*Execution, error) {
+	return func(pipeline internal.Pipeline) (*Execution, error) {
 		var chans []chan state
 
-		stageNames := orchestration.Stages()
+		stageNames := pipeline.Stages()
 		stageCtxs := make(map[internal.StageName]*stageContext, len(stageNames))
 		for _, n := range stageNames {
 			s, err := stageLoader.Load(n)
@@ -39,13 +39,13 @@ func NewBuilder(
 			}
 			m, err := methodLoader.Load(s.MethodContext())
 			if err != nil {
-				err = fmt.Errorf("build stage %s in %s: %w", n, orchestration.Name(), err)
+				err = fmt.Errorf("build stage %s in %s: %w", n, pipeline.Name(), err)
 				return nil, err
 			}
 			stageCtxs[n] = &stageContext{stage: s, method: m}
 		}
 
-		linkNames := orchestration.Links()
+		linkNames := pipeline.Links()
 		links := make(map[internal.LinkName]*linkContext, len(linkNames))
 		for _, n := range linkNames {
 			link, err := linkLoader.Load(n)

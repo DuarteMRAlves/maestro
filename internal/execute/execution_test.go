@@ -94,13 +94,13 @@ func TestExecution_Linear(t *testing.T) {
 	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
-	orchestration := internal.NewOrchestration(
-		createOrchName(t, "orchestration"),
+	pipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
 		[]internal.StageName{sourceName, transformName, sinkName},
 		[]internal.LinkName{sourceToTransformName, transformToSinkName},
 	)
 
-	e, err := executionBuilder(orchestration)
+	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
 	}
@@ -354,13 +354,13 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
-	orchestration := internal.NewOrchestration(
-		createOrchName(t, "orchestration"),
+	pipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
 		[]internal.StageName{sourceName, transformName, sinkName},
 		[]internal.LinkName{sourceToTransformName, sourceToSinkName, transformToSinkName},
 	)
 
-	e, err := executionBuilder(orchestration)
+	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
 	}
@@ -620,13 +620,13 @@ func TestExecution_Slow(t *testing.T) {
 	logger := logs.New(true)
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
-	orchestration := internal.NewOrchestration(
-		createOrchName(t, "orchestration"),
+	pipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
 		[]internal.StageName{sourceName, transformName, sinkName},
 		[]internal.LinkName{sourceToTransformName, transformToSinkName},
 	)
 
-	e, err := executionBuilder(orchestration)
+	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
 	}
@@ -788,12 +788,12 @@ func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
 
 func (c *slowSinkClient) Close() error { return nil }
 
-func createOrchName(t *testing.T, name string) internal.OrchestrationName {
-	orchName, err := internal.NewOrchestrationName(name)
+func createPipelineName(t *testing.T, name string) internal.PipelineName {
+	pipelineName, err := internal.NewPipelineName(name)
 	if err != nil {
-		t.Fatalf("create orchestration name %s: %s", name, err)
+		t.Fatalf("create pipeline name %s: %s", name, err)
 	}
-	return orchName
+	return pipelineName
 }
 
 func createStageName(t *testing.T, name string) internal.StageName {

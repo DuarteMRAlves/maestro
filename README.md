@@ -2,14 +2,14 @@
 
 ## Overview
 
-Maestro is a tool for orchestrating grpc services into pipelines. It connects
+Maestro is a tool for developing pipelines of grpc services. It connects
 the services by delivering the returned messages from one service as an input to
 the next.
 
 ## Main Concepts
 
-There are three main concepts inside maestro - `Asset`, `Orchestration`
-, `Orchestration`:
+There are three main concepts inside maestro - `Asset`, `Stage`
+, `Pipeline`:
 
 ### Asset
 
@@ -21,15 +21,14 @@ An Asset has the following properties:
 * `Name` that is a human-readable string to uniquely identify the Asset.
 * `Image` (optional) which is the name of the image associated with this Asset.
 
-### Orchestration
+### Pipeline
 
-A `Orchestration` defines the architecture of the pipeline. A Orchestration is a
-graph like structure where we have Stages and Links.
+A `Pipeline` is a graph like structure where we have Stages and Links.
 
 A `Stage` is an instantiation of an Asset. It specifies a concrete grpc method
 to be executed, and has the following fields:
 
-* `Name` Uniquely identifies the stage inside a Orchestration.
+* `Name` Uniquely identifies the stage inside a Pipeline.
 * `Asset` The name of the associated Asset.
 * `Service` (optional) Specifies the grpc service within the sever (required if
   multiple services exist, otherwise can be omitted)
@@ -48,9 +47,9 @@ A `Link` specifies a connection between two stages. A Link has:
   created, and the field with the given variable name is set with the received
   message.
 
-### Orchestration
+### Pipeline
 
-An `Orchestration` is an instantiation of a Orchestration where the pipeline is
+An `Pipeline` is an instantiation of a Pipeline where the pipeline is
 executed.
 
 ## Developing

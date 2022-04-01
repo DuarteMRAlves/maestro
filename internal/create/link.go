@@ -32,14 +32,14 @@ func (err *linkAlreadyExists) Error() string {
 	return fmt.Sprintf("link '%s' already exists", err.name)
 }
 
-type stageNotInOrchestration struct {
-	Orch  internal.OrchestrationName
-	Stage internal.StageName
+type stageNotInPipeline struct {
+	Pipeline internal.PipelineName
+	Stage    internal.StageName
 }
 
-func (err *stageNotInOrchestration) Error() string {
-	format := "stage '%s' not found in orchestration '%s'."
-	return fmt.Sprintf(format, err.Stage, err.Orch)
+func (err *stageNotInPipeline) Error() string {
+	format := "stage '%s' not found in pipeline '%s'."
+	return fmt.Sprintf(format, err.Stage, err.Pipeline)
 }
 
 type incompatibleLinks struct {
@@ -53,17 +53,17 @@ func (err *incompatibleLinks) Error() string {
 func Link(
 	linkStorage LinkStorage,
 	stageLoader StageLoader,
-	orchStorage OrchestrationStorage,
+	pipelineStorage PipelineStorage,
 ) func(
 	internal.LinkName,
 	internal.LinkEndpoint,
 	internal.LinkEndpoint,
-	internal.OrchestrationName,
+	internal.PipelineName,
 ) error {
 	return func(
 		name internal.LinkName,
 		source, target internal.LinkEndpoint,
-		orchName internal.OrchestrationName,
+		pipelineName internal.PipelineName,
 	) error {
 		if name.IsEmpty() {
 			return emptyLinkName
@@ -79,8 +79,8 @@ func Link(
 			return emptyTargetStage
 		}
 
-		if orchName.IsEmpty() {
-			return emptyOrchestrationName
+		if pipelineName.IsEmpty() {
+			return emptyPipelineName
 		}
 
 		_, err := linkStorage.Load(name)
@@ -92,7 +92,7 @@ func Link(
 			return err
 		}
 
-		orch, err := orchStorage.Load(orchName)
+		pipeline, err := pipelineStorage.Load(pipelineName)
 		if err != nil {
 			return fmt.Errorf("add link %s: %w", name, err)
 		}
@@ -107,18 +107,18 @@ func Link(
 			return err
 		}
 
-		if !existsStage(sourceStage, orch.Stages()...) {
-			return &stageNotInOrchestration{Orch: orchName, Stage: sourceStage}
+		if !existsStage(sourceStage, pipeline.Stages()...) {
+			return &stageNotInPipeline{Pipeline: pipelineName, Stage: sourceStage}
 		}
-		if !existsStage(targetStage, orch.Stages()...) {
-			return &stageNotInOrchestration{Orch: orchName, Stage: targetStage}
+		if !existsStage(targetStage, pipeline.Stages()...) {
+			return &stageNotInPipeline{Pipeline: pipelineName, Stage: targetStage}
 		}
 
 		if sourceStage == targetStage {
 			return equalSourceAndTarget
 		}
 
-		targetLinks, err := linksForTarget(linkStorage, targetStage, orch.Links()...)
+		targetLinks, err := linksForTarget(linkStorage, targetStage, pipeline.Links()...)
 		if err != nil {
 			return fmt.Errorf("create link %s: %w", name, err)
 		}
@@ -134,11 +134,11 @@ func Link(
 			}
 		}
 
-		links := orch.Links()
+		links := pipeline.Links()
 		links = append(links, name)
-		orch = internal.NewOrchestration(orch.Name(), orch.Stages(), links)
+		pipeline = internal.NewPipeline(pipeline.Name(), pipeline.Stages(), links)
 
-		err = orchStorage.Save(orch)
+		err = pipelineStorage.Save(pipeline)
 		if err != nil {
 			return fmt.Errorf("add link %s: %w", name, err)
 		}

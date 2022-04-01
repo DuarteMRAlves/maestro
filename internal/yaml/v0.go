@@ -33,12 +33,12 @@ func ReadV0(file string) (ResourceSet, error) {
 		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
 
-	orchName, err := internal.NewOrchestrationName("v0-orchestration")
+	pipelineName, err := internal.NewPipelineName("v0-pipeline")
 	if err != nil {
 		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
-	orch := Orchestration{Name: orchName}
-	resources.Orchestrations = append(resources.Orchestrations, orch)
+	pipeline := Pipeline{Name: pipelineName}
+	resources.Pipelines = append(resources.Pipelines, pipeline)
 
 	for _, spec := range fileSpec.Stages {
 		name, err := internal.NewStageName(spec.Name)
@@ -50,7 +50,7 @@ func ReadV0(file string) (ResourceSet, error) {
 		meth := internal.NewMethod(spec.Method)
 
 		methCtx := MethodContext{Address: addr, Service: serv, Method: meth}
-		s := Stage{Name: name, Method: methCtx, Orchestration: orchName}
+		s := Stage{Name: name, Method: methCtx, Pipeline: pipelineName}
 		resources.Stages = append(resources.Stages, s)
 	}
 
@@ -76,10 +76,10 @@ func ReadV0(file string) (ResourceSet, error) {
 		tgtField := internal.NewMessageField(spec.Target.Field)
 
 		l := Link{
-			Name:          linkName,
-			Source:        LinkEndpoint{Stage: srcStage, Field: srcField},
-			Target:        LinkEndpoint{Stage: tgtStage, Field: tgtField},
-			Orchestration: orchName,
+			Name:     linkName,
+			Source:   LinkEndpoint{Stage: srcStage, Field: srcField},
+			Target:   LinkEndpoint{Stage: tgtStage, Field: tgtField},
+			Pipeline: pipelineName,
 		}
 		resources.Links = append(resources.Links, l)
 	}

@@ -1,7 +1,7 @@
 package yaml
 
-type v1OrchestrationSpec struct {
-	// Name that should be associated with the orchestration.
+type v1PipelineSpec struct {
+	// Name that should be associated with the pipeline.
 	// (required, unique)
 	Name string `yaml:"name" info:"required"`
 }
@@ -22,10 +22,10 @@ type v1StageSpec struct {
 	// only a single method.
 	// (optional)
 	Method string `yaml:"method,omitempty"`
-	// Orchestration specifies the name of the Orchestration where this stage
+	// Pipeline specifies the name of the Pipeline where this stage
 	// should be inserted.
 	// (required)
-	Orchestration string `yaml:"orchestration" info:"required"`
+	Pipeline string `yaml:"pipeline" info:"required"`
 }
 
 type v1LinkSpec struct {
@@ -55,10 +55,10 @@ type v1LinkSpec struct {
 	// message is sent as input to the TargetStage.
 	// (optional)
 	TargetField string `yaml:"target_field,omitempty"`
-	// Orchestration specifies the orchestration where this link should be
+	// Pipeline specifies the pipeline where this link should be
 	// inserted.
 	// (required)
-	Orchestration string `yaml:"orchestration"`
+	Pipeline string `yaml:"pipeline"`
 }
 
 type v1AssetSpec struct {

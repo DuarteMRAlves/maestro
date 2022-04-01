@@ -22,23 +22,23 @@ func (m AssetStorage) Load(name internal.AssetName) (
 	return asset, nil
 }
 
-type OrchestrationStorage struct {
-	Orchs map[internal.OrchestrationName]internal.Orchestration
+type PipelineStorage struct {
+	Pipelines map[internal.PipelineName]internal.Pipeline
 }
 
-func (m OrchestrationStorage) Save(o internal.Orchestration) error {
-	m.Orchs[o.Name()] = o
+func (m PipelineStorage) Save(o internal.Pipeline) error {
+	m.Pipelines[o.Name()] = o
 	return nil
 }
 
-func (m OrchestrationStorage) Load(name internal.OrchestrationName) (
-	internal.Orchestration,
+func (m PipelineStorage) Load(name internal.PipelineName) (
+	internal.Pipeline,
 	error,
 ) {
-	o, exists := m.Orchs[name]
+	o, exists := m.Pipelines[name]
 	if !exists {
-		err := &notFound{typ: "orchestration", name: name.Unwrap()}
-		return internal.Orchestration{}, err
+		err := &notFound{typ: "pipeline", name: name.Unwrap()}
+		return internal.Pipeline{}, err
 	}
 	return o, nil
 }

@@ -12,12 +12,12 @@ import (
 
 func TestCreateStage(t *testing.T) {
 	tests := map[string]struct {
-		name              internal.StageName
-		methodCtx         internal.MethodContext
-		orchName          internal.OrchestrationName
-		expStage          internal.Stage
-		loadOrchestration internal.Orchestration
-		expOrch           internal.Orchestration
+		name         internal.StageName
+		methodCtx    internal.MethodContext
+		pipelineName internal.PipelineName
+		expStage     internal.Stage
+		loadPipeline internal.Pipeline
+		expPipeline  internal.Pipeline
 	}{
 		"required fields": {
 			name: createStageName(t, "some-name"),
@@ -26,19 +26,11 @@ func TestCreateStage(t *testing.T) {
 				internal.Service{},
 				internal.Method{},
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			expStage: createStage(t, "some-name", true),
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
-			expOrch: createOrchestration(
-				t,
-				"orchestration",
-				[]string{"some-name"},
-				[]string{},
+			pipelineName: createPipelineName(t, "pipeline"),
+			expStage:     createStage(t, "some-name", true),
+			loadPipeline: createPipeline(t, "pipeline", nil, nil),
+			expPipeline: createPipeline(
+				t, "pipeline", []string{"some-name"}, []string{},
 			),
 		},
 		"all fields": {
@@ -48,19 +40,11 @@ func TestCreateStage(t *testing.T) {
 				internal.NewService("some-service"),
 				internal.NewMethod("some-method"),
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			expStage: createStage(t, "some-name", false),
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
-			expOrch: createOrchestration(
-				t,
-				"orchestration",
-				[]string{"some-name"},
-				[]string{},
+			pipelineName: createPipelineName(t, "pipeline"),
+			expStage:     createStage(t, "some-name", false),
+			loadPipeline: createPipeline(t, "pipeline", nil, nil),
+			expPipeline: createPipeline(
+				t, "pipeline", []string{"some-name"}, []string{},
 			),
 		},
 	}
@@ -72,15 +56,15 @@ func TestCreateStage(t *testing.T) {
 					Stages: map[internal.StageName]internal.Stage{},
 				}
 
-				orchStore := mock.OrchestrationStorage{
-					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						tc.loadOrchestration.Name(): tc.loadOrchestration,
+				pipelineStore := mock.PipelineStorage{
+					Pipelines: map[internal.PipelineName]internal.Pipeline{
+						tc.loadPipeline.Name(): tc.loadPipeline,
 					},
 				}
 
-				createFn := Stage(stageStore, orchStore)
+				createFn := Stage(stageStore, pipelineStore)
 
-				err := createFn(tc.name, tc.methodCtx, tc.orchName)
+				err := createFn(tc.name, tc.methodCtx, tc.pipelineName)
 				if err != nil {
 					t.Fatalf("create error: %s", err)
 				}
@@ -94,14 +78,14 @@ func TestCreateStage(t *testing.T) {
 				}
 				cmpStage(t, tc.expStage, s, "created stage")
 
-				if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-					t.Fatalf("number of orchestrations mismatch:\n%s", diff)
+				if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+					t.Fatalf("number of pipelines mismatch:\n%s", diff)
 				}
-				o, exists := orchStore.Orchs[tc.expOrch.Name()]
+				p, exists := pipelineStore.Pipelines[tc.expPipeline.Name()]
 				if !exists {
-					t.Fatalf("updated orchestration does not exist in storage")
+					t.Fatalf("updated pipeline does not exist in storage")
 				}
-				cmpOrchestration(t, tc.expOrch, o, "updated orchestration")
+				cmpPipeline(t, tc.expPipeline, p, "updated pipeline")
 			},
 		)
 	}
@@ -109,11 +93,11 @@ func TestCreateStage(t *testing.T) {
 
 func TestCreateStage_Err(t *testing.T) {
 	tests := map[string]struct {
-		stageName         internal.StageName
-		methodCtx         internal.MethodContext
-		orchName          internal.OrchestrationName
-		isError           error
-		loadOrchestration internal.Orchestration
+		stageName    internal.StageName
+		methodCtx    internal.MethodContext
+		pipelineName internal.PipelineName
+		isError      error
+		loadPipeline internal.Pipeline
 	}{
 		"empty name": {
 			stageName: createStageName(t, ""),
@@ -122,14 +106,9 @@ func TestCreateStage_Err(t *testing.T) {
 				internal.Service{},
 				internal.Method{},
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			isError:  emptyStageName,
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
+			pipelineName: createPipelineName(t, "pipeline"),
+			isError:      emptyStageName,
+			loadPipeline: createPipeline(t, "pipeline", nil, nil),
 		},
 		"empty address": {
 			stageName: createStageName(t, "some-name"),
@@ -138,30 +117,20 @@ func TestCreateStage_Err(t *testing.T) {
 				internal.Service{},
 				internal.Method{},
 			),
-			orchName: createOrchestrationName(t, "orchestration"),
-			isError:  emptyAddress,
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
+			pipelineName: createPipelineName(t, "pipeline"),
+			isError:      emptyAddress,
+			loadPipeline: createPipeline(t, "pipeline", nil, nil),
 		},
-		"empty orchestration": {
+		"empty pipeline": {
 			stageName: createStageName(t, "some-name"),
 			methodCtx: internal.NewMethodContext(
 				internal.NewAddress("some-address"),
 				internal.Service{},
 				internal.Method{},
 			),
-			orchName: createOrchestrationName(t, ""),
-			isError:  emptyOrchestrationName,
-			loadOrchestration: createOrchestration(
-				t,
-				"orchestration",
-				nil,
-				nil,
-			),
+			pipelineName: createPipelineName(t, ""),
+			isError:      emptyPipelineName,
+			loadPipeline: createPipeline(t, "pipeline", nil, nil),
 		},
 	}
 	for name, tc := range tests {
@@ -172,14 +141,14 @@ func TestCreateStage_Err(t *testing.T) {
 					Stages: map[internal.StageName]internal.Stage{},
 				}
 
-				orchStore := mock.OrchestrationStorage{
-					Orchs: map[internal.OrchestrationName]internal.Orchestration{
-						tc.loadOrchestration.Name(): tc.loadOrchestration,
+				pipelineStore := mock.PipelineStorage{
+					Pipelines: map[internal.PipelineName]internal.Pipeline{
+						tc.loadPipeline.Name(): tc.loadPipeline,
 					},
 				}
 
-				createFn := Stage(stageStore, orchStore)
-				err := createFn(tc.stageName, tc.methodCtx, tc.orchName)
+				createFn := Stage(stageStore, pipelineStore)
+				err := createFn(tc.stageName, tc.methodCtx, tc.pipelineName)
 				if err == nil {
 					t.Fatalf("expected error but got none")
 				}
@@ -202,30 +171,27 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 		internal.NewService("some-service"),
 		internal.NewMethod("some-method"),
 	)
-	orchName := createOrchestrationName(t, "orchestration")
+	pipelineName := createPipelineName(t, "pipeline")
 
 	expStage := createStage(t, "some-name", false)
-	storedOrchestration := createOrchestration(t, "orchestration", nil, nil)
-	expOrchestration := createOrchestration(
-		t,
-		"orchestration",
-		[]string{"some-name"},
-		[]string{},
+	storedPipeline := createPipeline(t, "pipeline", nil, nil)
+	expPipeline := createPipeline(
+		t, "pipeline", []string{"some-name"}, []string{},
 	)
 
 	stageStore := mock.StageStorage{
 		Stages: map[internal.StageName]internal.Stage{},
 	}
 
-	orchStore := mock.OrchestrationStorage{
-		Orchs: map[internal.OrchestrationName]internal.Orchestration{
-			storedOrchestration.Name(): storedOrchestration,
+	pipelineStore := mock.PipelineStorage{
+		Pipelines: map[internal.PipelineName]internal.Pipeline{
+			storedPipeline.Name(): storedPipeline,
 		},
 	}
 
-	createFn := Stage(stageStore, orchStore)
+	createFn := Stage(stageStore, pipelineStore)
 
-	err := createFn(stageName, methodCtx, orchName)
+	err := createFn(stageName, methodCtx, pipelineName)
 	if err != nil {
 		t.Fatalf("first create error: %s", err)
 	}
@@ -238,16 +204,16 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	}
 	cmpStage(t, expStage, s, "first stage create")
 
-	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-		t.Fatalf("first number of orchestrations mismatch:\n%s", diff)
+	if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+		t.Fatalf("first number of pipelines mismatch:\n%s", diff)
 	}
-	o, exists := orchStore.Orchs[expOrchestration.Name()]
+	p, exists := pipelineStore.Pipelines[expPipeline.Name()]
 	if !exists {
-		t.Fatalf("first updated orchestration does not exist in storage")
+		t.Fatalf("first updated pipeline does not exist in storage")
 	}
-	cmpOrchestration(t, expOrchestration, o, "first update orchestration")
+	cmpPipeline(t, expPipeline, p, "first update pipeline")
 
-	err = createFn(stageName, methodCtx, orchName)
+	err = createFn(stageName, methodCtx, pipelineName)
 	if err == nil {
 		t.Fatalf("expected create error but got none")
 	}
@@ -269,14 +235,14 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	}
 	cmpStage(t, expStage, s, "second stage create")
 
-	if diff := cmp.Diff(1, len(orchStore.Orchs)); diff != "" {
-		t.Fatalf("second number of orchestrations mismatch:\n%s", diff)
+	if diff := cmp.Diff(1, len(pipelineStore.Pipelines)); diff != "" {
+		t.Fatalf("second number of pipelines mismatch:\n%s", diff)
 	}
-	o, exists = orchStore.Orchs[expOrchestration.Name()]
+	p, exists = pipelineStore.Pipelines[expPipeline.Name()]
 	if !exists {
-		t.Fatalf("second updated orchestration does not exist in storage")
+		t.Fatalf("second updated pipeline does not exist in storage")
 	}
-	cmpOrchestration(t, expOrchestration, o, "second update orchestration")
+	cmpPipeline(t, expPipeline, p, "second update pipeline")
 }
 
 func createStageName(t *testing.T, name string) internal.StageName {
