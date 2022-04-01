@@ -109,13 +109,13 @@ func TestLinear(t *testing.T) {
 		stageLoader, linkLoader, r, logs.New(true),
 	)
 
-	orchestration := internal.NewOrchestration(
-		createOrchName(t, "orchestration"),
+	pipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
 		[]internal.StageName{sourceName, transfName, sinkName},
 		[]internal.LinkName{sourceToTransformName, transformToSinkName},
 	)
 
-	e, err := executionBuilder(orchestration)
+	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
 	}

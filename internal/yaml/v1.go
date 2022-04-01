@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	assetKind         = "asset"
-	stageKind         = "stage"
-	linkKind          = "link"
-	orchestrationKind = "orchestration"
+	assetKind    = "asset"
+	stageKind    = "stage"
+	linkKind     = "link"
+	pipelineKind = "pipeline"
 )
 
 var (
@@ -54,12 +54,12 @@ func ReadV1(files ...string) (ResourceSet, error) {
 			}
 
 			switch r.Kind {
-			case orchestrationKind:
-				o, err := resourceToOrchestration(r)
+			case pipelineKind:
+				o, err := resourceToPipeline(r)
 				if err != nil {
 					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
-				resources.Orchestrations = append(resources.Orchestrations, o)
+				resources.Pipelines = append(resources.Pipelines, o)
 			case stageKind:
 				s, err := resourceToStage(r)
 				if err != nil {
@@ -93,16 +93,16 @@ func ReadV1(files ...string) (ResourceSet, error) {
 	return resources, nil
 }
 
-func resourceToOrchestration(r v1ReadResource) (Orchestration, error) {
-	spec, ok := r.Spec.(*v1OrchestrationSpec)
+func resourceToPipeline(r v1ReadResource) (Pipeline, error) {
+	spec, ok := r.Spec.(*v1PipelineSpec)
 	if !ok {
-		return Orchestration{}, errors.New("orchestration spec cast error")
+		return Pipeline{}, errors.New("pipeline spec cast error")
 	}
-	name, err := internal.NewOrchestrationName(spec.Name)
+	name, err := internal.NewPipelineName(spec.Name)
 	if err != nil {
-		return Orchestration{}, err
+		return Pipeline{}, err
 	}
-	return Orchestration{Name: name}, nil
+	return Pipeline{Name: name}, nil
 }
 
 func resourceToStage(r v1ReadResource) (Stage, error) {
@@ -119,15 +119,15 @@ func resourceToStage(r v1ReadResource) (Stage, error) {
 	serv := internal.NewService(spec.Service)
 	meth := internal.NewMethod(spec.Method)
 
-	orchName, err := internal.NewOrchestrationName(spec.Orchestration)
+	pipelineName, err := internal.NewPipelineName(spec.Pipeline)
 	if err != nil {
 		return Stage{}, err
 	}
 
 	s := Stage{
-		Name:          name,
-		Method:        MethodContext{Address: addr, Service: serv, Method: meth},
-		Orchestration: orchName,
+		Name:     name,
+		Method:   MethodContext{Address: addr, Service: serv, Method: meth},
+		Pipeline: pipelineName,
 	}
 	return s, err
 }
@@ -155,16 +155,16 @@ func resourceToLink(r v1ReadResource) (Link, error) {
 	}
 	tgtField := internal.NewMessageField(spec.TargetField)
 
-	orchName, err := internal.NewOrchestrationName(spec.Orchestration)
+	pipelineName, err := internal.NewPipelineName(spec.Pipeline)
 	if err != nil {
 		return Link{}, err
 	}
 
 	l := Link{
-		Name:          name,
-		Source:        LinkEndpoint{Stage: srcStage, Field: srcField},
-		Target:        LinkEndpoint{Stage: tgtStage, Field: tgtField},
-		Orchestration: orchName,
+		Name:     name,
+		Source:   LinkEndpoint{Stage: srcStage, Field: srcField},
+		Target:   LinkEndpoint{Stage: tgtStage, Field: tgtField},
+		Pipeline: pipelineName,
 	}
 	return l, nil
 }
@@ -221,8 +221,8 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		r.Spec = new(v1StageSpec)
 	case linkKind:
 		r.Spec = new(v1LinkSpec)
-	case orchestrationKind:
-		r.Spec = new(v1OrchestrationSpec)
+	case pipelineKind:
+		r.Spec = new(v1PipelineSpec)
 	case assetKind:
 		r.Spec = new(v1AssetSpec)
 	default:
@@ -307,7 +307,7 @@ func WriteV1(resources ResourceSet, file string, perm fs.FileMode) error {
 		err error
 	)
 	enc := yaml.NewEncoder(&buf)
-	err = encodeResources(enc, orchestrationToResource, resources.Orchestrations...)
+	err = encodeResources(enc, pipelineToResource, resources.Pipelines...)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
@@ -349,11 +349,11 @@ type v1WriteResource struct {
 	Spec interface{} `yaml:"spec"`
 }
 
-func orchestrationToResource(r *v1WriteResource, o Orchestration) {
-	var spec v1OrchestrationSpec
+func pipelineToResource(r *v1WriteResource, o Pipeline) {
+	var spec v1PipelineSpec
 	spec.Name = o.Name.Unwrap()
 
-	r.Kind = orchestrationKind
+	r.Kind = pipelineKind
 	r.Spec = spec
 }
 
@@ -363,7 +363,7 @@ func stageToResource(r *v1WriteResource, s Stage) {
 	spec.Address = s.Method.Address.Unwrap()
 	spec.Service = s.Method.Service.Unwrap()
 	spec.Method = s.Method.Method.Unwrap()
-	spec.Orchestration = s.Orchestration.Unwrap()
+	spec.Pipeline = s.Pipeline.Unwrap()
 
 	r.Kind = stageKind
 	r.Spec = spec
@@ -376,7 +376,7 @@ func linkToResource(r *v1WriteResource, l Link) {
 	spec.SourceField = l.Source.Field.Unwrap()
 	spec.TargetStage = l.Target.Stage.Unwrap()
 	spec.TargetField = l.Target.Field.Unwrap()
-	spec.Orchestration = l.Orchestration.Unwrap()
+	spec.Pipeline = l.Pipeline.Unwrap()
 
 	r.Kind = linkKind
 	r.Spec = spec

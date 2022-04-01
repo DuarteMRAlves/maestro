@@ -5,27 +5,25 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
-type Orchestrations map[internal.OrchestrationName]internal.Orchestration
+type Pipelines map[internal.PipelineName]internal.Pipeline
 
-func (s Orchestrations) Save(o internal.Orchestration) error {
-	s[o.Name()] = o
+func (s Pipelines) Save(p internal.Pipeline) error {
+	s[p.Name()] = p
 	return nil
 }
 
-func (s Orchestrations) Load(
-	n internal.OrchestrationName,
-) (internal.Orchestration, error) {
+func (s Pipelines) Load(n internal.PipelineName) (internal.Pipeline, error) {
 	o, exists := s[n]
 	if !exists {
-		return internal.Orchestration{}, &orchestrationNotFound{name: n.Unwrap()}
+		return internal.Pipeline{}, &pipelineNotFound{name: n.Unwrap()}
 	}
 	return o, nil
 }
 
-type orchestrationNotFound struct{ name string }
+type pipelineNotFound struct{ name string }
 
-func (err *orchestrationNotFound) NotFound() {}
+func (err *pipelineNotFound) NotFound() {}
 
-func (err *orchestrationNotFound) Error() string {
-	return fmt.Sprintf("orchestration not found: %s", err.name)
+func (err *pipelineNotFound) Error() string {
+	return fmt.Sprintf("pipeline not found: %s", err.name)
 }

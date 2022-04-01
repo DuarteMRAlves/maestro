@@ -31,28 +31,23 @@ func (err *stageAlreadyExists) Error() string {
 }
 
 func Stage(
-	stageStorage StageStorage,
-	orchStorage OrchestrationStorage,
-) func(
-	internal.StageName,
-	internal.MethodContext,
-	internal.OrchestrationName,
-) error {
+	stageStorage StageStorage, pipelineStorage PipelineStorage,
+) func(internal.StageName, internal.MethodContext, internal.PipelineName) error {
 	return func(
 		name internal.StageName,
-		ctx internal.MethodContext,
-		orchName internal.OrchestrationName,
+		methodContext internal.MethodContext,
+		pipelineName internal.PipelineName,
 	) error {
 		if name.IsEmpty() {
 			return emptyStageName
 		}
-		addr := ctx.Address()
+		addr := methodContext.Address()
 		if addr.IsEmpty() {
 			return emptyAddress
 		}
 
-		if orchName.IsEmpty() {
-			return emptyOrchestrationName
+		if pipelineName.IsEmpty() {
+			return emptyPipelineName
 		}
 
 		_, err := stageStorage.Load(name)
@@ -64,20 +59,20 @@ func Stage(
 			return err
 		}
 
-		orch, err := orchStorage.Load(orchName)
+		pipeline, err := pipelineStorage.Load(pipelineName)
 		if err != nil {
 			return fmt.Errorf("add stage %s: %w", name, err)
 		}
 
-		stages := orch.Stages()
+		stages := pipeline.Stages()
 		stages = append(stages, name)
-		orch = internal.NewOrchestration(orch.Name(), stages, orch.Links())
+		pipeline = internal.NewPipeline(pipeline.Name(), stages, pipeline.Links())
 
-		err = orchStorage.Save(orch)
+		err = pipelineStorage.Save(pipeline)
 		if err != nil {
 			return fmt.Errorf("add stage %s: %w", name, err)
 		}
-		stage := internal.NewStage(name, ctx)
+		stage := internal.NewStage(name, methodContext)
 		return stageStorage.Save(stage)
 	}
 }

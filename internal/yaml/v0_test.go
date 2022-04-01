@@ -16,12 +16,12 @@ func TestReadV0(t *testing.T) {
 	}
 
 	expected := ResourceSet{
-		Orchestrations: []Orchestration{createOrchestration(t, "v0-orchestration")},
+		Pipelines: []Pipeline{createPipeline(t, "v0-pipeline")},
 		Stages: []Stage{
-			createStage(t, "stage-1", "host-1:1", "", "", "v0-orchestration"),
-			createStage(t, "stage-2", "host-2:2", "Service2", "", "v0-orchestration"),
-			createStage(t, "stage-3", "host-3:3", "", "Method3", "v0-orchestration"),
-			createStage(t, "stage-4", "host-4:4", "Service4", "Method4", "v0-orchestration"),
+			createStage(t, "stage-1", "host-1:1", "", "", "v0-pipeline"),
+			createStage(t, "stage-2", "host-2:2", "Service2", "", "v0-pipeline"),
+			createStage(t, "stage-3", "host-3:3", "", "Method3", "v0-pipeline"),
+			createStage(t, "stage-4", "host-4:4", "Service4", "Method4", "v0-pipeline"),
 		},
 		Links: []Link{
 			createLink(
@@ -31,7 +31,7 @@ func TestReadV0(t *testing.T) {
 				"",
 				"stage-2",
 				"",
-				"v0-orchestration",
+				"v0-pipeline",
 			),
 			createLink(
 				t,
@@ -40,7 +40,7 @@ func TestReadV0(t *testing.T) {
 				"Field2",
 				"stage-3",
 				"",
-				"v0-orchestration",
+				"v0-pipeline",
 			),
 			createLink(
 				t,
@@ -49,7 +49,7 @@ func TestReadV0(t *testing.T) {
 				"",
 				"stage-4",
 				"Field4",
-				"v0-orchestration",
+				"v0-pipeline",
 			),
 			createLink(
 				t,
@@ -58,7 +58,7 @@ func TestReadV0(t *testing.T) {
 				"Field4",
 				"stage-1",
 				"Field1",
-				"v0-orchestration",
+				"v0-pipeline",
 			),
 		},
 		Assets: nil,
@@ -72,7 +72,7 @@ func TestReadV0(t *testing.T) {
 		internal.Method{},
 		internal.LinkName{},
 		internal.MessageField{},
-		internal.OrchestrationName{},
+		internal.PipelineName{},
 	)
 	if diff := cmp.Diff(expected, resources, cmpOpts); diff != "" {
 		t.Fatalf("read resources mismatch:\n%s", diff)

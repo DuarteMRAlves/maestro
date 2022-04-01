@@ -1,4 +1,4 @@
 kind: stage
 spec:
   name: stage-name
-  orchestration: orch
+  pipeline: pipeline

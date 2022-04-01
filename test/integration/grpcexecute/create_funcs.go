@@ -30,12 +30,12 @@ func createGrpcServer(
 	return lis.Addr(), start, stop
 }
 
-func createOrchName(t *testing.T, name string) internal.OrchestrationName {
-	orchName, err := internal.NewOrchestrationName(name)
+func createPipelineName(t *testing.T, name string) internal.PipelineName {
+	pipelineName, err := internal.NewPipelineName(name)
 	if err != nil {
-		t.Fatalf("create orchestration name %s: %s", name, err)
+		t.Fatalf("create pipeline name %s: %s", name, err)
 	}
-	return orchName
+	return pipelineName
 }
 
 func createStageName(t *testing.T, name string) internal.StageName {

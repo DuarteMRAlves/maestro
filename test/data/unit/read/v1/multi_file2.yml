@@ -2,14 +2,14 @@ kind: stage
 spec:
   name: stage-4
   address: address-4
-  orchestration: orchestration-4
+  pipeline: pipeline-4
 ---
 kind: stage
 spec:
   name: stage-5
   address: address-5
   method: Method5
-  orchestration: orchestration-3
+  pipeline: pipeline-3
 ---
 kind: stage
 spec:
@@ -17,11 +17,11 @@ spec:
   service: Service6
   method: Method6
   address: address-6
-  orchestration: orchestration-3
+  pipeline: pipeline-3
 ---
 kind: stage
 spec:
   name: stage-7
   service: Service7
   address: address-7
-  orchestration: orchestration-4
+  pipeline: pipeline-4

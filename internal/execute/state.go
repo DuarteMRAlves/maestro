@@ -9,7 +9,7 @@ type id int
 
 // State defines a structure to manage the flow of a computation. This State is
 // created in a source stage with a unique id, that is transferred through the
-// orchestration, identifying the flow so that messages in parallel branches can
+// pipeline, identifying the flow so that messages in parallel branches can
 // be synchronized.
 type state struct {
 	id  id

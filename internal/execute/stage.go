@@ -94,7 +94,7 @@ func (s *unaryStage) call(
 	return client.Call(ctx, req)
 }
 
-// sourceStage is the source of the orchestration. It defines the initial ids of
+// sourceStage is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type sourceStage struct {
 	count  int32

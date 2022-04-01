@@ -3,20 +3,20 @@ package yaml
 import "github.com/DuarteMRAlves/maestro/internal"
 
 type ResourceSet struct {
-	Orchestrations []Orchestration
-	Stages         []Stage
-	Links          []Link
-	Assets         []Asset
+	Pipelines []Pipeline
+	Stages    []Stage
+	Links     []Link
+	Assets    []Asset
 }
 
-type Orchestration struct {
-	Name internal.OrchestrationName
+type Pipeline struct {
+	Name internal.PipelineName
 }
 
 type Stage struct {
-	Name          internal.StageName
-	Method        MethodContext
-	Orchestration internal.OrchestrationName
+	Name     internal.StageName
+	Method   MethodContext
+	Pipeline internal.PipelineName
 }
 
 type MethodContext struct {
@@ -26,10 +26,10 @@ type MethodContext struct {
 }
 
 type Link struct {
-	Name          internal.LinkName
-	Source        LinkEndpoint
-	Target        LinkEndpoint
-	Orchestration internal.OrchestrationName
+	Name     internal.LinkName
+	Source   LinkEndpoint
+	Target   LinkEndpoint
+	Pipeline internal.PipelineName
 }
 
 type LinkEndpoint struct {

@@ -17,19 +17,19 @@ func TestReadV1(t *testing.T) {
 		"single file": {
 			files: []string{"../../test/data/unit/read/v1/single_file.yml"},
 			expected: ResourceSet{
-				Orchestrations: []Orchestration{
-					createOrchestration(t, "orchestration-2"),
-					createOrchestration(t, "orchestration-1"),
+				Pipelines: []Pipeline{
+					createPipeline(t, "pipeline-2"),
+					createPipeline(t, "pipeline-1"),
 				},
 				Stages: []Stage{
 					createStage(
-						t, "stage-1", "address-1", "Service1", "Method1", "orchestration-1",
+						t, "stage-1", "address-1", "Service1", "Method1", "pipeline-1",
 					),
 					createStage(
-						t, "stage-2", "address-2", "Service2", "", "orchestration-1",
+						t, "stage-2", "address-2", "Service2", "", "pipeline-1",
 					),
 					createStage(
-						t, "stage-3", "address-3", "", "Method3", "orchestration-1",
+						t, "stage-3", "address-3", "", "Method3", "pipeline-1",
 					),
 				},
 				Links: []Link{
@@ -40,7 +40,7 @@ func TestReadV1(t *testing.T) {
 						"",
 						"stage-1",
 						"",
-						"orchestration-1",
+						"pipeline-1",
 					),
 					createLink(
 						t,
@@ -49,7 +49,7 @@ func TestReadV1(t *testing.T) {
 						"Field1",
 						"stage-2",
 						"Field2",
-						"orchestration-1",
+						"pipeline-1",
 					),
 				},
 				Assets: []Asset{
@@ -66,22 +66,22 @@ func TestReadV1(t *testing.T) {
 				"../../test/data/unit/read/v1/multi_file4.yml",
 			},
 			expected: ResourceSet{
-				Orchestrations: []Orchestration{
-					createOrchestration(t, "orchestration-3"),
-					createOrchestration(t, "orchestration-4"),
+				Pipelines: []Pipeline{
+					createPipeline(t, "pipeline-3"),
+					createPipeline(t, "pipeline-4"),
 				},
 				Stages: []Stage{
 					createStage(
-						t, "stage-4", "address-4", "", "", "orchestration-4",
+						t, "stage-4", "address-4", "", "", "pipeline-4",
 					),
 					createStage(
-						t, "stage-5", "address-5", "", "Method5", "orchestration-3",
+						t, "stage-5", "address-5", "", "Method5", "pipeline-3",
 					),
 					createStage(
-						t, "stage-6", "address-6", "Service6", "Method6", "orchestration-3",
+						t, "stage-6", "address-6", "Service6", "Method6", "pipeline-3",
 					),
 					createStage(
-						t, "stage-7", "address-7", "Service7", "", "orchestration-4",
+						t, "stage-7", "address-7", "Service7", "", "pipeline-4",
 					),
 				},
 				Links: []Link{
@@ -92,7 +92,7 @@ func TestReadV1(t *testing.T) {
 						"",
 						"stage-5",
 						"",
-						"orchestration-4",
+						"pipeline-4",
 					),
 					createLink(
 						t,
@@ -101,7 +101,7 @@ func TestReadV1(t *testing.T) {
 						"",
 						"stage-6",
 						"Field1",
-						"orchestration-3",
+						"pipeline-3",
 					),
 					createLink(
 						t,
@@ -110,7 +110,7 @@ func TestReadV1(t *testing.T) {
 						"",
 						"stage-6",
 						"Field2",
-						"orchestration-4",
+						"pipeline-4",
 					),
 				},
 				Assets: []Asset{
@@ -136,7 +136,7 @@ func TestReadV1(t *testing.T) {
 				internal.Method{},
 				internal.LinkName{},
 				internal.MessageField{},
-				internal.OrchestrationName{},
+				internal.PipelineName{},
 			)
 			if diff := cmp.Diff(tc.expected, resources, cmpOpts); diff != "" {
 				t.Fatalf("read resources mismatch:\n%s", diff)
@@ -228,21 +228,21 @@ func TestReadV1_Err(t *testing.T) {
 
 func TestWriteV1(t *testing.T) {
 	var resources ResourceSet
-	resources.Orchestrations = []Orchestration{
-		createOrchestration(t, "orchestration-2"),
-		createOrchestration(t, "orchestration-1"),
+	resources.Pipelines = []Pipeline{
+		createPipeline(t, "pipeline-2"),
+		createPipeline(t, "pipeline-1"),
 	}
 	resources.Stages = []Stage{
-		createStage(t, "stage-1", "address-1", "Service1", "Method1", "orchestration-1"),
-		createStage(t, "stage-2", "address-2", "Service2", "", "orchestration-1"),
-		createStage(t, "stage-3", "address-3", "", "Method3", "orchestration-1"),
+		createStage(t, "stage-1", "address-1", "Service1", "Method1", "pipeline-1"),
+		createStage(t, "stage-2", "address-2", "Service2", "", "pipeline-1"),
+		createStage(t, "stage-3", "address-3", "", "Method3", "pipeline-1"),
 	}
 	resources.Links = []Link{
 		createLink(
-			t, "link-stage-2-stage-1", "stage-2", "", "stage-1", "", "orchestration-1",
+			t, "link-stage-2-stage-1", "stage-2", "", "stage-1", "", "pipeline-1",
 		),
 		createLink(
-			t, "link-stage-1-stage-2", "stage-1", "Field1", "stage-2", "Field2", "orchestration-1",
+			t, "link-stage-1-stage-2", "stage-1", "Field1", "stage-2", "Field2", "pipeline-1",
 		),
 	}
 	resources.Assets = []Asset{
@@ -270,15 +270,15 @@ func TestWriteV1(t *testing.T) {
 	}
 }
 
-func createOrchestration(t *testing.T, name string) Orchestration {
-	orchName, err := internal.NewOrchestrationName(name)
+func createPipeline(t *testing.T, name string) Pipeline {
+	pipelineName, err := internal.NewPipelineName(name)
 	if err != nil {
-		t.Fatalf("create orchestration name %s: %s", name, err)
+		t.Fatalf("create pipeline name %s: %s", name, err)
 	}
-	return Orchestration{Name: orchName}
+	return Pipeline{Name: pipelineName}
 }
 
-func createStage(t *testing.T, name, addr, serv, meth, orch string) Stage {
+func createStage(t *testing.T, name, addr, serv, meth, pipeline string) Stage {
 	stageName, err := internal.NewStageName(name)
 	if err != nil {
 		t.Fatalf("create stage name %s: %s", name, err)
@@ -288,15 +288,15 @@ func createStage(t *testing.T, name, addr, serv, meth, orch string) Stage {
 		Service: internal.NewService(serv),
 		Method:  internal.NewMethod(meth),
 	}
-	orchName, err := internal.NewOrchestrationName(orch)
+	pipelineName, err := internal.NewPipelineName(pipeline)
 	if err != nil {
-		t.Fatalf("create orchestration name %s: %s", orch, err)
+		t.Fatalf("create pipeline name %s: %s", pipeline, err)
 	}
-	return Stage{Name: stageName, Method: methodCtx, Orchestration: orchName}
+	return Stage{Name: stageName, Method: methodCtx, Pipeline: pipelineName}
 }
 
 func createLink(
-	t *testing.T, name, srcStage, srcField, tgtStage, tgtField, orch string,
+	t *testing.T, name, srcStage, srcField, tgtStage, tgtField, pipeline string,
 ) Link {
 	linkName, err := internal.NewLinkName(name)
 	if err != nil {
@@ -316,12 +316,12 @@ func createLink(
 	tgtEndPt := LinkEndpoint{
 		Stage: tgtName, Field: internal.NewMessageField(tgtField),
 	}
-	orchName, err := internal.NewOrchestrationName(orch)
+	pipelineName, err := internal.NewPipelineName(pipeline)
 	if err != nil {
-		t.Fatalf("create orchestration name %s: %s", orch, err)
+		t.Fatalf("create pipeline name %s: %s", pipeline, err)
 	}
 	return Link{
-		Name: linkName, Source: srcEndPt, Target: tgtEndPt, Orchestration: orchName,
+		Name: linkName, Source: srcEndPt, Target: tgtEndPt, Pipeline: pipelineName,
 	}
 }
 
