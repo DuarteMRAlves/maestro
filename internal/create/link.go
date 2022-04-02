@@ -136,7 +136,7 @@ func Link(
 
 		links := pipeline.Links()
 		links = append(links, name)
-		pipeline = internal.NewPipeline(pipeline.Name(), pipeline.Stages(), links)
+		pipeline = internal.FromPipeline(pipeline, internal.WithLinks(links...))
 
 		err = pipelineStorage.Save(pipeline)
 		if err != nil {

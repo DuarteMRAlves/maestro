@@ -136,7 +136,11 @@ func createPipeline(
 	for _, l := range links {
 		linkNames = append(linkNames, createLinkName(t, l))
 	}
-	return internal.NewPipeline(pipelineName, stageNames, linkNames)
+	return internal.NewPipeline(
+		pipelineName,
+		internal.WithStages(stageNames...),
+		internal.WithLinks(linkNames...),
+	)
 }
 
 func cmpPipeline(

@@ -42,7 +42,7 @@ func Pipeline(storage PipelineStorage) func(internal.PipelineName) error {
 			return err
 		}
 
-		p := internal.NewPipeline(name, nil, nil)
+		p := internal.NewPipeline(name)
 		return storage.Save(p)
 	}
 }
