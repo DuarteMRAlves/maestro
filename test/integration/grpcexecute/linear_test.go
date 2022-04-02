@@ -111,8 +111,8 @@ func TestLinear(t *testing.T) {
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
-		[]internal.StageName{sourceName, transfName, sinkName},
-		[]internal.LinkName{sourceToTransformName, transformToSinkName},
+		internal.WithStages(sourceName, transfName, sinkName),
+		internal.WithLinks(sourceToTransformName, transformToSinkName),
 	)
 
 	e, err := executionBuilder(pipeline)

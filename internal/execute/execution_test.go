@@ -96,8 +96,8 @@ func TestExecution_Linear(t *testing.T) {
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
-		[]internal.StageName{sourceName, transformName, sinkName},
-		[]internal.LinkName{sourceToTransformName, transformToSinkName},
+		internal.WithStages(sourceName, transformName, sinkName),
+		internal.WithLinks(sourceToTransformName, transformToSinkName),
 	)
 
 	e, err := executionBuilder(pipeline)
@@ -356,8 +356,8 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
-		[]internal.StageName{sourceName, transformName, sinkName},
-		[]internal.LinkName{sourceToTransformName, sourceToSinkName, transformToSinkName},
+		internal.WithStages(sourceName, transformName, sinkName),
+		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
 	)
 
 	e, err := executionBuilder(pipeline)
@@ -622,8 +622,8 @@ func TestExecution_Slow(t *testing.T) {
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
-		[]internal.StageName{sourceName, transformName, sinkName},
-		[]internal.LinkName{sourceToTransformName, transformToSinkName},
+		internal.WithStages(sourceName, transformName, sinkName),
+		internal.WithLinks(sourceToTransformName, transformToSinkName),
 	)
 
 	e, err := executionBuilder(pipeline)

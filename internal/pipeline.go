@@ -78,8 +78,49 @@ func (o Pipeline) Mode() ExecutionMode {
 	return o.mode
 }
 
-func NewPipeline(
-	name PipelineName, stages []StageName, links []LinkName,
-) Pipeline {
-	return Pipeline{name: name, stages: stages, links: links}
+type PipelineOpt func(*Pipeline)
+
+func WithStages(ss ...StageName) PipelineOpt {
+	return func(p *Pipeline) {
+		p.stages = ss
+	}
+}
+
+func WithLinks(ll ...LinkName) PipelineOpt {
+	return func(p *Pipeline) {
+		p.links = ll
+	}
+}
+
+func WithOfflineExec() PipelineOpt {
+	return func(p *Pipeline) {
+		p.mode = OfflineExecution
+	}
+}
+
+func WithOnlineExec() PipelineOpt {
+	return func(p *Pipeline) {
+		p.mode = OnlineExecution
+	}
+}
+
+func NewPipeline(name PipelineName, opts ...PipelineOpt) Pipeline {
+	p := Pipeline{name: name}
+	for _, o := range opts {
+		o(&p)
+	}
+	return p
+}
+
+func FromPipeline(src Pipeline, opts ...PipelineOpt) Pipeline {
+	p := Pipeline{
+		name:   src.name,
+		stages: src.stages,
+		links:  src.links,
+		mode:   src.mode,
+	}
+	for _, o := range opts {
+		o(&p)
+	}
+	return p
 }

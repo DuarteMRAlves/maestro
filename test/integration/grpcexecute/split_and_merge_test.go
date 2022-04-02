@@ -119,8 +119,8 @@ func TestSplitAndMerge(t *testing.T) {
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
-		[]internal.StageName{sourceName, transfName, sinkName},
-		[]internal.LinkName{sourceToTransformName, sourceToSinkName, transformToSinkName},
+		internal.WithStages(sourceName, transfName, sinkName),
+		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
 	)
 
 	e, err := executionBuilder(pipeline)

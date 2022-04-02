@@ -66,7 +66,7 @@ func Stage(
 
 		stages := pipeline.Stages()
 		stages = append(stages, name)
-		pipeline = internal.NewPipeline(pipeline.Name(), stages, pipeline.Links())
+		pipeline = internal.FromPipeline(pipeline, internal.WithStages(stages...))
 
 		err = pipelineStorage.Save(pipeline)
 		if err != nil {
