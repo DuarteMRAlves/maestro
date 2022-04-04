@@ -11,37 +11,81 @@ import (
 )
 
 func TestCreatePipeline(t *testing.T) {
-	name := "some-name"
-	pipelineName := createPipelineName(t, name)
-	expected := createPipeline(t, name, nil, nil)
-	storage := mock.PipelineStorage{Pipelines: map[internal.PipelineName]internal.Pipeline{}}
-
-	createFn := Pipeline(storage)
-
-	err := createFn(pipelineName)
-	if err != nil {
-		t.Fatalf("create error: %s", err)
+	tests := map[string]struct {
+		name     internal.PipelineName
+		mode     internal.ExecutionMode
+		expected internal.Pipeline
+	}{
+		"required fields": {
+			name: createPipelineName(t, "some-name"),
+			expected: internal.NewPipeline(
+				createPipelineName(t, "some-name"),
+				internal.WithOfflineExec(),
+			),
+		},
+		"all fields": {
+			name: createPipelineName(t, "some-name"),
+			mode: internal.OnlineExecution,
+			expected: internal.NewPipeline(
+				createPipelineName(t, "some-name"),
+				internal.WithOnlineExec(),
+			),
+		},
 	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			storage := mock.PipelineStorage{Pipelines: map[internal.PipelineName]internal.Pipeline{}}
 
-	if diff := cmp.Diff(1, len(storage.Pipelines)); diff != "" {
-		t.Fatalf("number of pipelines mismatch:\n%s", diff)
-	}
+			createFn := Pipeline(storage)
 
-	p, exists := storage.Pipelines[expected.Name()]
-	if !exists {
-		t.Fatalf("created pipeline does not exist in storage")
+			err := createFn(tc.name, tc.mode)
+			if err != nil {
+				t.Fatalf("create error: %s", err)
+			}
+
+			if diff := cmp.Diff(1, len(storage.Pipelines)); diff != "" {
+				t.Fatalf("number of pipelines mismatch:\n%s", diff)
+			}
+
+			p, exists := storage.Pipelines[tc.expected.Name()]
+			if !exists {
+				t.Fatalf("created pipeline does not exist in storage")
+			}
+			cmpPipeline(t, tc.expected, p, "created pipeline")
+		})
 	}
-	cmpPipeline(t, expected, p, "created pipeline")
 }
 
 func TestCreatePipeline_Err(t *testing.T) {
 	tests := map[string]struct {
-		name    internal.PipelineName
-		isError error
+		name     internal.PipelineName
+		mode     internal.ExecutionMode
+		valError func(*testing.T, error)
 	}{
 		"empty name": {
-			name:    createPipelineName(t, ""),
-			isError: emptyPipelineName,
+			name: createPipelineName(t, ""),
+			mode: internal.OnlineExecution,
+			valError: func(t *testing.T, err error) {
+				if !errors.Is(err, emptyPipelineName) {
+					format := "Wrong error: expected %s, got %s"
+					t.Fatalf(format, emptyPipelineName, err)
+				}
+			},
+		},
+		"unknown execution mode": {
+			name: createPipelineName(t, "some-name"),
+			mode: internal.ExecutionMode(3),
+			valError: func(t *testing.T, err error) {
+				var unkMode *unknownExecutionMode
+				if !errors.As(err, &unkMode) {
+					format := "Wrong error type: expected %s, got %s"
+					t.Fatalf(format, reflect.TypeOf(unkMode), reflect.TypeOf(err))
+				}
+				exp := internal.ExecutionMode(3)
+				if diff := cmp.Diff(exp, unkMode.mode); diff != "" {
+					t.Fatalf("execution mode mismatch:\n%s", diff)
+				}
+			},
 		},
 	}
 	for name, tc := range tests {
@@ -53,14 +97,11 @@ func TestCreatePipeline_Err(t *testing.T) {
 				}
 
 				createFn := Pipeline(storage)
-				err := createFn(tc.name)
+				err := createFn(tc.name, tc.mode)
 				if err == nil {
 					t.Fatalf("expected error but got none")
 				}
-				if !errors.Is(err, tc.isError) {
-					format := "Wrong error: expected %s, got %s"
-					t.Fatalf(format, tc.isError, err)
-				}
+				tc.valError(t, err)
 				if diff := cmp.Diff(0, len(storage.Pipelines)); diff != "" {
 					t.Fatalf("number of pipelines mismatch:\n%s", diff)
 				}
@@ -72,12 +113,13 @@ func TestCreatePipeline_Err(t *testing.T) {
 func TestCreatePipeline_AlreadyExists(t *testing.T) {
 	name := "some-name"
 	pipelineName := createPipelineName(t, name)
-	expected := createPipeline(t, name, nil, nil)
+	mode := internal.OnlineExecution
+	expected := internal.NewPipeline(pipelineName, internal.WithOnlineExec())
 	storage := mock.PipelineStorage{Pipelines: map[internal.PipelineName]internal.Pipeline{}}
 
 	createFn := Pipeline(storage)
 
-	err := createFn(pipelineName)
+	err := createFn(pipelineName, mode)
 	if err != nil {
 		t.Fatalf("first create error: %s", err)
 	}
@@ -91,7 +133,7 @@ func TestCreatePipeline_AlreadyExists(t *testing.T) {
 	}
 	cmpPipeline(t, expected, p, "first create pipeline")
 
-	err = createFn(pipelineName)
+	err = createFn(pipelineName, mode)
 	if err == nil {
 		t.Fatalf("expected create error but got none")
 	}
@@ -120,27 +162,6 @@ func createPipelineName(t *testing.T, name string) internal.PipelineName {
 		t.Fatalf("create pipeline name %s: %s", name, err)
 	}
 	return pipelineName
-}
-
-func createPipeline(
-	t *testing.T, name string, stages, links []string,
-) internal.Pipeline {
-	var (
-		stageNames []internal.StageName
-		linkNames  []internal.LinkName
-	)
-	pipelineName := createPipelineName(t, name)
-	for _, s := range stages {
-		stageNames = append(stageNames, createStageName(t, s))
-	}
-	for _, l := range links {
-		linkNames = append(linkNames, createLinkName(t, l))
-	}
-	return internal.NewPipeline(
-		pipelineName,
-		internal.WithStages(stageNames...),
-		internal.WithLinks(linkNames...),
-	)
 }
 
 func cmpPipeline(

@@ -28,9 +28,10 @@ func TestCreateStage(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, "pipeline"),
 			expStage:     createStage(t, "some-name", true),
-			loadPipeline: createPipeline(t, "pipeline", nil, nil),
-			expPipeline: createPipeline(
-				t, "pipeline", []string{"some-name"}, []string{},
+			loadPipeline: internal.NewPipeline(createPipelineName(t, "pipeline")),
+			expPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(createStageName(t, "some-name")),
 			),
 		},
 		"all fields": {
@@ -42,9 +43,10 @@ func TestCreateStage(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, "pipeline"),
 			expStage:     createStage(t, "some-name", false),
-			loadPipeline: createPipeline(t, "pipeline", nil, nil),
-			expPipeline: createPipeline(
-				t, "pipeline", []string{"some-name"}, []string{},
+			loadPipeline: internal.NewPipeline(createPipelineName(t, "pipeline")),
+			expPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(createStageName(t, "some-name")),
 			),
 		},
 	}
@@ -108,7 +110,7 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, "pipeline"),
 			isError:      emptyStageName,
-			loadPipeline: createPipeline(t, "pipeline", nil, nil),
+			loadPipeline: internal.NewPipeline(createPipelineName(t, "pipeline")),
 		},
 		"empty address": {
 			stageName: createStageName(t, "some-name"),
@@ -119,7 +121,7 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, "pipeline"),
 			isError:      emptyAddress,
-			loadPipeline: createPipeline(t, "pipeline", nil, nil),
+			loadPipeline: internal.NewPipeline(createPipelineName(t, "pipeline")),
 		},
 		"empty pipeline": {
 			stageName: createStageName(t, "some-name"),
@@ -130,7 +132,7 @@ func TestCreateStage_Err(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, ""),
 			isError:      emptyPipelineName,
-			loadPipeline: createPipeline(t, "pipeline", nil, nil),
+			loadPipeline: internal.NewPipeline(createPipelineName(t, "pipeline")),
 		},
 	}
 	for name, tc := range tests {
@@ -174,10 +176,8 @@ func TestCreateStage_AlreadyExists(t *testing.T) {
 	pipelineName := createPipelineName(t, "pipeline")
 
 	expStage := createStage(t, "some-name", false)
-	storedPipeline := createPipeline(t, "pipeline", nil, nil)
-	expPipeline := createPipeline(
-		t, "pipeline", []string{"some-name"}, []string{},
-	)
+	storedPipeline := internal.NewPipeline(pipelineName)
+	expPipeline := internal.NewPipeline(pipelineName, internal.WithStages(stageName))
 
 	stageStore := mock.StageStorage{
 		Stages: map[internal.StageName]internal.Stage{},

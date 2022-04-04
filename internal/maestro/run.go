@@ -137,7 +137,8 @@ func (opts *RunOpts) run() error {
 	createLink := create.Link(linkStore, stageStore, pipelineStore)
 
 	for _, o := range resources.Pipelines {
-		if err := createPipeline(o.Name); err != nil {
+		// FIXME: remove online execution hardcoded.
+		if err := createPipeline(o.Name, internal.OnlineExecution); err != nil {
 			return err
 		}
 	}
