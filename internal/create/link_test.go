@@ -37,17 +37,18 @@ func TestCreateLink(t *testing.T) {
 				"some-name",
 				true,
 			),
-			loadPipeline: createPipeline(
-				t,
-				"pipeline",
-				[]string{"source", "target"},
-				[]string{},
+			loadPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
 			),
-			expPipeline: createPipeline(
-				t,
-				"pipeline",
-				[]string{"source", "target"},
-				[]string{"some-name"},
+			expPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
+				internal.WithLinks(createLinkName(t, "some-name")),
 			),
 			storedStages: []internal.Stage{
 				createStage(t, "source", true),
@@ -66,17 +67,18 @@ func TestCreateLink(t *testing.T) {
 			),
 			pipelineName: createPipelineName(t, "pipeline"),
 			expLink:      createLink(t, "some-name", false),
-			loadPipeline: createPipeline(
-				t,
-				"pipeline",
-				[]string{"source", "target"},
-				[]string{},
+			loadPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
 			),
-			expPipeline: createPipeline(
-				t,
-				"pipeline",
-				[]string{"source", "target"},
-				[]string{"some-name"},
+			expPipeline: internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
+				internal.WithLinks(createLinkName(t, "some-name")),
 			),
 			storedStages: []internal.Stage{
 				createStage(t, "source", false),
@@ -213,7 +215,12 @@ func TestCreateLink_Err(t *testing.T) {
 				},
 			}
 
-			pipeline := createPipeline(t, "pipeline", []string{"source", "target"}, nil)
+			pipeline := internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
+			)
 			pipelineStore := mock.PipelineStorage{
 				Pipelines: map[internal.PipelineName]internal.Pipeline{
 					createPipelineName(t, "pipeline"): pipeline,
@@ -258,17 +265,18 @@ func TestCreateLink_AlreadyExists(t *testing.T) {
 	)
 	pipelineName := createPipelineName(t, "pipeline")
 	expLink := createLink(t, "some-name", false)
-	storedPipeline := createPipeline(
-		t,
-		"pipeline",
-		[]string{"source", "target"},
-		[]string{},
+	storedPipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
+		internal.WithStages(
+			createStageName(t, "source"), createStageName(t, "target"),
+		),
 	)
-	expPipeline := createPipeline(
-		t,
-		"pipeline",
-		[]string{"source", "target"},
-		[]string{"some-name"},
+	expPipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
+		internal.WithStages(
+			createStageName(t, "source"), createStageName(t, "target"),
+		),
+		internal.WithLinks(linkName),
 	)
 	storedStages := []internal.Stage{
 		createStage(t, "source", false),
@@ -392,7 +400,12 @@ func TestStageNotInPipeline_Error(t *testing.T) {
 				},
 			}
 
-			pipeline := createPipeline(t, "pipeline", []string{"source", "target"}, nil)
+			pipeline := internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
+			)
 			pipelineStore := mock.PipelineStorage{
 				Pipelines: map[internal.PipelineName]internal.Pipeline{
 					createPipelineName(t, "pipeline"): pipeline,
@@ -457,11 +470,18 @@ func TestCreateLink_IncompatibleLinks(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			initialPipeline := createPipeline(
-				t, "pipeline", []string{"source", "target"}, nil,
+			initialPipeline := internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
 			)
-			expPipeline := createPipeline(
-				t, "pipeline", []string{"source", "target"}, []string{"first"},
+			expPipeline := internal.NewPipeline(
+				createPipelineName(t, "pipeline"),
+				internal.WithStages(
+					createStageName(t, "source"), createStageName(t, "target"),
+				),
+				internal.WithLinks(createLinkName(t, "first")),
 			)
 			pipelineStore := mock.PipelineStorage{
 				Pipelines: map[internal.PipelineName]internal.Pipeline{

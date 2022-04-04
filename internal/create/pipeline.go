@@ -27,8 +27,18 @@ func (err *pipelineAlreadyExists) Error() string {
 	return fmt.Sprintf("pipeline '%s' already exists", err.name)
 }
 
-func Pipeline(storage PipelineStorage) func(internal.PipelineName) error {
-	return func(name internal.PipelineName) error {
+type unknownExecutionMode struct{ mode internal.ExecutionMode }
+
+func (err *unknownExecutionMode) Error() string {
+	return fmt.Sprintf("unknown execution mode: %s", err.mode)
+}
+
+func Pipeline(
+	storage PipelineStorage,
+) func(internal.PipelineName, internal.ExecutionMode) error {
+	return func(name internal.PipelineName, mode internal.ExecutionMode) error {
+		var modeOpt internal.PipelineOpt
+
 		if name.IsEmpty() {
 			return emptyPipelineName
 		}
@@ -42,7 +52,16 @@ func Pipeline(storage PipelineStorage) func(internal.PipelineName) error {
 			return err
 		}
 
-		p := internal.NewPipeline(name)
+		switch mode {
+		case internal.OfflineExecution:
+			modeOpt = internal.WithOfflineExec()
+		case internal.OnlineExecution:
+			modeOpt = internal.WithOnlineExec()
+		default:
+			return &unknownExecutionMode{mode: mode}
+		}
+
+		p := internal.NewPipeline(name, modeOpt)
 		return storage.Save(p)
 	}
 }
