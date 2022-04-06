@@ -15,11 +15,11 @@ func TestReadV1(t *testing.T) {
 		expected ResourceSet
 	}{
 		"single file": {
-			files: []string{"../../test/data/unit/read/v1/single_file.yml"},
+			files: []string{"../../test/data/unit/read/v1/read_single_file.yml"},
 			expected: ResourceSet{
 				Pipelines: []Pipeline{
-					createPipeline(t, "pipeline-2"),
-					createPipeline(t, "pipeline-1"),
+					createPipeline(t, "pipeline-2", internal.OfflineExecution),
+					createPipeline(t, "pipeline-1", internal.OnlineExecution),
 				},
 				Stages: []Stage{
 					createStage(
@@ -67,8 +67,8 @@ func TestReadV1(t *testing.T) {
 			},
 			expected: ResourceSet{
 				Pipelines: []Pipeline{
-					createPipeline(t, "pipeline-3"),
-					createPipeline(t, "pipeline-4"),
+					createPipeline(t, "pipeline-3", internal.OfflineExecution),
+					createPipeline(t, "pipeline-4", internal.OfflineExecution),
 				},
 				Stages: []Stage{
 					createStage(
@@ -137,6 +137,7 @@ func TestReadV1(t *testing.T) {
 				internal.LinkName{},
 				internal.MessageField{},
 				internal.PipelineName{},
+				internal.ExecutionMode{},
 			)
 			if diff := cmp.Diff(tc.expected, resources, cmpOpts); diff != "" {
 				t.Fatalf("read resources mismatch:\n%s", diff)
@@ -229,8 +230,8 @@ func TestReadV1_Err(t *testing.T) {
 func TestWriteV1(t *testing.T) {
 	var resources ResourceSet
 	resources.Pipelines = []Pipeline{
-		createPipeline(t, "pipeline-2"),
-		createPipeline(t, "pipeline-1"),
+		createPipeline(t, "pipeline-2", internal.OnlineExecution),
+		createPipeline(t, "pipeline-1", internal.OfflineExecution),
 	}
 	resources.Stages = []Stage{
 		createStage(t, "stage-1", "address-1", "Service1", "Method1", "pipeline-1"),
@@ -270,12 +271,14 @@ func TestWriteV1(t *testing.T) {
 	}
 }
 
-func createPipeline(t *testing.T, name string) Pipeline {
+func createPipeline(
+	t *testing.T, name string, mode internal.ExecutionMode,
+) Pipeline {
 	pipelineName, err := internal.NewPipelineName(name)
 	if err != nil {
 		t.Fatalf("create pipeline name %s: %s", name, err)
 	}
-	return Pipeline{Name: pipelineName}
+	return Pipeline{Name: pipelineName, Mode: mode}
 }
 
 func createStage(t *testing.T, name, addr, serv, meth, pipeline string) Stage {

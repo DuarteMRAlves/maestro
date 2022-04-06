@@ -16,7 +16,9 @@ func TestReadV0(t *testing.T) {
 	}
 
 	expected := ResourceSet{
-		Pipelines: []Pipeline{createPipeline(t, "v0-pipeline")},
+		Pipelines: []Pipeline{
+			createPipeline(t, "v0-pipeline", internal.OnlineExecution),
+		},
 		Stages: []Stage{
 			createStage(t, "stage-1", "host-1:1", "", "", "v0-pipeline"),
 			createStage(t, "stage-2", "host-2:2", "Service2", "", "v0-pipeline"),
@@ -73,6 +75,7 @@ func TestReadV0(t *testing.T) {
 		internal.LinkName{},
 		internal.MessageField{},
 		internal.PipelineName{},
+		internal.ExecutionMode{},
 	)
 	if diff := cmp.Diff(expected, resources, cmpOpts); diff != "" {
 		t.Fatalf("read resources mismatch:\n%s", diff)

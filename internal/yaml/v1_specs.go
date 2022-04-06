@@ -4,6 +4,9 @@ type v1PipelineSpec struct {
 	// Name that should be associated with the pipeline.
 	// (required, unique)
 	Name string `yaml:"name" info:"required"`
+	// Mode specifies the execution mode for the pipeline.
+	// (optional)
+	Mode string `yaml:"execution_mode,omitempty"`
 }
 
 type v1StageSpec struct {
