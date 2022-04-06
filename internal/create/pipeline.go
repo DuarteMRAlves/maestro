@@ -27,10 +27,10 @@ func (err *pipelineAlreadyExists) Error() string {
 	return fmt.Sprintf("pipeline '%s' already exists", err.name)
 }
 
-type unknownExecutionMode struct{ mode internal.ExecutionMode }
+type unsupportedExecutionMode struct{ mode internal.ExecutionMode }
 
-func (err *unknownExecutionMode) Error() string {
-	return fmt.Sprintf("unknown execution mode: %s", err.mode)
+func (err *unsupportedExecutionMode) Error() string {
+	return fmt.Sprintf("unsupported execution mode: %s", err.mode)
 }
 
 func Pipeline(
@@ -58,7 +58,7 @@ func Pipeline(
 		case internal.OnlineExecution:
 			modeOpt = internal.WithOnlineExec()
 		default:
-			return &unknownExecutionMode{mode: mode}
+			return &unsupportedExecutionMode{mode: mode}
 		}
 
 		p := internal.NewPipeline(name, modeOpt)

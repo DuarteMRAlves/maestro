@@ -72,21 +72,6 @@ func TestCreatePipeline_Err(t *testing.T) {
 				}
 			},
 		},
-		"unknown execution mode": {
-			name: createPipelineName(t, "some-name"),
-			mode: internal.ExecutionMode(3),
-			valError: func(t *testing.T, err error) {
-				var unkMode *unknownExecutionMode
-				if !errors.As(err, &unkMode) {
-					format := "Wrong error type: expected %s, got %s"
-					t.Fatalf(format, reflect.TypeOf(unkMode), reflect.TypeOf(err))
-				}
-				exp := internal.ExecutionMode(3)
-				if diff := cmp.Diff(exp, unkMode.mode); diff != "" {
-					t.Fatalf("execution mode mismatch:\n%s", diff)
-				}
-			},
-		},
 	}
 	for name, tc := range tests {
 		t.Run(
@@ -170,6 +155,7 @@ func cmpPipeline(
 	cmpOpts := cmp.AllowUnexported(
 		internal.Pipeline{},
 		internal.PipelineName{},
+		internal.ExecutionMode{},
 		internal.StageName{},
 		internal.LinkName{},
 	)
