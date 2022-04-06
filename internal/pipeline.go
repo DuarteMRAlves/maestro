@@ -36,19 +36,26 @@ func (err *invalidPipelineName) Error() string {
 	return fmt.Sprintf("invalid pipeline name: '%s'", err.name)
 }
 
-type ExecutionMode int
+type ExecutionMode struct {
+	val int
+}
 
 const (
 	// OfflineExecution is the default execution mode.
-	OfflineExecution ExecutionMode = iota
-	OnlineExecution
+	offlineExecution int = iota
+	onlineExecution
+)
+
+var (
+	OfflineExecution = ExecutionMode{val: offlineExecution}
+	OnlineExecution  = ExecutionMode{val: onlineExecution}
 )
 
 func (e ExecutionMode) String() string {
-	switch e {
-	case OfflineExecution:
+	switch e.val {
+	case offlineExecution:
 		return "OfflineExecution"
-	case OnlineExecution:
+	case onlineExecution:
 		return "OnlineExecution"
 	default:
 		return "UnknownExecutionMode"
