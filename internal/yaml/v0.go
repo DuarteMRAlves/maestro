@@ -37,7 +37,8 @@ func ReadV0(file string) (ResourceSet, error) {
 	if err != nil {
 		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
 	}
-	pipeline := Pipeline{Name: pipelineName}
+	// v0 pipeline executes always online.
+	pipeline := Pipeline{Name: pipelineName, Mode: internal.OnlineExecution}
 	resources.Pipelines = append(resources.Pipelines, pipeline)
 
 	for _, spec := range fileSpec.Stages {

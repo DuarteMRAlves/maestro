@@ -11,6 +11,7 @@ type ResourceSet struct {
 
 type Pipeline struct {
 	Name internal.PipelineName
+	Mode internal.ExecutionMode
 }
 
 type Stage struct {
