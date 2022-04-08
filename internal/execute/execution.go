@@ -13,14 +13,14 @@ type Logger interface {
 
 type Execution struct {
 	stages *stageMap
-	chans  []chan state
+	chans  []chan onlineState
 	wg     *errgroup.Group
 	cancel context.CancelFunc
 
 	logger Logger
 }
 
-func newExecution(stages *stageMap, chans []chan state, logger Logger) *Execution {
+func newExecution(stages *stageMap, chans []chan onlineState, logger Logger) *Execution {
 	return &Execution{stages: stages, chans: chans, logger: logger}
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 func TestUnaryStage_Run(t *testing.T) {
-	var received []state
+	var received []onlineState
 
 	stageDone := make(chan struct{})
 	receiveDone := make(chan struct{})
@@ -20,14 +20,14 @@ func TestUnaryStage_Run(t *testing.T) {
 	fieldName := internal.NewMessageField("field")
 
 	requests := testRequests(fieldName)
-	states := []state{
-		newState(1, requests[0]),
-		newState(3, requests[1]),
-		newState(5, requests[2]),
+	states := []onlineState{
+		newOnlineState(1, requests[0]),
+		newOnlineState(3, requests[1]),
+		newOnlineState(5, requests[2]),
 	}
 
-	input := make(chan state, len(requests))
-	output := make(chan state, len(requests))
+	input := make(chan onlineState, len(requests))
+	output := make(chan onlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
@@ -67,7 +67,7 @@ func TestUnaryStage_Run(t *testing.T) {
 	}
 	for i, rcv := range received {
 		in := states[i]
-		exp := state{
+		exp := onlineState{
 			id: in.id,
 			msg: &mock.Message{
 				Fields: map[internal.MessageField]interface{}{
@@ -75,7 +75,7 @@ func TestUnaryStage_Run(t *testing.T) {
 				},
 			},
 		}
-		cmpOpts := cmp.AllowUnexported(state{})
+		cmpOpts := cmp.AllowUnexported(onlineState{})
 		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
@@ -133,7 +133,7 @@ func TestSourceStage_Run(t *testing.T) {
 	start := int32(1)
 	numRequest := 10
 
-	output := make(chan state)
+	output := make(chan onlineState)
 	s := newSourceStage(start, mock.NewGen(), output)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -149,7 +149,7 @@ func TestSourceStage_Run(t *testing.T) {
 		close(done)
 	}()
 
-	generated := make([]state, 0, numRequest)
+	generated := make([]onlineState, 0, numRequest)
 	for i := 0; i < numRequest; i++ {
 		generated = append(generated, <-output)
 	}
@@ -158,9 +158,9 @@ func TestSourceStage_Run(t *testing.T) {
 
 	for i, g := range generated {
 		m := &mock.Message{Fields: map[internal.MessageField]interface{}{}}
-		exp := state{id: id(i + 1), msg: m}
+		exp := onlineState{id: id(i + 1), msg: m}
 
-		cmpOpts := cmp.AllowUnexported(state{})
+		cmpOpts := cmp.AllowUnexported(onlineState{})
 		if diff := cmp.Diff(exp, g, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
@@ -178,42 +178,42 @@ func TestMergeStage_Run(t *testing.T) {
 	f3 := internal.NewMessageField("f3")
 	fields := []internal.MessageField{f1, f2, f3}
 
-	input1 := make(chan state)
+	input1 := make(chan onlineState)
 	defer close(input1)
-	input2 := make(chan state)
+	input2 := make(chan onlineState)
 	defer close(input2)
-	input3 := make(chan state)
+	input3 := make(chan onlineState)
 	defer close(input3)
-	inputs := []<-chan state{input1, input2, input3}
+	inputs := []<-chan onlineState{input1, input2, input3}
 
-	output := make(chan state)
+	output := make(chan onlineState)
 
 	s := newMergeStage(fields, inputs, output, mock.NewGen())
 
-	expected := []state{
-		newState(3, testMergeOuterMessage(inner, fields, 3)),
-		newState(6, testMergeOuterMessage(inner, fields, 6)),
+	expected := []onlineState{
+		newOnlineState(3, testMergeOuterMessage(inner, fields, 3)),
+		newOnlineState(6, testMergeOuterMessage(inner, fields, 6)),
 	}
 
 	go func() {
-		input1 <- newState(1, testInnerMessage(inner[0], 1))
-		input1 <- newState(2, testInnerMessage(inner[0], 2))
-		input1 <- newState(3, testInnerMessage(inner[0], 3))
-		input1 <- newState(6, testInnerMessage(inner[0], 6))
+		input1 <- newOnlineState(1, testInnerMessage(inner[0], 1))
+		input1 <- newOnlineState(2, testInnerMessage(inner[0], 2))
+		input1 <- newOnlineState(3, testInnerMessage(inner[0], 3))
+		input1 <- newOnlineState(6, testInnerMessage(inner[0], 6))
 	}()
 
 	go func() {
-		input2 <- newState(2, testInnerMessage(inner[1], 2))
-		input2 <- newState(3, testInnerMessage(inner[1], 3))
-		input2 <- newState(5, testInnerMessage(inner[1], 5))
-		input2 <- newState(6, testInnerMessage(inner[1], 6))
+		input2 <- newOnlineState(2, testInnerMessage(inner[1], 2))
+		input2 <- newOnlineState(3, testInnerMessage(inner[1], 3))
+		input2 <- newOnlineState(5, testInnerMessage(inner[1], 5))
+		input2 <- newOnlineState(6, testInnerMessage(inner[1], 6))
 	}()
 
 	go func() {
-		input3 <- newState(1, testInnerMessage(inner[2], 2))
-		input3 <- newState(3, testInnerMessage(inner[2], 3))
-		input3 <- newState(5, testInnerMessage(inner[2], 5))
-		input3 <- newState(6, testInnerMessage(inner[2], 6))
+		input3 <- newOnlineState(1, testInnerMessage(inner[2], 2))
+		input3 <- newOnlineState(3, testInnerMessage(inner[2], 3))
+		input3 <- newOnlineState(5, testInnerMessage(inner[2], 5))
+		input3 <- newOnlineState(6, testInnerMessage(inner[2], 6))
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -231,7 +231,7 @@ func TestMergeStage_Run(t *testing.T) {
 
 	for i, exp := range expected {
 		out := <-output
-		cmpOpts := cmp.AllowUnexported(state{})
+		cmpOpts := cmp.AllowUnexported(onlineState{})
 		if diff := cmp.Diff(exp, out, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
@@ -264,36 +264,36 @@ func TestSplitStage_Run(t *testing.T) {
 
 	fields := []internal.MessageField{f1, f2, f3}
 
-	input := make(chan state)
+	input := make(chan onlineState)
 
-	output1 := make(chan state)
-	output2 := make(chan state)
-	output3 := make(chan state)
+	output1 := make(chan onlineState)
+	output2 := make(chan onlineState)
+	output3 := make(chan onlineState)
 
-	outputs := []chan<- state{output1, output2, output3}
+	outputs := []chan<- onlineState{output1, output2, output3}
 
 	s := newSplitStage(fields, input, outputs)
 
-	expected1 := []state{
-		newState(id(1), testInnerMessage(inner[0], 1)),
-		newState(id(3), testInnerMessage(inner[0], 3)),
-		newState(id(5), testInnerMessage(inner[0], 5)),
+	expected1 := []onlineState{
+		newOnlineState(id(1), testInnerMessage(inner[0], 1)),
+		newOnlineState(id(3), testInnerMessage(inner[0], 3)),
+		newOnlineState(id(5), testInnerMessage(inner[0], 5)),
 	}
-	expected2 := []state{
-		newState(id(1), testSplitOuterMessage(inner, fields, 1)),
-		newState(id(3), testSplitOuterMessage(inner, fields, 3)),
-		newState(id(5), testSplitOuterMessage(inner, fields, 5)),
+	expected2 := []onlineState{
+		newOnlineState(id(1), testSplitOuterMessage(inner, fields, 1)),
+		newOnlineState(id(3), testSplitOuterMessage(inner, fields, 3)),
+		newOnlineState(id(5), testSplitOuterMessage(inner, fields, 5)),
 	}
-	expected3 := []state{
-		newState(id(1), testInnerMessage(inner[1], 1)),
-		newState(id(3), testInnerMessage(inner[1], 3)),
-		newState(id(5), testInnerMessage(inner[1], 5)),
+	expected3 := []onlineState{
+		newOnlineState(id(1), testInnerMessage(inner[1], 1)),
+		newOnlineState(id(3), testInnerMessage(inner[1], 3)),
+		newOnlineState(id(5), testInnerMessage(inner[1], 5)),
 	}
 
 	go func() {
-		input <- newState(id(1), testSplitOuterMessage(inner, fields, 1))
-		input <- newState(id(3), testSplitOuterMessage(inner, fields, 3))
-		input <- newState(id(5), testSplitOuterMessage(inner, fields, 5))
+		input <- newOnlineState(id(1), testSplitOuterMessage(inner, fields, 1))
+		input <- newOnlineState(id(3), testSplitOuterMessage(inner, fields, 3))
+		input <- newOnlineState(id(5), testSplitOuterMessage(inner, fields, 5))
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -309,7 +309,7 @@ func TestSplitStage_Run(t *testing.T) {
 		close(done)
 	}()
 
-	cmpOpts := cmp.AllowUnexported(state{})
+	cmpOpts := cmp.AllowUnexported(onlineState{})
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]
 		out1 := <-output1
