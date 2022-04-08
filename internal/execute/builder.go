@@ -28,7 +28,7 @@ func NewBuilder(
 	logger Logger,
 ) Builder {
 	return func(pipeline internal.Pipeline) (*Execution, error) {
-		var chans []chan state
+		var chans []chan onlineState
 
 		stageNames := pipeline.Stages()
 		stageCtxs := make(map[internal.StageName]*stageContext, len(stageNames))
@@ -52,7 +52,7 @@ func NewBuilder(
 			if err != nil {
 				return nil, err
 			}
-			ch := make(chan state, defaultChanSize)
+			ch := make(chan onlineState, defaultChanSize)
 			chans = append(chans, ch)
 			linkCtx := &linkContext{link: link, ch: ch}
 			links[n] = linkCtx
@@ -92,7 +92,7 @@ func NewBuilder(
 		stages := newStageMap()
 		for name, stageCtx := range stageCtxs {
 			var (
-				inChan, outChan chan state
+				inChan, outChan chan onlineState
 				aux             Stage
 				err             error
 			)
@@ -128,13 +128,13 @@ type stageContext struct {
 
 type linkContext struct {
 	link internal.Link
-	ch   chan state
+	ch   chan onlineState
 }
 
-func (ctx stageContext) buildInputResources(chans *[]chan state) (chan state, Stage, error) {
+func (ctx stageContext) buildInputResources(chans *[]chan onlineState) (chan onlineState, Stage, error) {
 	switch len(ctx.inputs) {
 	case 0:
-		ch := make(chan state, defaultChanSize)
+		ch := make(chan onlineState, defaultChanSize)
 		*chans = append(*chans, ch)
 		s := newSourceStage(1, ctx.method.Input().EmptyGen(), ch)
 		return ch, s, nil
@@ -150,12 +150,12 @@ func (ctx stageContext) buildInputResources(chans *[]chan state) (chan state, St
 	}
 }
 
-func (ctx stageContext) buildMergeStage(chans *[]chan state) (chan state, *mergeStage) {
+func (ctx stageContext) buildMergeStage(chans *[]chan onlineState) (chan onlineState, *mergeStage) {
 	fields := make([]internal.MessageField, 0, len(ctx.inputs))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan state, 0, len(ctx.inputs))
+	inputs := make([]<-chan onlineState, 0, len(ctx.inputs))
 	// channel where the stage will send the constructed messages.
-	outputChan := make(chan state, defaultChanSize)
+	outputChan := make(chan onlineState, defaultChanSize)
 	*chans = append(*chans, outputChan)
 	for _, l := range ctx.inputs {
 		fields = append(fields, l.link.Target().Field())
@@ -165,10 +165,10 @@ func (ctx stageContext) buildMergeStage(chans *[]chan state) (chan state, *merge
 	return outputChan, newMergeStage(fields, inputs, outputChan, gen)
 }
 
-func (ctx stageContext) buildOutputResources(chans *[]chan state) (chan state, Stage) {
+func (ctx stageContext) buildOutputResources(chans *[]chan onlineState) (chan onlineState, Stage) {
 	switch len(ctx.outputs) {
 	case 0:
-		ch := make(chan state, defaultChanSize)
+		ch := make(chan onlineState, defaultChanSize)
 		*chans = append(*chans, ch)
 		s := newSinkStage(ch)
 		return ch, s
@@ -185,13 +185,13 @@ func (ctx stageContext) buildOutputResources(chans *[]chan state) (chan state, S
 	}
 }
 
-func (ctx stageContext) buildSplitStage(chans *[]chan state) (chan state, Stage) {
+func (ctx stageContext) buildSplitStage(chans *[]chan onlineState) (chan onlineState, Stage) {
 	fields := make([]internal.MessageField, 0, len(ctx.outputs))
 	// channel where the stage will send the produced states.
-	inputChan := make(chan state, defaultChanSize)
+	inputChan := make(chan onlineState, defaultChanSize)
 	*chans = append(*chans, inputChan)
 	// channels to split the received states.
-	outputs := make([]chan<- state, 0, len(ctx.outputs))
+	outputs := make([]chan<- onlineState, 0, len(ctx.outputs))
 	for _, l := range ctx.outputs {
 		fields = append(fields, l.link.Source().Field())
 		outputs = append(outputs, l.ch)

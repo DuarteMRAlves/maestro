@@ -14,8 +14,8 @@ type unaryStage struct {
 	name    internal.StageName
 	address internal.Address
 
-	input  <-chan state
-	output chan<- state
+	input  <-chan onlineState
+	output chan<- onlineState
 
 	clientBuilder internal.UnaryClientBuilder
 
@@ -24,8 +24,8 @@ type unaryStage struct {
 
 func newUnaryStage(
 	name internal.StageName,
-	input <-chan state,
-	output chan<- state,
+	input <-chan onlineState,
+	output chan<- onlineState,
 	address internal.Address,
 	clientBuilder internal.UnaryClientBuilder,
 	logger Logger,
@@ -42,7 +42,7 @@ func newUnaryStage(
 
 func (s *unaryStage) Run(ctx context.Context) error {
 	var (
-		in, out state
+		in, out onlineState
 		more    bool
 	)
 	client, err := s.clientBuilder(s.address)
@@ -72,7 +72,7 @@ func (s *unaryStage) Run(ctx context.Context) error {
 			return err
 		}
 
-		out = updateStateMsg(in, rep)
+		out = fromOnlineState(in, rep)
 		s.logger.Debugf("'%s': send id: %d, msg: %#v\n", s.name, out.id, out.msg)
 		select {
 		case s.output <- out:
@@ -99,13 +99,13 @@ func (s *unaryStage) call(
 type sourceStage struct {
 	count  int32
 	gen    internal.EmptyMessageGen
-	output chan<- state
+	output chan<- onlineState
 }
 
 func newSourceStage(
 	start int32,
 	gen internal.EmptyMessageGen,
-	output chan<- state,
+	output chan<- onlineState,
 ) *sourceStage {
 	return &sourceStage{
 		count:  start,
@@ -116,7 +116,7 @@ func newSourceStage(
 
 func (s *sourceStage) Run(ctx context.Context) error {
 	for {
-		next := newState(id(s.count), s.gen())
+		next := newOnlineState(id(s.count), s.gen())
 		select {
 		case s.output <- next:
 		case <-ctx.Done():
@@ -128,10 +128,10 @@ func (s *sourceStage) Run(ctx context.Context) error {
 }
 
 type sinkStage struct {
-	input <-chan state
+	input <-chan onlineState
 }
 
-func newSinkStage(input <-chan state) *sinkStage {
+func newSinkStage(input <-chan onlineState) *sinkStage {
 	return &sinkStage{input: input}
 }
 
@@ -150,9 +150,9 @@ type mergeStage struct {
 	// be filled with the collected messages.
 	fields []internal.MessageField
 	// inputs are the several input channels from which to collect the messages.
-	inputs []<-chan state
+	inputs []<-chan onlineState
 	// output is the channel used to send messages to the downstream stage.
-	output chan<- state
+	output chan<- onlineState
 	// gen generates empty messages for the output type.
 	gen internal.EmptyMessageGen
 	// currId is the current id being constructed.
@@ -161,8 +161,8 @@ type mergeStage struct {
 
 func newMergeStage(
 	fields []internal.MessageField,
-	inputs []<-chan state,
-	output chan<- state,
+	inputs []<-chan onlineState,
+	output chan<- onlineState,
 	gen internal.EmptyMessageGen,
 ) *mergeStage {
 	return &mergeStage{
@@ -178,13 +178,13 @@ func (s *mergeStage) Run(ctx context.Context) error {
 	var (
 		// partial is the current message being constructed.
 		partial   internal.Message
-		currState state
+		currState onlineState
 		done      bool
 	)
 	// latest stores the most recent state received from any channel.
-	latest := make([]state, 0, len(s.inputs))
+	latest := make([]onlineState, 0, len(s.inputs))
 	for i := 0; i < len(s.inputs); i++ {
-		latest = append(latest, emptyState)
+		latest = append(latest, emptyOnlineState)
 	}
 	for {
 		partial = s.gen()
@@ -216,7 +216,7 @@ func (s *mergeStage) Run(ctx context.Context) error {
 		}
 		// All fields from inputs were set. The message can be sent
 		if setFields == len(s.inputs) {
-			sendState := newState(s.currId, partial)
+			sendState := newOnlineState(s.currId, partial)
 			select {
 			case s.output <- sendState:
 			case <-ctx.Done():
@@ -225,7 +225,7 @@ func (s *mergeStage) Run(ctx context.Context) error {
 			}
 			s.currId++
 			for i := 0; i < len(s.inputs); i++ {
-				latest[i] = emptyState
+				latest[i] = emptyOnlineState
 			}
 		}
 	}
@@ -233,19 +233,19 @@ func (s *mergeStage) Run(ctx context.Context) error {
 
 func (s *mergeStage) takeUntilCurrId(
 	ctx context.Context,
-	input <-chan state,
-) (state, bool) {
+	input <-chan onlineState,
+) (onlineState, bool) {
 	for {
 		select {
 		case st, more := <-input:
 			if !more {
-				return emptyState, true
+				return emptyOnlineState, true
 			}
 			if st.id >= s.currId {
 				return st, false
 			}
 		case <-ctx.Done():
-			return emptyState, true
+			return emptyOnlineState, true
 		}
 	}
 }
@@ -256,15 +256,15 @@ type splitStage struct {
 	// entire message is sent.
 	fields []internal.MessageField
 	// input is the channel from which to receive the messages.
-	input <-chan state
+	input <-chan onlineState
 	// outputs are the several channels where to send messages.
-	outputs []chan<- state
+	outputs []chan<- onlineState
 }
 
 func newSplitStage(
 	fields []internal.MessageField,
-	input <-chan state,
-	outputs []chan<- state,
+	input <-chan onlineState,
+	outputs []chan<- onlineState,
 ) *splitStage {
 	return &splitStage{
 		fields:  fields,
@@ -274,7 +274,7 @@ func newSplitStage(
 }
 
 func (s *splitStage) Run(ctx context.Context) error {
-	var currState state
+	var currState onlineState
 	for {
 		select {
 		case currState = <-s.input:
@@ -295,7 +295,7 @@ func (s *splitStage) Run(ctx context.Context) error {
 				}
 				send = fieldMsg
 			}
-			sendState := newState(currState.id, send)
+			sendState := newOnlineState(currState.id, send)
 			select {
 			case out <- sendState:
 			case <-ctx.Done():

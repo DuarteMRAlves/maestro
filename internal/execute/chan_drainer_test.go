@@ -10,20 +10,20 @@ import (
 func TestChanDrainer(t *testing.T) {
 	nChans := 10
 	capacity := 10
-	chans := make([]chan state, 0, nChans)
+	chans := make([]chan onlineState, 0, nChans)
 	defer func() {
 		for _, ch := range chans {
 			close(ch)
 		}
 	}()
 	for i := 0; i < nChans; i++ {
-		ch := make(chan state, capacity)
+		ch := make(chan onlineState, capacity)
 		chans = append(chans, ch)
 	}
 
 	for i := 0; i < nChans; i++ {
 		for j := 0; j < i; j++ {
-			chans[i] <- state{id: id(j)}
+			chans[i] <- onlineState{id: id(j)}
 		}
 	}
 
@@ -39,14 +39,14 @@ func TestChanDrainer(t *testing.T) {
 	cancel()
 	<-done
 
-	exp := make([]chan state, 0, nChans)
+	exp := make([]chan onlineState, 0, nChans)
 	defer func() {
 		for _, ch := range exp {
 			close(ch)
 		}
 	}()
 	for i := 0; i < nChans; i++ {
-		ch := make(chan state, capacity)
+		ch := make(chan onlineState, capacity)
 		exp = append(exp, ch)
 	}
 	for i := 0; i < nChans; i++ {
@@ -55,7 +55,7 @@ func TestChanDrainer(t *testing.T) {
 			max = 0
 		}
 		for j := 0; j < max; j++ {
-			exp[i] <- state{id: id(j)}
+			exp[i] <- onlineState{id: id(j)}
 		}
 	}
 	for i, ch := range chans {
