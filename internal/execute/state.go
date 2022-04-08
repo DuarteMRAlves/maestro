@@ -5,6 +5,19 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
+// offlineState defines a structure to store the state of an offline pipeline.
+type offlineState struct {
+	msg internal.Message
+}
+
+func newOfflineState(msg internal.Message) offlineState {
+	return offlineState{msg: msg}
+}
+
+func (s offlineState) String() string {
+	return fmt.Sprintf("offlineState{msg:%v}", s.msg)
+}
+
 type id int
 
 // onlineState defines a structure to store the state of an online pipeline. It
@@ -31,5 +44,5 @@ func fromOnlineState(s onlineState, msg internal.Message) onlineState {
 }
 
 func (s onlineState) String() string {
-	return fmt.Sprintf("state{id:%d,msg:%v}", s.id, s.msg)
+	return fmt.Sprintf("onlineState{id:%d,msg:%v}", s.id, s.msg)
 }
