@@ -9,8 +9,6 @@ import (
 	"io"
 	"io/fs"
 	"io/ioutil"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -252,68 +250,78 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		return err
 	}
 
-	return validateInfo(r.Spec)
+	return valV1ReadResource(r)
 }
 
-// validateInfo verifies if all the restrictions specified by the info tags are
-// complied
-func validateInfo(v interface{}) error {
-	value := reflect.ValueOf(v)
-	switch value.Kind() {
-	case reflect.Ptr:
-		value = value.Elem()
-	case reflect.Struct:
-		// Do nothing, we keep the same value to later analyze as we already
-		// have the struct.
+func valV1ReadResource(r *v1ReadResource) error {
+	switch r.Kind {
+	case stageKind:
+		spec, ok := r.Spec.(*v1StageSpec)
+		if !ok {
+			return errors.New("spec not v1StageSpec for stage kind")
+		}
+		return valV1StageSpec(spec)
+	case linkKind:
+		spec, ok := r.Spec.(*v1LinkSpec)
+		if !ok {
+			return errors.New("spec not v1LinkSpec for link kind")
+		}
+		return valV1LinkSpec(spec)
+	case pipelineKind:
+		spec, ok := r.Spec.(*v1PipelineSpec)
+		if !ok {
+			return errors.New("spec not v1PipelineSpec for pipeline kind")
+		}
+		return valV1PipelineSpec(spec)
+	case assetKind:
+		spec, ok := r.Spec.(*v1AssetSpec)
+		if !ok {
+			return errors.New("spec not v1AssetSpec for asset kind")
+		}
+		return valV1AssetSpec(spec)
 	default:
-		return fmt.Errorf(
-			"invalid type: expected Ptr or Struct but got %v", value.Kind(),
-		)
+		return &unknownKind{Kind: r.Kind}
 	}
+}
 
-	objType := value.Type()
-	for i := 0; i < objType.NumField(); i++ {
-		objTypeField := objType.Field(i)
-		// Ignore unexported fields
-		if !objTypeField.IsExported() {
-			continue
-		}
-		fieldValue := value.Field(i)
-		if err := validateField(objTypeField, fieldValue); err != nil {
-			return err
-		}
+func valV1PipelineSpec(spec *v1PipelineSpec) error {
+	if spec.Name == "" {
+		return &missingRequiredField{Field: "name"}
 	}
 	return nil
 }
 
-func validateField(
-	objTypeField reflect.StructField, fieldValue reflect.Value,
-) error {
-	tag, hasTag := objTypeField.Tag.Lookup("info")
-	if hasTag {
-
-		tagOpts := strings.Split(tag, ",")
-		for _, opt := range tagOpts {
-			switch opt {
-			case "required":
-				if fieldValue.IsZero() {
-					return &missingRequiredField{Field: yamlName(objTypeField)}
-				}
-			}
-		}
+func valV1StageSpec(spec *v1StageSpec) error {
+	if spec.Name == "" {
+		return &missingRequiredField{Field: "name"}
+	}
+	if spec.Address == "" {
+		return &missingRequiredField{Field: "address"}
+	}
+	if spec.Pipeline == "" {
+		return &missingRequiredField{Field: "pipeline"}
 	}
 	return nil
 }
 
-func yamlName(f reflect.StructField) string {
-	tag, hasTag := f.Tag.Lookup("yaml")
-	if hasTag {
-		tagOpts := strings.Split(tag, ",")
-		if tagOpts[0] != "" {
-			return tagOpts[0]
-		}
+func valV1LinkSpec(spec *v1LinkSpec) error {
+	if spec.Name == "" {
+		return &missingRequiredField{Field: "name"}
 	}
-	return f.Name
+	if spec.SourceStage == "" {
+		return &missingRequiredField{Field: "source_stage"}
+	}
+	if spec.TargetStage == "" {
+		return &missingRequiredField{Field: "target_stage"}
+	}
+	return nil
+}
+
+func valV1AssetSpec(spec *v1AssetSpec) error {
+	if spec.Name == "" {
+		return &missingRequiredField{Field: "name"}
+	}
+	return nil
 }
 
 // WriteV1 stores the resources set in a single file as a
