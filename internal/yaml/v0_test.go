@@ -17,51 +17,79 @@ func TestReadV0(t *testing.T) {
 
 	expected := ResourceSet{
 		Pipelines: []Pipeline{
-			createPipeline(t, "v0-pipeline", internal.OnlineExecution),
+			{Name: newV0PipelineName(t, "v0-pipeline"), Mode: internal.OnlineExecution},
 		},
 		Stages: []Stage{
-			createStage(t, "stage-1", "host-1:1", "", "", "v0-pipeline"),
-			createStage(t, "stage-2", "host-2:2", "Service2", "", "v0-pipeline"),
-			createStage(t, "stage-3", "host-3:3", "", "Method3", "v0-pipeline"),
-			createStage(t, "stage-4", "host-4:4", "Service4", "Method4", "v0-pipeline"),
+			{
+				Name: newV0StageName(t, "stage-1"),
+				Method: MethodContext{
+					Address: internal.NewAddress("host-1:1"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name: newV0StageName(t, "stage-2"),
+				Method: MethodContext{
+					Address: internal.NewAddress("host-2:2"),
+					Service: internal.NewService("Service2"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name: newV0StageName(t, "stage-3"),
+				Method: MethodContext{
+					Address: internal.NewAddress("host-3:3"),
+					Method:  internal.NewMethod("Method3"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name: newV0StageName(t, "stage-4"),
+				Method: MethodContext{
+					Address: internal.NewAddress("host-4:4"),
+					Service: internal.NewService("Service4"),
+					Method:  internal.NewMethod("Method4"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
 		},
 		Links: []Link{
-			createLink(
-				t,
-				"v0-link-stage-1-to-stage-2",
-				"stage-1",
-				"",
-				"stage-2",
-				"",
-				"v0-pipeline",
-			),
-			createLink(
-				t,
-				"v0-link-stage-2-to-stage-3",
-				"stage-2",
-				"Field2",
-				"stage-3",
-				"",
-				"v0-pipeline",
-			),
-			createLink(
-				t,
-				"v0-link-stage-3-to-stage-4",
-				"stage-3",
-				"",
-				"stage-4",
-				"Field4",
-				"v0-pipeline",
-			),
-			createLink(
-				t,
-				"v0-link-stage-4-to-stage-1",
-				"stage-4",
-				"Field4",
-				"stage-1",
-				"Field1",
-				"v0-pipeline",
-			),
+			{
+				Name:     newV0LinkName(t, "v0-link-stage-1-to-stage-2"),
+				Source:   LinkEndpoint{Stage: newV0StageName(t, "stage-1")},
+				Target:   LinkEndpoint{Stage: newV0StageName(t, "stage-2")},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name: newV0LinkName(t, "v0-link-stage-2-to-stage-3"),
+				Source: LinkEndpoint{
+					Stage: newV0StageName(t, "stage-2"),
+					Field: internal.NewMessageField("Field2"),
+				},
+				Target:   LinkEndpoint{Stage: newV0StageName(t, "stage-3")},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name:   newV0LinkName(t, "v0-link-stage-3-to-stage-4"),
+				Source: LinkEndpoint{Stage: newV0StageName(t, "stage-3")},
+				Target: LinkEndpoint{
+					Stage: newV0StageName(t, "stage-4"),
+					Field: internal.NewMessageField("Field4"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
+			{
+				Name: newV0LinkName(t, "v0-link-stage-4-to-stage-1"),
+				Source: LinkEndpoint{
+					Stage: newV0StageName(t, "stage-4"),
+					Field: internal.NewMessageField("Field4"),
+				},
+				Target: LinkEndpoint{
+					Stage: newV0StageName(t, "stage-1"),
+					Field: internal.NewMessageField("Field1"),
+				},
+				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+			},
 		},
 		Assets: nil,
 	}
@@ -145,4 +173,28 @@ func TestReadV0_Err(t *testing.T) {
 			tc.verifyErr(t, err)
 		})
 	}
+}
+
+func newV0LinkName(t *testing.T, name string) internal.LinkName {
+	linkName, err := internal.NewLinkName(name)
+	if err != nil {
+		t.Fatalf("new v0 link name %s: %s", name, err)
+	}
+	return linkName
+}
+
+func newV0StageName(t *testing.T, name string) internal.StageName {
+	stageName, err := internal.NewStageName(name)
+	if err != nil {
+		t.Fatalf("new v0 stage name %s: %s", name, err)
+	}
+	return stageName
+}
+
+func newV0PipelineName(t *testing.T, name string) internal.PipelineName {
+	pipelineName, err := internal.NewPipelineName(name)
+	if err != nil {
+		t.Fatalf("new v0 pipeline name %s: %s", name, err)
+	}
+	return pipelineName
 }
