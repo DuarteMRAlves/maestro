@@ -18,43 +18,59 @@ func TestReadV1(t *testing.T) {
 			files: []string{"../../test/data/unit/read/v1/read_single_file.yml"},
 			expected: ResourceSet{
 				Pipelines: []Pipeline{
-					createPipeline(t, "pipeline-2", internal.OfflineExecution),
-					createPipeline(t, "pipeline-1", internal.OnlineExecution),
+					{Name: newV1PipelineName(t, "pipeline-2"), Mode: internal.OfflineExecution},
+					{Name: newV1PipelineName(t, "pipeline-1"), Mode: internal.OnlineExecution},
 				},
 				Stages: []Stage{
-					createStage(
-						t, "stage-1", "address-1", "Service1", "Method1", "pipeline-1",
-					),
-					createStage(
-						t, "stage-2", "address-2", "Service2", "", "pipeline-1",
-					),
-					createStage(
-						t, "stage-3", "address-3", "", "Method3", "pipeline-1",
-					),
+					{
+						Name: newV1StageName(t, "stage-1"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-1"),
+							Service: internal.NewService("Service1"),
+							Method:  internal.NewMethod("Method1"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-1"),
+					},
+					{
+						Name: newV1StageName(t, "stage-2"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-2"),
+							Service: internal.NewService("Service2"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-1"),
+					},
+					{
+						Name: newV1StageName(t, "stage-3"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-3"),
+							Method:  internal.NewMethod("Method3"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-1"),
+					},
 				},
 				Links: []Link{
-					createLink(
-						t,
-						"link-stage-2-stage-1",
-						"stage-2",
-						"",
-						"stage-1",
-						"",
-						"pipeline-1",
-					),
-					createLink(
-						t,
-						"link-stage-1-stage-2",
-						"stage-1",
-						"Field1",
-						"stage-2",
-						"Field2",
-						"pipeline-1",
-					),
+					{
+						Name:     newV1LinkName(t, "link-stage-2-stage-1"),
+						Source:   LinkEndpoint{Stage: newV1StageName(t, "stage-2")},
+						Target:   LinkEndpoint{Stage: newV1StageName(t, "stage-1")},
+						Pipeline: newV1PipelineName(t, "pipeline-1"),
+					},
+					{
+						Name: newV1LinkName(t, "link-stage-1-stage-2"),
+						Source: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-1"),
+							Field: internal.NewMessageField("Field1"),
+						},
+						Target: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-2"),
+							Field: internal.NewMessageField("Field2"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-1"),
+					},
 				},
 				Assets: []Asset{
-					createAsset(t, "asset-1", "image-1"),
-					createAsset(t, "asset-2", ""),
+					{Name: newV1AssetName(t, "asset-1"), Image: internal.NewImage("image-1")},
+					{Name: newV1AssetName(t, "asset-2"), Image: internal.NewImage("")},
 				},
 			},
 		},
@@ -67,56 +83,81 @@ func TestReadV1(t *testing.T) {
 			},
 			expected: ResourceSet{
 				Pipelines: []Pipeline{
-					createPipeline(t, "pipeline-3", internal.OfflineExecution),
-					createPipeline(t, "pipeline-4", internal.OfflineExecution),
+					{Name: newV1PipelineName(t, "pipeline-3"), Mode: internal.OfflineExecution},
+					{Name: newV1PipelineName(t, "pipeline-4"), Mode: internal.OfflineExecution},
 				},
 				Stages: []Stage{
-					createStage(
-						t, "stage-4", "address-4", "", "", "pipeline-4",
-					),
-					createStage(
-						t, "stage-5", "address-5", "", "Method5", "pipeline-3",
-					),
-					createStage(
-						t, "stage-6", "address-6", "Service6", "Method6", "pipeline-3",
-					),
-					createStage(
-						t, "stage-7", "address-7", "Service7", "", "pipeline-4",
-					),
+					{
+						Name: newV1StageName(t, "stage-4"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-4"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-4"),
+					},
+					{
+						Name: newV1StageName(t, "stage-5"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-5"),
+							Method:  internal.NewMethod("Method5"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-3"),
+					},
+					{
+						Name: newV1StageName(t, "stage-6"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-6"),
+							Service: internal.NewService("Service6"),
+							Method:  internal.NewMethod("Method6"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-3"),
+					},
+					{
+						Name: newV1StageName(t, "stage-7"),
+						Method: MethodContext{
+							Address: internal.NewAddress("address-7"),
+							Service: internal.NewService("Service7"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-4"),
+					},
 				},
 				Links: []Link{
-					createLink(
-						t,
-						"link-stage-4-stage-5",
-						"stage-4",
-						"",
-						"stage-5",
-						"",
-						"pipeline-4",
-					),
-					createLink(
-						t,
-						"link-stage-5-stage-6",
-						"stage-5",
-						"",
-						"stage-6",
-						"Field1",
-						"pipeline-3",
-					),
-					createLink(
-						t,
-						"link-stage-4-stage-6",
-						"stage-4",
-						"",
-						"stage-6",
-						"Field2",
-						"pipeline-4",
-					),
+					{
+						Name: newV1LinkName(t, "link-stage-4-stage-5"),
+						Source: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-4"),
+						},
+						Target: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-5"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-4"),
+					},
+					{
+						Name: newV1LinkName(t, "link-stage-5-stage-6"),
+						Source: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-5"),
+						},
+						Target: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-6"),
+							Field: internal.NewMessageField("Field1"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-3"),
+					},
+					{
+						Name: newV1LinkName(t, "link-stage-4-stage-6"),
+						Source: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-4"),
+						},
+						Target: LinkEndpoint{
+							Stage: newV1StageName(t, "stage-6"),
+							Field: internal.NewMessageField("Field2"),
+						},
+						Pipeline: newV1PipelineName(t, "pipeline-4"),
+					},
 				},
 				Assets: []Asset{
-					createAsset(t, "asset-4", "image-4"),
-					createAsset(t, "asset-5", ""),
-					createAsset(t, "asset-6", "image-6"),
+					{Name: newV1AssetName(t, "asset-4"), Image: internal.NewImage("image-4")},
+					{Name: newV1AssetName(t, "asset-5"), Image: internal.NewImage("")},
+					{Name: newV1AssetName(t, "asset-6"), Image: internal.NewImage("image-6")},
 				},
 			},
 		},
@@ -230,25 +271,59 @@ func TestReadV1_Err(t *testing.T) {
 func TestWriteV1(t *testing.T) {
 	var resources ResourceSet
 	resources.Pipelines = []Pipeline{
-		createPipeline(t, "pipeline-2", internal.OnlineExecution),
-		createPipeline(t, "pipeline-1", internal.OfflineExecution),
+		{Name: newV1PipelineName(t, "pipeline-2"), Mode: internal.OnlineExecution},
+		{Name: newV1PipelineName(t, "pipeline-1"), Mode: internal.OfflineExecution},
 	}
 	resources.Stages = []Stage{
-		createStage(t, "stage-1", "address-1", "Service1", "Method1", "pipeline-1"),
-		createStage(t, "stage-2", "address-2", "Service2", "", "pipeline-1"),
-		createStage(t, "stage-3", "address-3", "", "Method3", "pipeline-1"),
+		{
+			Name: newV1StageName(t, "stage-1"),
+			Method: MethodContext{
+				Address: internal.NewAddress("address-1"),
+				Service: internal.NewService("Service1"),
+				Method:  internal.NewMethod("Method1"),
+			},
+			Pipeline: newV1PipelineName(t, "pipeline-1"),
+		},
+		{
+			Name: newV1StageName(t, "stage-2"),
+			Method: MethodContext{
+				Address: internal.NewAddress("address-2"),
+				Service: internal.NewService("Service2"),
+			},
+			Pipeline: newV1PipelineName(t, "pipeline-1"),
+		},
+		{
+			Name: newV1StageName(t, "stage-3"),
+			Method: MethodContext{
+				Address: internal.NewAddress("address-3"),
+				Method:  internal.NewMethod("Method3"),
+			},
+			Pipeline: newV1PipelineName(t, "pipeline-1"),
+		},
 	}
 	resources.Links = []Link{
-		createLink(
-			t, "link-stage-2-stage-1", "stage-2", "", "stage-1", "", "pipeline-1",
-		),
-		createLink(
-			t, "link-stage-1-stage-2", "stage-1", "Field1", "stage-2", "Field2", "pipeline-1",
-		),
+		{
+			Name:     newV1LinkName(t, "link-stage-2-stage-1"),
+			Source:   LinkEndpoint{Stage: newV1StageName(t, "stage-2")},
+			Target:   LinkEndpoint{Stage: newV1StageName(t, "stage-1")},
+			Pipeline: newV1PipelineName(t, "pipeline-1"),
+		},
+		{
+			Name: newV1LinkName(t, "link-stage-1-stage-2"),
+			Source: LinkEndpoint{
+				Stage: newV1StageName(t, "stage-1"),
+				Field: internal.NewMessageField("Field1"),
+			},
+			Target: LinkEndpoint{
+				Stage: newV1StageName(t, "stage-2"),
+				Field: internal.NewMessageField("Field2"),
+			},
+			Pipeline: newV1PipelineName(t, "pipeline-1"),
+		},
 	}
 	resources.Assets = []Asset{
-		createAsset(t, "asset-1", "image-1"),
-		createAsset(t, "asset-2", ""),
+		{Name: newV1AssetName(t, "asset-1"), Image: internal.NewImage("image-1")},
+		{Name: newV1AssetName(t, "asset-2"), Image: internal.NewImage("")},
 	}
 	tempDir := t.TempDir()
 	outFile := tempDir + "/to_v1.yml"
@@ -271,68 +346,34 @@ func TestWriteV1(t *testing.T) {
 	}
 }
 
-func createPipeline(
-	t *testing.T, name string, mode internal.ExecutionMode,
-) Pipeline {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", name, err)
-	}
-	return Pipeline{Name: pipelineName, Mode: mode}
-}
-
-func createStage(t *testing.T, name, addr, serv, meth, pipeline string) Stage {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	methodCtx := MethodContext{
-		Address: internal.NewAddress(addr),
-		Service: internal.NewService(serv),
-		Method:  internal.NewMethod(meth),
-	}
-	pipelineName, err := internal.NewPipelineName(pipeline)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", pipeline, err)
-	}
-	return Stage{Name: stageName, Method: methodCtx, Pipeline: pipelineName}
-}
-
-func createLink(
-	t *testing.T, name, srcStage, srcField, tgtStage, tgtField, pipeline string,
-) Link {
+func newV1LinkName(t *testing.T, name string) internal.LinkName {
 	linkName, err := internal.NewLinkName(name)
 	if err != nil {
-		t.Fatalf("create link name %s: %s", name, err)
+		t.Fatalf("new v1 link name %s: %s", name, err)
 	}
-	srcName, err := internal.NewStageName(srcStage)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	tgtName, err := internal.NewStageName(tgtStage)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	srcEndPt := LinkEndpoint{
-		Stage: srcName, Field: internal.NewMessageField(srcField),
-	}
-	tgtEndPt := LinkEndpoint{
-		Stage: tgtName, Field: internal.NewMessageField(tgtField),
-	}
-	pipelineName, err := internal.NewPipelineName(pipeline)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", pipeline, err)
-	}
-	return Link{
-		Name: linkName, Source: srcEndPt, Target: tgtEndPt, Pipeline: pipelineName,
-	}
+	return linkName
 }
 
-func createAsset(t *testing.T, name, img string) Asset {
+func newV1StageName(t *testing.T, name string) internal.StageName {
+	stageName, err := internal.NewStageName(name)
+	if err != nil {
+		t.Fatalf("new v1 stage name %s: %s", name, err)
+	}
+	return stageName
+}
+
+func newV1PipelineName(t *testing.T, name string) internal.PipelineName {
+	pipelineName, err := internal.NewPipelineName(name)
+	if err != nil {
+		t.Fatalf("new v1 pipeline name %s: %s", name, err)
+	}
+	return pipelineName
+}
+
+func newV1AssetName(t *testing.T, name string) internal.AssetName {
 	assetName, err := internal.NewAssetName(name)
 	if err != nil {
-		t.Fatalf("create asset name %s: %s", name, err)
+		t.Fatalf("new v1 asset name %s: %s", name, err)
 	}
-	image := internal.NewImage(img)
-	return Asset{Name: assetName, Image: image}
+	return assetName
 }
