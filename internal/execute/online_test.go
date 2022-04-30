@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
-	"testing"
 )
 
-func TestUnaryStage_Run(t *testing.T) {
+func TestOnlineUnaryStage_Run(t *testing.T) {
 	var received []onlineState
 
 	stageDone := make(chan struct{})
@@ -33,7 +34,7 @@ func TestUnaryStage_Run(t *testing.T) {
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
 	logger := logs.New(true)
-	stage := newUnaryStage(name, input, output, address, clientBuilder, logger)
+	stage := newOnlineUnaryStage(name, input, output, address, clientBuilder, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -129,12 +130,12 @@ func (c unaryClient) Call(_ context.Context, req internal.Message) (
 
 func (c unaryClient) Close() error { return nil }
 
-func TestSourceStage_Run(t *testing.T) {
+func TestOnlineSourceStage_Run(t *testing.T) {
 	start := int32(1)
 	numRequest := 10
 
 	output := make(chan onlineState)
-	s := newSourceStage(start, mock.NewGen(), output)
+	s := newOnlineSourceStage(start, mock.NewGen(), output)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -167,7 +168,7 @@ func TestSourceStage_Run(t *testing.T) {
 	}
 }
 
-func TestMergeStage_Run(t *testing.T) {
+func TestOnlineMergeStage_Run(t *testing.T) {
 	inner1 := internal.NewMessageField("inner1")
 	inner2 := internal.NewMessageField("inner2")
 	inner3 := internal.NewMessageField("inner3")
@@ -188,7 +189,7 @@ func TestMergeStage_Run(t *testing.T) {
 
 	output := make(chan onlineState)
 
-	s := newMergeStage(fields, inputs, output, mock.NewGen())
+	s := newOnlineMergeStage(fields, inputs, output, mock.NewGen())
 
 	expected := []onlineState{
 		newOnlineState(3, testMergeOuterMessage(inner, fields, 3)),
@@ -253,7 +254,7 @@ func testMergeOuterMessage(
 	return msg
 }
 
-func TestSplitStage_Run(t *testing.T) {
+func TestOnlineSplitStage_Run(t *testing.T) {
 	inner1 := internal.NewMessageField("inner1")
 	inner3 := internal.NewMessageField("inner3")
 	inner := []internal.MessageField{inner1, inner3}
@@ -272,7 +273,7 @@ func TestSplitStage_Run(t *testing.T) {
 
 	outputs := []chan<- onlineState{output1, output2, output3}
 
-	s := newSplitStage(fields, input, outputs)
+	s := newOnlineSplitStage(fields, input, outputs)
 
 	expected1 := []onlineState{
 		newOnlineState(id(1), testInnerMessage(inner[0], 1)),

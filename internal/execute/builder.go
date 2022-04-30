@@ -2,6 +2,7 @@ package execute
 
 import (
 	"fmt"
+
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
@@ -109,7 +110,7 @@ func NewBuilder(
 			}
 			address := stageCtx.stage.MethodContext().Address()
 			clientBuilder := stageCtx.method.ClientBuilder()
-			rpcStage := newUnaryStage(
+			rpcStage := newOnlineUnaryStage(
 				name, inChan, outChan, address, clientBuilder, logger,
 			)
 			stages.addRpcStage(name, rpcStage)
@@ -136,7 +137,7 @@ func (ctx stageContext) buildInputResources(chans *[]chan onlineState) (chan onl
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*chans = append(*chans, ch)
-		s := newSourceStage(1, ctx.method.Input().EmptyGen(), ch)
+		s := newOnlineSourceStage(1, ctx.method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
 		if !ctx.inputs[0].link.Target().Field().IsEmpty() {
@@ -150,7 +151,7 @@ func (ctx stageContext) buildInputResources(chans *[]chan onlineState) (chan onl
 	}
 }
 
-func (ctx stageContext) buildMergeStage(chans *[]chan onlineState) (chan onlineState, *mergeStage) {
+func (ctx stageContext) buildMergeStage(chans *[]chan onlineState) (chan onlineState, *onlineMergeStage) {
 	fields := make([]internal.MessageField, 0, len(ctx.inputs))
 	// channels where the stage will receive the several inputs.
 	inputs := make([]<-chan onlineState, 0, len(ctx.inputs))
@@ -162,7 +163,7 @@ func (ctx stageContext) buildMergeStage(chans *[]chan onlineState) (chan onlineS
 		inputs = append(inputs, l.ch)
 	}
 	gen := ctx.method.Input().EmptyGen()
-	return outputChan, newMergeStage(fields, inputs, outputChan, gen)
+	return outputChan, newOnlineMergeStage(fields, inputs, outputChan, gen)
 }
 
 func (ctx stageContext) buildOutputResources(chans *[]chan onlineState) (chan onlineState, Stage) {
@@ -196,7 +197,7 @@ func (ctx stageContext) buildSplitStage(chans *[]chan onlineState) (chan onlineS
 		fields = append(fields, l.link.Source().Field())
 		outputs = append(outputs, l.ch)
 	}
-	return inputChan, newSplitStage(fields, inputChan, outputs)
+	return inputChan, newOnlineSplitStage(fields, inputChan, outputs)
 }
 
 type incompatibleMessageDesc struct {
