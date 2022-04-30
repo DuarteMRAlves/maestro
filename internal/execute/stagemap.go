@@ -1,6 +1,14 @@
 package execute
 
-import "github.com/DuarteMRAlves/maestro/internal"
+import (
+	"context"
+
+	"github.com/DuarteMRAlves/maestro/internal"
+)
+
+type Stage interface {
+	Run(context.Context) error
+}
 
 // stageMap stores the stages to be used in an Execution.
 type stageMap struct {
