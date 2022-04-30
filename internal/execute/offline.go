@@ -104,3 +104,33 @@ func (s *offlineUnaryStage) call(
 	defer cancel()
 	return client.Call(ctx, req)
 }
+
+// offlineSourceStage is the source of the pipeline. It defines the initial ids of
+// the states and sends empty messages of the received type.
+type offlineSourceStage struct {
+	gen    internal.EmptyMessageGen
+	output chan<- offlineState
+}
+
+func newOfflineSourceStage(
+	start int32,
+	gen internal.EmptyMessageGen,
+	output chan<- offlineState,
+) *offlineSourceStage {
+	return &offlineSourceStage{
+		gen:    gen,
+		output: output,
+	}
+}
+
+func (s *offlineSourceStage) Run(ctx context.Context) error {
+	for {
+		next := newOfflineState(s.gen())
+		select {
+		case s.output <- next:
+		case <-ctx.Done():
+			close(s.output)
+			return nil
+		}
+	}
+}
