@@ -20,7 +20,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 
 	fieldName := internal.NewMessageField("field")
 
-	requests := testRequests(fieldName)
+	requests := testOnlineRequests(fieldName)
 	states := []onlineState{
 		newOnlineState(1, requests[0]),
 		newOnlineState(3, requests[1]),
@@ -32,7 +32,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
-	clientBuilder := testUnaryClientBuilder(fieldName)
+	clientBuilder := testOnlineUnaryClientBuilder(fieldName)
 	logger := logs.New(true)
 	stage := newOnlineUnaryStage(name, input, output, address, clientBuilder, logger)
 
@@ -83,7 +83,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	}
 }
 
-func testRequests(field internal.MessageField) []*mock.Message {
+func testOnlineRequests(field internal.MessageField) []*mock.Message {
 	fields1 := map[internal.MessageField]interface{}{field: "val1"}
 	msg1 := &mock.Message{Fields: fields1}
 
@@ -96,17 +96,17 @@ func testRequests(field internal.MessageField) []*mock.Message {
 	return []*mock.Message{msg1, msg2, msg3}
 }
 
-func testUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func testOnlineUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		return unaryClient{field: field}, nil
+		return testOnlineUnaryClient{field: field}, nil
 	}
 }
 
-type unaryClient struct {
+type testOnlineUnaryClient struct {
 	field internal.MessageField
 }
 
-func (c unaryClient) Call(_ context.Context, req internal.Message) (
+func (c testOnlineUnaryClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
@@ -128,7 +128,7 @@ func (c unaryClient) Call(_ context.Context, req internal.Message) (
 	return repMock, nil
 }
 
-func (c unaryClient) Close() error { return nil }
+func (c testOnlineUnaryClient) Close() error { return nil }
 
 func TestOnlineSourceStage_Run(t *testing.T) {
 	start := int32(1)
