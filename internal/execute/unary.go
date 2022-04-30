@@ -2,24 +2,10 @@ package execute
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal"
 )
-
-// offlineState defines a structure to store the state of an offline pipeline.
-type offlineState struct {
-	msg internal.Message
-}
-
-func newOfflineState(msg internal.Message) offlineState {
-	return offlineState{msg: msg}
-}
-
-func (s offlineState) String() string {
-	return fmt.Sprintf("offlineState{msg:%v}", s.msg)
-}
 
 type offlineUnaryStage struct {
 	name    internal.StageName
@@ -105,50 +91,86 @@ func (s *offlineUnaryStage) call(
 	return client.Call(ctx, req)
 }
 
-// offlineSourceStage is the source of the pipeline. It defines the initial ids of
-// the states and sends empty messages of the received type.
-type offlineSourceStage struct {
-	gen    internal.EmptyMessageGen
-	output chan<- offlineState
+type onlineUnaryStage struct {
+	name    internal.StageName
+	address internal.Address
+
+	input  <-chan onlineState
+	output chan<- onlineState
+
+	clientBuilder internal.UnaryClientBuilder
+
+	logger Logger
 }
 
-func newOfflineSourceStage(
-	start int32,
-	gen internal.EmptyMessageGen,
-	output chan<- offlineState,
-) *offlineSourceStage {
-	return &offlineSourceStage{
-		gen:    gen,
-		output: output,
+func newOnlineUnaryStage(
+	name internal.StageName,
+	input <-chan onlineState,
+	output chan<- onlineState,
+	address internal.Address,
+	clientBuilder internal.UnaryClientBuilder,
+	logger Logger,
+) *onlineUnaryStage {
+	return &onlineUnaryStage{
+		name:          name,
+		input:         input,
+		output:        output,
+		address:       address,
+		clientBuilder: clientBuilder,
+		logger:        logger,
 	}
 }
 
-func (s *offlineSourceStage) Run(ctx context.Context) error {
+func (s *onlineUnaryStage) Run(ctx context.Context) error {
+	var (
+		in, out onlineState
+		more    bool
+	)
+	client, err := s.clientBuilder(s.address)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	s.logger.Infof("'%s': started\n", s.name)
 	for {
-		next := newOfflineState(s.gen())
 		select {
-		case s.output <- next:
+		case in, more = <-s.input:
 		case <-ctx.Done():
 			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
-	}
-}
+		// channel is closed
+		if !more {
+			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
+			return nil
+		}
+		s.logger.Debugf("'%s': recv id: %d, msg: %#v\n", s.name, in.id, in.msg)
+		req := in.msg
+		rep, err := s.call(ctx, client, req)
+		if err != nil {
+			return err
+		}
 
-type offlineSinkStage struct {
-	input <-chan offlineState
-}
-
-func newOfflineSinkStage(input <-chan offlineState) *offlineSinkStage {
-	return &offlineSinkStage{input: input}
-}
-
-func (s *offlineSinkStage) Run(ctx context.Context) error {
-	for {
+		out = fromOnlineState(in, rep)
+		s.logger.Debugf("'%s': send id: %d, msg: %#v\n", s.name, out.id, out.msg)
 		select {
-		case <-s.input:
+		case s.output <- out:
 		case <-ctx.Done():
+			close(s.output)
+			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
 	}
+}
+
+func (s *onlineUnaryStage) call(
+	ctx context.Context,
+	client internal.UnaryClient,
+	req internal.Message,
+) (internal.Message, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	return client.Call(ctx, req)
 }
