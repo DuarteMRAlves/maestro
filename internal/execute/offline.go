@@ -134,3 +134,21 @@ func (s *offlineSourceStage) Run(ctx context.Context) error {
 		}
 	}
 }
+
+type offlineSinkStage struct {
+	input <-chan offlineState
+}
+
+func newOfflineSinkStage(input <-chan offlineState) *offlineSinkStage {
+	return &offlineSinkStage{input: input}
+}
+
+func (s *offlineSinkStage) Run(ctx context.Context) error {
+	for {
+		select {
+		case <-s.input:
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}

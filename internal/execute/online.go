@@ -158,7 +158,7 @@ type onlineSinkStage struct {
 	input <-chan onlineState
 }
 
-func newSinkStage(input <-chan onlineState) *onlineSinkStage {
+func newOnlineSinkStage(input <-chan onlineState) *onlineSinkStage {
 	return &onlineSinkStage{input: input}
 }
 

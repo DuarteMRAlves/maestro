@@ -171,7 +171,7 @@ func (ctx stageContext) buildOutputResources(chans *[]chan onlineState) (chan on
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*chans = append(*chans, ch)
-		s := newSinkStage(ch)
+		s := newOnlineSinkStage(ch)
 		return ch, s
 	case 1:
 		// We have only one link, but we want a sub message. We can use the
