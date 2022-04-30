@@ -20,7 +20,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 
 	fieldName := internal.NewMessageField("field")
 
-	requests := testOfflineRequests(fieldName)
+	requests := testUnaryRequests(fieldName)
 	states := []offlineState{
 		newOfflineState(requests[0]),
 		newOfflineState(requests[1]),
@@ -32,7 +32,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
-	clientBuilder := testOfflineUnaryClientBuilder(fieldName)
+	clientBuilder := testUnaryClientBuilder(fieldName)
 	logger := logs.New(true)
 	stage := newOfflineUnaryStage(name, input, output, address, clientBuilder, logger)
 
@@ -81,7 +81,78 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	}
 }
 
-func testOfflineRequests(field internal.MessageField) []*mock.Message {
+func TestOnlineUnaryStage_Run(t *testing.T) {
+	var received []onlineState
+
+	stageDone := make(chan struct{})
+	receiveDone := make(chan struct{})
+
+	fieldName := internal.NewMessageField("field")
+
+	requests := testUnaryRequests(fieldName)
+	states := []onlineState{
+		newOnlineState(1, requests[0]),
+		newOnlineState(3, requests[1]),
+		newOnlineState(5, requests[2]),
+	}
+
+	input := make(chan onlineState, len(requests))
+	output := make(chan onlineState, len(requests))
+
+	name := createStageName(t, "test-stage")
+	address := internal.NewAddress("some-address")
+	clientBuilder := testUnaryClientBuilder(fieldName)
+	logger := logs.New(true)
+	stage := newOnlineUnaryStage(name, input, output, address, clientBuilder, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		if err := stage.Run(ctx); err != nil {
+			t.Errorf("run error: %s", err)
+			return
+		}
+		close(stageDone)
+	}()
+
+	go func() {
+		for i := 0; i < len(states); i++ {
+			c := <-output
+			received = append(received, c)
+		}
+		close(receiveDone)
+	}()
+
+	input <- states[0]
+	input <- states[1]
+	input <- states[2]
+	<-receiveDone
+	cancel()
+	<-stageDone
+	close(input)
+
+	if diff := cmp.Diff(len(states), len(received)); diff != "" {
+		t.Fatalf("mismatch on number of received states:\n%s", diff)
+	}
+	for i, rcv := range received {
+		in := states[i]
+		exp := onlineState{
+			id: in.id,
+			msg: &mock.Message{
+				Fields: map[internal.MessageField]interface{}{
+					fieldName: fmt.Sprintf("val%dval%d", i+1, i+1),
+				},
+			},
+		}
+		cmpOpts := cmp.AllowUnexported(onlineState{})
+		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
+			t.Fatalf("mismatch on message %d:\n%s", i, diff)
+		}
+	}
+}
+
+func testUnaryRequests(field internal.MessageField) []*mock.Message {
 	fields1 := map[internal.MessageField]interface{}{field: "val1"}
 	msg1 := &mock.Message{Fields: fields1}
 
@@ -94,17 +165,17 @@ func testOfflineRequests(field internal.MessageField) []*mock.Message {
 	return []*mock.Message{msg1, msg2, msg3}
 }
 
-func testOfflineUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func testUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		return testOfflineUnaryClient{field: field}, nil
+		return testUnaryClient{field: field}, nil
 	}
 }
 
-type testOfflineUnaryClient struct {
+type testUnaryClient struct {
 	field internal.MessageField
 }
 
-func (c testOfflineUnaryClient) Call(_ context.Context, req internal.Message) (
+func (c testUnaryClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
@@ -126,4 +197,4 @@ func (c testOfflineUnaryClient) Call(_ context.Context, req internal.Message) (
 	return repMock, nil
 }
 
-func (c testOfflineUnaryClient) Close() error { return nil }
+func (c testUnaryClient) Close() error { return nil }
