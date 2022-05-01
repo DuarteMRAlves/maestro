@@ -2,13 +2,18 @@ package execute
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Logger interface {
 	Debugf(format string, args ...any)
 	Infof(format string, args ...any)
+}
+
+type Stage interface {
+	Run(context.Context) error
 }
 
 type Execution struct {
