@@ -6,24 +6,14 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
-// offlineSourceStage is the source of the pipeline. It defines the initial ids of
+// offlineSource is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
-type offlineSourceStage struct {
+type offlineSource struct {
 	gen    internal.EmptyMessageGen
 	output chan<- offlineState
 }
 
-func newOfflineSourceStage(
-	gen internal.EmptyMessageGen,
-	output chan<- offlineState,
-) *offlineSourceStage {
-	return &offlineSourceStage{
-		gen:    gen,
-		output: output,
-	}
-}
-
-func (s *offlineSourceStage) Run(ctx context.Context) error {
+func (s *offlineSource) Run(ctx context.Context) error {
 	for {
 		next := newOfflineState(s.gen())
 		select {
@@ -35,27 +25,15 @@ func (s *offlineSourceStage) Run(ctx context.Context) error {
 	}
 }
 
-// onlineSourceStage is the source of the pipeline. It defines the initial ids of
+// onlineSource is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
-type onlineSourceStage struct {
+type onlineSource struct {
 	count  int32
 	gen    internal.EmptyMessageGen
 	output chan<- onlineState
 }
 
-func newOnlineSourceStage(
-	start int32,
-	gen internal.EmptyMessageGen,
-	output chan<- onlineState,
-) *onlineSourceStage {
-	return &onlineSourceStage{
-		count:  start,
-		gen:    gen,
-		output: output,
-	}
-}
-
-func (s *onlineSourceStage) Run(ctx context.Context) error {
+func (s *onlineSource) Run(ctx context.Context) error {
 	for {
 		next := newOnlineState(id(s.count), s.gen())
 		select {
@@ -65,5 +43,35 @@ func (s *onlineSourceStage) Run(ctx context.Context) error {
 			return nil
 		}
 		s.count++
+	}
+}
+
+type sourceBuildFunc[T any] func(
+	gen internal.EmptyMessageGen,
+	output chan<- T,
+) Stage
+
+func offlineSourceBuildFunc() sourceBuildFunc[offlineState] {
+	return func(
+		gen internal.EmptyMessageGen,
+		output chan<- offlineState,
+	) Stage {
+		return &offlineSource{
+			gen:    gen,
+			output: output,
+		}
+	}
+}
+
+func onlineSourceBuildFunc(start int32) sourceBuildFunc[onlineState] {
+	return func(
+		gen internal.EmptyMessageGen,
+		output chan<- onlineState,
+	) Stage {
+		return &onlineSource{
+			count:  start,
+			gen:    gen,
+			output: output,
+		}
 	}
 }

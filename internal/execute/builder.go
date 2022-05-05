@@ -29,53 +29,58 @@ func NewBuilder(
 	logger Logger,
 ) Builder {
 	return func(pipeline internal.Pipeline) (*Execution, error) {
-		buildGraph := newBuildGraphFunc(stageLoader, linkLoader, methodLoader)
+		graphBuildFunc := newBuildGraphFunc(stageLoader, linkLoader, methodLoader)
 
-		execGraph, err := buildGraph(pipeline.Stages(), pipeline.Links())
+		execGraph, err := graphBuildFunc(pipeline.Stages(), pipeline.Links())
 		if err != nil {
 			return nil, fmt.Errorf("build execution graph: %w", err)
 		}
 
-		// allChans stores all the channels, including the ones for aux stages.
-		var allChans []chan onlineState
-		// linkChans stores the channels associates with the pipeline links.
-		linkChans := make(map[internal.LinkName]chan onlineState)
-
-		for _, l := range pipeline.Links() {
-			ch := make(chan onlineState, defaultChanSize)
-			allChans = append(allChans, ch)
-			linkChans[l] = ch
-		}
-
-		stages := newStageMap()
-		for name, info := range execGraph {
-			var (
-				inChan, outChan chan onlineState
-				aux             Stage
-				err             error
-			)
-			fmt.Printf("On stage %s\n", name)
-			inChan, aux, err = buildInputResources(info, &allChans, linkChans)
-			if err != nil {
-				return nil, err
-			}
-			if aux != nil {
-				stages.addInputStage(name, aux)
-			}
-			outChan, aux = buildOutputResources(info, &allChans, linkChans)
-			if aux != nil {
-				stages.addOutputStage(name, aux)
-			}
-			address := info.stage.MethodContext().Address()
-			clientBuilder := info.method.ClientBuilder()
-			rpcStage := newOnlineUnaryStage(
-				name, inChan, outChan, address, clientBuilder, logger,
-			)
-			stages.addRpcStage(name, rpcStage)
-		}
-
-		return newExecution(stages, allChans, logger), nil
+		return buildExecution(pipeline, execGraph, logger)
 	}
+}
+
+func buildExecution(pipeline internal.Pipeline, execGraph graph, logger Logger) (*Execution, error) {
+	// allChans stores all the channels, including the ones for aux stages.
+	// linkChans stores the channels associates with the pipeline links.
+	var allChans []chan onlineState
+
+	linkChans := make(map[internal.LinkName]chan onlineState)
+
+	for _, l := range execGraph.links() {
+		ch := make(chan onlineState, defaultChanSize)
+		allChans = append(allChans, ch)
+		linkChans[l.Name()] = ch
+	}
+
+	stages := newStageMap()
+	for name, info := range execGraph {
+		var (
+			inChan, outChan chan onlineState
+			aux             Stage
+			err             error
+		)
+		inChan, aux, err = buildInputResources(info, &allChans, linkChans)
+		if err != nil {
+			return nil, err
+		}
+		if aux != nil {
+			stages.addInputStage(name, aux)
+		}
+		outChan, aux = buildOutputResources(info, &allChans, linkChans)
+		if aux != nil {
+			stages.addOutputStage(name, aux)
+		}
+		address := info.stage.MethodContext().Address()
+		clientBuilder := info.method.ClientBuilder()
+		buildFunc := onlineUnaryBuildFunc()
+		rpcStage := buildFunc(
+			name, inChan, outChan, address, clientBuilder, logger,
+		)
+		stages.addRpcStage(name, rpcStage)
+	}
+
+	return newExecution(stages, allChans, logger), nil
 }
 
 func buildInputResources(
@@ -85,7 +90,8 @@ func buildInputResources(
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		s := newOnlineSourceStage(1, info.method.Input().EmptyGen(), ch)
+		buildFunc := onlineSourceBuildFunc(1)
+		s := buildFunc(info.method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
 		l := info.inputs[0]
@@ -102,7 +108,7 @@ func buildInputResources(
 
 func buildMergeStage(
 	info *stageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
-) (chan onlineState, *onlineMergeStage) {
+) (chan onlineState, Stage) {
 	fields := make([]internal.MessageField, 0, len(info.inputs))
 	// channels where the stage will receive the several inputs.
 	inputs := make([]<-chan onlineState, 0, len(info.inputs))
@@ -114,7 +120,8 @@ func buildMergeStage(
 		inputs = append(inputs, linkChans[l.Name()])
 	}
 	gen := info.method.Input().EmptyGen()
-	return outputChan, newOnlineMergeStage(fields, inputs, outputChan, gen)
+	buildFunc := onlineMergeBuildFunc()
+	return outputChan, buildFunc(fields, inputs, outputChan, gen)
 }
 
 func buildOutputResources(
@@ -124,7 +131,8 @@ func buildOutputResources(
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		s := newOnlineSinkStage(ch)
+		buildFunc := onlineSinkBuildFunc()
+		s := buildFunc(ch)
 		return ch, s
 	case 1:
 		// We have only one link, but we want a sub message. We can use the
@@ -153,5 +161,6 @@ func buildSplitStage(
 		fields = append(fields, l.Source().Field())
 		outputs = append(outputs, linkChans[l.Name()])
 	}
-	return inputChan, newOnlineSplitStage(fields, inputChan, outputs)
+	buildFunc := onlineSplitBuildFunc()
+	return inputChan, buildFunc(fields, inputChan, outputs)
 }

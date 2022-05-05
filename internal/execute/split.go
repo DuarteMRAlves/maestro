@@ -6,7 +6,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
-type offlineSplitStage struct {
+type offlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
@@ -17,19 +17,7 @@ type offlineSplitStage struct {
 	outputs []chan<- offlineState
 }
 
-func newOfflineSplitStage(
-	fields []internal.MessageField,
-	input <-chan offlineState,
-	outputs []chan<- offlineState,
-) *offlineSplitStage {
-	return &offlineSplitStage{
-		fields:  fields,
-		input:   input,
-		outputs: outputs,
-	}
-}
-
-func (s *offlineSplitStage) Run(ctx context.Context) error {
+func (s *offlineSplit) Run(ctx context.Context) error {
 	for {
 		var currState offlineState
 		select {
@@ -64,7 +52,7 @@ func (s *offlineSplitStage) Run(ctx context.Context) error {
 	}
 }
 
-type onlineSplitStage struct {
+type onlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
@@ -75,19 +63,7 @@ type onlineSplitStage struct {
 	outputs []chan<- onlineState
 }
 
-func newOnlineSplitStage(
-	fields []internal.MessageField,
-	input <-chan onlineState,
-	outputs []chan<- onlineState,
-) *onlineSplitStage {
-	return &onlineSplitStage{
-		fields:  fields,
-		input:   input,
-		outputs: outputs,
-	}
-}
-
-func (s *onlineSplitStage) Run(ctx context.Context) error {
+func (s *onlineSplit) Run(ctx context.Context) error {
 	var currState onlineState
 	for {
 		select {
@@ -118,6 +94,40 @@ func (s *onlineSplitStage) Run(ctx context.Context) error {
 				}
 				return nil
 			}
+		}
+	}
+}
+
+type splitBuildFunc[T any] func(
+	fields []internal.MessageField,
+	input <-chan T,
+	outputs []chan<- T,
+) Stage
+
+func offlineSplitBuildFunc() splitBuildFunc[offlineState] {
+	return func(
+		fields []internal.MessageField,
+		input <-chan offlineState,
+		outputs []chan<- offlineState,
+	) Stage {
+		return &offlineSplit{
+			fields:  fields,
+			input:   input,
+			outputs: outputs,
+		}
+	}
+}
+
+func onlineSplitBuildFunc() splitBuildFunc[onlineState] {
+	return func(
+		fields []internal.MessageField,
+		input <-chan onlineState,
+		outputs []chan<- onlineState,
+	) Stage {
+		return &onlineSplit{
+			fields:  fields,
+			input:   input,
+			outputs: outputs,
 		}
 	}
 }

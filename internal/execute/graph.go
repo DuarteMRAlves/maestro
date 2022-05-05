@@ -8,6 +8,14 @@ import (
 
 type graph map[internal.StageName]*stageInfo
 
+func (g graph) links() []internal.Link {
+	var links []internal.Link
+	for _, info := range g {
+		links = append(links, info.inputs...)
+	}
+	return links
+}
+
 // stageInfo stores information about stages that
 // is unrelated to links.
 type stageInfo struct {
