@@ -30,7 +30,8 @@ func TestOfflineMergeStage_Run(t *testing.T) {
 
 	output := make(chan offlineState)
 
-	s := newOfflineMergeStage(fields, inputs, output, mock.NewGen())
+	buildFunc := offlineMergeBuildFunc()
+	s := buildFunc(fields, inputs, output, mock.NewGen())
 
 	expected := []offlineState{
 		newOfflineState(testMergeOuterMessage(inner, fields, 1)),
@@ -105,7 +106,8 @@ func TestOnlineMergeStage_Run(t *testing.T) {
 
 	output := make(chan onlineState)
 
-	s := newOnlineMergeStage(fields, inputs, output, mock.NewGen())
+	buildFunc := onlineMergeBuildFunc()
+	s := buildFunc(fields, inputs, output, mock.NewGen())
 
 	expected := []onlineState{
 		newOnlineState(3, testMergeOuterMessage(inner, fields, 3)),

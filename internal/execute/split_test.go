@@ -28,7 +28,8 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 
 	outputs := []chan<- offlineState{output1, output2, output3}
 
-	s := newOfflineSplitStage(fields, input, outputs)
+	buildFunc := offlineSplitBuildFunc()
+	s := buildFunc(fields, input, outputs)
 
 	expected1 := []offlineState{
 		newOfflineState(testSplitInnerMessage(inner[0], 1)),
@@ -108,7 +109,8 @@ func TestOnlineSplitStage_Run(t *testing.T) {
 
 	outputs := []chan<- onlineState{output1, output2, output3}
 
-	s := newOnlineSplitStage(fields, input, outputs)
+	buildFunc := onlineSplitBuildFunc()
+	s := buildFunc(fields, input, outputs)
 
 	expected1 := []onlineState{
 		newOnlineState(id(1), testSplitInnerMessage(inner[0], 1)),

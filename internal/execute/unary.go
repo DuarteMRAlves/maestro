@@ -7,7 +7,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal"
 )
 
-type offlineUnaryStage struct {
+type offlineUnary struct {
 	name    internal.StageName
 	address internal.Address
 
@@ -19,25 +19,7 @@ type offlineUnaryStage struct {
 	logger Logger
 }
 
-func newOfflineUnaryStage(
-	name internal.StageName,
-	input <-chan offlineState,
-	output chan<- offlineState,
-	address internal.Address,
-	clientBuilder internal.UnaryClientBuilder,
-	logger Logger,
-) *offlineUnaryStage {
-	return &offlineUnaryStage{
-		name:          name,
-		input:         input,
-		output:        output,
-		address:       address,
-		clientBuilder: clientBuilder,
-		logger:        logger,
-	}
-}
-
-func (s *offlineUnaryStage) Run(ctx context.Context) error {
+func (s *offlineUnary) Run(ctx context.Context) error {
 	var (
 		in, out offlineState
 		more    bool
@@ -81,7 +63,7 @@ func (s *offlineUnaryStage) Run(ctx context.Context) error {
 	}
 }
 
-func (s *offlineUnaryStage) call(
+func (s *offlineUnary) call(
 	ctx context.Context,
 	client internal.UnaryClient,
 	req internal.Message,
@@ -91,7 +73,7 @@ func (s *offlineUnaryStage) call(
 	return client.Call(ctx, req)
 }
 
-type onlineUnaryStage struct {
+type onlineUnary struct {
 	name    internal.StageName
 	address internal.Address
 
@@ -103,25 +85,7 @@ type onlineUnaryStage struct {
 	logger Logger
 }
 
-func newOnlineUnaryStage(
-	name internal.StageName,
-	input <-chan onlineState,
-	output chan<- onlineState,
-	address internal.Address,
-	clientBuilder internal.UnaryClientBuilder,
-	logger Logger,
-) *onlineUnaryStage {
-	return &onlineUnaryStage{
-		name:          name,
-		input:         input,
-		output:        output,
-		address:       address,
-		clientBuilder: clientBuilder,
-		logger:        logger,
-	}
-}
-
-func (s *onlineUnaryStage) Run(ctx context.Context) error {
+func (s *onlineUnary) Run(ctx context.Context) error {
 	var (
 		in, out onlineState
 		more    bool
@@ -165,7 +129,7 @@ func (s *onlineUnaryStage) Run(ctx context.Context) error {
 	}
 }
 
-func (s *onlineUnaryStage) call(
+func (s *onlineUnary) call(
 	ctx context.Context,
 	client internal.UnaryClient,
 	req internal.Message,
@@ -173,4 +137,53 @@ func (s *onlineUnaryStage) call(
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return client.Call(ctx, req)
+}
+
+type unaryBuildFunc[T any] func(
+	name internal.StageName,
+	input <-chan T,
+	output chan<- T,
+	address internal.Address,
+	clientBuilder internal.UnaryClientBuilder,
+	logger Logger,
+) Stage
+
+func offlineUnaryBuildFunc() unaryBuildFunc[offlineState] {
+	return func(
+		name internal.StageName,
+		input <-chan offlineState,
+		output chan<- offlineState,
+		address internal.Address,
+		clientBuilder internal.UnaryClientBuilder,
+		logger Logger,
+	) Stage {
+		return &offlineUnary{
+			name:          name,
+			input:         input,
+			output:        output,
+			address:       address,
+			clientBuilder: clientBuilder,
+			logger:        logger,
+		}
+	}
+}
+
+func onlineUnaryBuildFunc() unaryBuildFunc[onlineState] {
+	return func(
+		name internal.StageName,
+		input <-chan onlineState,
+		output chan<- onlineState,
+		address internal.Address,
+		clientBuilder internal.UnaryClientBuilder,
+		logger Logger,
+	) Stage {
+		return &onlineUnary{
+			name:          name,
+			input:         input,
+			output:        output,
+			address:       address,
+			clientBuilder: clientBuilder,
+			logger:        logger,
+		}
+	}
 }
