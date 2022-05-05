@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func newChanDrainer(sleep time.Duration, channels ...chan onlineState) func(context.Context) {
+func newChanDrainer[T any](sleep time.Duration, channels ...chan T) func(context.Context) {
 	highs := make([]int, 0, len(channels))
 	for _, ch := range channels {
 		highs = append(highs, cap(ch)*7/10)
@@ -27,7 +27,7 @@ func newChanDrainer(sleep time.Duration, channels ...chan onlineState) func(cont
 	}
 }
 
-func drainChan(ch chan onlineState) {
+func drainChan[T any](ch chan T) {
 	maxDrain := len(ch)
 	for i := 0; i < maxDrain; i++ {
 		select {

@@ -16,20 +16,20 @@ type Stage interface {
 	Run(context.Context) error
 }
 
-type Execution struct {
+type Execution[T any] struct {
 	stages *stageMap
-	chans  []chan onlineState
+	chans  []chan T
 	wg     *errgroup.Group
 	cancel context.CancelFunc
 
 	logger Logger
 }
 
-func newExecution(stages *stageMap, chans []chan onlineState, logger Logger) *Execution {
-	return &Execution{stages: stages, chans: chans, logger: logger}
+func newExecution[T any](stages *stageMap, chans []chan T, logger Logger) *Execution[T] {
+	return &Execution[T]{stages: stages, chans: chans, logger: logger}
 }
 
-func (e *Execution) Start() {
+func (e *Execution[T]) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
 
@@ -54,7 +54,7 @@ func (e *Execution) Start() {
 	e.logger.Debugf("Execution started\n")
 }
 
-func (e *Execution) Stop() error {
+func (e *Execution[T]) Stop() error {
 	e.cancel()
 	err := e.wg.Wait()
 	e.logger.Debugf("Execution stopped\n")
