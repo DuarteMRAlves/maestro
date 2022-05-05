@@ -20,7 +20,7 @@ type MethodLoader interface {
 	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
-type Builder func(pipeline internal.Pipeline) (*Execution, error)
+type Builder func(pipeline internal.Pipeline) (*Execution[onlineState], error)
 
 func NewBuilder(
 	stageLoader StageLoader,
@@ -28,7 +28,7 @@ func NewBuilder(
 	methodLoader MethodLoader,
 	logger Logger,
 ) Builder {
-	return func(pipeline internal.Pipeline) (*Execution, error) {
+	return func(pipeline internal.Pipeline) (*Execution[onlineState], error) {
 		graphBuildFunc := newBuildGraphFunc(stageLoader, linkLoader, methodLoader)
 
 		execGraph, err := graphBuildFunc(pipeline.Stages(), pipeline.Links())
@@ -40,7 +40,7 @@ func NewBuilder(
 	}
 }
 
-func buildExecution(pipeline internal.Pipeline, execGraph graph, logger Logger) (*Execution, error) {
+func buildExecution(pipeline internal.Pipeline, execGraph graph, logger Logger) (*Execution[onlineState], error) {
 	// allChans stores all the channels, including the ones for aux stages.
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan onlineState
