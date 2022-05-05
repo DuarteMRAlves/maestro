@@ -2,7 +2,6 @@ package execute
 
 import (
 	"context"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -16,26 +15,25 @@ type Stage interface {
 	Run(context.Context) error
 }
 
-type Execution[T any] struct {
-	stages *stageMap
-	chans  []chan T
-	wg     *errgroup.Group
-	cancel context.CancelFunc
+type Execution struct {
+	stages      *stageMap
+	chanDrainer chanDrainer
+	wg          *errgroup.Group
+	cancel      context.CancelFunc
 
 	logger Logger
 }
 
-func newExecution[T any](stages *stageMap, chans []chan T, logger Logger) *Execution[T] {
-	return &Execution[T]{stages: stages, chans: chans, logger: logger}
+func newExecution(stages *stageMap, drainFunc chanDrainer, logger Logger) *Execution {
+	return &Execution{stages: stages, chanDrainer: drainFunc, logger: logger}
 }
 
-func (e *Execution[T]) Start() {
+func (e *Execution) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg, ctx := errgroup.WithContext(ctx)
 
-	chanDrainer := newChanDrainer(5*time.Millisecond, e.chans...)
 	wg.Go(func() error {
-		chanDrainer(ctx)
+		e.chanDrainer(ctx)
 		return nil
 	})
 
@@ -54,7 +52,7 @@ func (e *Execution[T]) Start() {
 	e.logger.Debugf("Execution started\n")
 }
 
-func (e *Execution[T]) Stop() error {
+func (e *Execution) Stop() error {
 	e.cancel()
 	err := e.wg.Wait()
 	e.logger.Debugf("Execution stopped\n")
