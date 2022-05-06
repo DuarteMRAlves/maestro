@@ -18,6 +18,20 @@ type offlineMerge struct {
 	gen internal.EmptyMessageGen
 }
 
+func newOfflineMerge(
+	fields []internal.MessageField,
+	inputs []<-chan offlineState,
+	output chan<- offlineState,
+	gen internal.EmptyMessageGen,
+) Stage {
+	return &offlineMerge{
+		fields: fields,
+		inputs: inputs,
+		output: output,
+		gen:    gen,
+	}
+}
+
 func (s *offlineMerge) Run(ctx context.Context) error {
 	for {
 		var (
@@ -64,6 +78,21 @@ type onlineMerge struct {
 	gen internal.EmptyMessageGen
 	// currId is the current id being constructed.
 	currId id
+}
+
+func newOnlineMerge(
+	fields []internal.MessageField,
+	inputs []<-chan onlineState,
+	output chan<- onlineState,
+	gen internal.EmptyMessageGen,
+) Stage {
+	return &onlineMerge{
+		fields: fields,
+		inputs: inputs,
+		output: output,
+		gen:    gen,
+		currId: 0,
+	}
 }
 
 func (s *onlineMerge) Run(ctx context.Context) error {
@@ -138,46 +167,6 @@ func (s *onlineMerge) takeUntilCurrId(
 			}
 		case <-ctx.Done():
 			return emptyOnlineState, true
-		}
-	}
-}
-
-type mergeBuildFunc[T any] func(
-	fields []internal.MessageField,
-	inputs []<-chan T,
-	output chan<- T,
-	gen internal.EmptyMessageGen,
-) Stage
-
-func offlineMergeBuildFunc() mergeBuildFunc[offlineState] {
-	return func(
-		fields []internal.MessageField,
-		inputs []<-chan offlineState,
-		output chan<- offlineState,
-		gen internal.EmptyMessageGen,
-	) Stage {
-		return &offlineMerge{
-			fields: fields,
-			inputs: inputs,
-			output: output,
-			gen:    gen,
-		}
-	}
-}
-
-func onlineMergeBuildFunc() mergeBuildFunc[onlineState] {
-	return func(
-		fields []internal.MessageField,
-		inputs []<-chan onlineState,
-		output chan<- onlineState,
-		gen internal.EmptyMessageGen,
-	) Stage {
-		return &onlineMerge{
-			fields: fields,
-			inputs: inputs,
-			output: output,
-			gen:    gen,
-			currId: 0,
 		}
 	}
 }

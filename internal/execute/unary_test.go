@@ -34,8 +34,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
 	logger := logs.New(true)
-	buildFunc := offlineUnaryBuildFunc()
-	stage := buildFunc(name, input, output, address, clientBuilder, logger)
+	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -104,8 +103,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
 	logger := logs.New(true)
-	buildFunc := onlineUnaryBuildFunc()
-	stage := buildFunc(name, input, output, address, clientBuilder, logger)
+	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

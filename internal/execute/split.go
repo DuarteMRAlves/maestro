@@ -17,6 +17,18 @@ type offlineSplit struct {
 	outputs []chan<- offlineState
 }
 
+func newOfflineSplit(
+	fields []internal.MessageField,
+	input <-chan offlineState,
+	outputs []chan<- offlineState,
+) Stage {
+	return &offlineSplit{
+		fields:  fields,
+		input:   input,
+		outputs: outputs,
+	}
+}
+
 func (s *offlineSplit) Run(ctx context.Context) error {
 	for {
 		var currState offlineState
@@ -63,6 +75,18 @@ type onlineSplit struct {
 	outputs []chan<- onlineState
 }
 
+func newOnlineSplit(
+	fields []internal.MessageField,
+	input <-chan onlineState,
+	outputs []chan<- onlineState,
+) Stage {
+	return &onlineSplit{
+		fields:  fields,
+		input:   input,
+		outputs: outputs,
+	}
+}
+
 func (s *onlineSplit) Run(ctx context.Context) error {
 	var currState onlineState
 	for {
@@ -94,40 +118,6 @@ func (s *onlineSplit) Run(ctx context.Context) error {
 				}
 				return nil
 			}
-		}
-	}
-}
-
-type splitBuildFunc[T any] func(
-	fields []internal.MessageField,
-	input <-chan T,
-	outputs []chan<- T,
-) Stage
-
-func offlineSplitBuildFunc() splitBuildFunc[offlineState] {
-	return func(
-		fields []internal.MessageField,
-		input <-chan offlineState,
-		outputs []chan<- offlineState,
-	) Stage {
-		return &offlineSplit{
-			fields:  fields,
-			input:   input,
-			outputs: outputs,
-		}
-	}
-}
-
-func onlineSplitBuildFunc() splitBuildFunc[onlineState] {
-	return func(
-		fields []internal.MessageField,
-		input <-chan onlineState,
-		outputs []chan<- onlineState,
-	) Stage {
-		return &onlineSplit{
-			fields:  fields,
-			input:   input,
-			outputs: outputs,
 		}
 	}
 }

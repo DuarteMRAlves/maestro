@@ -14,8 +14,7 @@ func TestOnlineSourceStage_Run(t *testing.T) {
 	numRequest := 10
 
 	output := make(chan onlineState)
-	buildFunc := onlineSourceBuildFunc(start)
-	s := buildFunc(mock.NewGen(), output)
+	s := newOnlineSource(start, mock.NewGen(), output)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -81,8 +81,7 @@ func buildOnlineExecution(execGraph graph, logger Logger) (*Execution, error) {
 		}
 		address := info.stage.MethodContext().Address()
 		clientBuilder := info.method.ClientBuilder()
-		buildFunc := onlineUnaryBuildFunc()
-		rpcStage := buildFunc(
+		rpcStage := newOnlineUnary(
 			name, inChan, outChan, address, clientBuilder, logger,
 		)
 		stages.addRpcStage(name, rpcStage)
@@ -98,8 +97,7 @@ func buildOnlineInputResources(
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		buildFunc := onlineSourceBuildFunc(1)
-		s := buildFunc(info.method.Input().EmptyGen(), ch)
+		s := newOnlineSource(1, info.method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
 		l := info.inputs[0]
@@ -128,8 +126,7 @@ func buildOnlineMergeStage(
 		inputs = append(inputs, linkChans[l.Name()])
 	}
 	gen := info.method.Input().EmptyGen()
-	buildFunc := onlineMergeBuildFunc()
-	return outputChan, buildFunc(fields, inputs, outputChan, gen)
+	return outputChan, newOnlineMerge(fields, inputs, outputChan, gen)
 }
 
 func buildOnlineOutputResources(
@@ -139,9 +136,7 @@ func buildOnlineOutputResources(
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		buildFunc := onlineSinkBuildFunc()
-		s := buildFunc(ch)
-		return ch, s
+		return ch, newOnlineSink(ch)
 	case 1:
 		// We have only one link, but we want a sub message. We can use the
 		// split stage with just one output that retrieves the desired message
@@ -169,8 +164,7 @@ func buildOnlineSplitStage(
 		fields = append(fields, l.Source().Field())
 		outputs = append(outputs, linkChans[l.Name()])
 	}
-	buildFunc := onlineSplitBuildFunc()
-	return inputChan, buildFunc(fields, inputChan, outputs)
+	return inputChan, newOnlineSplit(fields, inputChan, outputs)
 }
 
 func buildOfflineExecution(execGraph graph, logger Logger) (*Execution, error) {
@@ -206,8 +200,7 @@ func buildOfflineExecution(execGraph graph, logger Logger) (*Execution, error) {
 		}
 		address := info.stage.MethodContext().Address()
 		clientBuilder := info.method.ClientBuilder()
-		buildFunc := offlineUnaryBuildFunc()
-		rpcStage := buildFunc(
+		rpcStage := newOfflineUnary(
 			name, inChan, outChan, address, clientBuilder, logger,
 		)
 		stages.addRpcStage(name, rpcStage)
@@ -223,8 +216,7 @@ func buildInputResources(
 	case 0:
 		ch := make(chan offlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		buildFunc := offlineSourceBuildFunc()
-		s := buildFunc(info.method.Input().EmptyGen(), ch)
+		s := newOfflineSource(info.method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
 		l := info.inputs[0]
@@ -253,8 +245,7 @@ func buildOfflineMergeStage(
 		inputs = append(inputs, linkChans[l.Name()])
 	}
 	gen := info.method.Input().EmptyGen()
-	buildFunc := offlineMergeBuildFunc()
-	return outputChan, buildFunc(fields, inputs, outputChan, gen)
+	return outputChan, newOfflineMerge(fields, inputs, outputChan, gen)
 }
 
 func buildOfflineOutputResources(
@@ -264,9 +255,7 @@ func buildOfflineOutputResources(
 	case 0:
 		ch := make(chan offlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		buildFunc := offlineSinkBuildFunc()
-		s := buildFunc(ch)
-		return ch, s
+		return ch, newOfflineSink(ch)
 	case 1:
 		// We have only one link, but we want a sub message. We can use the
 		// split stage with just one output that retrieves the desired message
@@ -294,6 +283,5 @@ func buildOfflineSplitStage(
 		fields = append(fields, l.Source().Field())
 		outputs = append(outputs, linkChans[l.Name()])
 	}
-	buildFunc := offlineSplitBuildFunc()
-	return inputChan, buildFunc(fields, inputChan, outputs)
+	return inputChan, newOfflineSplit(fields, inputChan, outputs)
 }

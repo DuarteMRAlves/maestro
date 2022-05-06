@@ -19,6 +19,24 @@ type offlineUnary struct {
 	logger Logger
 }
 
+func newOfflineUnary(
+	name internal.StageName,
+	input <-chan offlineState,
+	output chan<- offlineState,
+	address internal.Address,
+	clientBuilder internal.UnaryClientBuilder,
+	logger Logger,
+) Stage {
+	return &offlineUnary{
+		name:          name,
+		input:         input,
+		output:        output,
+		address:       address,
+		clientBuilder: clientBuilder,
+		logger:        logger,
+	}
+}
+
 func (s *offlineUnary) Run(ctx context.Context) error {
 	var (
 		in, out offlineState
@@ -85,6 +103,24 @@ type onlineUnary struct {
 	logger Logger
 }
 
+func newOnlineUnary(
+	name internal.StageName,
+	input <-chan onlineState,
+	output chan<- onlineState,
+	address internal.Address,
+	clientBuilder internal.UnaryClientBuilder,
+	logger Logger,
+) Stage {
+	return &onlineUnary{
+		name:          name,
+		input:         input,
+		output:        output,
+		address:       address,
+		clientBuilder: clientBuilder,
+		logger:        logger,
+	}
+}
+
 func (s *onlineUnary) Run(ctx context.Context) error {
 	var (
 		in, out onlineState
@@ -137,53 +173,4 @@ func (s *onlineUnary) call(
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return client.Call(ctx, req)
-}
-
-type unaryBuildFunc[T any] func(
-	name internal.StageName,
-	input <-chan T,
-	output chan<- T,
-	address internal.Address,
-	clientBuilder internal.UnaryClientBuilder,
-	logger Logger,
-) Stage
-
-func offlineUnaryBuildFunc() unaryBuildFunc[offlineState] {
-	return func(
-		name internal.StageName,
-		input <-chan offlineState,
-		output chan<- offlineState,
-		address internal.Address,
-		clientBuilder internal.UnaryClientBuilder,
-		logger Logger,
-	) Stage {
-		return &offlineUnary{
-			name:          name,
-			input:         input,
-			output:        output,
-			address:       address,
-			clientBuilder: clientBuilder,
-			logger:        logger,
-		}
-	}
-}
-
-func onlineUnaryBuildFunc() unaryBuildFunc[onlineState] {
-	return func(
-		name internal.StageName,
-		input <-chan onlineState,
-		output chan<- onlineState,
-		address internal.Address,
-		clientBuilder internal.UnaryClientBuilder,
-		logger Logger,
-	) Stage {
-		return &onlineUnary{
-			name:          name,
-			input:         input,
-			output:        output,
-			address:       address,
-			clientBuilder: clientBuilder,
-			logger:        logger,
-		}
-	}
 }
