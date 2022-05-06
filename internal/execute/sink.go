@@ -6,6 +6,10 @@ type offlineSink struct {
 	input <-chan offlineState
 }
 
+func newOfflineSink(input <-chan offlineState) Stage {
+	return &offlineSink{input: input}
+}
+
 func (s *offlineSink) Run(ctx context.Context) error {
 	for {
 		select {
@@ -20,6 +24,10 @@ type onlineSink struct {
 	input <-chan onlineState
 }
 
+func newOnlineSink(input <-chan onlineState) Stage {
+	return &onlineSink{input: input}
+}
+
 func (s *onlineSink) Run(ctx context.Context) error {
 	for {
 		select {
@@ -27,19 +35,5 @@ func (s *onlineSink) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		}
-	}
-}
-
-type sinkBuildFunc[T any] func(input <-chan T) Stage
-
-func offlineSinkBuildFunc() sinkBuildFunc[offlineState] {
-	return func(input <-chan offlineState) Stage {
-		return &offlineSink{input: input}
-	}
-}
-
-func onlineSinkBuildFunc() sinkBuildFunc[onlineState] {
-	return func(input <-chan onlineState) Stage {
-		return &onlineSink{input: input}
 	}
 }

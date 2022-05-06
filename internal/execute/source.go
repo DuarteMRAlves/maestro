@@ -13,6 +13,15 @@ type offlineSource struct {
 	output chan<- offlineState
 }
 
+func newOfflineSource(
+	gen internal.EmptyMessageGen, output chan<- offlineState,
+) Stage {
+	return &offlineSource{
+		gen:    gen,
+		output: output,
+	}
+}
+
 func (s *offlineSource) Run(ctx context.Context) error {
 	for {
 		next := newOfflineState(s.gen())
@@ -33,6 +42,16 @@ type onlineSource struct {
 	output chan<- onlineState
 }
 
+func newOnlineSource(
+	start int32, gen internal.EmptyMessageGen, output chan<- onlineState,
+) Stage {
+	return &onlineSource{
+		count:  start,
+		gen:    gen,
+		output: output,
+	}
+}
+
 func (s *onlineSource) Run(ctx context.Context) error {
 	for {
 		next := newOnlineState(id(s.count), s.gen())
@@ -43,35 +62,5 @@ func (s *onlineSource) Run(ctx context.Context) error {
 			return nil
 		}
 		s.count++
-	}
-}
-
-type sourceBuildFunc[T any] func(
-	gen internal.EmptyMessageGen,
-	output chan<- T,
-) Stage
-
-func offlineSourceBuildFunc() sourceBuildFunc[offlineState] {
-	return func(
-		gen internal.EmptyMessageGen,
-		output chan<- offlineState,
-	) Stage {
-		return &offlineSource{
-			gen:    gen,
-			output: output,
-		}
-	}
-}
-
-func onlineSourceBuildFunc(start int32) sourceBuildFunc[onlineState] {
-	return func(
-		gen internal.EmptyMessageGen,
-		output chan<- onlineState,
-	) Stage {
-		return &onlineSource{
-			count:  start,
-			gen:    gen,
-			output: output,
-		}
 	}
 }
