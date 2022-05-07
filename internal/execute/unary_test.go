@@ -2,12 +2,10 @@ package execute
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -17,9 +15,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	stageDone := make(chan struct{})
 	receiveDone := make(chan struct{})
 
-	fieldName := internal.NewMessageField("field")
-
-	requests := testUnaryRequests(fieldName)
+	requests := []testUnaryMessage{{"val1"}, {"val2"}, {"val3"}}
 	states := []offlineState{
 		newOfflineState(requests[0]),
 		newOfflineState(requests[1]),
@@ -31,7 +27,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
-	clientBuilder := testUnaryClientBuilder(fieldName)
+	clientBuilder := testUnaryClientBuilder()
 	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -66,13 +62,11 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	}
 	for i, rcv := range received {
 		exp := offlineState{
-			msg: &mock.Message{
-				Fields: map[internal.MessageField]interface{}{
-					fieldName: fmt.Sprintf("val%dval%d", i+1, i+1),
-				},
+			msg: testUnaryMessage{
+				val: fmt.Sprintf("val%dval%d", i+1, i+1),
 			},
 		}
-		cmpOpts := cmp.AllowUnexported(offlineState{})
+		cmpOpts := cmp.AllowUnexported(offlineState{}, testUnaryMessage{})
 		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
@@ -85,9 +79,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	stageDone := make(chan struct{})
 	receiveDone := make(chan struct{})
 
-	fieldName := internal.NewMessageField("field")
-
-	requests := testUnaryRequests(fieldName)
+	requests := []testUnaryMessage{{"val1"}, {"val2"}, {"val3"}}
 	states := []onlineState{
 		newOnlineState(1, requests[0]),
 		newOnlineState(3, requests[1]),
@@ -99,7 +91,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
-	clientBuilder := testUnaryClientBuilder(fieldName)
+	clientBuilder := testUnaryClientBuilder()
 	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -136,62 +128,45 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 		in := states[i]
 		exp := onlineState{
 			id: in.id,
-			msg: &mock.Message{
-				Fields: map[internal.MessageField]interface{}{
-					fieldName: fmt.Sprintf("val%dval%d", i+1, i+1),
-				},
+			msg: testUnaryMessage{
+				val: fmt.Sprintf("val%dval%d", i+1, i+1),
 			},
 		}
-		cmpOpts := cmp.AllowUnexported(onlineState{})
+		cmpOpts := cmp.AllowUnexported(onlineState{}, testUnaryMessage{})
 		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
 	}
 }
 
-func testUnaryRequests(field internal.MessageField) []*mock.Message {
-	fields1 := map[internal.MessageField]interface{}{field: "val1"}
-	msg1 := &mock.Message{Fields: fields1}
+type testUnaryMessage struct{ val string }
 
-	fields2 := map[internal.MessageField]interface{}{field: "val2"}
-	msg2 := &mock.Message{Fields: fields2}
-
-	fields3 := map[internal.MessageField]interface{}{field: "val3"}
-	msg3 := &mock.Message{Fields: fields3}
-
-	return []*mock.Message{msg1, msg2, msg3}
+func (m testUnaryMessage) SetField(_ internal.MessageField, _ internal.Message) error {
+	panic("Should not set field in unary test")
 }
 
-func testUnaryClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func (m testUnaryMessage) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field in unary test")
+}
+
+func testUnaryClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		return testUnaryClient{field: field}, nil
+		return testUnaryClient{}, nil
 	}
 }
 
-type testUnaryClient struct {
-	field internal.MessageField
-}
+type testUnaryClient struct{}
 
 func (c testUnaryClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(testUnaryMessage)
 	if !ok {
-		return nil, errors.New("request message is not *mock.Message")
+		panic("request message is not testUnaryMessage")
 	}
-	val1, ok := reqMock.Fields[c.field]
-	if !ok {
-		return nil, errors.New("request message does not have field1 field")
-	}
-	val1AsString, ok := val1.(string)
-	if !ok {
-		return nil, errors.New("request message field1 is not a string")
-	}
-	replyField := val1AsString + val1AsString
-	repFields := map[internal.MessageField]interface{}{c.field: replyField}
-	repMock := &mock.Message{Fields: repFields}
-	return repMock, nil
+	replyVal := reqMsg.val + reqMsg.val
+	return testUnaryMessage{replyVal}, nil
 }
 
 func (c testUnaryClient) Close() error { return nil }
