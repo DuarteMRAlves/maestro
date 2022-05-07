@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -14,7 +13,10 @@ func TestOnlineSourceStage_Run(t *testing.T) {
 	numRequest := 10
 
 	output := make(chan onlineState)
-	s := newOnlineSource(start, mock.NewGen(), output)
+	gen := func() internal.Message {
+		return testSourceMessage{}
+	}
+	s := newOnlineSource(start, gen, output)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -37,12 +39,21 @@ func TestOnlineSourceStage_Run(t *testing.T) {
 	<-done
 
 	for i, g := range generated {
-		m := &mock.Message{Fields: map[internal.MessageField]interface{}{}}
-		exp := onlineState{id: id(i + 1), msg: m}
+		exp := onlineState{id: id(i + 1), msg: testSourceMessage{}}
 
-		cmpOpts := cmp.AllowUnexported(onlineState{})
+		cmpOpts := cmp.AllowUnexported(onlineState{}, testSourceMessage{})
 		if diff := cmp.Diff(exp, g, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}
 	}
+}
+
+type testSourceMessage struct{}
+
+func (m testSourceMessage) SetField(_ internal.MessageField, _ internal.Message) error {
+	panic("Should not set field in source test")
+}
+
+func (m testSourceMessage) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field in source test")
 }
