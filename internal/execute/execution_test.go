@@ -16,13 +16,101 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestExecution_Linear(t *testing.T) {
+func TestOfflineExecution_Linear(t *testing.T) {
 	fieldName := internal.NewMessageField("field")
 
 	max := 100
 	collect := make([]*mock.Message, 0, max)
 	done := make(chan struct{})
 
+	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	for i, msg := range collect {
+		val, ok := msg.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		}
+		curr, ok := val.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(val))
+		}
+		exp := int64((i + 1) * 2)
+		if diff := cmp.Diff(exp, curr); diff != "" {
+			t.Fatalf("mismatch on value %d:\n%s", i, diff)
+		}
+	}
+}
+
+func TestOnlineExecution_Linear(t *testing.T) {
+	fieldName := internal.NewMessageField("field")
+
+	max := 100
+	collect := make([]*mock.Message, 0, max)
+	done := make(chan struct{})
+
+	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	prev := int64(0)
+	for i, msg := range collect {
+		val, ok := msg.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		}
+		curr, ok := val.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(val))
+		}
+		if prev >= curr {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
+		}
+		if curr%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, curr)
+		}
+		prev = curr
+	}
+}
+
+func setupLinear(
+	t *testing.T, fieldName internal.MessageField, max int, collect *[]*mock.Message, done chan struct{},
+) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
 	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
 	linearMsgDesc := mock.MessageDescriptor{Ident: "message"}
 
@@ -38,7 +126,7 @@ func TestExecution_Linear(t *testing.T) {
 		Out:                 linearMsgDesc,
 	}
 	sinkMethod := mock.Method{
-		MethodClientBuilder: linearSinkClientBuilder(max, &collect, done),
+		MethodClientBuilder: linearSinkClientBuilder(max, collect, done),
 		In:                  linearMsgDesc,
 		Out:                 emptyDesc,
 	}
@@ -92,48 +180,13 @@ func TestExecution_Linear(t *testing.T) {
 		sinkContext:      sinkMethod,
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
 
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
 		internal.WithStages(sourceName, transformName, sinkName),
 		internal.WithLinks(sourceToTransformName, transformToSinkName),
 	)
-
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
-		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
-		}
-		if prev >= curr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
-		}
-		if curr%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, curr)
-		}
-		prev = curr
-	}
+	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
 func linearSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
@@ -256,15 +309,171 @@ func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
 
 func (c *linearSinkClient) Close() error { return nil }
 
-func TestExecution_SplitAndMerge(t *testing.T) {
+func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	fieldName := internal.NewMessageField("field")
-	originalField := internal.NewMessageField("original")
-	transformField := internal.NewMessageField("transform")
+	origFld := internal.NewMessageField("original")
+	transfFld := internal.NewMessageField("transform")
 
 	max := 100
 	collect := make([]*mock.Message, 0, max)
 	done := make(chan struct{})
 
+	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
+		t, fieldName, origFld, transfFld, max, &collect, done,
+	)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	for i, msg := range collect {
+		orig, ok := msg.Fields[origFld]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", origFld, i)
+		}
+		origMock, ok := orig.(*mock.Message)
+		if !ok {
+			t.Fatalf("orig %d is not a *mock.Message", i)
+		}
+		origVal, ok := origMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
+		}
+		origCurr, ok := origVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(origVal))
+		}
+		origExp := int64((i + 1))
+		if diff := cmp.Diff(origExp, origCurr); diff != "" {
+			t.Fatalf("mismatch on orig value %d:\n%s", i, diff)
+		}
+
+		transf, ok := msg.Fields[transfFld]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", transfFld, i)
+		}
+		transfMock, ok := transf.(*mock.Message)
+		if !ok {
+			t.Fatalf("transf %d is not a *mock.Message", i)
+		}
+		transfVal, ok := transfMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
+		}
+		transfCurr, ok := transfVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(transfVal))
+		}
+		transfExp := int64((i + 1) * 3)
+		if diff := cmp.Diff(transfExp, transfCurr); diff != "" {
+			t.Fatalf("mismatch on transf value %d:\n%s", i, diff)
+		}
+	}
+}
+
+func TestOnlineExecution_SplitAndMerge(t *testing.T) {
+	fieldName := internal.NewMessageField("field")
+	origFld := internal.NewMessageField("original")
+	transfFld := internal.NewMessageField("transform")
+
+	max := 100
+	collect := make([]*mock.Message, 0, max)
+	done := make(chan struct{})
+
+	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
+		t, fieldName, origFld, transfFld, max, &collect, done,
+	)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	prev := int64(0)
+	for i, msg := range collect {
+		orig, ok := msg.Fields[origFld]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", origFld, i)
+		}
+		origMock, ok := orig.(*mock.Message)
+		if !ok {
+			t.Fatalf("orig %d is not a *mock.Message", i)
+		}
+		origVal, ok := origMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
+		}
+		origCurr, ok := origVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(origVal))
+		}
+		if prev >= origCurr {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origCurr)
+		}
+
+		transf, ok := msg.Fields[transfFld]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", transfFld, i)
+		}
+		transfMock, ok := transf.(*mock.Message)
+		if !ok {
+			t.Fatalf("transf %d is not a *mock.Message", i)
+		}
+		transfVal, ok := transfMock.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
+		}
+		transfCurr, ok := transfVal.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(transfVal))
+		}
+		if transfCurr != 3*origCurr {
+			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origCurr, transfCurr)
+		}
+		prev = origCurr
+	}
+}
+
+func setupSplitAndMerge(
+	t *testing.T,
+	fieldName internal.MessageField,
+	originalField internal.MessageField,
+	transformField internal.MessageField,
+	max int,
+	collect *[]*mock.Message,
+	done chan struct{},
+) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
 	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
 	singleMsgDesc := mock.MessageDescriptor{Ident: "single"}
 	mergeMsgDesc := mock.MessageDescriptor{
@@ -286,7 +495,7 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 		Out:                 singleMsgDesc,
 	}
 	sinkMethod := mock.Method{
-		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, &collect, done),
+		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, collect, done),
 		In:                  mergeMsgDesc,
 		Out:                 emptyDesc,
 	}
@@ -349,74 +558,12 @@ func TestExecution_SplitAndMerge(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
-
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
 		internal.WithStages(sourceName, transformName, sinkName),
 		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
 	)
-
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		orig, ok := msg.Fields[originalField]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", originalField, i)
-		}
-		origMock, ok := orig.(*mock.Message)
-		if !ok {
-			t.Fatalf("orig %d is not a *mock.Message", i)
-		}
-		origVal, ok := origMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
-		}
-		origCurr, ok := origVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(origVal))
-		}
-		if prev >= origCurr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origCurr)
-		}
-
-		transf, ok := msg.Fields[transformField]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", transformField, i)
-		}
-		transfMock, ok := transf.(*mock.Message)
-		if !ok {
-			t.Fatalf("transf %d is not a *mock.Message", i)
-		}
-		transfVal, ok := transfMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
-		}
-		transfCurr, ok := transfVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(transfVal))
-		}
-		if transfCurr != 2*origCurr {
-			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origCurr, transfCurr)
-		}
-		prev = origCurr
-	}
+	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
 func splitAndMergeSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
@@ -483,7 +630,7 @@ func (c *splitAndMergeTransformClient) Call(
 			c.field,
 		)
 	}
-	replyVal := 2 * valAsInt64
+	replyVal := 3 * valAsInt64
 	repFields := map[internal.MessageField]interface{}{c.field: replyVal}
 	return &mock.Message{Fields: repFields}, nil
 }
@@ -535,13 +682,99 @@ func (c *splitAndMergeSinkClient) Call(_ context.Context, req internal.Message) 
 
 func (c *splitAndMergeSinkClient) Close() error { return nil }
 
-func TestExecution_Slow(t *testing.T) {
+func TestOfflineExecution_Slow(t *testing.T) {
 	fieldName := internal.NewMessageField("field")
 
 	max := 100
 	collect := make([]*mock.Message, 0, max)
 	done := make(chan struct{})
 
+	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	for i, msg := range collect {
+		val, ok := msg.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		}
+		curr, ok := val.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(val))
+		}
+		exp := int64((i + 1) * 2)
+		if diff := cmp.Diff(exp, curr); diff != "" {
+			t.Fatalf("mismatch on value %d:\n%s", i, diff)
+		}
+	}
+}
+
+func TestOnlineExecution_Slow(t *testing.T) {
+	fieldName := internal.NewMessageField("field")
+
+	max := 100
+	collect := make([]*mock.Message, 0, max)
+	done := make(chan struct{})
+
+	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
+	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+	logger := logs.New(true)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	prev := int64(0)
+	for i, msg := range collect {
+		val, ok := msg.Fields[fieldName]
+		if !ok {
+			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		}
+		curr, ok := val.(int64)
+		if !ok {
+			format := "type mismatch in value %d: expected int64, got %s"
+			t.Fatalf(format, i, reflect.TypeOf(val))
+		}
+		if prev >= curr {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
+		}
+		if curr%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, curr)
+		}
+		prev = curr
+	}
+}
+
+func setupSlow(
+	t *testing.T, fieldName internal.MessageField, max int, collect *[]*mock.Message, done chan struct{},
+) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
 	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
 	linearMsgDesc := mock.MessageDescriptor{Ident: "message"}
 
@@ -557,7 +790,7 @@ func TestExecution_Slow(t *testing.T) {
 		Out:                 linearMsgDesc,
 	}
 	sinkMethod := mock.Method{
-		MethodClientBuilder: slowSinkClientBuilder(max, &collect, done),
+		MethodClientBuilder: slowSinkClientBuilder(max, collect, done),
 		In:                  linearMsgDesc,
 		Out:                 emptyDesc,
 	}
@@ -612,48 +845,12 @@ func TestExecution_Slow(t *testing.T) {
 	}
 	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
-
 	pipeline := internal.NewPipeline(
 		createPipelineName(t, "pipeline"),
 		internal.WithStages(sourceName, transformName, sinkName),
 		internal.WithLinks(sourceToTransformName, transformToSinkName),
 	)
-
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
-		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
-		}
-		if prev >= curr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
-		}
-		if curr%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, curr)
-		}
-		prev = curr
-	}
+	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
 func slowSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
