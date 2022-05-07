@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
@@ -26,8 +25,7 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -70,8 +68,7 @@ func TestOnlineExecution_Linear(t *testing.T) {
 	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -323,8 +320,7 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -401,8 +397,7 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 	)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
 
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -691,8 +686,7 @@ func TestOfflineExecution_Slow(t *testing.T) {
 
 	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -734,8 +728,7 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
-	logger := logs.New(true)
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger)
+	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {

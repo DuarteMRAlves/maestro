@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
@@ -33,8 +32,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
-	logger := logs.New(true)
-	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger)
+	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -102,8 +100,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	name := createStageName(t, "test-stage")
 	address := internal.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder(fieldName)
-	logger := logs.New(true)
-	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger)
+	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
