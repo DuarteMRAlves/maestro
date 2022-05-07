@@ -1,14 +1,10 @@
 package storage
 
-import (
-	"github.com/DuarteMRAlves/maestro/internal/logs"
-	"github.com/dgraph-io/badger/v3"
-	"testing"
-)
+import "github.com/dgraph-io/badger/v3"
 
-func NewDb() (*badger.DB, error) {
-	logger := NewBadgerLogger(logs.New(false))
-	opts := badger.DefaultOptions("").WithInMemory(true).WithLogger(logger)
+func NewDb(logger Logger) (*badger.DB, error) {
+	badgerLogger := NewBadgerLogger(logger)
+	opts := badger.DefaultOptions("").WithInMemory(true).WithLogger(badgerLogger)
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
@@ -16,24 +12,16 @@ func NewDb() (*badger.DB, error) {
 	return db, err
 }
 
-func NewTestDb(t *testing.T) *badger.DB {
-	logger := NewBadgerLogger(logs.New(true))
-	opts := badger.DefaultOptions("").
-		WithInMemory(true).
-		WithLoggingLevel(badger.WARNING).
-		WithLogger(logger)
-	db, err := badger.Open(opts)
-	if err == nil {
-		t.Fatalf("error creating test db: %s", err)
-	}
-	return db
+type Logger interface {
+	Debugf(format string, args ...any)
+	Infof(format string, args ...any)
 }
 
 type badgerLogger struct {
-	logger logs.Logger
+	logger Logger
 }
 
-func NewBadgerLogger(logger logs.Logger) badger.Logger {
+func NewBadgerLogger(logger Logger) badger.Logger {
 	return &badgerLogger{logger: logger}
 }
 
