@@ -2,25 +2,21 @@ package execute
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestOfflineSplitStage_Run(t *testing.T) {
 	inner1 := internal.NewMessageField("inner1")
 	inner3 := internal.NewMessageField("inner3")
-	inner := []internal.MessageField{inner1, inner3}
-
-	f1 := internal.NewMessageField("f1")
-	f2 := internal.MessageField{}
-	f3 := internal.NewMessageField("f3")
-
-	fields := []internal.MessageField{f1, f2, f3}
+	// Send full message through second output
+	fields := []internal.MessageField{inner1, {}, inner3}
 
 	input := make(chan offlineState)
+	defer close(input)
 
 	output1 := make(chan offlineState)
 	output2 := make(chan offlineState)
@@ -30,26 +26,32 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 
 	s := newOfflineSplit(fields, input, outputs)
 
+	inputs := []*testSplitOuterMessage{
+		{&testSplitInnerMessage{1}, &testSplitInnerMessage{2}, &testSplitInnerMessage{3}},
+		{&testSplitInnerMessage{4}, &testSplitInnerMessage{5}, &testSplitInnerMessage{6}},
+		{&testSplitInnerMessage{7}, &testSplitInnerMessage{8}, &testSplitInnerMessage{9}},
+	}
+
 	expected1 := []offlineState{
-		newOfflineState(testSplitInnerMessage(inner[0], 1)),
-		newOfflineState(testSplitInnerMessage(inner[0], 3)),
-		newOfflineState(testSplitInnerMessage(inner[0], 5)),
+		newOfflineState(inputs[0].inner1),
+		newOfflineState(inputs[1].inner1),
+		newOfflineState(inputs[2].inner1),
 	}
 	expected2 := []offlineState{
-		newOfflineState(testSplitOuterMessage(inner, fields, 1)),
-		newOfflineState(testSplitOuterMessage(inner, fields, 3)),
-		newOfflineState(testSplitOuterMessage(inner, fields, 5)),
+		newOfflineState(inputs[0]),
+		newOfflineState(inputs[1]),
+		newOfflineState(inputs[2]),
 	}
 	expected3 := []offlineState{
-		newOfflineState(testSplitInnerMessage(inner[1], 1)),
-		newOfflineState(testSplitInnerMessage(inner[1], 3)),
-		newOfflineState(testSplitInnerMessage(inner[1], 5)),
+		newOfflineState(inputs[0].inner3),
+		newOfflineState(inputs[1].inner3),
+		newOfflineState(inputs[2].inner3),
 	}
 
 	go func() {
-		input <- newOfflineState(testSplitOuterMessage(inner, fields, 1))
-		input <- newOfflineState(testSplitOuterMessage(inner, fields, 3))
-		input <- newOfflineState(testSplitOuterMessage(inner, fields, 5))
+		input <- newOfflineState(inputs[0])
+		input <- newOfflineState(inputs[1])
+		input <- newOfflineState(inputs[2])
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -65,7 +67,9 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 		close(done)
 	}()
 
-	cmpOpts := cmp.AllowUnexported(offlineState{})
+	cmpOpts := cmp.AllowUnexported(
+		offlineState{}, testSplitInnerMessage{}, testSplitOuterMessage{},
+	)
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]
 		out1 := <-output1
@@ -92,15 +96,11 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 func TestOnlineSplitStage_Run(t *testing.T) {
 	inner1 := internal.NewMessageField("inner1")
 	inner3 := internal.NewMessageField("inner3")
-	inner := []internal.MessageField{inner1, inner3}
-
-	f1 := internal.NewMessageField("f1")
-	f2 := internal.MessageField{}
-	f3 := internal.NewMessageField("f3")
-
-	fields := []internal.MessageField{f1, f2, f3}
+	// Send full message through second output
+	fields := []internal.MessageField{inner1, {}, inner3}
 
 	input := make(chan onlineState)
+	defer close(input)
 
 	output1 := make(chan onlineState)
 	output2 := make(chan onlineState)
@@ -110,26 +110,32 @@ func TestOnlineSplitStage_Run(t *testing.T) {
 
 	s := newOnlineSplit(fields, input, outputs)
 
+	inputs := []*testSplitOuterMessage{
+		{&testSplitInnerMessage{1}, &testSplitInnerMessage{2}, &testSplitInnerMessage{3}},
+		{&testSplitInnerMessage{4}, &testSplitInnerMessage{5}, &testSplitInnerMessage{6}},
+		{&testSplitInnerMessage{7}, &testSplitInnerMessage{8}, &testSplitInnerMessage{9}},
+	}
+
 	expected1 := []onlineState{
-		newOnlineState(id(1), testSplitInnerMessage(inner[0], 1)),
-		newOnlineState(id(3), testSplitInnerMessage(inner[0], 3)),
-		newOnlineState(id(5), testSplitInnerMessage(inner[0], 5)),
+		newOnlineState(1, inputs[0].inner1),
+		newOnlineState(3, inputs[1].inner1),
+		newOnlineState(5, inputs[2].inner1),
 	}
 	expected2 := []onlineState{
-		newOnlineState(id(1), testSplitOuterMessage(inner, fields, 1)),
-		newOnlineState(id(3), testSplitOuterMessage(inner, fields, 3)),
-		newOnlineState(id(5), testSplitOuterMessage(inner, fields, 5)),
+		newOnlineState(1, inputs[0]),
+		newOnlineState(3, inputs[1]),
+		newOnlineState(5, inputs[2]),
 	}
 	expected3 := []onlineState{
-		newOnlineState(id(1), testSplitInnerMessage(inner[1], 1)),
-		newOnlineState(id(3), testSplitInnerMessage(inner[1], 3)),
-		newOnlineState(id(5), testSplitInnerMessage(inner[1], 5)),
+		newOnlineState(1, inputs[0].inner3),
+		newOnlineState(3, inputs[1].inner3),
+		newOnlineState(5, inputs[2].inner3),
 	}
 
 	go func() {
-		input <- newOnlineState(id(1), testSplitOuterMessage(inner, fields, 1))
-		input <- newOnlineState(id(3), testSplitOuterMessage(inner, fields, 3))
-		input <- newOnlineState(id(5), testSplitOuterMessage(inner, fields, 5))
+		input <- newOnlineState(1, inputs[0])
+		input <- newOnlineState(3, inputs[1])
+		input <- newOnlineState(5, inputs[2])
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -145,7 +151,9 @@ func TestOnlineSplitStage_Run(t *testing.T) {
 		close(done)
 	}()
 
-	cmpOpts := cmp.AllowUnexported(onlineState{})
+	cmpOpts := cmp.AllowUnexported(
+		onlineState{}, testSplitInnerMessage{}, testSplitOuterMessage{},
+	)
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]
 		out1 := <-output1
@@ -169,24 +177,36 @@ func TestOnlineSplitStage_Run(t *testing.T) {
 	<-done
 }
 
-func testSplitOuterMessage(
-	inner []internal.MessageField, fields []internal.MessageField,
-	val int32,
-) *mock.Message {
-	msgFields := map[internal.MessageField]interface{}{}
-	innerIdx := 0
-	for _, f := range fields {
-		if !f.IsEmpty() {
-			innerMsg := testSplitInnerMessage(inner[innerIdx], val)
-			msgFields[f] = innerMsg
-			innerIdx++
-		}
-	}
-	msg := &mock.Message{Fields: msgFields}
-	return msg
+type testSplitInnerMessage struct{ val int32 }
+
+func (m *testSplitInnerMessage) SetField(_ internal.MessageField, _ internal.Message) error {
+	panic("Should not set field for inner message in split test")
 }
 
-func testSplitInnerMessage(field internal.MessageField, val int32) *mock.Message {
-	fields := map[internal.MessageField]interface{}{field: val}
-	return &mock.Message{Fields: fields}
+func (m *testSplitInnerMessage) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field for inner message in split test")
+}
+
+type testSplitOuterMessage struct {
+	inner1 *testSplitInnerMessage
+	inner2 *testSplitInnerMessage
+	inner3 *testSplitInnerMessage
+}
+
+func (m *testSplitOuterMessage) SetField(f internal.MessageField, v internal.Message) error {
+	panic("Should not set field for outer message in split test")
+}
+
+func (m *testSplitOuterMessage) GetField(f internal.MessageField) (internal.Message, error) {
+	switch f.Unwrap() {
+	case "inner1":
+		return m.inner1, nil
+	case "inner2":
+		return m.inner2, nil
+	case "inner3":
+		return m.inner3, nil
+	default:
+		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f.Unwrap())
+		panic(msg)
+	}
 }
