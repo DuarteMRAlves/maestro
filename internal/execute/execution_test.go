@@ -2,9 +2,7 @@ package execute
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -16,13 +14,11 @@ import (
 )
 
 func TestOfflineExecution_Linear(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
+	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
 
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
@@ -42,30 +38,18 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	}
 
 	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
-		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
-		}
-		exp := int64((i + 1) * 2)
-		if diff := cmp.Diff(exp, curr); diff != "" {
+		if diff := cmp.Diff(int64((i+1)*2), msg.Val); diff != "" {
 			t.Fatalf("mismatch on value %d:\n%s", i, diff)
 		}
 	}
 }
 
 func TestOnlineExecution_Linear(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, fieldName, max, &collect, done)
+	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
 
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
@@ -86,46 +70,34 @@ func TestOnlineExecution_Linear(t *testing.T) {
 
 	prev := int64(0)
 	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		if prev >= msg.Val {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
 		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
+		if msg.Val%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, msg.Val)
 		}
-		if prev >= curr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
-		}
-		if curr%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, curr)
-		}
-		prev = curr
+		prev = msg.Val
 	}
 }
 
 func setupLinear(
-	t *testing.T, fieldName internal.MessageField, max int, collect *[]*mock.Message, done chan struct{},
+	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
 ) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
-	linearMsgDesc := mock.MessageDescriptor{Ident: "message"}
-
 	sourceMethod := mock.Method{
-		MethodClientBuilder: linearSourceClientBuilder(fieldName),
-		In:                  emptyDesc,
-		Out:                 linearMsgDesc,
+		MethodClientBuilder: linearSourceClientBuilder(),
+		In:                  testEmptyDesc{},
+		Out:                 testValDesc{},
 	}
 
 	transformMethod := mock.Method{
-		MethodClientBuilder: linearTransformClientBuilder(fieldName),
-		In:                  linearMsgDesc,
-		Out:                 linearMsgDesc,
+		MethodClientBuilder: linearTransformClientBuilder(),
+		In:                  testValDesc{},
+		Out:                 testValDesc{},
 	}
 	sinkMethod := mock.Method{
 		MethodClientBuilder: linearSinkClientBuilder(max, collect, done),
-		In:                  linearMsgDesc,
-		Out:                 emptyDesc,
+		In:                  testValDesc{},
+		Out:                 testEmptyDesc{},
 	}
 
 	sourceName := createStageName(t, "source")
@@ -186,82 +158,53 @@ func setupLinear(
 	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
-func linearSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func linearSourceClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &linearSourceClient{
-			field:   field,
-			counter: 0,
-		}
-		return c, nil
+		return &linearSourceClient{counter: 0}, nil
 	}
 }
 
-type linearSourceClient struct {
-	field   internal.MessageField
-	counter int64
-}
+type linearSourceClient struct{ counter int64 }
 
 func (c *linearSourceClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	_, ok := req.(*testEmptyMsg)
 	if !ok {
-		return nil, errors.New("source request message is not *mock.Message")
-	}
-	if len(reqMock.Fields) != 0 {
-		return nil, errors.New("source request message is not empty")
+		panic("source request message is not testEmptyMsg")
 	}
 	val := atomic.AddInt64(&c.counter, 1)
-	repFields := map[internal.MessageField]interface{}{c.field: val}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: val}, nil
 }
 
 func (c *linearSourceClient) Close() error { return nil }
 
-func linearTransformClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func linearTransformClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &linearTransformClient{field: field}
+		c := &linearTransformClient{}
 		return c, nil
 	}
 }
 
-type linearTransformClient struct {
-	field internal.MessageField
-}
+type linearTransformClient struct{}
 
 func (c *linearTransformClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(*testValMsg)
 	if !ok {
-		return nil, errors.New("transform request message is not *mock.Message")
+		panic("transform request message is not testValMsg")
 	}
-	val, ok := reqMock.Fields[c.field]
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message does not have %s field",
-			c.field,
-		)
-	}
-	valAsInt64, ok := val.(int64)
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message %s is not an int64",
-			c.field,
-		)
-	}
-	replyVal := 2 * valAsInt64
-	repFields := map[internal.MessageField]interface{}{c.field: replyVal}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: 2 * reqMsg.Val}, nil
 }
 
 func (c *linearTransformClient) Close() error { return nil }
 
 func linearSinkClientBuilder(
 	max int,
-	collect *[]*mock.Message,
+	collect *[]*testValMsg,
 	done chan<- struct{},
 ) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
@@ -277,7 +220,7 @@ func linearSinkClientBuilder(
 
 type linearSinkClient struct {
 	max     int
-	collect *[]*mock.Message
+	collect *[]*testValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
@@ -286,37 +229,36 @@ func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(*testValMsg)
 	if !ok {
-		return nil, errors.New("sink request message is not *mock.Message")
+		panic("sink request message is not testValMsg")
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// Receive while not at full capacity
 	if len(*c.collect) < c.max {
-		*c.collect = append(*c.collect, reqMock)
+		*c.collect = append(*c.collect, reqMsg)
 	}
 	// Notify when full. Remaining messages are discarded.
 	if len(*c.collect) == c.max && c.done != nil {
 		close(c.done)
 		c.done = nil
 	}
-	return &mock.Message{}, nil
+	return &testEmptyMsg{}, nil
 }
 
 func (c *linearSinkClient) Close() error { return nil }
 
 func TestOfflineExecution_SplitAndMerge(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-	origFld := internal.NewMessageField("original")
-	transfFld := internal.NewMessageField("transform")
+	origFld := internal.NewMessageField("Orig")
+	transfFld := internal.NewMessageField("Transf")
 
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
 	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, fieldName, origFld, transfFld, max, &collect, done,
+		t, origFld, transfFld, max, &collect, done,
 	)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
 
@@ -337,63 +279,26 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	}
 
 	for i, msg := range collect {
-		orig, ok := msg.Fields[origFld]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", origFld, i)
-		}
-		origMock, ok := orig.(*mock.Message)
-		if !ok {
-			t.Fatalf("orig %d is not a *mock.Message", i)
-		}
-		origVal, ok := origMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
-		}
-		origCurr, ok := origVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(origVal))
-		}
-		origExp := int64((i + 1))
-		if diff := cmp.Diff(origExp, origCurr); diff != "" {
+		if diff := cmp.Diff(int64((i + 1)), msg.Orig.Val); diff != "" {
 			t.Fatalf("mismatch on orig value %d:\n%s", i, diff)
 		}
 
-		transf, ok := msg.Fields[transfFld]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", transfFld, i)
-		}
-		transfMock, ok := transf.(*mock.Message)
-		if !ok {
-			t.Fatalf("transf %d is not a *mock.Message", i)
-		}
-		transfVal, ok := transfMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
-		}
-		transfCurr, ok := transfVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(transfVal))
-		}
-		transfExp := int64((i + 1) * 3)
-		if diff := cmp.Diff(transfExp, transfCurr); diff != "" {
+		if diff := cmp.Diff(int64((i+1)*3), msg.Transf.Val); diff != "" {
 			t.Fatalf("mismatch on transf value %d:\n%s", i, diff)
 		}
 	}
 }
 
 func TestOnlineExecution_SplitAndMerge(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-	origFld := internal.NewMessageField("original")
-	transfFld := internal.NewMessageField("transform")
+	origFld := internal.NewMessageField("Orig")
+	transfFld := internal.NewMessageField("Transf")
 
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
 	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, fieldName, origFld, transfFld, max, &collect, done,
+		t, origFld, transfFld, max, &collect, done,
 	)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
 
@@ -415,84 +320,40 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 
 	prev := int64(0)
 	for i, msg := range collect {
-		orig, ok := msg.Fields[origFld]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", origFld, i)
+		origVal := msg.Orig.Val
+		if prev >= origVal {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origVal)
 		}
-		origMock, ok := orig.(*mock.Message)
-		if !ok {
-			t.Fatalf("orig %d is not a *mock.Message", i)
+		transfVal := msg.Transf.Val
+		if transfVal != 3*origVal {
+			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origVal, transfVal)
 		}
-		origVal, ok := origMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in orig %d", fieldName, i)
-		}
-		origCurr, ok := origVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(origVal))
-		}
-		if prev >= origCurr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origCurr)
-		}
-
-		transf, ok := msg.Fields[transfFld]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", transfFld, i)
-		}
-		transfMock, ok := transf.(*mock.Message)
-		if !ok {
-			t.Fatalf("transf %d is not a *mock.Message", i)
-		}
-		transfVal, ok := transfMock.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in transf %d", fieldName, i)
-		}
-		transfCurr, ok := transfVal.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(transfVal))
-		}
-		if transfCurr != 3*origCurr {
-			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origCurr, transfCurr)
-		}
-		prev = origCurr
+		prev = origVal
 	}
 }
 
 func setupSplitAndMerge(
 	t *testing.T,
-	fieldName internal.MessageField,
 	originalField internal.MessageField,
 	transformField internal.MessageField,
 	max int,
-	collect *[]*mock.Message,
+	collect *[]*testTwoValMsg,
 	done chan struct{},
 ) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
-	singleMsgDesc := mock.MessageDescriptor{Ident: "single"}
-	mergeMsgDesc := mock.MessageDescriptor{
-		Ident: "merge",
-		Fields: map[internal.MessageField]internal.MessageDesc{
-			originalField:  singleMsgDesc,
-			transformField: singleMsgDesc,
-		},
-	}
-
 	sourceMethod := mock.Method{
-		MethodClientBuilder: splitAndMergeSourceClientBuilder(fieldName),
-		In:                  emptyDesc,
-		Out:                 singleMsgDesc,
+		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
+		In:                  testEmptyDesc{},
+		Out:                 testValDesc{},
 	}
 	transformMethod := mock.Method{
-		MethodClientBuilder: splitAndMergeTransformClientBuilder(fieldName),
-		In:                  singleMsgDesc,
-		Out:                 singleMsgDesc,
+		MethodClientBuilder: splitAndMergeTransformClientBuilder(),
+		In:                  testValDesc{},
+		Out:                 testValDesc{},
 	}
 	sinkMethod := mock.Method{
 		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, collect, done),
-		In:                  mergeMsgDesc,
-		Out:                 emptyDesc,
+		In:                  testTwoValDesc{},
+		Out:                 testEmptyDesc{},
 	}
 
 	sourceName := createStageName(t, "source")
@@ -561,79 +422,48 @@ func setupSplitAndMerge(
 	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
-func splitAndMergeSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &splitAndMergeSourceClient{
-			field:   field,
-			counter: 0,
-		}
-		return c, nil
+		return &splitAndMergeSourceClient{counter: 0}, nil
 	}
 }
 
-type splitAndMergeSourceClient struct {
-	field   internal.MessageField
-	counter int64
-}
+type splitAndMergeSourceClient struct{ counter int64 }
 
 func (c *splitAndMergeSourceClient) Call(
 	_ context.Context, req internal.Message,
 ) (internal.Message, error) {
-	reqMock, ok := req.(*mock.Message)
+	_, ok := req.(*testEmptyMsg)
 	if !ok {
-		return nil, errors.New("source request message is not *mock.Message")
+		panic("source request message is not testEmptyMsg")
 	}
-	if len(reqMock.Fields) != 0 {
-		return nil, errors.New("source request message is not empty")
-	}
-	val := atomic.AddInt64(&c.counter, 1)
-	repFields := map[internal.MessageField]interface{}{c.field: val}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: atomic.AddInt64(&c.counter, 1)}, nil
 }
 
 func (c *splitAndMergeSourceClient) Close() error { return nil }
 
-func splitAndMergeTransformClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func splitAndMergeTransformClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &splitAndMergeTransformClient{field: field}
-		return c, nil
+		return &splitAndMergeTransformClient{}, nil
 	}
 }
 
-type splitAndMergeTransformClient struct {
-	field internal.MessageField
-}
+type splitAndMergeTransformClient struct{}
 
 func (c *splitAndMergeTransformClient) Call(
 	_ context.Context, req internal.Message,
 ) (internal.Message, error) {
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(*testValMsg)
 	if !ok {
-		return nil, errors.New("transform request message is not *mock.Message")
+		panic("transform request message is not testValMsg")
 	}
-	val, ok := reqMock.Fields[c.field]
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message does not have %s field",
-			c.field,
-		)
-	}
-	valAsInt64, ok := val.(int64)
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message %s is not an int64",
-			c.field,
-		)
-	}
-	replyVal := 3 * valAsInt64
-	repFields := map[internal.MessageField]interface{}{c.field: replyVal}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: 3 * reqMsg.Val}, nil
 }
 
 func (c *splitAndMergeTransformClient) Close() error { return nil }
 
 func splitAndMergeSinkClientBuilder(
-	max int, collect *[]*mock.Message, done chan<- struct{},
+	max int, collect *[]*testTwoValMsg, done chan<- struct{},
 ) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
 		c := &splitAndMergeSinkClient{
@@ -648,7 +478,7 @@ func splitAndMergeSinkClientBuilder(
 
 type splitAndMergeSinkClient struct {
 	max     int
-	collect *[]*mock.Message
+	collect *[]*testTwoValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
@@ -657,9 +487,9 @@ func (c *splitAndMergeSinkClient) Call(_ context.Context, req internal.Message) 
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	reqMock, ok := req.(*testTwoValMsg)
 	if !ok {
-		return nil, errors.New("sink request message is not *mock.Message")
+		panic("sink request message is not *testTwoValMsg")
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -672,19 +502,17 @@ func (c *splitAndMergeSinkClient) Call(_ context.Context, req internal.Message) 
 		close(c.done)
 		c.done = nil
 	}
-	return &mock.Message{}, nil
+	return &testEmptyMsg{}, nil
 }
 
 func (c *splitAndMergeSinkClient) Close() error { return nil }
 
 func TestOfflineExecution_Slow(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
+	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
@@ -703,30 +531,18 @@ func TestOfflineExecution_Slow(t *testing.T) {
 	}
 
 	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
-		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
-		}
-		exp := int64((i + 1) * 2)
-		if diff := cmp.Diff(exp, curr); diff != "" {
+		if diff := cmp.Diff(int64((i+1)*2), msg.Val); diff != "" {
 			t.Fatalf("mismatch on value %d:\n%s", i, diff)
 		}
 	}
 }
 
 func TestOnlineExecution_Slow(t *testing.T) {
-	fieldName := internal.NewMessageField("field")
-
 	max := 100
-	collect := make([]*mock.Message, 0, max)
+	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, fieldName, max, &collect, done)
+	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
 	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
 	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
 
@@ -746,46 +562,34 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 	prev := int64(0)
 	for i, msg := range collect {
-		val, ok := msg.Fields[fieldName]
-		if !ok {
-			t.Fatalf("field %s does not exist in msg %d", fieldName, i)
+		if prev >= msg.Val {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
 		}
-		curr, ok := val.(int64)
-		if !ok {
-			format := "type mismatch in value %d: expected int64, got %s"
-			t.Fatalf(format, i, reflect.TypeOf(val))
+		if msg.Val%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, msg.Val)
 		}
-		if prev >= curr {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, curr)
-		}
-		if curr%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, curr)
-		}
-		prev = curr
+		prev = msg.Val
 	}
 }
 
 func setupSlow(
-	t *testing.T, fieldName internal.MessageField, max int, collect *[]*mock.Message, done chan struct{},
+	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
 ) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	emptyDesc := mock.MessageDescriptor{Ident: "empty"}
-	linearMsgDesc := mock.MessageDescriptor{Ident: "message"}
-
 	sourceMethod := mock.Method{
-		MethodClientBuilder: slowSourceClientBuilder(fieldName),
-		In:                  emptyDesc,
-		Out:                 linearMsgDesc,
+		MethodClientBuilder: slowSourceClientBuilder(),
+		In:                  testEmptyDesc{},
+		Out:                 testValDesc{},
 	}
 
 	transformMethod := mock.Method{
-		MethodClientBuilder: slowTransformClientBuilder(fieldName, 1*time.Millisecond),
-		In:                  linearMsgDesc,
-		Out:                 linearMsgDesc,
+		MethodClientBuilder: slowTransformClientBuilder(1 * time.Millisecond),
+		In:                  testValDesc{},
+		Out:                 testValDesc{},
 	}
 	sinkMethod := mock.Method{
 		MethodClientBuilder: slowSinkClientBuilder(max, collect, done),
-		In:                  linearMsgDesc,
-		Out:                 emptyDesc,
+		In:                  testValDesc{},
+		Out:                 testEmptyDesc{},
 	}
 
 	sourceName := createStageName(t, "source")
@@ -846,86 +650,53 @@ func setupSlow(
 	return pipeline, stageLoader, linkLoader, methodLoader
 }
 
-func slowSourceClientBuilder(field internal.MessageField) internal.UnaryClientBuilder {
+func slowSourceClientBuilder() internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &slowSourceClient{
-			field:   field,
-			counter: 0,
-		}
-		return c, nil
+		return &slowSourceClient{counter: 0}, nil
 	}
 }
 
-type slowSourceClient struct {
-	field   internal.MessageField
-	counter int64
-}
+type slowSourceClient struct{ counter int64 }
 
 func (c *slowSourceClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	_, ok := req.(*testEmptyMsg)
 	if !ok {
-		return nil, errors.New("source request message is not *mock.Message")
-	}
-	if len(reqMock.Fields) != 0 {
-		return nil, errors.New("source request message is not empty")
+		panic("source request message is not testEmptyMsg")
 	}
 	val := atomic.AddInt64(&c.counter, 1)
-	repFields := map[internal.MessageField]interface{}{c.field: val}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: val}, nil
 }
 
 func (c *slowSourceClient) Close() error { return nil }
 
-func slowTransformClientBuilder(
-	field internal.MessageField, sleep time.Duration,
-) internal.UnaryClientBuilder {
+func slowTransformClientBuilder(sleep time.Duration) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
-		c := &slowTransformClient{field: field, sleep: sleep}
-		return c, nil
+		return &slowTransformClient{sleep: sleep}, nil
 	}
 }
 
-type slowTransformClient struct {
-	field internal.MessageField
-	sleep time.Duration
-}
+type slowTransformClient struct{ sleep time.Duration }
 
 func (c *slowTransformClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
 	time.Sleep(c.sleep)
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(*testValMsg)
 	if !ok {
-		return nil, errors.New("transform request message is not *mock.Message")
+		panic("transform request message is not testValMsg")
 	}
-	val, ok := reqMock.Fields[c.field]
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message does not have %s field",
-			c.field,
-		)
-	}
-	valAsInt64, ok := val.(int64)
-	if !ok {
-		return nil, fmt.Errorf(
-			"transform request message %s is not an int64",
-			c.field,
-		)
-	}
-	replyVal := 2 * valAsInt64
-	repFields := map[internal.MessageField]interface{}{c.field: replyVal}
-	return &mock.Message{Fields: repFields}, nil
+	return &testValMsg{Val: 2 * reqMsg.Val}, nil
 }
 
 func (c *slowTransformClient) Close() error { return nil }
 
 func slowSinkClientBuilder(
 	max int,
-	collect *[]*mock.Message,
+	collect *[]*testValMsg,
 	done chan<- struct{},
 ) internal.UnaryClientBuilder {
 	return func(_ internal.Address) (internal.UnaryClient, error) {
@@ -941,7 +712,7 @@ func slowSinkClientBuilder(
 
 type slowSinkClient struct {
 	max     int
-	collect *[]*mock.Message
+	collect *[]*testValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
@@ -950,22 +721,22 @@ func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
 	internal.Message,
 	error,
 ) {
-	reqMock, ok := req.(*mock.Message)
+	reqMsg, ok := req.(*testValMsg)
 	if !ok {
-		return nil, errors.New("sink request message is not *mock.Message")
+		panic("sink request message is not testValMsg")
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	// Receive while not at full capacity
 	if len(*c.collect) < c.max {
-		*c.collect = append(*c.collect, reqMock)
+		*c.collect = append(*c.collect, reqMsg)
 	}
 	// Notify when full. Remaining messages are discarded.
 	if len(*c.collect) == c.max && c.done != nil {
 		close(c.done)
 		c.done = nil
 	}
-	return &mock.Message{}, nil
+	return &testEmptyMsg{}, nil
 }
 
 func (c *slowSinkClient) Close() error { return nil }
@@ -1000,4 +771,99 @@ func createMethodContext(addr internal.Address) internal.MethodContext {
 		emptyMethod  internal.Method
 	)
 	return internal.NewMethodContext(addr, emptyService, emptyMethod)
+}
+
+type testEmptyMsg struct{}
+
+func (m *testEmptyMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+	panic("Should not set field in empty message")
+}
+
+func (m *testEmptyMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field in empty message")
+}
+
+type testEmptyDesc struct{}
+
+func (d testEmptyDesc) Compatible(other internal.MessageDesc) bool {
+	_, ok := other.(testEmptyDesc)
+	return ok
+}
+
+func (d testEmptyDesc) EmptyGen() internal.EmptyMessageGen {
+	return func() internal.Message { return &testEmptyMsg{} }
+}
+
+func (d testEmptyDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+	panic("method get field should not be called for testEmptyDesc")
+}
+
+type testValMsg struct{ Val int64 }
+
+func (m *testValMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+	panic("Should not set field in val message")
+}
+
+func (m *testValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field in val message")
+}
+
+type testValDesc struct{}
+
+func (d testValDesc) Compatible(other internal.MessageDesc) bool {
+	_, ok := other.(testValDesc)
+	return ok
+}
+
+func (d testValDesc) EmptyGen() internal.EmptyMessageGen {
+	return func() internal.Message { return &testValMsg{} }
+}
+
+func (d testValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+	panic("method get field should not be called for testValDesc")
+}
+
+type testTwoValMsg struct {
+	Orig   *testValMsg
+	Transf *testValMsg
+}
+
+func (m *testTwoValMsg) SetField(f internal.MessageField, v internal.Message) error {
+	inner, ok := v.(*testValMsg)
+	if !ok {
+		panic("v is not *testValMsg")
+	}
+	switch f.Unwrap() {
+	case "Orig":
+		m.Orig = inner
+	case "Transf":
+		m.Transf = inner
+	default:
+		panic(fmt.Sprintf("Unknown field for testTwoValMsg: %s", f.Unwrap()))
+	}
+	return nil
+}
+
+func (m *testTwoValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+	panic("Should not get field in two val message")
+}
+
+type testTwoValDesc struct{}
+
+func (d testTwoValDesc) Compatible(other internal.MessageDesc) bool {
+	_, ok := other.(testTwoValDesc)
+	return ok
+}
+
+func (d testTwoValDesc) EmptyGen() internal.EmptyMessageGen {
+	return func() internal.Message { return &testTwoValMsg{} }
+}
+
+func (d testTwoValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+	switch f.Unwrap() {
+	case "Orig", "Transf":
+		return testValDesc{}, nil
+	default:
+		panic(fmt.Sprintf("Unknown field for testTwoValDesc: %s", f.Unwrap()))
+	}
 }
