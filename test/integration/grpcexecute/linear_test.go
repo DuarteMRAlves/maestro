@@ -3,6 +3,12 @@ package grpcexecute
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
@@ -15,14 +21,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"math/rand"
-	"sync"
-	"sync/atomic"
-	"testing"
-	"time"
 )
 
-func TestLinear(t *testing.T) {
+func TestOfflineLinear(t *testing.T) {
 	var (
 		source  linearSource
 		transf  linearTransform
@@ -113,6 +114,133 @@ func TestLinear(t *testing.T) {
 		createPipelineName(t, "pipeline"),
 		internal.WithStages(sourceName, transfName, sinkName),
 		internal.WithLinks(sourceToTransformName, transformToSinkName),
+		internal.WithOfflineExec(),
+	)
+
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	<-done
+	if err := e.Stop(); err != nil {
+		cause, ok := errors.Unwrap(err).(interface {
+			GRPCStatus() *status.Status
+		})
+		if !ok {
+			t.Fatalf("stop error does not implement grpc interface")
+		}
+		st := cause.GRPCStatus()
+		// The cancel can happen midways through a method call
+		if diff := cmp.Diff(codes.Canceled, st.Code()); diff != "" {
+			t.Fatalf("stop error code mismatch:\n%s", diff)
+		}
+	}
+
+	if diff := cmp.Diff(max, len(collect)); diff != "" {
+		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
+	}
+
+	for i, msg := range collect {
+		if diff := cmp.Diff(int64((i+1)*3), msg.Val); diff != "" {
+			t.Fatalf("mismatch at msg %d:\n%s", i, diff)
+		}
+	}
+}
+
+func TestOnlineLinear(t *testing.T) {
+	var (
+		source  linearSource
+		transf  linearTransform
+		sink    linearSink
+		backoff retry.ExponentialBackoff
+	)
+
+	max := 100
+	collect := make([]*integration.LinearMessage, 0, max)
+	done := make(chan struct{})
+
+	sink.max = max
+	sink.collect = &collect
+	sink.done = done
+
+	sourceName := createStageName(t, "source")
+	transfName := createStageName(t, "transform")
+	sinkName := createStageName(t, "sink")
+
+	sourceAddr, sourceStart, sourceStop := createGrpcServer(
+		t,
+		func(registrar grpc.ServiceRegistrar) {
+			integration.RegisterLinearSourceServer(registrar, &source)
+		},
+	)
+	defer sourceStop()
+	go sourceStart()
+
+	transfAddr, transfStart, transfStop := createGrpcServer(
+		t,
+		func(registrar grpc.ServiceRegistrar) {
+			integration.RegisterLinearTransformServer(registrar, &transf)
+		},
+	)
+	defer transfStop()
+	go transfStart()
+
+	sinkAddr, sinkStart, sinkStop := createGrpcServer(
+		t,
+		func(registrar grpc.ServiceRegistrar) {
+			integration.RegisterLinearSinkServer(registrar, &sink)
+		},
+	)
+	defer sinkStop()
+	go sinkStart()
+
+	sourceCtx := createMethodContext(internal.NewAddress(sourceAddr.String()))
+	transfCtx := createMethodContext(internal.NewAddress(transfAddr.String()))
+	sinkCtx := createMethodContext(internal.NewAddress(sinkAddr.String()))
+
+	sourceStage := internal.NewStage(sourceName, sourceCtx)
+	transfStage := internal.NewStage(transfName, transfCtx)
+	sinkStage := internal.NewStage(sinkName, sinkCtx)
+
+	stages := map[internal.StageName]internal.Stage{
+		sourceName: sourceStage,
+		transfName: transfStage,
+		sinkName:   sinkStage,
+	}
+	stageLoader := &mock.StageStorage{Stages: stages}
+
+	sourceToTransformName := createLinkName(t, "link-source-transform")
+	sourceToTransform := internal.NewLink(
+		sourceToTransformName,
+		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
+		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
+	)
+
+	transformToSinkName := createLinkName(t, "link-transform-sink")
+	transformToSink := internal.NewLink(
+		transformToSinkName,
+		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
+		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
+	)
+
+	links := map[internal.LinkName]internal.Link{
+		sourceToTransformName: sourceToTransform,
+		transformToSinkName:   transformToSink,
+	}
+	linkLoader := &mock.LinkStorage{Links: links}
+
+	r := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
+	executionBuilder := execute.NewBuilder(
+		stageLoader, linkLoader, r, logs.New(true),
+	)
+
+	pipeline := internal.NewPipeline(
+		createPipelineName(t, "pipeline"),
+		internal.WithStages(sourceName, transfName, sinkName),
+		internal.WithLinks(sourceToTransformName, transformToSinkName),
+		internal.WithOnlineExec(),
 	)
 
 	e, err := executionBuilder(pipeline)
