@@ -47,7 +47,7 @@ func newBuildGraphFunc(
 			}
 			method, err := methodLoader.Load(stage.MethodContext())
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("load method %v: %w", stage.MethodContext(), err)
 			}
 			execGraph[stageName] = &stageInfo{stage: stage, method: method}
 		}
