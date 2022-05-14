@@ -76,6 +76,22 @@ func (m MethodContext) Service() Service { return m.service }
 
 func (m MethodContext) Method() Method { return m.method }
 
+func (m MethodContext) String() string {
+	addr := "*"
+	srv := "*"
+	meth := "*"
+	if !m.address.IsEmpty() {
+		addr = m.address.val
+	}
+	if !m.service.IsEmpty() {
+		srv = m.service.val
+	}
+	if !m.method.IsEmpty() {
+		meth = m.method.val
+	}
+	return fmt.Sprintf("%s/%s/%s", addr, srv, meth)
+}
+
 func NewMethodContext(
 	address Address,
 	service Service,

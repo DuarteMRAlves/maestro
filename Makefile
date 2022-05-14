@@ -43,9 +43,13 @@ help:
 	@echo "  ci-cd/build          builds the docker image for the build workflow."
 
 
-.PHONY: docker/build
-docker/build:
-	docker build -t duartemralves/maestro:latest -f docker/Dockerfile --platform linux/amd64  .
+.PHONY: docker/build-v1
+docker/build-v1:
+	docker build -t duartemralves/maestro:v1-latest -f docker/v1.Dockerfile --platform linux/amd64  .
+
+.PHONY: docker/build-v0
+docker/build-v0:
+	docker build -t duartemralves/maestro:v0-latest -f docker/v0.Dockerfile --platform linux/amd64  .
 
 go/build: pb/api
 	GOOS=$(OS) GOARCH=$(ARCH) go build -o target/maestro ./cmd/maestro/maestro.go

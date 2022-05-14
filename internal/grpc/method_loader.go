@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/jhump/protoreflect/desc"
@@ -11,7 +13,6 @@ import (
 	"google.golang.org/grpc/codes"
 	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
-	"time"
 )
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"

@@ -3,6 +3,12 @@ package maestro
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/arrays"
 	"github.com/DuarteMRAlves/maestro/internal/create"
@@ -13,11 +19,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
-	"io"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 type configVersion string
@@ -137,8 +138,7 @@ func (opts *RunOpts) run() error {
 	createLink := create.Link(linkStore, stageStore, pipelineStore)
 
 	for _, o := range resources.Pipelines {
-		// FIXME: remove online execution hardcoded.
-		if err := createPipeline(o.Name, internal.OnlineExecution); err != nil {
+		if err := createPipeline(o.Name, o.Mode); err != nil {
 			return err
 		}
 	}
@@ -173,11 +173,11 @@ func (opts *RunOpts) run() error {
 		return err
 	}
 
-	r := grpc.NewReflectionMethodLoader(5*time.Minute, backoff, opts.logger)
+	r := grpc.NewReflectionMethodLoader(time.Minute, backoff, opts.logger)
 	b := execute.NewBuilder(stageStore, linkStore, r, opts.logger)
 	execution, err := b(pipeline)
 	if err != nil {
-		return err
+		return fmt.Errorf("build %s: %w", pipelineName, err)
 	}
 
 	errs := make(chan error, 1)
