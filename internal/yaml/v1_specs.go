@@ -13,9 +13,8 @@ type v1StageSpec struct {
 	// Name that should be associated with the stage.
 	// (required, unique)
 	Name string `yaml:"name"`
-	// Address where to connect to the grpc server. If not specified, will be
-	// inferred from Host and Port as {Host}:{Port}.
-	// (optional)
+	// Address where to connect to the grpc server.
+	// (required)
 	Address string `yaml:"address"`
 	// Name of the grpc service that contains the rpc to execute. May be
 	// omitted if the target grpc server only has one service.
