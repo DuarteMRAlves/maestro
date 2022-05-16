@@ -17,6 +17,7 @@
 # Grpc generated code
 /**/*.pb.go
 
+/.vscode/
 .idea/
 
 # target
