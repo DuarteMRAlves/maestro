@@ -1,10 +1,10 @@
 # Maestro
 
-## Overview
-
 Maestro is a tool for developing pipelines of grpc services. It connects
 the services by delivering the returned messages from one service as an input to
 the next.
+
+![GitHub](https://img.shields.io/github/license/duarteMRAlves/maestro?label=License)
 
 ## Main Concepts
 
