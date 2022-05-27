@@ -3,6 +3,10 @@
 This directory provides documentation for the several `maestro` functionalities.
 It also contains several proposals describing future functionality.
 
+* [Configuration](CONFIG_FILE.md) - Details the format of configuration files to create pipelines.
+
+* [Execution Modes](EXECUTION_MODES.md) - Describes the two execution modes for pipelines: offline and online. The first is suited for continuous data processing and the second for realtime applications.
+
 ## Functionality Proposals
 
-* [Pipeline Modes](MODES_PROPOSAL.md) - Describes a proposal of two execution modes for pipelines: online and offline. The first is suited for realtime applications and the second for continuous data processing.
+Currently there are no functionality proposals for `maestro`.
