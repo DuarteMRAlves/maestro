@@ -1,6 +1,6 @@
-## Pipeline Modes Proposal
+## Pipeline Execution Modes
 
-This document describes a proposal for two execution modes for pipelines: online and offline.
+This document describes the two available execution modes for pipelines: online and offline.
 
 In pipelines, messages are created in a source stage and suffer a series of transformations in intermediate until they reach the sink stage where they are consumed.
 These modes specify the behaviour of the connections between the stages.
@@ -50,26 +50,13 @@ If the size of a queue is above a given threshold, it is drained, allowing for m
 
 ## Configuration
 
-The execution can be configured using an enumeration:
-
-```go
-type ExecutionMode int
-
-const (
-	OfflineExecution ExecutionMode = iota
-	OnlineExecution ExecutionMode
-)
-```
-
-This allows for support for future modes. 
-By default, the offline mode should be used such that the user does not lose that without noticing.
-
-In yaml, the mode can be configured withing the `pipeline` spec as follows:
+In the yaml configuration file, the execution mode can be configured within the `pipeline` spec as follows:
 ```yaml
 kind: pipeline
 spec:
-  name: pipeline
-  execution_mode: offline / online
+  (...)
+  execution_mode: Offline / Online
+  (...)
 ```
 
-If the `execution_mode` tag is not specified, the **offline** mode should be used.
+If the `execution_mode` tag is not specified, the **Offline** mode is used.
