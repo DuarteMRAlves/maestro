@@ -1,56 +1,25 @@
 # Maestro
 
-Maestro is a tool for developing pipelines of grpc services. It connects
-the services by delivering the returned messages from one service as an input to
+`maestro` is a tool for developing pipelines of grpc services. It connects the services by delivering messages returned from one service as an input to
 the next.
 
 ![GitHub](https://img.shields.io/github/license/duarteMRAlves/maestro?label=License)
 
-## Main Concepts
+## Getting Started
 
-There are three main concepts inside maestro - `Asset`, `Stage`
-, `Pipeline`:
+The `maestro` tool is available as a [docker image](https://hub.docker.com/r/duartemralves/maestro). To pull the image, perform the following command:
 
-### Asset
+```shell
+docker pull duartemralves/maestro:v1-latest
+```
 
-An `Asset` is a component that can be added to a pipeline. It may have an
-associated docker image that exposes the grpc api.
+In order to run `maestro`, you need to specify the pipeline configuration with a .yaml file. The specification for the `maestro` configuration file is detailed [here](docs/CONFIG_FILE.md).
 
-An Asset has the following properties:
+You can then run the pipeline by executing:
 
-* `Name` that is a human-readable string to uniquely identify the Asset.
-* `Image` (optional) which is the name of the image associated with this Asset.
-
-### Pipeline
-
-A `Pipeline` is a graph like structure where we have Stages and Links.
-
-A `Stage` is an instantiation of an Asset. It specifies a concrete grpc method
-to be executed, and has the following fields:
-
-* `Name` Uniquely identifies the stage inside a Pipeline.
-* `Asset` The name of the associated Asset.
-* `Service` (optional) Specifies the grpc service within the sever (required if
-  multiple services exist, otherwise can be omitted)
-* `Method` (optional) Specifies the grpc method within the service (required if
-  multiple methods exist, otherwise can be omitted)
-
-A `Link` specifies a connection between two stages. A Link has:
-
-* `SourceStage` Name of the Stage that is the source of the connection.
-* `SourceField` (optional) If not specified the whole message is transferred. It
-  defines the field name of the source output that will be transferred through
-  the connection.
-* `TargetStage` Name of the Stage that is the target of the connection.
-* `TargetField`(optional) If not defined, the whole received message is
-  delivered to the stage. Otherwise, the default message for the target stage is
-  created, and the field with the given variable name is set with the received
-  message.
-
-### Pipeline
-
-An `Pipeline` is an instantiation of a Pipeline where the pipeline is
-executed.
+```shell
+docker run --mount type=bind,source=<config file absolute path>,target=/config.yaml duartemralves/maestro:v1-latest
+```
 
 ## Developing
 
