@@ -22,3 +22,7 @@
 
 # target
 /target
+
+# Contrary to https://docs.dagger.io/1225/pushing-plan-dependencies/
+# we ignore this package while in single development
+/cue.mod

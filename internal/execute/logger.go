@@ -10,7 +10,9 @@ type Logger interface {
 type logger struct{ debug bool }
 
 func (l logger) Debugf(format string, args ...any) {
-	fmt.Printf(format, args...)
+	if l.debug {
+		fmt.Printf(format, args...)
+	}
 }
 
 func (l logger) Infof(format string, args ...any) {
