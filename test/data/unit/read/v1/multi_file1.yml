@@ -1,0 +1,7 @@
+kind: pipeline
+spec:
+  name: pipeline-3
+---
+kind: pipeline
+spec:
+  name: pipeline-4

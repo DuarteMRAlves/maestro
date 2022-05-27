@@ -1,0 +1,5 @@
+kind: asset
+spec:
+  name: some-name
+  unknown_2: unknown-2
+  unknown_1: unknown-1

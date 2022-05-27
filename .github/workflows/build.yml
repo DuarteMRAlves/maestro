@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Run from a specific container with go and protoc already installed
+    container: duartemralves/maestro.build-workflow:latest
+    steps:
+      - name: Setup | Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build | Format
+        uses: ./.github/actions/gofmt-action
+
+      - name: Build | Test
+        run: make go/test

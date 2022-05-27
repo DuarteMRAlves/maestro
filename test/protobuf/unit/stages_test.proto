@@ -1,0 +1,40 @@
+// This file defines messages to be used in tests for exec stages.
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+// MergeMessage defines a message to test the merge stage.
+message MergeMessage {
+  MergeInner1 in1 = 1;
+  MergeInner2 in2 = 2;
+  MergeInner3 in3 = 3;
+}
+
+message MergeInner1 {
+  int32 val = 1;
+}
+
+message MergeInner2 {
+  int32 val = 1;
+}
+
+message MergeInner3 {
+  int32 val = 1;
+}
+
+// SplitMessage defines a message to test the split stage.
+message SplitMessage {
+  SplitInner1 out1 = 1;
+  int32 val = 2;
+  SplitInner2 out2 = 3;
+}
+
+message SplitInner1 {
+  int32 val = 1;
+}
+
+message SplitInner2 {
+  int32 val = 1;
+}

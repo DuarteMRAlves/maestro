@@ -1,0 +1,4 @@
+kind: stage
+spec:
+  name: stage-name
+  pipeline: pipeline

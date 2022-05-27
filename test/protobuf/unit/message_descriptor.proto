@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+message TestMessage1 {
+  int32 field1 = 1;
+  double field2 = 2;
+  string field3 = 3;
+  repeated InternalMessage1 field4 = 4;
+}
+
+message InternalMessage1 {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated string field3 = 3;
+}
+
+// Should be compatible to TestMessage1
+message TestMessage2 {
+  int32 field1 = 1;
+  double field2 = 2;
+  string field3 = 3;
+  repeated InternalMessage2 field4 = 4;
+}
+
+// Should be compatible to InternalMessage1
+message InternalMessage2 {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated string field3 = 3;
+}
+
+// Should be compatible to TestMessage1
+message TestMessageDiffNames {
+  int32 fieldName1 = 1;
+  double fieldName2 = 2;
+  string fieldName3 = 3;
+  repeated InternalMessageDiffNames fieldName4 = 4;
+}
+
+// Should be compatible to InternalMessage1
+message InternalMessageDiffNames {
+  int32 fieldName1 = 1;
+  double fieldName2 = 2;
+  repeated string fieldName3 = 3;
+}
+
+// Should be compatible to TestMessage1
+message TestMessageDiffFields {
+  int32 field1 = 1;
+  string field3 = 3;
+  repeated InternalMessageDiffFields field4 = 4;
+  bool field6 = 6;
+}
+
+// Should be compatible to InternalMessage1
+message InternalMessageDiffFields {
+  repeated string field3 = 3;
+  repeated int64 field4 = 4;
+}
+
+// Should NOT be compatible to TestMessage1
+message TestWrongOuterCardinality {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated string field3 = 3;
+  repeated InternalWrongOuterCardinality field4 = 4;
+}
+
+// Should be compatible to InternalMessage1
+message InternalWrongOuterCardinality {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated string field3 = 3;
+}
+
+// Should be compatible to TestMessage1
+message TestWrongInnerCardinality {
+  int32 field1 = 1;
+  double field2 = 2;
+  string field3 = 3;
+  repeated InternalWrongInnerCardinality field4 = 4;
+}
+
+// Should NOT be compatible to InternalMessage1
+message InternalWrongInnerCardinality {
+  int32 field1 = 1;
+  double field2 = 2;
+  string field3 = 3;
+}
+
+// Should NOT be compatible to TestMessage1
+message TestWrongOuterFieldType {
+  int32 field1 = 1;
+  string field2 = 2;
+  string field3 = 3;
+  repeated InternalWrongOuterFieldType field4 = 4;
+}
+
+// Should be compatible to InternalMessage1
+message InternalWrongOuterFieldType {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated string field3 = 3;
+}
+
+// Should be compatible to TestMessage1
+message TestWrongInnerFieldType {
+  int32 field1 = 1;
+  double field2 = 2;
+  string field3 = 3;
+  repeated InternalWrongInnerFieldType field4 = 4;
+}
+
+// Should NOT be compatible to InternalMessage1
+message InternalWrongInnerFieldType {
+  int32 field1 = 1;
+  double field2 = 2;
+  repeated int32 field3 = 3;
+}

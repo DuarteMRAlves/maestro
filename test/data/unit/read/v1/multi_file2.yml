@@ -1,0 +1,27 @@
+kind: stage
+spec:
+  name: stage-4
+  address: address-4
+  pipeline: pipeline-4
+---
+kind: stage
+spec:
+  name: stage-5
+  address: address-5
+  method: Method5
+  pipeline: pipeline-3
+---
+kind: stage
+spec:
+  name: stage-6
+  service: Service6
+  method: Method6
+  address: address-6
+  pipeline: pipeline-3
+---
+kind: stage
+spec:
+  name: stage-7
+  service: Service7
+  address: address-7
+  pipeline: pipeline-4

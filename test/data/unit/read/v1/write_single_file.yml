@@ -1,0 +1,55 @@
+kind: pipeline
+spec:
+  name: pipeline-2
+  execution_mode: Online
+---
+kind: pipeline
+spec:
+  name: pipeline-1
+---
+kind: stage
+spec:
+  name: stage-1
+  address: address-1
+  service: Service1
+  method: Method1
+  pipeline: pipeline-1
+---
+kind: stage
+spec:
+  name: stage-2
+  address: address-2
+  service: Service2
+  pipeline: pipeline-1
+---
+kind: stage
+spec:
+  name: stage-3
+  address: address-3
+  method: Method3
+  pipeline: pipeline-1
+---
+kind: link
+spec:
+  name: link-stage-2-stage-1
+  source_stage: stage-2
+  target_stage: stage-1
+  pipeline: pipeline-1
+---
+kind: link
+spec:
+  name: link-stage-1-stage-2
+  source_stage: stage-1
+  source_field: Field1
+  target_stage: stage-2
+  target_field: Field2
+  pipeline: pipeline-1
+---
+kind: asset
+spec:
+  name: asset-1
+  image: image-1
+---
+kind: asset
+spec:
+  name: asset-2

@@ -1,0 +1,8 @@
+stages:
+  - name: stage-1
+    host: host-1
+    port: 1
+links:
+  - source:
+    target:
+      stage: stage-2

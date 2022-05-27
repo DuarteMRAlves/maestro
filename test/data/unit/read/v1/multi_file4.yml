@@ -1,0 +1,13 @@
+kind: asset
+spec:
+  name: asset-4
+  image: image-4
+---
+kind: asset
+spec:
+  name: asset-5
+---
+kind: asset
+spec:
+  name: asset-6
+  image: image-6

@@ -1,0 +1,8 @@
+# Test files and dependencies
+./**/*_test.go
+./test
+
+./docker
+./target
+.gitignore
+README.md

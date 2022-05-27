@@ -1,0 +1,22 @@
+kind: link
+spec:
+  name: link-stage-4-stage-5
+  source_stage: stage-4
+  target_stage: stage-5
+  pipeline: pipeline-4
+---
+kind: link
+spec:
+  name: link-stage-5-stage-6
+  source_stage: stage-5
+  target_stage: stage-6
+  target_field: Field1
+  pipeline: pipeline-3
+---
+kind: link
+spec:
+  name: link-stage-4-stage-6
+  source_stage: stage-4
+  target_stage: stage-6
+  target_field: Field2
+  pipeline: pipeline-4

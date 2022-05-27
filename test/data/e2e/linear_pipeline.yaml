@@ -1,0 +1,38 @@
+kind: pipeline
+spec:
+  name: LinearPipeline
+---
+kind: stage
+spec:
+  name: Source
+  host: localhost
+  port: 50052
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Transform
+  host: localhost
+  port: 50053
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Sink
+  host: localhost
+  port: 50054
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Source-To-Transform
+  source_stage: Source
+  target_stage: Transform
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Transform-To-Sink
+  source_stage: Transform
+  target_stage: Sink
+  pipeline: LinearPipeline

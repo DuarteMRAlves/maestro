@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+service MethodLoaderTestService {
+  rpc Unary(MethodLoaderRequest) returns (MethodLoaderReply);
+  rpc ClientStream(stream MethodLoaderRequest) returns (MethodLoaderReply);
+  rpc ServerStream(MethodLoaderRequest) returns (stream MethodLoaderReply);
+  rpc BidiStream(stream MethodLoaderRequest) returns (stream MethodLoaderReply);
+}
+
+message MethodLoaderRequest {
+  string stringField = 1;
+  repeated int64 repeatedField = 2;
+  repeated MethodLoaderInnerMessage repeatedInnerMsg = 3;
+}
+
+message MethodLoaderReply {
+  double doubleField = 1;
+  MethodLoaderInnerMessage innerMsg = 2;
+}
+
+message MethodLoaderInnerMessage {
+  repeated string repeatedString = 1;
+}
