@@ -8,14 +8,46 @@ import (
     "universe.dagger.io/go"
 )
 
+#PlanImage: {
+    go: string
+    protoc: string
+    workdir: string
+
+    docker.#Dockerfile & {
+        dockerfile: contents: """
+            ARG GO=\(go)
+            ARG PROTOC=\(protoc)
+
+            FROM debian:bullseye-slim AS builder
+            ARG PROTOC
+
+            RUN apt-get update && apt-get install -y curl unzip && \\
+                curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC}/protoc-${PROTOC}-linux-x86_64.zip &&  \\
+                unzip protoc-${PROTOC}-linux-x86_64.zip -d /opt/protoc
+
+            FROM --platform=linux/amd64 golang:${GO}-bullseye
+            ARG PROTOC
+
+            COPY --from=builder /opt/protoc /opt/protoc
+            ENV PATH="${PATH}:/opt/protoc/bin"
+
+            RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 && \\
+                go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+
+            COPY . \(workdir)
+            """
+    }
+}
+
 #Protobuf: {
     input: docker.#Image
     dir: string
+    protoc: string | *"protoc"
     _input: input
     run: bash.#Run & {
         input: _input
         workdir: dir
-        script: contents: "protoc -I. --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative ./*.proto"
+        script: contents: "\(protoc) -I. --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative ./*.proto"
     }, 
     contents: core.#Subdir & {
         input: run.output.rootfs
@@ -31,16 +63,15 @@ dagger.#Plan & {
     }
 
     actions: {
-        deps: docker.#Build & {
-            steps: [
-                docker.#Pull & {
-                    source: "duartemralves/maestro.build-workflow:latest"
-                },
-                docker.#Copy & {
-                    contents: client.filesystem."./".read.contents
-                    dest: "/workspace"
-                }
-            ]
+        params: {
+            go: version: "1.18.2"
+            protoc: version: "3.19.4"
+        }
+        deps: #PlanImage & {
+            go: params.go.version
+            protoc: params.protoc.version
+            workdir: "/workspace"
+            source: client.filesystem."./".read.contents
         }
         pb: {
             unit: #Protobuf & {
