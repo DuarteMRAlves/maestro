@@ -44,12 +44,3 @@ spec:
   target_stage: stage-2
   target_field: Field2
   pipeline: pipeline-1
----
-kind: asset
-spec:
-  name: asset-1
-  image: image-1
----
-kind: asset
-spec:
-  name: asset-2

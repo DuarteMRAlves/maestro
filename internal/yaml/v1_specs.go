@@ -61,12 +61,3 @@ type v1LinkSpec struct {
 	// (required)
 	Pipeline string `yaml:"pipeline"`
 }
-
-type v1AssetSpec struct {
-	// Name that should be associated with the asset.
-	// (required, unique)
-	Name string `yaml:"name"`
-	// Image specifies the container image associated with this asset.
-	// (optional)
-	Image string `yaml:"image,omitempty"`
-}

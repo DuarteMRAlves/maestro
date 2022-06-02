@@ -6,7 +6,6 @@ type ResourceSet struct {
 	Pipelines []Pipeline
 	Stages    []Stage
 	Links     []Link
-	Assets    []Asset
 }
 
 type Pipeline struct {
@@ -36,9 +35,4 @@ type Link struct {
 type LinkEndpoint struct {
 	Stage internal.StageName
 	Field internal.MessageField
-}
-
-type Asset struct {
-	Name  internal.AssetName
-	Image internal.Image
 }

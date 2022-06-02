@@ -2,10 +2,11 @@ package yaml
 
 import (
 	"errors"
-	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"testing"
+
+	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadV0(t *testing.T) {
@@ -91,11 +92,8 @@ func TestReadV0(t *testing.T) {
 				Pipeline: newV0PipelineName(t, "v0-pipeline"),
 			},
 		},
-		Assets: nil,
 	}
 	cmpOpts := cmp.AllowUnexported(
-		internal.AssetName{},
-		internal.Image{},
 		internal.StageName{},
 		internal.Address{},
 		internal.Service{},

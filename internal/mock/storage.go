@@ -2,26 +2,6 @@ package mock
 
 import "github.com/DuarteMRAlves/maestro/internal"
 
-type AssetStorage struct {
-	Assets map[internal.AssetName]internal.Asset
-}
-
-func (m AssetStorage) Save(asset internal.Asset) error {
-	m.Assets[asset.Name()] = asset
-	return nil
-}
-
-func (m AssetStorage) Load(name internal.AssetName) (
-	internal.Asset,
-	error,
-) {
-	asset, exists := m.Assets[name]
-	if !exists {
-		return internal.Asset{}, &notFound{typ: "asset", name: name.Unwrap()}
-	}
-	return asset, nil
-}
-
 type PipelineStorage struct {
 	Pipelines map[internal.PipelineName]internal.Pipeline
 }

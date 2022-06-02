@@ -2,11 +2,12 @@ package yaml
 
 import (
 	"errors"
-	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"reflect"
 	"testing"
+
+	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadV1(t *testing.T) {
@@ -68,10 +69,6 @@ func TestReadV1(t *testing.T) {
 						Pipeline: newV1PipelineName(t, "pipeline-1"),
 					},
 				},
-				Assets: []Asset{
-					{Name: newV1AssetName(t, "asset-1"), Image: internal.NewImage("image-1")},
-					{Name: newV1AssetName(t, "asset-2"), Image: internal.NewImage("")},
-				},
 			},
 		},
 		"multiple files": {
@@ -79,7 +76,6 @@ func TestReadV1(t *testing.T) {
 				"../../test/data/unit/read/v1/multi_file1.yml",
 				"../../test/data/unit/read/v1/multi_file2.yml",
 				"../../test/data/unit/read/v1/multi_file3.yml",
-				"../../test/data/unit/read/v1/multi_file4.yml",
 			},
 			expected: ResourceSet{
 				Pipelines: []Pipeline{
@@ -154,11 +150,6 @@ func TestReadV1(t *testing.T) {
 						Pipeline: newV1PipelineName(t, "pipeline-4"),
 					},
 				},
-				Assets: []Asset{
-					{Name: newV1AssetName(t, "asset-4"), Image: internal.NewImage("image-4")},
-					{Name: newV1AssetName(t, "asset-5"), Image: internal.NewImage("")},
-					{Name: newV1AssetName(t, "asset-6"), Image: internal.NewImage("image-6")},
-				},
 			},
 		},
 	}
@@ -169,8 +160,6 @@ func TestReadV1(t *testing.T) {
 				t.Fatalf("read error: %s", err)
 			}
 			cmpOpts := cmp.AllowUnexported(
-				internal.AssetName{},
-				internal.Image{},
 				internal.StageName{},
 				internal.Address{},
 				internal.Service{},
@@ -321,10 +310,6 @@ func TestWriteV1(t *testing.T) {
 			Pipeline: newV1PipelineName(t, "pipeline-1"),
 		},
 	}
-	resources.Assets = []Asset{
-		{Name: newV1AssetName(t, "asset-1"), Image: internal.NewImage("image-1")},
-		{Name: newV1AssetName(t, "asset-2"), Image: internal.NewImage("")},
-	}
 	tempDir := t.TempDir()
 	outFile := tempDir + "/to_v1.yml"
 	err := WriteV1(resources, outFile, 777)
@@ -368,12 +353,4 @@ func newV1PipelineName(t *testing.T, name string) internal.PipelineName {
 		t.Fatalf("new v1 pipeline name %s: %s", name, err)
 	}
 	return pipelineName
-}
-
-func newV1AssetName(t *testing.T, name string) internal.AssetName {
-	assetName, err := internal.NewAssetName(name)
-	if err != nil {
-		t.Fatalf("new v1 asset name %s: %s", name, err)
-	}
-	return assetName
 }

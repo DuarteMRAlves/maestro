@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/fs"
 	"io/ioutil"
+
+	"github.com/DuarteMRAlves/maestro/internal"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	assetKind    = "asset"
 	stageKind    = "stage"
 	linkKind     = "link"
 	pipelineKind = "pipeline"
@@ -70,12 +70,6 @@ func ReadV1(files ...string) (ResourceSet, error) {
 					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
 				}
 				resources.Links = append(resources.Links, l)
-			case assetKind:
-				a, err := resourceToAsset(r)
-				if err != nil {
-					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
-				}
-				resources.Assets = append(resources.Assets, a)
 			}
 		}
 		if err != nil && err != io.EOF {
@@ -183,19 +177,6 @@ func resourceToLink(r v1ReadResource) (Link, error) {
 	return l, nil
 }
 
-func resourceToAsset(r v1ReadResource) (Asset, error) {
-	spec, ok := r.Spec.(*v1AssetSpec)
-	if !ok {
-		return Asset{}, errors.New("asset spec cast error")
-	}
-	name, err := internal.NewAssetName(spec.Name)
-	if err != nil {
-		return Asset{}, err
-	}
-	image := internal.NewImage(spec.Image)
-	return Asset{Name: name, Image: image}, nil
-}
-
 type v1ReadResource struct {
 	Kind string      `yaml:"kind"`
 	Spec interface{} `yaml:"-"`
@@ -237,8 +218,6 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		r.Spec = new(v1LinkSpec)
 	case pipelineKind:
 		r.Spec = new(v1PipelineSpec)
-	case assetKind:
-		r.Spec = new(v1AssetSpec)
 	default:
 		return &unknownKind{Kind: r.Kind}
 	}
@@ -273,12 +252,6 @@ func valV1ReadResource(r *v1ReadResource) error {
 			return errors.New("spec not v1PipelineSpec for pipeline kind")
 		}
 		return valV1PipelineSpec(spec)
-	case assetKind:
-		spec, ok := r.Spec.(*v1AssetSpec)
-		if !ok {
-			return errors.New("spec not v1AssetSpec for asset kind")
-		}
-		return valV1AssetSpec(spec)
 	default:
 		return &unknownKind{Kind: r.Kind}
 	}
@@ -317,13 +290,6 @@ func valV1LinkSpec(spec *v1LinkSpec) error {
 	return nil
 }
 
-func valV1AssetSpec(spec *v1AssetSpec) error {
-	if spec.Name == "" {
-		return &missingRequiredField{Field: "name"}
-	}
-	return nil
-}
-
 // WriteV1 stores the resources set in a single file as a
 func WriteV1(resources ResourceSet, file string, perm fs.FileMode) error {
 	var (
@@ -340,10 +306,6 @@ func WriteV1(resources ResourceSet, file string, perm fs.FileMode) error {
 		return fmt.Errorf("write v1: %w", err)
 	}
 	err = encodeResources(enc, linkToResource, resources.Links...)
-	if err != nil {
-		return fmt.Errorf("write v1: %w", err)
-	}
-	err = encodeResources(enc, assetToResource, resources.Assets...)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
@@ -412,14 +374,5 @@ func linkToResource(r *v1WriteResource, l Link) {
 	spec.Pipeline = l.Pipeline.Unwrap()
 
 	r.Kind = linkKind
-	r.Spec = spec
-}
-
-func assetToResource(r *v1WriteResource, a Asset) {
-	var spec v1AssetSpec
-	spec.Name = a.Name.Unwrap()
-	spec.Image = a.Image.Unwrap()
-
-	r.Kind = assetKind
 	r.Spec = spec
 }
