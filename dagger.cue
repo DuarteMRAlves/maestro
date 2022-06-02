@@ -60,6 +60,7 @@ dagger.#Plan & {
         "./": read: contents: dagger.#FS,
         "./test/protobuf/unit": write: contents: actions.pb.unit.contents.output
         "./test/protobuf/integration": write: contents: actions.pb.integration.contents.output
+        "./target": write: contents: actions.build.output
     }
 
     actions: {
@@ -100,6 +101,12 @@ dagger.#Plan & {
                 source: _prep_integration.output 
                 package: "./test/integration/..."
             }
+        }
+        build: go.#Build & {
+            source: client.filesystem."./".read.contents
+            package: "./cmd/maestro/maestro.go"
+            os: client.platform.os
+            arch: client.platform.arch
         }
     }
 }
