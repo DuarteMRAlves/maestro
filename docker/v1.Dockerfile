@@ -1,4 +1,4 @@
-ARG GO=1.18.2
+ARG GO=1.18.3
 ARG PROTOC="3.19.4"
 ARG WORKSPACE=/opt/maestro
 
