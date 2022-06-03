@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/graph"
 )
 
 const defaultChanSize = 10
@@ -21,7 +22,7 @@ type MethodLoader interface {
 	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
-type Builder func(pipeline internal.Pipeline) (Execution, error)
+type Builder func(graph internal.Pipeline) (Execution, error)
 
 func NewBuilder(
 	stageLoader StageLoader,
@@ -30,7 +31,7 @@ func NewBuilder(
 	logger Logger,
 ) Builder {
 	return func(pipeline internal.Pipeline) (Execution, error) {
-		graphBuildFunc := newBuildGraphFunc(stageLoader, linkLoader, methodLoader)
+		graphBuildFunc := graph.NewBuildFunc(stageLoader, linkLoader, methodLoader)
 
 		execGraph, err := graphBuildFunc(pipeline.Stages(), pipeline.Links())
 		if err != nil {
@@ -48,14 +49,14 @@ func NewBuilder(
 	}
 }
 
-func buildOfflineExecution(execGraph graph, logger Logger) (*offlineExecution, error) {
+func buildOfflineExecution(execGraph graph.Graph, logger Logger) (*offlineExecution, error) {
 	// allChans stores all the channels, including the ones for aux stages.
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan offlineState
 
 	linkChans := make(map[internal.LinkName]chan offlineState)
 
-	for _, l := range execGraph.links() {
+	for _, l := range execGraph.Links() {
 		ch := make(chan offlineState, defaultChanSize)
 		allChans = append(allChans, ch)
 		linkChans[l.Name()] = ch
@@ -79,8 +80,8 @@ func buildOfflineExecution(execGraph graph, logger Logger) (*offlineExecution, e
 		if aux != nil {
 			stages.addOutputStage(name, aux)
 		}
-		address := info.stage.MethodContext().Address()
-		clientBuilder := info.method.ClientBuilder()
+		address := info.Stage.MethodContext().Address()
+		clientBuilder := info.Method.ClientBuilder()
 		rpcStage := newOfflineUnary(
 			name, inChan, outChan, address, clientBuilder, logger,
 		)
@@ -90,16 +91,16 @@ func buildOfflineExecution(execGraph graph, logger Logger) (*offlineExecution, e
 }
 
 func buildInputResources(
-	info *stageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	info *graph.StageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
 ) (chan offlineState, Stage, error) {
-	switch len(info.inputs) {
+	switch len(info.Inputs) {
 	case 0:
 		ch := make(chan offlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		s := newOfflineSource(info.method.Input().EmptyGen(), ch)
+		s := newOfflineSource(info.Method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
-		l := info.inputs[0]
+		l := info.Inputs[0]
 		if !l.Target().Field().IsEmpty() {
 			output, s := buildOfflineMergeStage(info, allChans, linkChans)
 			return output, s, nil
@@ -112,26 +113,26 @@ func buildInputResources(
 }
 
 func buildOfflineMergeStage(
-	info *stageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	info *graph.StageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(info.inputs))
+	fields := make([]internal.MessageField, 0, len(info.Inputs))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan offlineState, 0, len(info.inputs))
+	inputs := make([]<-chan offlineState, 0, len(info.Inputs))
 	// channel where the stage will send the constructed messages.
 	outputChan := make(chan offlineState, defaultChanSize)
 	*allChans = append(*allChans, outputChan)
-	for _, l := range info.inputs {
+	for _, l := range info.Inputs {
 		fields = append(fields, l.Target().Field())
 		inputs = append(inputs, linkChans[l.Name()])
 	}
-	gen := info.method.Input().EmptyGen()
+	gen := info.Method.Input().EmptyGen()
 	return outputChan, newOfflineMerge(fields, inputs, outputChan, gen)
 }
 
 func buildOfflineOutputResources(
-	info *stageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	info *graph.StageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
-	switch len(info.outputs) {
+	switch len(info.Outputs) {
 	case 0:
 		ch := make(chan offlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
@@ -140,7 +141,7 @@ func buildOfflineOutputResources(
 		// We have only one link, but we want a sub message. We can use the
 		// split stage with just one output that retrieves the desired message
 		// part.
-		l := info.outputs[0]
+		l := info.Outputs[0]
 		if !l.Source().Field().IsEmpty() {
 			return buildOfflineSplitStage(info, allChans, linkChans)
 		}
@@ -151,29 +152,29 @@ func buildOfflineOutputResources(
 }
 
 func buildOfflineSplitStage(
-	info *stageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	info *graph.StageInfo, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(info.outputs))
+	fields := make([]internal.MessageField, 0, len(info.Outputs))
 	// channel where the stage will send the produced states.
 	inputChan := make(chan offlineState, defaultChanSize)
 	*allChans = append(*allChans, inputChan)
 	// channels to split the received states.
-	outputs := make([]chan<- offlineState, 0, len(info.outputs))
-	for _, l := range info.outputs {
+	outputs := make([]chan<- offlineState, 0, len(info.Outputs))
+	for _, l := range info.Outputs {
 		fields = append(fields, l.Source().Field())
 		outputs = append(outputs, linkChans[l.Name()])
 	}
 	return inputChan, newOfflineSplit(fields, inputChan, outputs)
 }
 
-func buildOnlineExecution(execGraph graph, logger Logger) (*onlineExecution, error) {
+func buildOnlineExecution(execGraph graph.Graph, logger Logger) (*onlineExecution, error) {
 	// allChans stores all the channels, including the ones for aux stages.
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan onlineState
 
 	linkChans := make(map[internal.LinkName]chan onlineState)
 
-	for _, l := range execGraph.links() {
+	for _, l := range execGraph.Links() {
 		ch := make(chan onlineState, defaultChanSize)
 		allChans = append(allChans, ch)
 		linkChans[l.Name()] = ch
@@ -197,8 +198,8 @@ func buildOnlineExecution(execGraph graph, logger Logger) (*onlineExecution, err
 		if aux != nil {
 			stages.addOutputStage(name, aux)
 		}
-		address := info.stage.MethodContext().Address()
-		clientBuilder := info.method.ClientBuilder()
+		address := info.Stage.MethodContext().Address()
+		clientBuilder := info.Method.ClientBuilder()
 		rpcStage := newOnlineUnary(
 			name, inChan, outChan, address, clientBuilder, logger,
 		)
@@ -209,16 +210,16 @@ func buildOnlineExecution(execGraph graph, logger Logger) (*onlineExecution, err
 }
 
 func buildOnlineInputResources(
-	info *stageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	info *graph.StageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
 ) (chan onlineState, Stage, error) {
-	switch len(info.inputs) {
+	switch len(info.Inputs) {
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
-		s := newOnlineSource(1, info.method.Input().EmptyGen(), ch)
+		s := newOnlineSource(1, info.Method.Input().EmptyGen(), ch)
 		return ch, s, nil
 	case 1:
-		l := info.inputs[0]
+		l := info.Inputs[0]
 		if !l.Target().Field().IsEmpty() {
 			output, s := buildOnlineMergeStage(info, allChans, linkChans)
 			return output, s, nil
@@ -231,26 +232,26 @@ func buildOnlineInputResources(
 }
 
 func buildOnlineMergeStage(
-	info *stageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	info *graph.StageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(info.inputs))
+	fields := make([]internal.MessageField, 0, len(info.Inputs))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan onlineState, 0, len(info.inputs))
+	inputs := make([]<-chan onlineState, 0, len(info.Inputs))
 	// channel where the stage will send the constructed messages.
 	outputChan := make(chan onlineState, defaultChanSize)
 	*allChans = append(*allChans, outputChan)
-	for _, l := range info.inputs {
+	for _, l := range info.Inputs {
 		fields = append(fields, l.Target().Field())
 		inputs = append(inputs, linkChans[l.Name()])
 	}
-	gen := info.method.Input().EmptyGen()
+	gen := info.Method.Input().EmptyGen()
 	return outputChan, newOnlineMerge(fields, inputs, outputChan, gen)
 }
 
 func buildOnlineOutputResources(
-	info *stageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	info *graph.StageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
-	switch len(info.outputs) {
+	switch len(info.Outputs) {
 	case 0:
 		ch := make(chan onlineState, defaultChanSize)
 		*allChans = append(*allChans, ch)
@@ -259,7 +260,7 @@ func buildOnlineOutputResources(
 		// We have only one link, but we want a sub message. We can use the
 		// split stage with just one output that retrieves the desired message
 		// part.
-		l := info.outputs[0]
+		l := info.Outputs[0]
 		if !l.Source().Field().IsEmpty() {
 			return buildOnlineSplitStage(info, allChans, linkChans)
 		}
@@ -270,15 +271,15 @@ func buildOnlineOutputResources(
 }
 
 func buildOnlineSplitStage(
-	info *stageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	info *graph.StageInfo, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(info.outputs))
+	fields := make([]internal.MessageField, 0, len(info.Outputs))
 	// channel where the stage will send the produced states.
 	inputChan := make(chan onlineState, defaultChanSize)
 	*allChans = append(*allChans, inputChan)
 	// channels to split the received states.
-	outputs := make([]chan<- onlineState, 0, len(info.outputs))
-	for _, l := range info.outputs {
+	outputs := make([]chan<- onlineState, 0, len(info.Outputs))
+	for _, l := range info.Outputs {
 		fields = append(fields, l.Source().Field())
 		outputs = append(outputs, linkChans[l.Name()])
 	}
