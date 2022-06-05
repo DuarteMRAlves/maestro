@@ -7,66 +7,62 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadV1(t *testing.T) {
 	tests := map[string]struct {
 		files    []string
-		expected ResourceSet
+		expected []*spec.Pipeline
 	}{
 		"single file": {
 			files: []string{"../../test/data/unit/read/v1/read_single_file.yml"},
-			expected: ResourceSet{
-				Pipelines: []Pipeline{
-					{Name: newV1PipelineName(t, "pipeline-2"), Mode: internal.OfflineExecution},
-					{Name: newV1PipelineName(t, "pipeline-1"), Mode: internal.OnlineExecution},
+			expected: []*spec.Pipeline{
+				{
+					Name: "pipeline-2",
+					Mode: spec.OfflineExecution,
 				},
-				Stages: []Stage{
-					{
-						Name: newV1StageName(t, "stage-1"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-1"),
-							Service: internal.NewService("Service1"),
-							Method:  internal.NewMethod("Method1"),
+				{
+					Name: "pipeline-1",
+					Mode: spec.OnlineExecution,
+					Stages: []*spec.Stage{
+						{
+							Name: "stage-1",
+							MethodContext: spec.MethodContext{
+								Address: "address-1",
+								Service: "Service1",
+								Method:  "Method1",
+							},
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-1"),
+						{
+							Name: "stage-2",
+							MethodContext: spec.MethodContext{
+								Address: "address-2",
+								Service: "Service2",
+							},
+						},
+						{
+							Name: "stage-3",
+							MethodContext: spec.MethodContext{
+								Address: "address-3",
+								Method:  "Method3",
+							},
+						},
 					},
-					{
-						Name: newV1StageName(t, "stage-2"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-2"),
-							Service: internal.NewService("Service2"),
+					Links: []*spec.Link{
+						{
+							Name:        "link-stage-2-stage-1",
+							SourceStage: "stage-2",
+							TargetStage: "stage-1",
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-1"),
-					},
-					{
-						Name: newV1StageName(t, "stage-3"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-3"),
-							Method:  internal.NewMethod("Method3"),
+						{
+							Name:        "link-stage-1-stage-2",
+							SourceStage: "stage-1",
+							SourceField: "Field1",
+							TargetStage: "stage-2",
+							TargetField: "Field2",
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-1"),
-					},
-				},
-				Links: []Link{
-					{
-						Name:     newV1LinkName(t, "link-stage-2-stage-1"),
-						Source:   LinkEndpoint{Stage: newV1StageName(t, "stage-2")},
-						Target:   LinkEndpoint{Stage: newV1StageName(t, "stage-1")},
-						Pipeline: newV1PipelineName(t, "pipeline-1"),
-					},
-					{
-						Name: newV1LinkName(t, "link-stage-1-stage-2"),
-						Source: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-1"),
-							Field: internal.NewMessageField("Field1"),
-						},
-						Target: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-2"),
-							Field: internal.NewMessageField("Field2"),
-						},
-						Pipeline: newV1PipelineName(t, "pipeline-1"),
 					},
 				},
 			},
@@ -77,77 +73,66 @@ func TestReadV1(t *testing.T) {
 				"../../test/data/unit/read/v1/multi_file2.yml",
 				"../../test/data/unit/read/v1/multi_file3.yml",
 			},
-			expected: ResourceSet{
-				Pipelines: []Pipeline{
-					{Name: newV1PipelineName(t, "pipeline-3"), Mode: internal.OfflineExecution},
-					{Name: newV1PipelineName(t, "pipeline-4"), Mode: internal.OfflineExecution},
-				},
-				Stages: []Stage{
-					{
-						Name: newV1StageName(t, "stage-4"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-4"),
+			expected: []*spec.Pipeline{
+				{
+					Name: "pipeline-3",
+					Mode: spec.OfflineExecution,
+					Stages: []*spec.Stage{
+						{
+							Name: "stage-5",
+							MethodContext: spec.MethodContext{
+								Address: "address-5",
+								Method:  "Method5",
+							},
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-4"),
+						{
+							Name: "stage-6",
+							MethodContext: spec.MethodContext{
+								Address: "address-6",
+								Service: "Service6",
+								Method:  "Method6",
+							},
+						},
 					},
-					{
-						Name: newV1StageName(t, "stage-5"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-5"),
-							Method:  internal.NewMethod("Method5"),
+					Links: []*spec.Link{
+						{
+							Name:        "link-stage-5-stage-6",
+							SourceStage: "stage-5",
+							TargetStage: "stage-6",
+							TargetField: "Field1",
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-3"),
-					},
-					{
-						Name: newV1StageName(t, "stage-6"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-6"),
-							Service: internal.NewService("Service6"),
-							Method:  internal.NewMethod("Method6"),
-						},
-						Pipeline: newV1PipelineName(t, "pipeline-3"),
-					},
-					{
-						Name: newV1StageName(t, "stage-7"),
-						Method: MethodContext{
-							Address: internal.NewAddress("address-7"),
-							Service: internal.NewService("Service7"),
-						},
-						Pipeline: newV1PipelineName(t, "pipeline-4"),
 					},
 				},
-				Links: []Link{
-					{
-						Name: newV1LinkName(t, "link-stage-4-stage-5"),
-						Source: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-4"),
+				{
+					Name: "pipeline-4",
+					Mode: spec.OfflineExecution,
+					Stages: []*spec.Stage{
+						{
+							Name: "stage-4",
+							MethodContext: spec.MethodContext{
+								Address: "address-4",
+							},
 						},
-						Target: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-5"),
+						{
+							Name: "stage-7",
+							MethodContext: spec.MethodContext{
+								Address: "address-7",
+								Service: "Service7",
+							},
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-4"),
 					},
-					{
-						Name: newV1LinkName(t, "link-stage-5-stage-6"),
-						Source: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-5"),
+					Links: []*spec.Link{
+						{
+							Name:        "link-stage-4-stage-5",
+							SourceStage: "stage-4",
+							TargetStage: "stage-5",
 						},
-						Target: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-6"),
-							Field: internal.NewMessageField("Field1"),
+						{
+							Name:        "link-stage-4-stage-6",
+							SourceStage: "stage-4",
+							TargetStage: "stage-6",
+							TargetField: "Field2",
 						},
-						Pipeline: newV1PipelineName(t, "pipeline-3"),
-					},
-					{
-						Name: newV1LinkName(t, "link-stage-4-stage-6"),
-						Source: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-4"),
-						},
-						Target: LinkEndpoint{
-							Stage: newV1StageName(t, "stage-6"),
-							Field: internal.NewMessageField("Field2"),
-						},
-						Pipeline: newV1PipelineName(t, "pipeline-4"),
 					},
 				},
 			},
@@ -184,7 +169,7 @@ func TestReadV1_Err(t *testing.T) {
 		"missing kind": {
 			files: []string{"../../test/data/unit/read/v1/err_missing_kind.yml"},
 			verifyErr: func(t *testing.T, err error) {
-				expErr := MissingKind
+				expErr := ErrMissingKind
 				if !errors.Is(err, expErr) {
 					t.Fatalf("Wrong error: expected '%s', got '%s'", expErr, err)
 				}
@@ -193,7 +178,7 @@ func TestReadV1_Err(t *testing.T) {
 		"empty spec": {
 			files: []string{"../../test/data/unit/read/v1/err_empty_spec.yml"},
 			verifyErr: func(t *testing.T, err error) {
-				expErr := EmptySpec
+				expErr := ErrEmptySpec
 				if !errors.Is(err, expErr) {
 					t.Fatalf("Wrong error: expected '%s', got '%s'", expErr, err)
 				}
@@ -244,13 +229,12 @@ func TestReadV1_Err(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var emptyResources ResourceSet
-			resources, err := ReadV1(tc.files...)
+			pipelines, err := ReadV1(tc.files...)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
-			if diff := cmp.Diff(emptyResources, resources); diff != "" {
-				t.Fatalf("resources not empty:\n%s", diff)
+			if pipelines != nil {
+				t.Fatalf("resources not nil")
 			}
 			tc.verifyErr(t, err)
 		})
@@ -258,61 +242,51 @@ func TestReadV1_Err(t *testing.T) {
 }
 
 func TestWriteV1(t *testing.T) {
-	var resources ResourceSet
-	resources.Pipelines = []Pipeline{
-		{Name: newV1PipelineName(t, "pipeline-2"), Mode: internal.OnlineExecution},
-		{Name: newV1PipelineName(t, "pipeline-1"), Mode: internal.OfflineExecution},
-	}
-	resources.Stages = []Stage{
-		{
-			Name: newV1StageName(t, "stage-1"),
-			Method: MethodContext{
-				Address: internal.NewAddress("address-1"),
-				Service: internal.NewService("Service1"),
-				Method:  internal.NewMethod("Method1"),
+	pipeline := spec.Pipeline{
+		Name: "pipeline-1",
+		Mode: spec.OnlineExecution,
+		Stages: []*spec.Stage{
+			{
+				Name: "stage-1",
+				MethodContext: spec.MethodContext{
+					Address: "address-1",
+					Service: "Service1",
+					Method:  "Method1",
+				},
 			},
-			Pipeline: newV1PipelineName(t, "pipeline-1"),
+			{
+				Name: "stage-2",
+				MethodContext: spec.MethodContext{
+					Address: "address-2",
+					Service: "Service2",
+				},
+			},
+			{
+				Name: "stage-3",
+				MethodContext: spec.MethodContext{
+					Address: "address-3",
+					Method:  "Method3",
+				},
+			},
 		},
-		{
-			Name: newV1StageName(t, "stage-2"),
-			Method: MethodContext{
-				Address: internal.NewAddress("address-2"),
-				Service: internal.NewService("Service2"),
+		Links: []*spec.Link{
+			{
+				Name:        "link-stage-2-stage-1",
+				SourceStage: "stage-2",
+				TargetStage: "stage-1",
 			},
-			Pipeline: newV1PipelineName(t, "pipeline-1"),
-		},
-		{
-			Name: newV1StageName(t, "stage-3"),
-			Method: MethodContext{
-				Address: internal.NewAddress("address-3"),
-				Method:  internal.NewMethod("Method3"),
+			{
+				Name:        "link-stage-1-stage-2",
+				SourceStage: "stage-1",
+				SourceField: "Field1",
+				TargetStage: "stage-2",
+				TargetField: "Field2",
 			},
-			Pipeline: newV1PipelineName(t, "pipeline-1"),
-		},
-	}
-	resources.Links = []Link{
-		{
-			Name:     newV1LinkName(t, "link-stage-2-stage-1"),
-			Source:   LinkEndpoint{Stage: newV1StageName(t, "stage-2")},
-			Target:   LinkEndpoint{Stage: newV1StageName(t, "stage-1")},
-			Pipeline: newV1PipelineName(t, "pipeline-1"),
-		},
-		{
-			Name: newV1LinkName(t, "link-stage-1-stage-2"),
-			Source: LinkEndpoint{
-				Stage: newV1StageName(t, "stage-1"),
-				Field: internal.NewMessageField("Field1"),
-			},
-			Target: LinkEndpoint{
-				Stage: newV1StageName(t, "stage-2"),
-				Field: internal.NewMessageField("Field2"),
-			},
-			Pipeline: newV1PipelineName(t, "pipeline-1"),
 		},
 	}
 	tempDir := t.TempDir()
 	outFile := tempDir + "/to_v1.yml"
-	err := WriteV1(resources, outFile, 777)
+	err := WriteV1(&pipeline, outFile, 0777)
 	if err != nil {
 		t.Fatalf("write v1: %s", err)
 	}
@@ -324,33 +298,12 @@ func TestWriteV1(t *testing.T) {
 
 	expFile := "../../test/data/unit/read/v1/write_single_file.yml"
 	expData, err := ioutil.ReadFile(expFile)
+	if err != nil {
+		t.Fatalf("read v1: %s", err)
+	}
 	expContent := string(expData)
 
 	if diff := cmp.Diff(expContent, writeContent); diff != "" {
 		t.Fatalf("content mismatch:\n%s", diff)
 	}
-}
-
-func newV1LinkName(t *testing.T, name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
-	if err != nil {
-		t.Fatalf("new v1 link name %s: %s", name, err)
-	}
-	return linkName
-}
-
-func newV1StageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("new v1 stage name %s: %s", name, err)
-	}
-	return stageName
-}
-
-func newV1PipelineName(t *testing.T, name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("new v1 pipeline name %s: %s", name, err)
-	}
-	return pipelineName
 }

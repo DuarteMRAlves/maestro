@@ -10,13 +10,13 @@ import (
 
 // MethodLoader resolves a method from its context.
 type MethodLoader interface {
-	Load(*internal.MethodContext) (internal.UnaryMethod, error)
+	Load(internal.MethodContext) (internal.UnaryMethod, error)
 }
 
 // MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(*internal.MethodContext) (internal.UnaryMethod, error)
+type MethodLoaderFunc func(internal.MethodContext) (internal.UnaryMethod, error)
 
-func (fn MethodLoaderFunc) Load(methodContext *internal.MethodContext) (internal.UnaryMethod, error) {
+func (fn MethodLoaderFunc) Load(methodContext internal.MethodContext) (internal.UnaryMethod, error) {
 	return fn(methodContext)
 }
 
@@ -165,7 +165,7 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	unaryMethod, err := ctx.methodLoader.Load(methodCtx)
+	unaryMethod, err := ctx.methodLoader.Load(*methodCtx)
 	if err != nil {
 		return nil, err
 	}

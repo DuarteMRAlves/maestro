@@ -1,11 +1,7 @@
 kind: pipeline
 spec:
-  name: pipeline-2
-  execution_mode: Online
----
-kind: pipeline
-spec:
   name: pipeline-1
+  execution_mode: Online
 ---
 kind: stage
 spec:

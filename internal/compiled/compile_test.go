@@ -119,7 +119,7 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -140,7 +140,7 @@ func TestNew(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -295,7 +295,7 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.NewService("service-1"),
@@ -316,7 +316,7 @@ func TestNew(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -367,7 +367,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -386,7 +386,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -405,7 +405,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -428,7 +428,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -443,7 +443,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -468,7 +468,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -483,7 +483,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -508,7 +508,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -523,7 +523,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -548,7 +548,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -563,7 +563,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -594,7 +594,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -609,7 +609,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -640,7 +640,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -655,7 +655,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -702,7 +702,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -723,7 +723,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -770,7 +770,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -791,7 +791,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -840,7 +840,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -861,7 +861,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -897,7 +897,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
 				ctx1 := internal.NewMethodContext(
 					internal.NewAddress("address-1"),
 					internal.Service{},
@@ -912,7 +912,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}

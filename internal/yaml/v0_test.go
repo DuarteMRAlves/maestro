@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -16,80 +17,63 @@ func TestReadV0(t *testing.T) {
 		t.Fatalf("read error: %s", err)
 	}
 
-	expected := ResourceSet{
-		Pipelines: []Pipeline{
-			{Name: newV0PipelineName(t, "v0-pipeline"), Mode: internal.OnlineExecution},
-		},
-		Stages: []Stage{
+	expected := &spec.Pipeline{
+		Name: "v0-pipeline",
+		Mode: spec.OnlineExecution,
+		Stages: []*spec.Stage{
 			{
-				Name: newV0StageName(t, "stage-1"),
-				Method: MethodContext{
-					Address: internal.NewAddress("host-1:1"),
+				Name: "stage-1",
+				MethodContext: spec.MethodContext{
+					Address: "host-1:1",
 				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
 			},
 			{
-				Name: newV0StageName(t, "stage-2"),
-				Method: MethodContext{
-					Address: internal.NewAddress("host-2:2"),
-					Service: internal.NewService("Service2"),
+				Name: "stage-2",
+				MethodContext: spec.MethodContext{
+					Address: "host-2:2",
+					Service: "Service2",
 				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
 			},
 			{
-				Name: newV0StageName(t, "stage-3"),
-				Method: MethodContext{
-					Address: internal.NewAddress("host-3:3"),
-					Method:  internal.NewMethod("Method3"),
+				Name: "stage-3",
+				MethodContext: spec.MethodContext{
+					Address: "host-3:3",
+					Method:  "Method3",
 				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
 			},
 			{
-				Name: newV0StageName(t, "stage-4"),
-				Method: MethodContext{
-					Address: internal.NewAddress("host-4:4"),
-					Service: internal.NewService("Service4"),
-					Method:  internal.NewMethod("Method4"),
+				Name: "stage-4",
+				MethodContext: spec.MethodContext{
+					Address: "host-4:4",
+					Service: "Service4",
+					Method:  "Method4",
 				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
 			},
 		},
-		Links: []Link{
+		Links: []*spec.Link{
 			{
-				Name:     newV0LinkName(t, "v0-link-stage-1-to-stage-2"),
-				Source:   LinkEndpoint{Stage: newV0StageName(t, "stage-1")},
-				Target:   LinkEndpoint{Stage: newV0StageName(t, "stage-2")},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+				Name:        "v0-link-stage-1-to-stage-2",
+				SourceStage: "stage-1",
+				TargetStage: "stage-2",
 			},
 			{
-				Name: newV0LinkName(t, "v0-link-stage-2-to-stage-3"),
-				Source: LinkEndpoint{
-					Stage: newV0StageName(t, "stage-2"),
-					Field: internal.NewMessageField("Field2"),
-				},
-				Target:   LinkEndpoint{Stage: newV0StageName(t, "stage-3")},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+				Name:        "v0-link-stage-2-to-stage-3",
+				SourceStage: "stage-2",
+				SourceField: "Field2",
+				TargetStage: "stage-3",
 			},
 			{
-				Name:   newV0LinkName(t, "v0-link-stage-3-to-stage-4"),
-				Source: LinkEndpoint{Stage: newV0StageName(t, "stage-3")},
-				Target: LinkEndpoint{
-					Stage: newV0StageName(t, "stage-4"),
-					Field: internal.NewMessageField("Field4"),
-				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+				Name:        "v0-link-stage-3-to-stage-4",
+				SourceStage: "stage-3",
+				TargetStage: "stage-4",
+				TargetField: "Field4",
 			},
 			{
-				Name: newV0LinkName(t, "v0-link-stage-4-to-stage-1"),
-				Source: LinkEndpoint{
-					Stage: newV0StageName(t, "stage-4"),
-					Field: internal.NewMessageField("Field4"),
-				},
-				Target: LinkEndpoint{
-					Stage: newV0StageName(t, "stage-1"),
-					Field: internal.NewMessageField("Field1"),
-				},
-				Pipeline: newV0PipelineName(t, "v0-pipeline"),
+				Name:        "v0-link-stage-4-to-stage-1",
+				SourceStage: "stage-4",
+				SourceField: "Field4",
+				TargetStage: "stage-1",
+				TargetField: "Field1",
 			},
 		},
 	}
@@ -160,39 +144,14 @@ func TestReadV0_Err(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var emptyResources ResourceSet
-			resources, err := ReadV0(tc.file)
+			pipeline, err := ReadV0(tc.file)
 			if err == nil {
 				t.Fatalf("expected error but got nil")
 			}
-			if diff := cmp.Diff(emptyResources, resources); diff != "" {
-				t.Fatalf("resources not empty:\n%s", diff)
+			if pipeline != nil {
+				t.Fatalf("expected nil pipeline")
 			}
 			tc.verifyErr(t, err)
 		})
 	}
-}
-
-func newV0LinkName(t *testing.T, name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
-	if err != nil {
-		t.Fatalf("new v0 link name %s: %s", name, err)
-	}
-	return linkName
-}
-
-func newV0StageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("new v0 stage name %s: %s", name, err)
-	}
-	return stageName
-}
-
-func newV0PipelineName(t *testing.T, name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("new v0 pipeline name %s: %s", name, err)
-	}
-	return pipelineName
 }
