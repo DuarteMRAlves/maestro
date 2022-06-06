@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 )
 
@@ -15,9 +14,9 @@ type Builder func(pipeline *compiled.Pipeline) (Execution, error)
 func NewBuilder(logger Logger) Builder {
 	return func(pipeline *compiled.Pipeline) (Execution, error) {
 		switch pipeline.Mode() {
-		case internal.OfflineExecution:
+		case compiled.OfflineExecution:
 			return buildOfflineExecution(pipeline, logger)
-		case internal.OnlineExecution:
+		case compiled.OnlineExecution:
 			return buildOnlineExecution(pipeline, logger)
 		default:
 			return nil, fmt.Errorf("unknown execution format: %v", pipeline.Mode())
@@ -30,9 +29,9 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan offlineState
 
-	linkChans := make(map[internal.LinkName]chan offlineState)
+	linkChans := make(map[compiled.LinkName]chan offlineState)
 
-	pipeline.VisitLinks(func(l *internal.Link) error {
+	pipeline.VisitLinks(func(l *compiled.Link) error {
 		ch := make(chan offlineState, defaultChanSize)
 		allChans = append(allChans, ch)
 		linkChans[l.Name()] = ch
@@ -65,7 +64,7 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 }
 
 func buildInputResources(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
 ) (chan offlineState, Stage, error) {
 	switch len(s.Inputs()) {
 	case 0:
@@ -87,9 +86,9 @@ func buildInputResources(
 }
 
 func buildOfflineMergeStage(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(s.Inputs()))
+	fields := make([]compiled.MessageField, 0, len(s.Inputs()))
 	// channels where the stage will receive the several inputs.
 	inputs := make([]<-chan offlineState, 0, len(s.Inputs()))
 	// channel where the stage will send the constructed messages.
@@ -104,7 +103,7 @@ func buildOfflineMergeStage(
 }
 
 func buildOfflineOutputResources(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
 	switch len(s.Outputs()) {
 	case 0:
@@ -126,9 +125,9 @@ func buildOfflineOutputResources(
 }
 
 func buildOfflineSplitStage(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[internal.LinkName]chan offlineState,
+	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
 ) (chan offlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(s.Outputs()))
+	fields := make([]compiled.MessageField, 0, len(s.Outputs()))
 	// channel where the stage will send the produced states.
 	inputChan := make(chan offlineState, defaultChanSize)
 	*allChans = append(*allChans, inputChan)
@@ -146,9 +145,9 @@ func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineEx
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan onlineState
 
-	linkChans := make(map[internal.LinkName]chan onlineState)
+	linkChans := make(map[compiled.LinkName]chan onlineState)
 
-	pipeline.VisitLinks(func(l *internal.Link) error {
+	pipeline.VisitLinks(func(l *compiled.Link) error {
 		ch := make(chan onlineState, defaultChanSize)
 		allChans = append(allChans, ch)
 		linkChans[l.Name()] = ch
@@ -182,7 +181,7 @@ func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineEx
 }
 
 func buildOnlineInputResources(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
 ) (chan onlineState, Stage, error) {
 	switch len(s.Inputs()) {
 	case 0:
@@ -204,9 +203,9 @@ func buildOnlineInputResources(
 }
 
 func buildOnlineMergeStage(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(s.Inputs()))
+	fields := make([]compiled.MessageField, 0, len(s.Inputs()))
 	// channels where the stage will receive the several inputs.
 	inputs := make([]<-chan onlineState, 0, len(s.Inputs()))
 	// channel where the stage will send the constructed messages.
@@ -221,7 +220,7 @@ func buildOnlineMergeStage(
 }
 
 func buildOnlineOutputResources(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
 	switch len(s.Outputs()) {
 	case 0:
@@ -243,9 +242,9 @@ func buildOnlineOutputResources(
 }
 
 func buildOnlineSplitStage(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[internal.LinkName]chan onlineState,
+	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
 ) (chan onlineState, Stage) {
-	fields := make([]internal.MessageField, 0, len(s.Outputs()))
+	fields := make([]compiled.MessageField, 0, len(s.Outputs()))
 	// channel where the stage will send the produced states.
 	inputChan := make(chan onlineState, defaultChanSize)
 	*allChans = append(*allChans, inputChan)

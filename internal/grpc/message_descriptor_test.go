@@ -1,11 +1,12 @@
 package grpc
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal"
+	"testing"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
-	"testing"
 )
 
 func TestMessageDescriptor_GetField(t *testing.T) {
@@ -14,7 +15,7 @@ func TestMessageDescriptor_GetField(t *testing.T) {
 		t.Fatalf("create message descriptor: %s", err)
 	}
 
-	field := internal.NewMessageField("field4")
+	field := compiled.NewMessageField("field4")
 
 	fieldDesc, err := msgDesc.GetField(field)
 	if err != nil {

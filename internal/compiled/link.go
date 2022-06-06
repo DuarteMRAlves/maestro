@@ -1,9 +1,38 @@
-package internal
+package compiled
 
 import (
 	"fmt"
 	"regexp"
 )
+
+type Link struct {
+	name   LinkName
+	source LinkEndpoint
+	target LinkEndpoint
+}
+
+func (l Link) Name() LinkName {
+	return l.name
+}
+
+func (l Link) Source() LinkEndpoint {
+	return l.source
+}
+
+func (l Link) Target() LinkEndpoint {
+	return l.target
+}
+
+func NewLink(
+	name LinkName,
+	source, target LinkEndpoint,
+) Link {
+	return Link{
+		name:   name,
+		source: source,
+		target: target,
+	}
+}
 
 var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
 
@@ -51,34 +80,5 @@ func NewLinkEndpoint(stage StageName, field MessageField) LinkEndpoint {
 	return LinkEndpoint{
 		stage: stage,
 		field: field,
-	}
-}
-
-type Link struct {
-	name   LinkName
-	source LinkEndpoint
-	target LinkEndpoint
-}
-
-func (l Link) Name() LinkName {
-	return l.name
-}
-
-func (l Link) Source() LinkEndpoint {
-	return l.source
-}
-
-func (l Link) Target() LinkEndpoint {
-	return l.target
-}
-
-func NewLink(
-	name LinkName,
-	source, target LinkEndpoint,
-) Link {
-	return Link{
-		name:   name,
-		source: source,
-		target: target,
 	}
 }

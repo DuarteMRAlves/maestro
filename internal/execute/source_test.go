@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -13,7 +13,7 @@ func TestOnlineSourceStage_Run(t *testing.T) {
 	numRequest := 10
 
 	output := make(chan onlineState)
-	gen := func() internal.Message {
+	gen := func() compiled.Message {
 		return testSourceMessage{}
 	}
 	s := newOnlineSource(start, gen, output)
@@ -50,10 +50,10 @@ func TestOnlineSourceStage_Run(t *testing.T) {
 
 type testSourceMessage struct{}
 
-func (m testSourceMessage) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m testSourceMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in source test")
 }
 
-func (m testSourceMessage) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m testSourceMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in source test")
 }

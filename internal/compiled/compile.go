@@ -4,19 +4,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
 )
 
 // MethodLoader resolves a method from its context.
 type MethodLoader interface {
-	Load(internal.MethodContext) (internal.UnaryMethod, error)
+	Load(MethodContext) (UnaryMethod, error)
 }
 
 // MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(internal.MethodContext) (internal.UnaryMethod, error)
+type MethodLoaderFunc func(MethodContext) (UnaryMethod, error)
 
-func (fn MethodLoaderFunc) Load(methodContext internal.MethodContext) (internal.UnaryMethod, error) {
+func (fn MethodLoaderFunc) Load(methodContext MethodContext) (UnaryMethod, error) {
 	return fn(methodContext)
 }
 
@@ -74,7 +73,7 @@ func (err *linksSetSameField) Error() string {
 	return fmt.Sprintf("links '%s' and '%s' set same field '%s'", err.A, err.B, err.field)
 }
 
-type incompatibleMessageDesc struct{ A, B internal.MessageDesc }
+type incompatibleMessageDesc struct{ A, B MessageDesc }
 
 func (err *incompatibleMessageDesc) Error() string {
 	return fmt.Sprintf("incompatible message descriptors: %s, %s", err.A, err.B)
@@ -132,8 +131,8 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 	return p, nil
 }
 
-func compileName(name string) (internal.PipelineName, error) {
-	pipelineName, err := internal.NewPipelineName(name)
+func compileName(name string) (PipelineName, error) {
+	pipelineName, err := NewPipelineName(name)
 	if err != nil {
 		return pipelineName, err
 	}
@@ -143,13 +142,13 @@ func compileName(name string) (internal.PipelineName, error) {
 	return pipelineName, nil
 }
 
-func compileExecutionMode(mode spec.ExecutionMode) (internal.ExecutionMode, error) {
-	var executionMode internal.ExecutionMode
+func compileExecutionMode(mode spec.ExecutionMode) (ExecutionMode, error) {
+	var executionMode ExecutionMode
 	switch mode {
 	case spec.OfflineExecution:
-		executionMode = internal.OfflineExecution
+		executionMode = OfflineExecution
 	case spec.OnlineExecution:
-		executionMode = internal.OnlineExecution
+		executionMode = OnlineExecution
 	default:
 		return executionMode, &unsupportedExecutionMode{mode: mode}
 	}
@@ -177,14 +176,14 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 		name:    name,
 		address: address,
 		method:  unaryMethod,
-		inputs:  []*internal.Link{},
-		outputs: []*internal.Link{},
+		inputs:  []*Link{},
+		outputs: []*Link{},
 	}
 	return stage, nil
 }
 
-func compileStageName(name string) (internal.StageName, error) {
-	stageName, err := internal.NewStageName(name)
+func compileStageName(name string) (StageName, error) {
+	stageName, err := NewStageName(name)
 	if err != nil {
 		return stageName, err
 	}
@@ -196,26 +195,26 @@ func compileStageName(name string) (internal.StageName, error) {
 
 func compileMethodContext(
 	methodContextSpec *spec.MethodContext,
-) (*internal.MethodContext, error) {
+) (*MethodContext, error) {
 	address, err := compileAddress(methodContextSpec.Address)
 	if err != nil {
 		return nil, err
 	}
-	service := internal.NewService(methodContextSpec.Service)
-	method := internal.NewMethod(methodContextSpec.Method)
-	methodCtx := internal.NewMethodContext(address, service, method)
+	service := NewService(methodContextSpec.Service)
+	method := NewMethod(methodContextSpec.Method)
+	methodCtx := NewMethodContext(address, service, method)
 	return &methodCtx, nil
 }
 
-func compileAddress(address string) (internal.Address, error) {
-	addr := internal.NewAddress(address)
+func compileAddress(address string) (Address, error) {
+	addr := NewAddress(address)
 	if addr.IsEmpty() {
 		return addr, errEmptyAddress
 	}
 	return addr, nil
 }
 
-func compileLink(linkSpec *spec.Link) (*internal.Link, error) {
+func compileLink(linkSpec *spec.Link) (*Link, error) {
 	name, err := compileLinkName(linkSpec.Name)
 	if err != nil {
 		return nil, err
@@ -234,12 +233,12 @@ func compileLink(linkSpec *spec.Link) (*internal.Link, error) {
 	if target.Stage().IsEmpty() {
 		return nil, errEmptyTargetName
 	}
-	l := internal.NewLink(name, source, target)
+	l := NewLink(name, source, target)
 	return &l, nil
 }
 
-func compileLinkName(name string) (internal.LinkName, error) {
-	linkName, err := internal.NewLinkName(name)
+func compileLinkName(name string) (LinkName, error) {
+	linkName, err := NewLinkName(name)
 	if err != nil {
 		return linkName, err
 	}
@@ -249,14 +248,14 @@ func compileLinkName(name string) (internal.LinkName, error) {
 	return linkName, nil
 }
 
-func compileEndpoint(stage string, field string) (internal.LinkEndpoint, error) {
-	var endpt internal.LinkEndpoint
-	stageName, err := internal.NewStageName(stage)
+func compileEndpoint(stage string, field string) (LinkEndpoint, error) {
+	var endpt LinkEndpoint
+	stageName, err := NewStageName(stage)
 	if err != nil {
 		return endpt, err
 	}
-	fieldName := internal.NewMessageField(field)
-	endpt = internal.NewLinkEndpoint(internal.StageName(stageName), fieldName)
+	fieldName := NewMessageField(field)
+	endpt = NewLinkEndpoint(StageName(stageName), fieldName)
 	return endpt, nil
 }
 
@@ -268,7 +267,7 @@ func validateStage(stages stageGraph, stage *Stage) error {
 	return nil
 }
 
-func validateLink(stages stageGraph, link *internal.Link) error {
+func validateLink(stages stageGraph, link *Link) error {
 	var err error
 
 	sourceStage := link.Source().Stage()

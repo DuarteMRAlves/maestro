@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -26,7 +26,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	output := make(chan offlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := internal.NewAddress("some-address")
+	address := compiled.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder()
 	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
@@ -90,7 +90,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	output := make(chan onlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := internal.NewAddress("some-address")
+	address := compiled.NewAddress("some-address")
 	clientBuilder := testUnaryClientBuilder()
 	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
@@ -139,8 +139,8 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	}
 }
 
-func createStageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
+func createStageName(t *testing.T, name string) compiled.StageName {
+	stageName, err := compiled.NewStageName(name)
 	if err != nil {
 		t.Fatalf("create stage name %s: %s", name, err)
 	}
@@ -149,24 +149,24 @@ func createStageName(t *testing.T, name string) internal.StageName {
 
 type testUnaryMessage struct{ val string }
 
-func (m testUnaryMessage) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m testUnaryMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in unary test")
 }
 
-func (m testUnaryMessage) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in unary test")
 }
 
-func testUnaryClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func testUnaryClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return testUnaryClient{}, nil
 	}
 }
 
 type testUnaryClient struct{}
 
-func (c testUnaryClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c testUnaryClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(testUnaryMessage)

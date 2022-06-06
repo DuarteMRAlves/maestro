@@ -3,7 +3,12 @@ package grpc
 import (
 	"context"
 	"errors"
-	"github.com/DuarteMRAlves/maestro/internal"
+	"net"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/google/go-cmp/cmp"
@@ -12,10 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"net"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestReflectionClient_ListServices(t *testing.T) {
@@ -125,7 +126,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := internal.NewService("unit.MethodLoaderTestService")
+	serviceName := compiled.NewService("unit.MethodLoaderTestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
@@ -268,7 +269,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := internal.NewService("pb.TestService")
+	serviceName := compiled.NewService("pb.TestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
@@ -310,7 +311,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := internal.NewService("pb.UnknownService")
+	serviceName := compiled.NewService("pb.UnknownService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {

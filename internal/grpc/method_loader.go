@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
@@ -39,8 +39,8 @@ func NewReflectionMethodLoader(
 	}
 }
 
-func (m *ReflectionMethodLoader) Load(methodCtx internal.MethodContext) (
-	internal.UnaryMethod,
+func (m *ReflectionMethodLoader) Load(methodCtx compiled.MethodContext) (
+	compiled.UnaryMethod,
 	error,
 ) {
 	m.logger.Debugf("Load method with reflection: %#v", methodCtx)
@@ -69,7 +69,7 @@ func (m *ReflectionMethodLoader) Load(methodCtx internal.MethodContext) (
 
 func (m *ReflectionMethodLoader) listServices(
 	ctx context.Context, conn grpc.ClientConnInterface,
-) ([]internal.Service, error) {
+) ([]compiled.Service, error) {
 	var (
 		all []string
 		err error
@@ -87,38 +87,38 @@ func (m *ReflectionMethodLoader) listServices(
 		return nil, fmt.Errorf("list services: %w", err)
 	}
 	// Filter the reflection service
-	services := make([]internal.Service, 0, len(all)-1)
+	services := make([]compiled.Service, 0, len(all)-1)
 	for _, s := range all {
 		if s != reflectionServiceName {
-			services = append(services, internal.NewService(s))
+			services = append(services, compiled.NewService(s))
 		}
 	}
 	return services, nil
 }
 
 func findService(
-	available []internal.Service,
-	search internal.Service,
-) (internal.Service, error) {
+	available []compiled.Service,
+	search compiled.Service,
+) (compiled.Service, error) {
 	if search.IsEmpty() {
 		if len(available) == 1 {
 			return available[0], nil
 		}
-		return internal.Service{}, notOneService
+		return compiled.Service{}, notOneService
 	} else {
 		for _, s := range available {
 			if search == s {
 				return search, nil
 			}
 		}
-		return internal.Service{}, &serviceNotFound{srv: search.Unwrap()}
+		return compiled.Service{}, &serviceNotFound{srv: search.Unwrap()}
 	}
 }
 
 func (m *ReflectionMethodLoader) resolveService(
 	ctx context.Context,
 	conn grpc.ClientConnInterface,
-	service internal.Service,
+	service compiled.Service,
 ) (*desc.ServiceDescriptor, error) {
 	var (
 		descriptor *desc.ServiceDescriptor
@@ -172,7 +172,7 @@ func isProtocolError(err error) bool {
 
 func findMethod(
 	available []*desc.MethodDescriptor,
-	search internal.Method,
+	search compiled.Method,
 ) (unaryMethod, error) {
 	if search.IsEmpty() {
 		if len(available) == 1 {

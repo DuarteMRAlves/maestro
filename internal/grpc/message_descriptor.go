@@ -1,7 +1,7 @@
 package grpc
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
@@ -19,12 +19,12 @@ func newMessageDescriptor(msg proto.Message) (messageDescriptor, error) {
 	return messageDescriptor{desc: d}, nil
 }
 
-func (d messageDescriptor) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return newMessageFromDescriptor(d.desc) }
+func (d messageDescriptor) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return newMessageFromDescriptor(d.desc) }
 }
 
-func (d messageDescriptor) GetField(name internal.MessageField) (
-	internal.MessageDesc,
+func (d messageDescriptor) GetField(name compiled.MessageField) (
+	compiled.MessageDesc,
 	error,
 ) {
 	field := d.desc.FindFieldByName(name.Unwrap())
@@ -43,7 +43,7 @@ func (d messageDescriptor) GetField(name internal.MessageField) (
 	return messageDescriptor{desc: field.GetMessageType()}, nil
 }
 
-func (d messageDescriptor) Compatible(other internal.MessageDesc) bool {
+func (d messageDescriptor) Compatible(other compiled.MessageDesc) bool {
 	grpcOther, ok := other.(messageDescriptor)
 	if !ok {
 		return false

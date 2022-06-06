@@ -3,18 +3,18 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 )
 
 // offlineSource is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type offlineSource struct {
-	gen    internal.EmptyMessageGen
+	gen    compiled.EmptyMessageGen
 	output chan<- offlineState
 }
 
 func newOfflineSource(
-	gen internal.EmptyMessageGen, output chan<- offlineState,
+	gen compiled.EmptyMessageGen, output chan<- offlineState,
 ) Stage {
 	return &offlineSource{
 		gen:    gen,
@@ -38,12 +38,12 @@ func (s *offlineSource) Run(ctx context.Context) error {
 // the states and sends empty messages of the received type.
 type onlineSource struct {
 	count  int32
-	gen    internal.EmptyMessageGen
+	gen    compiled.EmptyMessageGen
 	output chan<- onlineState
 }
 
 func newOnlineSource(
-	start int32, gen internal.EmptyMessageGen, output chan<- onlineState,
+	start int32, gen compiled.EmptyMessageGen, output chan<- onlineState,
 ) Stage {
 	return &onlineSource{
 		count:  start,

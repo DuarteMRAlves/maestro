@@ -3,27 +3,28 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 type unaryMethod struct {
-	clientBuilder internal.UnaryClientBuilder
+	clientBuilder compiled.UnaryClientBuilder
 	input         messageDescriptor
 	output        messageDescriptor
 }
 
-func (d unaryMethod) ClientBuilder() internal.UnaryClientBuilder {
+func (d unaryMethod) ClientBuilder() compiled.UnaryClientBuilder {
 	return d.clientBuilder
 }
 
-func (d unaryMethod) Input() internal.MessageDesc {
+func (d unaryMethod) Input() compiled.MessageDesc {
 	return d.input
 }
 
-func (d unaryMethod) Output() internal.MessageDesc {
+func (d unaryMethod) Output() compiled.MessageDesc {
 	return d.output
 }
 
@@ -48,9 +49,9 @@ func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor) unaryMethod {
 
 func newClientBuilder(
 	invokePath string,
-	emptyGen internal.EmptyMessageGen,
-) internal.UnaryClientBuilder {
-	return func(address internal.Address) (internal.UnaryClient, error) {
+	emptyGen compiled.EmptyMessageGen,
+) compiled.UnaryClientBuilder {
+	return func(address compiled.Address) (compiled.UnaryClient, error) {
 		conn, err := grpc.Dial(address.Unwrap(), grpc.WithInsecure())
 		if err != nil {
 			return nil, err
@@ -74,13 +75,13 @@ func methodInvokePath(desc *desc.MethodDescriptor) string {
 type unaryClient struct {
 	conn       *grpc.ClientConn
 	invokePath string
-	emptyGen   internal.EmptyMessageGen
+	emptyGen   compiled.EmptyMessageGen
 }
 
 func (c unaryClient) Call(
 	ctx context.Context,
-	req internal.Message,
-) (internal.Message, error) {
+	req compiled.Message,
+) (compiled.Message, error) {
 	rep := c.emptyGen()
 
 	grpcReq, ok := req.(*message)

@@ -3,7 +3,11 @@ package grpc
 import (
 	"context"
 	"errors"
-	"github.com/DuarteMRAlves/maestro/internal"
+	"net"
+	"testing"
+	"time"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -11,9 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"net"
-	"testing"
-	"time"
 )
 
 var (
@@ -72,7 +73,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(internal.NewAddress(addr))
+	client, err := clientBuilder(compiled.NewAddress(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}
@@ -136,7 +137,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(internal.NewAddress(addr))
+	client, err := clientBuilder(compiled.NewAddress(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}
@@ -194,7 +195,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(internal.NewAddress(addr))
+	client, err := clientBuilder(compiled.NewAddress(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}

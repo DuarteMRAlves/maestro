@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
@@ -49,96 +48,96 @@ func TestNew(t *testing.T) {
 			},
 			expected: &Pipeline{
 				name: createPipelineName("pipeline"),
-				mode: internal.OfflineExecution,
+				mode: OfflineExecution,
 				stages: stageGraph{
 					createStageName("stage-1"): &Stage{
 						name:    createStageName("stage-1"),
-						address: internal.NewAddress("address-1"),
+						address: NewAddress("address-1"),
 						method:  testStage1Method{},
-						inputs:  []*internal.Link{},
-						outputs: []*internal.Link{
+						inputs:  []*Link{},
+						outputs: []*Link{
 							createLink(
 								createLinkName("1-to-2"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.MessageField{},
+									MessageField{},
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.MessageField{},
+									MessageField{},
 								),
 							),
 						},
 					},
 					createStageName("stage-2"): &Stage{
 						name:    createStageName("stage-2"),
-						address: internal.NewAddress("address-2"),
+						address: NewAddress("address-2"),
 						method:  testStage2Method{},
-						inputs: []*internal.Link{
+						inputs: []*Link{
 							createLink(
 								createLinkName("1-to-2"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.MessageField{},
+									MessageField{},
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.MessageField{},
+									MessageField{},
 								),
 							),
 						},
-						outputs: []*internal.Link{
+						outputs: []*Link{
 							createLink(
 								createLinkName("2-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.MessageField{},
+									MessageField{},
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.MessageField{},
+									MessageField{},
 								),
 							),
 						},
 					},
 					createStageName("stage-3"): &Stage{
 						name:    createStageName("stage-3"),
-						address: internal.NewAddress("address-3"),
+						address: NewAddress("address-3"),
 						method:  testStage3Method{},
-						inputs: []*internal.Link{
+						inputs: []*Link{
 							createLink(
 								createLinkName("2-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.MessageField{},
+									MessageField{},
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.MessageField{},
+									MessageField{},
 								),
 							),
 						},
-						outputs: []*internal.Link{},
+						outputs: []*Link{},
 					},
 				},
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				ctx3 := internal.NewMethodContext(
-					internal.NewAddress("address-3"),
-					internal.Service{},
-					internal.Method{},
+				ctx3 := NewMethodContext(
+					NewAddress("address-3"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
@@ -206,118 +205,118 @@ func TestNew(t *testing.T) {
 			},
 			expected: &Pipeline{
 				name: createPipelineName("pipeline"),
-				mode: internal.OnlineExecution,
+				mode: OnlineExecution,
 				stages: stageGraph{
 					createStageName("stage-1"): &Stage{
 						name:    createStageName("stage-1"),
-						address: internal.NewAddress("address-1"),
+						address: NewAddress("address-1"),
 						method:  testStage1Method{},
-						inputs:  []*internal.Link{},
-						outputs: []*internal.Link{
+						inputs:  []*Link{},
+						outputs: []*Link{
 							createLink(
 								createLinkName("1-to-2"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.NewMessageField("field2"),
+									NewMessageField("field2"),
 								),
 							),
 							createLink(
 								createLinkName("1-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
 							),
 						},
 					},
 					createStageName("stage-2"): &Stage{
 						name:    createStageName("stage-2"),
-						address: internal.NewAddress("address-2"),
+						address: NewAddress("address-2"),
 						method:  testStage2Method{},
-						inputs: []*internal.Link{
+						inputs: []*Link{
 							createLink(
 								createLinkName("1-to-2"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.NewMessageField("field2"),
+									NewMessageField("field2"),
 								),
 							),
 						},
-						outputs: []*internal.Link{
+						outputs: []*Link{
 							createLink(
 								createLinkName("2-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.NewMessageField("field2"),
+									NewMessageField("field2"),
 								),
 							),
 						},
 					},
 					createStageName("stage-3"): &Stage{
 						name:    createStageName("stage-3"),
-						address: internal.NewAddress("address-3"),
+						address: NewAddress("address-3"),
 						method:  testStage3Method{},
-						inputs: []*internal.Link{
+						inputs: []*Link{
 							createLink(
 								createLinkName("1-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-1"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
 							),
 							createLink(
 								createLinkName("2-to-3"),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-2"),
-									internal.NewMessageField("field1"),
+									NewMessageField("field1"),
 								),
-								internal.NewLinkEndpoint(
+								NewLinkEndpoint(
 									createStageName("stage-3"),
-									internal.NewMessageField("field2"),
+									NewMessageField("field2"),
 								),
 							),
 						},
-						outputs: []*internal.Link{},
+						outputs: []*Link{},
 					},
 				},
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.NewService("service-1"),
-					internal.NewMethod("method-1"),
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					NewService("service-1"),
+					NewMethod("method-1"),
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.NewService("service-2"),
-					internal.NewMethod("method-2"),
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					NewService("service-2"),
+					NewMethod("method-2"),
 				)
-				ctx3 := internal.NewMethodContext(
-					internal.NewAddress("address-3"),
-					internal.NewService("service-3"),
-					internal.NewMethod("method-3"),
+				ctx3 := NewMethodContext(
+					NewAddress("address-3"),
+					NewService("service-3"),
+					NewMethod("method-3"),
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
@@ -339,17 +338,17 @@ func TestNew(t *testing.T) {
 			}
 			cmpOpts := cmp.AllowUnexported(
 				Pipeline{},
-				internal.PipelineName{},
-				internal.ExecutionMode{},
+				PipelineName{},
+				ExecutionMode{},
 				Stage{},
-				internal.StageName{},
-				internal.Address{},
-				internal.Service{},
-				internal.Method{},
-				internal.Link{},
-				internal.LinkName{},
-				internal.LinkEndpoint{},
-				internal.MessageField{},
+				StageName{},
+				Address{},
+				Service{},
+				Method{},
+				Link{},
+				LinkName{},
+				LinkEndpoint{},
+				MessageField{},
 			)
 			if diff := cmp.Diff(tc.expected, output, cmpOpts); diff != "" {
 				t.Fatalf("output mismatch:\n%s", diff)
@@ -373,7 +372,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -392,7 +391,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -411,7 +410,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -434,18 +433,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -474,18 +473,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -514,18 +513,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -554,18 +553,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -600,18 +599,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -646,18 +645,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -708,23 +707,23 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				ctx3 := internal.NewMethodContext(
-					internal.NewAddress("address-3"),
-					internal.Service{},
-					internal.Method{},
+				ctx3 := NewMethodContext(
+					NewAddress("address-3"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
@@ -776,23 +775,23 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				ctx3 := internal.NewMethodContext(
-					internal.NewAddress("address-3"),
-					internal.Service{},
-					internal.Method{},
+				ctx3 := NewMethodContext(
+					NewAddress("address-3"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
@@ -846,23 +845,23 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				ctx3 := internal.NewMethodContext(
-					internal.NewAddress("address-3"),
-					internal.Service{},
-					internal.Method{},
+				ctx3 := NewMethodContext(
+					NewAddress("address-3"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
@@ -903,18 +902,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
-				ctx1 := internal.NewMethodContext(
-					internal.NewAddress("address-1"),
-					internal.Service{},
-					internal.Method{},
+			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+				ctx1 := NewMethodContext(
+					NewAddress("address-1"),
+					Service{},
+					Method{},
 				)
-				ctx2 := internal.NewMethodContext(
-					internal.NewAddress("address-2"),
-					internal.Service{},
-					internal.Method{},
+				ctx2 := NewMethodContext(
+					NewAddress("address-2"),
+					Service{},
+					Method{},
 				)
-				mapper := map[internal.MethodContext]internal.UnaryMethod{
+				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
@@ -943,24 +942,24 @@ func TestNewIsErr(t *testing.T) {
 	}
 }
 
-func createPipelineName(name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
+func createPipelineName(name string) PipelineName {
+	pipelineName, err := NewPipelineName(name)
 	if err != nil {
 		panic(fmt.Sprintf("create pipeline name %s: %s", name, err))
 	}
 	return pipelineName
 }
 
-func createStageName(name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
+func createStageName(name string) StageName {
+	stageName, err := NewStageName(name)
 	if err != nil {
 		panic(fmt.Sprintf("create stage name %s: %s", name, err))
 	}
 	return stageName
 }
 
-func createLinkName(name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
+func createLinkName(name string) LinkName {
+	linkName, err := NewLinkName(name)
 	if err != nil {
 		panic(fmt.Sprintf("create link name %s: %s", name, err))
 	}
@@ -968,66 +967,66 @@ func createLinkName(name string) internal.LinkName {
 }
 
 func createLink(
-	name internal.LinkName, source, target internal.LinkEndpoint,
-) *internal.Link {
-	l := internal.NewLink(name, source, target)
+	name LinkName, source, target LinkEndpoint,
+) *Link {
+	l := NewLink(name, source, target)
 	return &l
 }
 
 type testStage1Method struct{}
 
-func (m testStage1Method) ClientBuilder() internal.UnaryClientBuilder {
+func (m testStage1Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage1Method) Input() internal.MessageDesc {
+func (m testStage1Method) Input() MessageDesc {
 	return testEmptyDesc{}
 }
 
-func (m testStage1Method) Output() internal.MessageDesc {
+func (m testStage1Method) Output() MessageDesc {
 	return testOuterValDesc{}
 }
 
 type testStage2Method struct{}
 
-func (m testStage2Method) ClientBuilder() internal.UnaryClientBuilder {
+func (m testStage2Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage2Method) Input() internal.MessageDesc {
+func (m testStage2Method) Input() MessageDesc {
 	return testOuterValDesc{}
 }
 
-func (m testStage2Method) Output() internal.MessageDesc {
+func (m testStage2Method) Output() MessageDesc {
 	return testOuterValDesc{}
 }
 
 type testStage3Method struct{}
 
-func (m testStage3Method) ClientBuilder() internal.UnaryClientBuilder {
+func (m testStage3Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage3Method) Input() internal.MessageDesc {
+func (m testStage3Method) Input() MessageDesc {
 	return testOuterValDesc{}
 }
 
-func (m testStage3Method) Output() internal.MessageDesc {
+func (m testStage3Method) Output() MessageDesc {
 	return testEmptyDesc{}
 }
 
 type testEmptyDesc struct{}
 
-func (d testEmptyDesc) Compatible(other internal.MessageDesc) bool {
+func (d testEmptyDesc) Compatible(other MessageDesc) bool {
 	_, ok := other.(testEmptyDesc)
 	return ok
 }
 
-func (d testEmptyDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return nil }
+func (d testEmptyDesc) EmptyGen() EmptyMessageGen {
+	return func() Message { return nil }
 }
 
-func (d testEmptyDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testEmptyDesc) GetField(f MessageField) (MessageDesc, error) {
 	panic("method get field should not be called for testEmptyDesc")
 }
 
@@ -1035,16 +1034,16 @@ func (d testEmptyDesc) GetField(f internal.MessageField) (internal.MessageDesc, 
 // Each field is associated with a descriptor of type testInnerValDesc
 type testOuterValDesc struct{}
 
-func (d testOuterValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testOuterValDesc) Compatible(other MessageDesc) bool {
 	_, ok := other.(testOuterValDesc)
 	return ok
 }
 
-func (d testOuterValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return nil }
+func (d testOuterValDesc) EmptyGen() EmptyMessageGen {
+	return func() Message { return nil }
 }
 
-func (d testOuterValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testOuterValDesc) GetField(f MessageField) (MessageDesc, error) {
 	switch f.Unwrap() {
 	case "field1", "field2":
 		return testInnerValDesc{}, nil
@@ -1059,16 +1058,16 @@ func (d testOuterValDesc) String() string {
 
 type testInnerValDesc struct{}
 
-func (d testInnerValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testInnerValDesc) Compatible(other MessageDesc) bool {
 	_, ok := other.(testInnerValDesc)
 	return ok
 }
 
-func (d testInnerValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return nil }
+func (d testInnerValDesc) EmptyGen() EmptyMessageGen {
+	return func() Message { return nil }
 }
 
-func (d testInnerValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testInnerValDesc) GetField(f MessageField) (MessageDesc, error) {
 	panic("method get field should not be called for testInnerValDesc")
 }
 

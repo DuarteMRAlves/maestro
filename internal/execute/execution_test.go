@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
@@ -125,9 +124,9 @@ func setupLinear(
 		},
 	}
 
-	sourceContext := createMethodContext(internal.NewAddress("source"))
-	transformContext := createMethodContext(internal.NewAddress("transform"))
-	sinkContext := createMethodContext(internal.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: linearSourceClientBuilder(),
@@ -146,12 +145,12 @@ func setupLinear(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
 		m, ok := methods[methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -162,16 +161,16 @@ func setupLinear(
 	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func linearSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func linearSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &linearSourceClient{counter: 0}, nil
 	}
 }
 
 type linearSourceClient struct{ counter int64 }
 
-func (c *linearSourceClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearSourceClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	_, ok := req.(*testEmptyMsg)
@@ -184,8 +183,8 @@ func (c *linearSourceClient) Call(_ context.Context, req internal.Message) (
 
 func (c *linearSourceClient) Close() error { return nil }
 
-func linearTransformClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func linearTransformClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &linearTransformClient{}
 		return c, nil
 	}
@@ -193,8 +192,8 @@ func linearTransformClientBuilder() internal.UnaryClientBuilder {
 
 type linearTransformClient struct{}
 
-func (c *linearTransformClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearTransformClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -210,8 +209,8 @@ func linearSinkClientBuilder(
 	max int,
 	collect *[]*testValMsg,
 	done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &linearSinkClient{
 			max:     max,
 			collect: collect,
@@ -229,8 +228,8 @@ type linearSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -376,9 +375,9 @@ func setupSplitAndMerge(
 		},
 	}
 
-	sourceContext := createMethodContext(internal.NewAddress("source"))
-	transformContext := createMethodContext(internal.NewAddress("transform"))
-	sinkContext := createMethodContext(internal.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
@@ -396,13 +395,13 @@ func setupSplitAndMerge(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
 
-	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
 		m, ok := methods[methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -413,8 +412,8 @@ func setupSplitAndMerge(
 	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func splitAndMergeSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &splitAndMergeSourceClient{counter: 0}, nil
 	}
 }
@@ -422,8 +421,8 @@ func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
 type splitAndMergeSourceClient struct{ counter int64 }
 
 func (c *splitAndMergeSourceClient) Call(
-	_ context.Context, req internal.Message,
-) (internal.Message, error) {
+	_ context.Context, req compiled.Message,
+) (compiled.Message, error) {
 	_, ok := req.(*testEmptyMsg)
 	if !ok {
 		panic("source request message is not testEmptyMsg")
@@ -433,8 +432,8 @@ func (c *splitAndMergeSourceClient) Call(
 
 func (c *splitAndMergeSourceClient) Close() error { return nil }
 
-func splitAndMergeTransformClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func splitAndMergeTransformClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &splitAndMergeTransformClient{}, nil
 	}
 }
@@ -442,8 +441,8 @@ func splitAndMergeTransformClientBuilder() internal.UnaryClientBuilder {
 type splitAndMergeTransformClient struct{}
 
 func (c *splitAndMergeTransformClient) Call(
-	_ context.Context, req internal.Message,
-) (internal.Message, error) {
+	_ context.Context, req compiled.Message,
+) (compiled.Message, error) {
 	reqMsg, ok := req.(*testValMsg)
 	if !ok {
 		panic("transform request message is not testValMsg")
@@ -455,8 +454,8 @@ func (c *splitAndMergeTransformClient) Close() error { return nil }
 
 func splitAndMergeSinkClientBuilder(
 	max int, collect *[]*testTwoValMsg, done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &splitAndMergeSinkClient{
 			max:     max,
 			collect: collect,
@@ -474,8 +473,8 @@ type splitAndMergeSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *splitAndMergeSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *splitAndMergeSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMock, ok := req.(*testTwoValMsg)
@@ -608,9 +607,9 @@ func setupSlow(
 		},
 	}
 
-	sourceContext := createMethodContext(internal.NewAddress("source"))
-	transformContext := createMethodContext(internal.NewAddress("transform"))
-	sinkContext := createMethodContext(internal.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: slowSourceClientBuilder(),
@@ -629,12 +628,12 @@ func setupSlow(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
 		m, ok := methods[methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -645,16 +644,16 @@ func setupSlow(
 	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func slowSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func slowSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &slowSourceClient{counter: 0}, nil
 	}
 }
 
 type slowSourceClient struct{ counter int64 }
 
-func (c *slowSourceClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowSourceClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	_, ok := req.(*testEmptyMsg)
@@ -667,16 +666,16 @@ func (c *slowSourceClient) Call(_ context.Context, req internal.Message) (
 
 func (c *slowSourceClient) Close() error { return nil }
 
-func slowTransformClientBuilder(sleep time.Duration) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func slowTransformClientBuilder(sleep time.Duration) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &slowTransformClient{sleep: sleep}, nil
 	}
 }
 
 type slowTransformClient struct{ sleep time.Duration }
 
-func (c *slowTransformClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowTransformClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	time.Sleep(c.sleep)
@@ -693,8 +692,8 @@ func slowSinkClientBuilder(
 	max int,
 	collect *[]*testValMsg,
 	done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &slowSinkClient{
 			max:     max,
 			collect: collect,
@@ -712,8 +711,8 @@ type slowSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -736,79 +735,79 @@ func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
 
 func (c *slowSinkClient) Close() error { return nil }
 
-func createMethodContext(addr internal.Address) internal.MethodContext {
+func createMethodContext(addr compiled.Address) compiled.MethodContext {
 	var (
-		emptyService internal.Service
-		emptyMethod  internal.Method
+		emptyService compiled.Service
+		emptyMethod  compiled.Method
 	)
-	return internal.NewMethodContext(addr, emptyService, emptyMethod)
+	return compiled.NewMethodContext(addr, emptyService, emptyMethod)
 }
 
 type testMethod struct {
-	MethodClientBuilder internal.UnaryClientBuilder
-	In                  internal.MessageDesc
-	Out                 internal.MessageDesc
+	MethodClientBuilder compiled.UnaryClientBuilder
+	In                  compiled.MessageDesc
+	Out                 compiled.MessageDesc
 }
 
-func (m testMethod) ClientBuilder() internal.UnaryClientBuilder {
+func (m testMethod) ClientBuilder() compiled.UnaryClientBuilder {
 	return m.MethodClientBuilder
 }
 
-func (m testMethod) Input() internal.MessageDesc {
+func (m testMethod) Input() compiled.MessageDesc {
 	return m.In
 }
 
-func (m testMethod) Output() internal.MessageDesc {
+func (m testMethod) Output() compiled.MessageDesc {
 	return m.Out
 }
 
 type testEmptyMsg struct{}
 
-func (m *testEmptyMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m *testEmptyMsg) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in empty message")
 }
 
-func (m *testEmptyMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testEmptyMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in empty message")
 }
 
 type testEmptyDesc struct{}
 
-func (d testEmptyDesc) Compatible(other internal.MessageDesc) bool {
+func (d testEmptyDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testEmptyDesc)
 	return ok
 }
 
-func (d testEmptyDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testEmptyMsg{} }
+func (d testEmptyDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testEmptyMsg{} }
 }
 
-func (d testEmptyDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testEmptyDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	panic("method get field should not be called for testEmptyDesc")
 }
 
 type testValMsg struct{ Val int64 }
 
-func (m *testValMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m *testValMsg) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in val message")
 }
 
-func (m *testValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testValMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in val message")
 }
 
 type testValDesc struct{}
 
-func (d testValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testValDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testValDesc)
 	return ok
 }
 
-func (d testValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testValMsg{} }
+func (d testValDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testValMsg{} }
 }
 
-func (d testValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testValDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	panic("method get field should not be called for testValDesc")
 }
 
@@ -817,7 +816,7 @@ type testTwoValMsg struct {
 	Transf *testValMsg
 }
 
-func (m *testTwoValMsg) SetField(f internal.MessageField, v internal.Message) error {
+func (m *testTwoValMsg) SetField(f compiled.MessageField, v compiled.Message) error {
 	inner, ok := v.(*testValMsg)
 	if !ok {
 		panic("v is not *testValMsg")
@@ -833,22 +832,22 @@ func (m *testTwoValMsg) SetField(f internal.MessageField, v internal.Message) er
 	return nil
 }
 
-func (m *testTwoValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testTwoValMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in two val message")
 }
 
 type testTwoValDesc struct{}
 
-func (d testTwoValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testTwoValDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testTwoValDesc)
 	return ok
 }
 
-func (d testTwoValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testTwoValMsg{} }
+func (d testTwoValDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testTwoValMsg{} }
 }
 
-func (d testTwoValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testTwoValDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	switch f.Unwrap() {
 	case "Orig", "Transf":
 		return testValDesc{}, nil

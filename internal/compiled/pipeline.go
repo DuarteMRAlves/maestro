@@ -1,13 +1,71 @@
 package compiled
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal"
+	"fmt"
+	"regexp"
 )
+
+var pipelineNameReqExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
+
+type PipelineName struct{ val string }
+
+var emptyPipelineName = PipelineName{val: ""}
+
+func (o PipelineName) Unwrap() string { return o.val }
+
+func (o PipelineName) IsEmpty() bool { return o.val == emptyPipelineName.val }
+
+func (o PipelineName) String() string {
+	return o.val
+}
+
+func NewPipelineName(name string) (PipelineName, error) {
+	if isValidPipelineName(name) {
+		return PipelineName{name}, nil
+	}
+	return emptyPipelineName, &invalidPipelineName{name: name}
+}
+
+func isValidPipelineName(name string) bool {
+	return pipelineNameReqExp.MatchString(name)
+}
+
+type invalidPipelineName struct{ name string }
+
+func (err *invalidPipelineName) Error() string {
+	return fmt.Sprintf("invalid pipeline name: '%s'", err.name)
+}
+
+type ExecutionMode struct {
+	val int
+}
+
+const (
+	// OfflineExecution is the default execution mode.
+	offlineExecution int = iota
+	onlineExecution
+)
+
+var (
+	OfflineExecution = ExecutionMode{val: offlineExecution}
+	OnlineExecution  = ExecutionMode{val: onlineExecution}
+)
+
+func (e ExecutionMode) String() string {
+	switch e.val {
+	case offlineExecution:
+		return "OfflineExecution"
+	case onlineExecution:
+		return "OnlineExecution"
+	default:
+		return "UnknownExecutionMode"
+	}
+}
 
 // Pipeline defines an immutable pipeline that can be executed.
 type Pipeline struct {
-	name   internal.PipelineName
-	mode   internal.ExecutionMode
+	name   PipelineName
+	mode   ExecutionMode
 	stages stageGraph
 }
 
@@ -15,19 +73,19 @@ type Pipeline struct {
 type StageVisitor func(s *Stage) error
 
 // LinkVisitor is a function to process links.
-type LinkVisitor func(l *internal.Link) error
+type LinkVisitor func(l *Link) error
 
-type stageGraph map[internal.StageName]*Stage
+type stageGraph map[StageName]*Stage
 
-func (p *Pipeline) Name() internal.PipelineName {
+func (p *Pipeline) Name() PipelineName {
 	return p.name
 }
 
-func (p *Pipeline) Mode() internal.ExecutionMode {
+func (p *Pipeline) Mode() ExecutionMode {
 	return p.mode
 }
 
-func (p *Pipeline) Stage(name internal.StageName) (*Stage, bool) {
+func (p *Pipeline) Stage(name StageName) (*Stage, bool) {
 	s, ok := p.stages[name]
 	return s, ok
 }
@@ -56,33 +114,4 @@ func (p *Pipeline) VisitLinks(v LinkVisitor) error {
 		}
 	}
 	return nil
-}
-
-// Stage defines a step of a Pipeline
-type Stage struct {
-	name    internal.StageName
-	address internal.Address
-	method  internal.UnaryMethod
-	inputs  []*internal.Link
-	outputs []*internal.Link
-}
-
-func (s *Stage) Name() internal.StageName {
-	return s.name
-}
-
-func (s *Stage) Address() internal.Address {
-	return s.address
-}
-
-func (s *Stage) Method() internal.UnaryMethod {
-	return s.method
-}
-
-func (s *Stage) Inputs() []*internal.Link {
-	return s.inputs
-}
-
-func (s *Stage) Outputs() []*internal.Link {
-	return s.outputs
 }

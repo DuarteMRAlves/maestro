@@ -1,16 +1,17 @@
 package grpc
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal"
+	"testing"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jhump/protoreflect/dynamic"
-	"testing"
 )
 
 func TestNewFieldSetter(t *testing.T) {
-	field := internal.NewMessageField("inner")
+	field := compiled.NewMessageField("inner")
 	pbInner := &unit.TestMessageInner{Val: "val"}
 
 	msg, err := newMessage(&unit.TestMessage{})
@@ -46,7 +47,7 @@ func TestNewFieldSetter(t *testing.T) {
 }
 
 func TestNewFieldGetter(t *testing.T) {
-	field := internal.NewMessageField("inner")
+	field := compiled.NewMessageField("inner")
 
 	pbInner := &unit.TestMessageInner{Val: "val"}
 	pbMsg := &unit.TestMessage{Inner: pbInner}
