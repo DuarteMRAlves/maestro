@@ -1,11 +1,11 @@
 package grpcexecute
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"net"
 	"testing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func createGrpcServer(
@@ -28,36 +28,4 @@ func createGrpcServer(
 		s.Stop()
 	}
 	return lis.Addr(), start, stop
-}
-
-func createPipelineName(t *testing.T, name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", name, err)
-	}
-	return pipelineName
-}
-
-func createStageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	return stageName
-}
-
-func createLinkName(t *testing.T, name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
-	if err != nil {
-		t.Fatalf("create link name %s: %s", name, err)
-	}
-	return linkName
-}
-
-func createMethodContext(addr internal.Address) internal.MethodContext {
-	var (
-		emptyService internal.Service
-		emptyMethod  internal.Method
-	)
-	return internal.NewMethodContext(addr, emptyService, emptyMethod)
 }
