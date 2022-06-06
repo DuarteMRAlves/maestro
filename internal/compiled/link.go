@@ -2,7 +2,6 @@ package compiled
 
 import (
 	"fmt"
-	"regexp"
 )
 
 type Link struct {
@@ -34,8 +33,6 @@ func NewLink(
 	}
 }
 
-var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
-
 type LinkName struct{ val string }
 
 func (l LinkName) Unwrap() string { return l.val }
@@ -47,7 +44,7 @@ func (l LinkName) String() string {
 }
 
 func NewLinkName(name string) (LinkName, error) {
-	if !isValidLinkName(name) {
+	if !validateResourceName(name) {
 		return LinkName{}, &invalidLinkName{name: name}
 	}
 	return LinkName{val: name}, nil
@@ -57,10 +54,6 @@ type invalidLinkName struct{ name string }
 
 func (err *invalidLinkName) Error() string {
 	return fmt.Sprintf("invalid link name: '%s'", err.name)
-}
-
-func isValidLinkName(name string) bool {
-	return linkNameRegExp.MatchString(name)
 }
 
 type LinkEndpoint struct {

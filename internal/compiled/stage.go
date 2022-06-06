@@ -2,7 +2,6 @@ package compiled
 
 import (
 	"fmt"
-	"regexp"
 )
 
 // Stage defines a step of a Pipeline
@@ -34,8 +33,6 @@ func (s *Stage) Outputs() []*Link {
 	return s.outputs
 }
 
-var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
-
 type StageName struct{ val string }
 
 func (s StageName) Unwrap() string { return s.val }
@@ -47,14 +44,10 @@ func (s StageName) String() string {
 }
 
 func NewStageName(name string) (StageName, error) {
-	if !isValidStageName(name) {
+	if !validateResourceName(name) {
 		return StageName{}, &invalidStageName{name: name}
 	}
 	return StageName{val: name}, nil
-}
-
-func isValidStageName(name string) bool {
-	return nameRegExp.MatchString(name)
 }
 
 type invalidStageName struct{ name string }

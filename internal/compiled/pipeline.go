@@ -2,65 +2,7 @@ package compiled
 
 import (
 	"fmt"
-	"regexp"
 )
-
-var pipelineNameReqExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
-
-type PipelineName struct{ val string }
-
-var emptyPipelineName = PipelineName{val: ""}
-
-func (o PipelineName) Unwrap() string { return o.val }
-
-func (o PipelineName) IsEmpty() bool { return o.val == emptyPipelineName.val }
-
-func (o PipelineName) String() string {
-	return o.val
-}
-
-func NewPipelineName(name string) (PipelineName, error) {
-	if isValidPipelineName(name) {
-		return PipelineName{name}, nil
-	}
-	return emptyPipelineName, &invalidPipelineName{name: name}
-}
-
-func isValidPipelineName(name string) bool {
-	return pipelineNameReqExp.MatchString(name)
-}
-
-type invalidPipelineName struct{ name string }
-
-func (err *invalidPipelineName) Error() string {
-	return fmt.Sprintf("invalid pipeline name: '%s'", err.name)
-}
-
-type ExecutionMode struct {
-	val int
-}
-
-const (
-	// OfflineExecution is the default execution mode.
-	offlineExecution int = iota
-	onlineExecution
-)
-
-var (
-	OfflineExecution = ExecutionMode{val: offlineExecution}
-	OnlineExecution  = ExecutionMode{val: onlineExecution}
-)
-
-func (e ExecutionMode) String() string {
-	switch e.val {
-	case offlineExecution:
-		return "OfflineExecution"
-	case onlineExecution:
-		return "OnlineExecution"
-	default:
-		return "UnknownExecutionMode"
-	}
-}
 
 // Pipeline defines an immutable pipeline that can be executed.
 type Pipeline struct {
@@ -114,4 +56,55 @@ func (p *Pipeline) VisitLinks(v LinkVisitor) error {
 		}
 	}
 	return nil
+}
+
+type PipelineName struct{ val string }
+
+var emptyPipelineName = PipelineName{val: ""}
+
+func (o PipelineName) Unwrap() string { return o.val }
+
+func (o PipelineName) IsEmpty() bool { return o.val == emptyPipelineName.val }
+
+func (o PipelineName) String() string {
+	return o.val
+}
+
+func NewPipelineName(name string) (PipelineName, error) {
+	if validateResourceName(name) {
+		return PipelineName{name}, nil
+	}
+	return emptyPipelineName, &invalidPipelineName{name: name}
+}
+
+type invalidPipelineName struct{ name string }
+
+func (err *invalidPipelineName) Error() string {
+	return fmt.Sprintf("invalid pipeline name: '%s'", err.name)
+}
+
+type ExecutionMode struct {
+	val int
+}
+
+const (
+	// OfflineExecution is the default execution mode.
+	offlineExecution int = iota
+	onlineExecution
+)
+
+var (
+	OfflineExecution = ExecutionMode{val: offlineExecution}
+	OnlineExecution  = ExecutionMode{val: onlineExecution}
+)
+
+func (e ExecutionMode) String() string {
+	switch e.val {
+	case offlineExecution:
+		return "OfflineExecution"
+	case onlineExecution:
+		return "OnlineExecution"
+	default:
+		return "UnknownExecutionMode"
+	}
 }
