@@ -10,7 +10,6 @@ import (
 
 	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
@@ -130,18 +129,18 @@ func setupLinear(
 	transformContext := createMethodContext(internal.NewAddress("transform"))
 	sinkContext := createMethodContext(internal.NewAddress("sink"))
 
-	sourceMethod := mock.Method{
+	sourceMethod := testMethod{
 		MethodClientBuilder: linearSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
 
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: linearTransformClientBuilder(),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: linearSinkClientBuilder(max, collect, done),
 		In:                  testValDesc{},
 		Out:                 testEmptyDesc{},
@@ -381,17 +380,17 @@ func setupSplitAndMerge(
 	transformContext := createMethodContext(internal.NewAddress("transform"))
 	sinkContext := createMethodContext(internal.NewAddress("sink"))
 
-	sourceMethod := mock.Method{
+	sourceMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: splitAndMergeTransformClientBuilder(),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, collect, done),
 		In:                  testTwoValDesc{},
 		Out:                 testEmptyDesc{},
@@ -613,18 +612,18 @@ func setupSlow(
 	transformContext := createMethodContext(internal.NewAddress("transform"))
 	sinkContext := createMethodContext(internal.NewAddress("sink"))
 
-	sourceMethod := mock.Method{
+	sourceMethod := testMethod{
 		MethodClientBuilder: slowSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
 
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: slowTransformClientBuilder(1 * time.Millisecond),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: slowSinkClientBuilder(max, collect, done),
 		In:                  testValDesc{},
 		Out:                 testEmptyDesc{},
@@ -743,6 +742,24 @@ func createMethodContext(addr internal.Address) internal.MethodContext {
 		emptyMethod  internal.Method
 	)
 	return internal.NewMethodContext(addr, emptyService, emptyMethod)
+}
+
+type testMethod struct {
+	MethodClientBuilder internal.UnaryClientBuilder
+	In                  internal.MessageDesc
+	Out                 internal.MessageDesc
+}
+
+func (m testMethod) ClientBuilder() internal.UnaryClientBuilder {
+	return m.MethodClientBuilder
+}
+
+func (m testMethod) Input() internal.MessageDesc {
+	return m.In
+}
+
+func (m testMethod) Output() internal.MessageDesc {
+	return m.Out
 }
 
 type testEmptyMsg struct{}
