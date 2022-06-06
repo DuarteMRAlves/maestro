@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
@@ -144,17 +143,7 @@ func TestReadV1(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read error: %s", err)
 			}
-			cmpOpts := cmp.AllowUnexported(
-				compiled.StageName{},
-				compiled.Address{},
-				compiled.Service{},
-				compiled.Method{},
-				compiled.LinkName{},
-				compiled.MessageField{},
-				compiled.PipelineName{},
-				compiled.ExecutionMode{},
-			)
-			if diff := cmp.Diff(tc.expected, resources, cmpOpts); diff != "" {
+			if diff := cmp.Diff(tc.expected, resources); diff != "" {
 				t.Fatalf("read resources mismatch:\n%s", diff)
 			}
 		})
