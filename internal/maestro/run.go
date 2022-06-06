@@ -142,8 +142,8 @@ func (opts *RunOpts) run() error {
 	if err != nil {
 		return fmt.Errorf("compile %s: %w", pipeline.Name, err)
 	}
-	b := execute.NewBuilder(stageStore, linkStore, r, opts.logger)
-	execution, err := b(pipeline)
+	b := execute.NewBuilder(opts.logger)
+	execution, err := b(compiledPipeline)
 	if err != nil {
 		return fmt.Errorf("build execution %s: %w", pipeline.Name, err)
 	}

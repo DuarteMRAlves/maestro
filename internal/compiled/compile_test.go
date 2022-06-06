@@ -52,9 +52,10 @@ func TestNew(t *testing.T) {
 				mode: internal.OfflineExecution,
 				stages: stageGraph{
 					createStageName("stage-1"): &Stage{
-						name:   createStageName("stage-1"),
-						method: testStage1Method{},
-						inputs: []*internal.Link{},
+						name:    createStageName("stage-1"),
+						address: internal.NewAddress("address-1"),
+						method:  testStage1Method{},
+						inputs:  []*internal.Link{},
 						outputs: []*internal.Link{
 							createLink(
 								createLinkName("1-to-2"),
@@ -70,8 +71,9 @@ func TestNew(t *testing.T) {
 						},
 					},
 					createStageName("stage-2"): &Stage{
-						name:   createStageName("stage-2"),
-						method: testStage2Method{},
+						name:    createStageName("stage-2"),
+						address: internal.NewAddress("address-2"),
+						method:  testStage2Method{},
 						inputs: []*internal.Link{
 							createLink(
 								createLinkName("1-to-2"),
@@ -100,8 +102,9 @@ func TestNew(t *testing.T) {
 						},
 					},
 					createStageName("stage-3"): &Stage{
-						name:   createStageName("stage-3"),
-						method: testStage3Method{},
+						name:    createStageName("stage-3"),
+						address: internal.NewAddress("address-3"),
+						method:  testStage3Method{},
 						inputs: []*internal.Link{
 							createLink(
 								createLinkName("2-to-3"),
@@ -206,9 +209,10 @@ func TestNew(t *testing.T) {
 				mode: internal.OnlineExecution,
 				stages: stageGraph{
 					createStageName("stage-1"): &Stage{
-						name:   createStageName("stage-1"),
-						method: testStage1Method{},
-						inputs: []*internal.Link{},
+						name:    createStageName("stage-1"),
+						address: internal.NewAddress("address-1"),
+						method:  testStage1Method{},
+						inputs:  []*internal.Link{},
 						outputs: []*internal.Link{
 							createLink(
 								createLinkName("1-to-2"),
@@ -235,8 +239,9 @@ func TestNew(t *testing.T) {
 						},
 					},
 					createStageName("stage-2"): &Stage{
-						name:   createStageName("stage-2"),
-						method: testStage2Method{},
+						name:    createStageName("stage-2"),
+						address: internal.NewAddress("address-2"),
+						method:  testStage2Method{},
 						inputs: []*internal.Link{
 							createLink(
 								createLinkName("1-to-2"),
@@ -265,8 +270,9 @@ func TestNew(t *testing.T) {
 						},
 					},
 					createStageName("stage-3"): &Stage{
-						name:   createStageName("stage-3"),
-						method: testStage3Method{},
+						name:    createStageName("stage-3"),
+						address: internal.NewAddress("address-3"),
+						method:  testStage3Method{},
 						inputs: []*internal.Link{
 							createLink(
 								createLinkName("1-to-3"),

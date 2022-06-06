@@ -139,6 +139,14 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	}
 }
 
+func createStageName(t *testing.T, name string) internal.StageName {
+	stageName, err := internal.NewStageName(name)
+	if err != nil {
+		t.Fatalf("create stage name %s: %s", name, err)
+	}
+	return stageName
+}
+
 type testUnaryMessage struct{ val string }
 
 func (m testUnaryMessage) SetField(_ internal.MessageField, _ internal.Message) error {

@@ -161,6 +161,10 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
+	address, err := compileAddress(stageSpec.MethodContext.Address)
+	if err != nil {
+		return nil, err
+	}
 	methodCtx, err := compileMethodContext(&stageSpec.MethodContext)
 	if err != nil {
 		return nil, err
@@ -171,6 +175,7 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	}
 	stage := &Stage{
 		name:    name,
+		address: address,
 		method:  unaryMethod,
 		inputs:  []*internal.Link{},
 		outputs: []*internal.Link{},

@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/mock"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -18,11 +20,16 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -49,10 +56,16 @@ func TestOnlineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -82,7 +95,41 @@ func TestOnlineExecution_Linear(t *testing.T) {
 
 func setupLinear(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(internal.NewAddress("source"))
+	transformContext := createMethodContext(internal.NewAddress("transform"))
+	sinkContext := createMethodContext(internal.NewAddress("sink"))
+
 	sourceMethod := mock.Method{
 		MethodClientBuilder: linearSourceClientBuilder(),
 		In:                  testEmptyDesc{},
@@ -100,62 +147,20 @@ func setupLinear(
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
 	methods := map[internal.MethodContext]internal.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
+	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+		m, ok := methods[methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func linearSourceClientBuilder() internal.UnaryClientBuilder {
@@ -250,20 +255,20 @@ func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
 func (c *linearSinkClient) Close() error { return nil }
 
 func TestOfflineExecution_SplitAndMerge(t *testing.T) {
-	origFld := internal.NewMessageField("Orig")
-	transfFld := internal.NewMessageField("Transf")
-
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, origFld, transfFld, max, &collect, done,
-	)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -290,20 +295,20 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 }
 
 func TestOnlineExecution_SplitAndMerge(t *testing.T) {
-	origFld := internal.NewMessageField("Orig")
-	transfFld := internal.NewMessageField("Transf")
-
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, origFld, transfFld, max, &collect, done,
-	)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -333,13 +338,49 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 }
 
 func setupSplitAndMerge(
-	t *testing.T,
-	originalField internal.MessageField,
-	transformField internal.MessageField,
-	max int,
-	collect *[]*testTwoValMsg,
-	done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
+	t *testing.T, max int, collect *[]*testTwoValMsg, done chan struct{},
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-source-sink",
+				SourceStage: "source",
+				TargetStage: "sink",
+				TargetField: "Orig",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+				TargetField: "Transf",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(internal.NewAddress("source"))
+	transformContext := createMethodContext(internal.NewAddress("transform"))
+	sinkContext := createMethodContext(internal.NewAddress("sink"))
+
 	sourceMethod := mock.Method{
 		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
 		In:                  testEmptyDesc{},
@@ -356,70 +397,21 @@ func setupSplitAndMerge(
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	sourceToSinkName := createLinkName(t, "link-source-sink")
-	sourceToSink := internal.NewLink(
-		sourceToSinkName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, originalField),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, transformField),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		sourceToSinkName:      sourceToSink,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
 	methods := map[internal.MethodContext]internal.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+		m, ok := methods[methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
+
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
@@ -512,10 +504,16 @@ func TestOfflineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -542,10 +540,16 @@ func TestOnlineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -574,7 +578,41 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 func setupSlow(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(internal.NewAddress("source"))
+	transformContext := createMethodContext(internal.NewAddress("transform"))
+	sinkContext := createMethodContext(internal.NewAddress("sink"))
+
 	sourceMethod := mock.Method{
 		MethodClientBuilder: slowSourceClientBuilder(),
 		In:                  testEmptyDesc{},
@@ -592,62 +630,20 @@ func setupSlow(
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
 	methods := map[internal.MethodContext]internal.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
+	methodLoader := func(methodCtx internal.MethodContext) (internal.UnaryMethod, error) {
+		m, ok := methods[methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func slowSourceClientBuilder() internal.UnaryClientBuilder {
@@ -740,30 +736,6 @@ func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
 }
 
 func (c *slowSinkClient) Close() error { return nil }
-
-func createPipelineName(t *testing.T, name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", name, err)
-	}
-	return pipelineName
-}
-
-func createStageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	return stageName
-}
-
-func createLinkName(t *testing.T, name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
-	if err != nil {
-		t.Fatalf("create link name %s: %s", name, err)
-	}
-	return linkName
-}
 
 func createMethodContext(addr internal.Address) internal.MethodContext {
 	var (
