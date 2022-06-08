@@ -47,102 +47,67 @@ func TestNew(t *testing.T) {
 				},
 			},
 			expected: &Pipeline{
-				name: createPipelineName("pipeline"),
+				name: PipelineName{val: "pipeline"},
 				mode: OfflineExecution,
 				stages: stageGraph{
-					createStageName("stage-1"): &Stage{
-						name:    createStageName("stage-1"),
-						address: NewAddress("address-1"),
+					StageName{val: "stage-1"}: &Stage{
+						name:    StageName{val: "stage-1"},
+						address: Address{val: "address-1"},
 						method:  testStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
-							createLink(
-								createLinkName("1-to-2"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									MessageField{},
-								),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									MessageField{},
-								),
-							),
+							{
+								name:   LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+							},
 						},
 					},
-					createStageName("stage-2"): &Stage{
-						name:    createStageName("stage-2"),
-						address: NewAddress("address-2"),
+					StageName{val: "stage-2"}: &Stage{
+						name:    StageName{val: "stage-2"},
+						address: Address{val: "address-2"},
 						method:  testStage2Method{},
 						inputs: []*Link{
-							createLink(
-								createLinkName("1-to-2"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									MessageField{},
-								),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									MessageField{},
-								),
-							),
+							{
+								name:   LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+							},
 						},
 						outputs: []*Link{
-							createLink(
-								createLinkName("2-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									MessageField{},
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									MessageField{},
-								),
-							),
+							{
+								name:   LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+							},
 						},
 					},
-					createStageName("stage-3"): &Stage{
-						name:    createStageName("stage-3"),
-						address: NewAddress("address-3"),
+					StageName{val: "stage-3"}: &Stage{
+						name:    StageName{val: "stage-3"},
+						address: Address{val: "address-3"},
 						method:  testStage3Method{},
 						inputs: []*Link{
-							createLink(
-								createLinkName("2-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									MessageField{},
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									MessageField{},
-								),
-							),
+							{
+								name:   LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+							},
 						},
 						outputs: []*Link{},
 					},
 				},
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					NewAddress("address-3"),
-					Service{},
-					Method{},
-				)
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
+				ctx1 := MethodContext{address: Address{val: "address-1"}}
+				ctx2 := MethodContext{address: Address{val: "address-2"}}
+				ctx3 := MethodContext{address: Address{val: "address-3"}}
+
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -204,103 +169,103 @@ func TestNew(t *testing.T) {
 				},
 			},
 			expected: &Pipeline{
-				name: createPipelineName("pipeline"),
+				name: PipelineName{val: "pipeline"},
 				mode: OnlineExecution,
 				stages: stageGraph{
-					createStageName("stage-1"): &Stage{
-						name:    createStageName("stage-1"),
-						address: NewAddress("address-1"),
+					StageName{val: "stage-1"}: &Stage{
+						name:    StageName{val: "stage-1"},
+						address: Address{val: "address-1"},
 						method:  testStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
-							createLink(
-								createLinkName("1-to-2"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									NewMessageField("field2"),
-								),
-							),
-							createLink(
-								createLinkName("1-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									NewMessageField("field1"),
-								),
-							),
+							{
+								name: LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-1"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-2"},
+									field: MessageField{val: "field2"},
+								},
+							},
+							{
+								name: LinkName{val: "1-to-3"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-1"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3"},
+									field: MessageField{val: "field1"},
+								},
+							},
 						},
 					},
-					createStageName("stage-2"): &Stage{
-						name:    createStageName("stage-2"),
-						address: NewAddress("address-2"),
+					StageName{val: "stage-2"}: &Stage{
+						name:    StageName{val: "stage-2"},
+						address: Address{val: "address-2"},
 						method:  testStage2Method{},
 						inputs: []*Link{
-							createLink(
-								createLinkName("1-to-2"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									NewMessageField("field2"),
-								),
-							),
+							{
+								name: LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-1"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-2"},
+									field: MessageField{val: "field2"},
+								},
+							},
 						},
 						outputs: []*Link{
-							createLink(
-								createLinkName("2-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									NewMessageField("field2"),
-								),
-							),
+							{
+								name: LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-2"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3"},
+									field: MessageField{val: "field2"},
+								},
+							},
 						},
 					},
-					createStageName("stage-3"): &Stage{
-						name:    createStageName("stage-3"),
-						address: NewAddress("address-3"),
+					StageName{val: "stage-3"}: &Stage{
+						name:    StageName{val: "stage-3"},
+						address: Address{val: "address-3"},
 						method:  testStage3Method{},
 						inputs: []*Link{
-							createLink(
-								createLinkName("1-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-1"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									NewMessageField("field1"),
-								),
-							),
-							createLink(
-								createLinkName("2-to-3"),
-								NewLinkEndpoint(
-									createStageName("stage-2"),
-									NewMessageField("field1"),
-								),
-								NewLinkEndpoint(
-									createStageName("stage-3"),
-									NewMessageField("field2"),
-								),
-							),
+							{
+								name: LinkName{val: "1-to-3"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-1"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3"},
+									field: MessageField{val: "field1"},
+								},
+							},
+							{
+								name: LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{
+									stage: StageName{val: "stage-2"},
+									field: MessageField{val: "field1"},
+								},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3"},
+									field: MessageField{val: "field2"},
+								},
+							},
 						},
 						outputs: []*Link{},
 					},
 				},
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					NewService("service-1"),
@@ -321,7 +286,7 @@ func TestNew(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -372,7 +337,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -391,7 +356,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -410,7 +375,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				t.Fatalf("No such method: %s", methodCtx)
 				return nil, nil
 			},
@@ -433,7 +398,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -448,7 +413,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -473,7 +438,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -488,7 +453,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -513,7 +478,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -528,7 +493,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -553,7 +518,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -568,7 +533,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -599,7 +564,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -614,7 +579,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -645,7 +610,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -660,7 +625,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -707,7 +672,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -728,7 +693,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -775,7 +740,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -796,7 +761,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -845,7 +810,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -866,7 +831,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx2: testStage2Method{},
 					ctx3: testStage3Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -902,7 +867,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx MethodContext) (UnaryMethod, error) {
+			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					NewAddress("address-1"),
 					Service{},
@@ -917,7 +882,7 @@ func TestNewIsErr(t *testing.T) {
 					ctx1: testStage1Method{},
 					ctx2: testStage2Method{},
 				}
-				s, ok := mapper[methodCtx]
+				s, ok := mapper[*methodCtx]
 				if !ok {
 					panic(fmt.Sprintf("No such method: %s", methodCtx))
 				}
@@ -940,37 +905,6 @@ func TestNewIsErr(t *testing.T) {
 			}
 		})
 	}
-}
-
-func createPipelineName(name string) PipelineName {
-	pipelineName, err := NewPipelineName(name)
-	if err != nil {
-		panic(fmt.Sprintf("create pipeline name %s: %s", name, err))
-	}
-	return pipelineName
-}
-
-func createStageName(name string) StageName {
-	stageName, err := NewStageName(name)
-	if err != nil {
-		panic(fmt.Sprintf("create stage name %s: %s", name, err))
-	}
-	return stageName
-}
-
-func createLinkName(name string) LinkName {
-	linkName, err := NewLinkName(name)
-	if err != nil {
-		panic(fmt.Sprintf("create link name %s: %s", name, err))
-	}
-	return linkName
-}
-
-func createLink(
-	name LinkName, source, target LinkEndpoint,
-) *Link {
-	l := NewLink(name, source, target)
-	return &l
 }
 
 type testStage1Method struct{}

@@ -150,8 +150,8 @@ func setupLinear(
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
-		m, ok := methods[methodCtx]
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
 		}
@@ -401,8 +401,8 @@ func setupSplitAndMerge(
 		sinkContext:      sinkMethod,
 	}
 
-	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
-		m, ok := methods[methodCtx]
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
 		}
@@ -633,8 +633,8 @@ func setupSlow(
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx compiled.MethodContext) (compiled.UnaryMethod, error) {
-		m, ok := methods[methodCtx]
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
 		}

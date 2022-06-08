@@ -9,13 +9,13 @@ import (
 
 // MethodLoader resolves a method from its context.
 type MethodLoader interface {
-	Load(MethodContext) (UnaryMethod, error)
+	Load(*MethodContext) (UnaryMethod, error)
 }
 
 // MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(MethodContext) (UnaryMethod, error)
+type MethodLoaderFunc func(*MethodContext) (UnaryMethod, error)
 
-func (fn MethodLoaderFunc) Load(methodContext MethodContext) (UnaryMethod, error) {
+func (fn MethodLoaderFunc) Load(methodContext *MethodContext) (UnaryMethod, error) {
 	return fn(methodContext)
 }
 
@@ -168,7 +168,7 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	unaryMethod, err := ctx.methodLoader.Load(*methodCtx)
+	unaryMethod, err := ctx.methodLoader.Load(methodCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -248,15 +248,15 @@ func compileLinkName(name string) (LinkName, error) {
 	return linkName, nil
 }
 
-func compileEndpoint(stage string, field string) (LinkEndpoint, error) {
+func compileEndpoint(stage string, field string) (*LinkEndpoint, error) {
 	var endpt LinkEndpoint
 	stageName, err := NewStageName(stage)
 	if err != nil {
-		return endpt, err
+		return nil, err
 	}
 	fieldName := NewMessageField(field)
 	endpt = NewLinkEndpoint(StageName(stageName), fieldName)
-	return endpt, nil
+	return &endpt, nil
 }
 
 func validateStage(stages stageGraph, stage *Stage) error {

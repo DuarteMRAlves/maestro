@@ -6,25 +6,25 @@ import (
 
 type Link struct {
 	name   LinkName
-	source LinkEndpoint
-	target LinkEndpoint
+	source *LinkEndpoint
+	target *LinkEndpoint
 }
 
 func (l Link) Name() LinkName {
 	return l.name
 }
 
-func (l Link) Source() LinkEndpoint {
+func (l Link) Source() *LinkEndpoint {
 	return l.source
 }
 
-func (l Link) Target() LinkEndpoint {
+func (l Link) Target() *LinkEndpoint {
 	return l.target
 }
 
 func NewLink(
 	name LinkName,
-	source, target LinkEndpoint,
+	source, target *LinkEndpoint,
 ) Link {
 	return Link{
 		name:   name,

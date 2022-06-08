@@ -39,7 +39,7 @@ func NewReflectionMethodLoader(
 	}
 }
 
-func (m *ReflectionMethodLoader) Load(methodCtx compiled.MethodContext) (
+func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
 	compiled.UnaryMethod,
 	error,
 ) {
