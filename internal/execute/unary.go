@@ -4,27 +4,27 @@ import (
 	"context"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 )
 
 type offlineUnary struct {
-	name    internal.StageName
-	address internal.Address
+	name    compiled.StageName
+	address compiled.Address
 
 	input  <-chan offlineState
 	output chan<- offlineState
 
-	clientBuilder internal.UnaryClientBuilder
+	clientBuilder compiled.UnaryClientBuilder
 
 	logger Logger
 }
 
 func newOfflineUnary(
-	name internal.StageName,
+	name compiled.StageName,
 	input <-chan offlineState,
 	output chan<- offlineState,
-	address internal.Address,
-	clientBuilder internal.UnaryClientBuilder,
+	address compiled.Address,
+	clientBuilder compiled.UnaryClientBuilder,
 	logger Logger,
 ) Stage {
 	return &offlineUnary{
@@ -83,32 +83,32 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 
 func (s *offlineUnary) call(
 	ctx context.Context,
-	client internal.UnaryClient,
-	req internal.Message,
-) (internal.Message, error) {
+	client compiled.UnaryClient,
+	req compiled.Message,
+) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return client.Call(ctx, req)
 }
 
 type onlineUnary struct {
-	name    internal.StageName
-	address internal.Address
+	name    compiled.StageName
+	address compiled.Address
 
 	input  <-chan onlineState
 	output chan<- onlineState
 
-	clientBuilder internal.UnaryClientBuilder
+	clientBuilder compiled.UnaryClientBuilder
 
 	logger Logger
 }
 
 func newOnlineUnary(
-	name internal.StageName,
+	name compiled.StageName,
 	input <-chan onlineState,
 	output chan<- onlineState,
-	address internal.Address,
-	clientBuilder internal.UnaryClientBuilder,
+	address compiled.Address,
+	clientBuilder compiled.UnaryClientBuilder,
 	logger Logger,
 ) Stage {
 	return &onlineUnary{
@@ -167,9 +167,9 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 
 func (s *onlineUnary) call(
 	ctx context.Context,
-	client internal.UnaryClient,
-	req internal.Message,
-) (internal.Message, error) {
+	client compiled.UnaryClient,
+	req compiled.Message,
+) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return client.Call(ctx, req)

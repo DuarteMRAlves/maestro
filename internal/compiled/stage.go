@@ -1,11 +1,37 @@
-package internal
+package compiled
 
 import (
 	"fmt"
-	"regexp"
 )
 
-var nameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
+// Stage defines a step of a Pipeline
+type Stage struct {
+	name    StageName
+	address Address
+	method  UnaryMethod
+	inputs  []*Link
+	outputs []*Link
+}
+
+func (s *Stage) Name() StageName {
+	return s.name
+}
+
+func (s *Stage) Address() Address {
+	return s.address
+}
+
+func (s *Stage) Method() UnaryMethod {
+	return s.method
+}
+
+func (s *Stage) Inputs() []*Link {
+	return s.inputs
+}
+
+func (s *Stage) Outputs() []*Link {
+	return s.outputs
+}
 
 type StageName struct{ val string }
 
@@ -18,14 +44,10 @@ func (s StageName) String() string {
 }
 
 func NewStageName(name string) (StageName, error) {
-	if !isValidStageName(name) {
+	if !validateResourceName(name) {
 		return StageName{}, &invalidStageName{name: name}
 	}
 	return StageName{val: name}, nil
-}
-
-func isValidStageName(name string) bool {
-	return nameRegExp.MatchString(name)
 }
 
 type invalidStageName struct{ name string }
@@ -101,28 +123,5 @@ func NewMethodContext(
 		address: address,
 		service: service,
 		method:  method,
-	}
-}
-
-type Stage struct {
-	name      StageName
-	methodCtx MethodContext
-}
-
-func (s Stage) Name() StageName {
-	return s.name
-}
-
-func (s Stage) MethodContext() MethodContext {
-	return s.methodCtx
-}
-
-func NewStage(
-	name StageName,
-	methodCtx MethodContext,
-) Stage {
-	return Stage{
-		name:      name,
-		methodCtx: methodCtx,
 	}
 }

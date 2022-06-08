@@ -1,11 +1,7 @@
 kind: pipeline
 spec:
-  name: pipeline-2
-  execution_mode: Online
----
-kind: pipeline
-spec:
   name: pipeline-1
+  execution_mode: Online
 ---
 kind: stage
 spec:
@@ -44,12 +40,3 @@ spec:
   target_stage: stage-2
   target_field: Field2
   pipeline: pipeline-1
----
-kind: asset
-spec:
-  name: asset-1
-  image: image-1
----
-kind: asset
-spec:
-  name: asset-2

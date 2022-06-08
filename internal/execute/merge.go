@@ -3,26 +3,26 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 )
 
 type offlineMerge struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
-	fields []internal.MessageField
+	fields []compiled.MessageField
 	// inputs are the several input channels from which to collect the messages.
 	inputs []<-chan offlineState
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- offlineState
 	// gen generates empty messages for the output type.
-	gen internal.EmptyMessageGen
+	gen compiled.EmptyMessageGen
 }
 
 func newOfflineMerge(
-	fields []internal.MessageField,
+	fields []compiled.MessageField,
 	inputs []<-chan offlineState,
 	output chan<- offlineState,
-	gen internal.EmptyMessageGen,
+	gen compiled.EmptyMessageGen,
 ) Stage {
 	return &offlineMerge{
 		fields: fields,
@@ -69,22 +69,22 @@ func (s *offlineMerge) Run(ctx context.Context) error {
 type onlineMerge struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
-	fields []internal.MessageField
+	fields []compiled.MessageField
 	// inputs are the several input channels from which to collect the messages.
 	inputs []<-chan onlineState
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- onlineState
 	// gen generates empty messages for the output type.
-	gen internal.EmptyMessageGen
+	gen compiled.EmptyMessageGen
 	// currId is the current id being constructed.
 	currId id
 }
 
 func newOnlineMerge(
-	fields []internal.MessageField,
+	fields []compiled.MessageField,
 	inputs []<-chan onlineState,
 	output chan<- onlineState,
-	gen internal.EmptyMessageGen,
+	gen compiled.EmptyMessageGen,
 ) Stage {
 	return &onlineMerge{
 		fields: fields,
@@ -98,7 +98,7 @@ func newOnlineMerge(
 func (s *onlineMerge) Run(ctx context.Context) error {
 	var (
 		// partial is the current message being constructed.
-		partial   internal.Message
+		partial   compiled.Message
 		currState onlineState
 		done      bool
 	)

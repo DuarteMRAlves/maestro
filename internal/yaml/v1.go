@@ -4,23 +4,24 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/fs"
 	"io/ioutil"
+
+	"github.com/DuarteMRAlves/maestro/internal/arrays"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	assetKind    = "asset"
 	stageKind    = "stage"
 	linkKind     = "link"
 	pipelineKind = "pipeline"
 )
 
 var (
-	MissingKind = errors.New("kind not specified")
-	EmptySpec   = errors.New("empty spec")
+	ErrMissingKind = errors.New("kind not specified")
+	ErrEmptySpec   = errors.New("empty spec")
 )
 
 type unknownKind struct {
@@ -33,167 +34,135 @@ func (err *unknownKind) Error() string {
 
 // ReadV1 reads a set of files in the Maestro V1 format and returns the
 // discovered resources.
-func ReadV1(files ...string) (ResourceSet, error) {
-	var resources ResourceSet
+func ReadV1(files ...string) ([]*spec.Pipeline, error) {
+	var pipelines []*spec.Pipeline
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
-			return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+			return nil, fmt.Errorf("read v1: %w", err)
 		}
 		reader := bytes.NewReader(data)
 
 		dec := yaml.NewDecoder(reader)
 		dec.SetStrict(true)
 
+		var resources []v1ReadResource
 		for {
 			var r v1ReadResource
 			if err = dec.Decode(&r); err != nil {
 				break
 			}
-
+			resources = append(resources, r)
+		}
+		if err != nil && err != io.EOF {
+			switch concreteErr := err.(type) {
+			case *yaml.TypeError:
+				err = typeErrorToError(concreteErr)
+				return nil, fmt.Errorf("read v1: %w", err)
+			default:
+				return nil, fmt.Errorf("read v1: %w", err)
+			}
+		}
+		for _, r := range resources {
 			switch r.Kind {
 			case pipelineKind:
 				o, err := resourceToPipeline(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+					return nil, fmt.Errorf("read v1: %w", err)
 				}
-				resources.Pipelines = append(resources.Pipelines, o)
+				pipelines = append(pipelines, o)
+			}
+		}
+		for _, r := range resources {
+			switch r.Kind {
 			case stageKind:
-				s, err := resourceToStage(r)
+				s, n, err := resourceToStage(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+					return nil, fmt.Errorf("read v1: %w", err)
 				}
-				resources.Stages = append(resources.Stages, s)
+				p := pipelineWithName(pipelines, n)
+				if p == nil {
+					return nil, fmt.Errorf("read v1: pipeline not found %s", n)
+				}
+				p.Stages = append(p.Stages, s)
 			case linkKind:
-				l, err := resourceToLink(r)
+				l, n, err := resourceToLink(r)
 				if err != nil {
-					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+					return nil, fmt.Errorf("read v1: %w", err)
 				}
-				resources.Links = append(resources.Links, l)
-			case assetKind:
-				a, err := resourceToAsset(r)
-				if err != nil {
-					return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+				p := pipelineWithName(pipelines, n)
+				if p == nil {
+					return nil, fmt.Errorf("read v1: pipeline not found %s", n)
 				}
-				resources.Assets = append(resources.Assets, a)
-			}
-		}
-		if err != nil && err != io.EOF {
-			switch err.(type) {
-			case *yaml.TypeError:
-				err = typeErrorToError(err.(*yaml.TypeError))
-				return ResourceSet{}, fmt.Errorf("read v1: %w", err)
-			default:
-				return ResourceSet{}, fmt.Errorf("read v1: %w", err)
+				p.Links = append(p.Links, l)
 			}
 		}
 	}
-	return resources, nil
+	return pipelines, nil
 }
 
-func resourceToPipeline(r v1ReadResource) (Pipeline, error) {
-	spec, ok := r.Spec.(*v1PipelineSpec)
+func pipelineWithName(pipelines []*spec.Pipeline, name string) *spec.Pipeline {
+	filterFn := func(p *spec.Pipeline) bool {
+		return p.Name == name
+	}
+	return arrays.FindFirst(filterFn, pipelines...)
+}
+
+func resourceToPipeline(r v1ReadResource) (*spec.Pipeline, error) {
+	s, ok := r.Spec.(*v1PipelineSpec)
 	if !ok {
-		return Pipeline{}, errors.New("pipeline spec cast error")
+		return nil, errors.New("pipeline spec cast error")
 	}
-	name, err := internal.NewPipelineName(spec.Name)
+	mode, err := stringToExecutionMode(s.Mode)
 	if err != nil {
-		return Pipeline{}, err
+		return nil, err
 	}
-	mode, err := stringToExecutionMode(spec.Mode)
-	if err != nil {
-		return Pipeline{}, err
-	}
-	return Pipeline{Name: name, Mode: mode}, nil
+	return &spec.Pipeline{Name: s.Name, Mode: mode}, nil
 }
 
-func stringToExecutionMode(val string) (internal.ExecutionMode, error) {
+func stringToExecutionMode(val string) (spec.ExecutionMode, error) {
 	switch val {
 	case "", "Offline":
-		return internal.OfflineExecution, nil
+		return spec.OfflineExecution, nil
 	case "Online":
-		return internal.OnlineExecution, nil
+		return spec.OnlineExecution, nil
 	default:
 		err := fmt.Errorf("unknown execution mode: %s", val)
-		return internal.ExecutionMode{}, err
+		return spec.OfflineExecution, err
 	}
 }
 
-func resourceToStage(r v1ReadResource) (Stage, error) {
-	spec, ok := r.Spec.(*v1StageSpec)
+func resourceToStage(r v1ReadResource) (*spec.Stage, string, error) {
+	stageSpec, ok := r.Spec.(*v1StageSpec)
 	if !ok {
-		return Stage{}, errors.New("stage spec cast error")
+		return nil, "", errors.New("stage spec cast error")
 	}
 
-	name, err := internal.NewStageName(spec.Name)
-	if err != nil {
-		return Stage{}, err
+	s := &spec.Stage{
+		Name: stageSpec.Name,
+		MethodContext: spec.MethodContext{
+			Address: stageSpec.Address,
+			Service: stageSpec.Service,
+			Method:  stageSpec.Method,
+		},
 	}
-	addr := internal.NewAddress(spec.Address)
-	serv := internal.NewService(spec.Service)
-	meth := internal.NewMethod(spec.Method)
-
-	pipelineName, err := internal.NewPipelineName(spec.Pipeline)
-	if err != nil {
-		return Stage{}, err
-	}
-
-	s := Stage{
-		Name:     name,
-		Method:   MethodContext{Address: addr, Service: serv, Method: meth},
-		Pipeline: pipelineName,
-	}
-	return s, err
+	return s, stageSpec.Pipeline, nil
 }
 
-func resourceToLink(r v1ReadResource) (Link, error) {
-	spec, ok := r.Spec.(*v1LinkSpec)
+func resourceToLink(r v1ReadResource) (*spec.Link, string, error) {
+	linkSpec, ok := r.Spec.(*v1LinkSpec)
 	if !ok {
-		return Link{}, errors.New("link spec cast error")
+		return nil, "", errors.New("link spec cast error")
 	}
 
-	name, err := internal.NewLinkName(spec.Name)
-	if err != nil {
-		return Link{}, err
+	l := &spec.Link{
+		Name:        linkSpec.Name,
+		SourceStage: linkSpec.SourceStage,
+		SourceField: linkSpec.SourceField,
+		TargetStage: linkSpec.TargetStage,
+		TargetField: linkSpec.TargetField,
 	}
-
-	srcStage, err := internal.NewStageName(spec.SourceStage)
-	if err != nil {
-		return Link{}, err
-	}
-	srcField := internal.NewMessageField(spec.SourceField)
-
-	tgtStage, err := internal.NewStageName(spec.TargetStage)
-	if err != nil {
-		return Link{}, err
-	}
-	tgtField := internal.NewMessageField(spec.TargetField)
-
-	pipelineName, err := internal.NewPipelineName(spec.Pipeline)
-	if err != nil {
-		return Link{}, err
-	}
-
-	l := Link{
-		Name:     name,
-		Source:   LinkEndpoint{Stage: srcStage, Field: srcField},
-		Target:   LinkEndpoint{Stage: tgtStage, Field: tgtField},
-		Pipeline: pipelineName,
-	}
-	return l, nil
-}
-
-func resourceToAsset(r v1ReadResource) (Asset, error) {
-	spec, ok := r.Spec.(*v1AssetSpec)
-	if !ok {
-		return Asset{}, errors.New("asset spec cast error")
-	}
-	name, err := internal.NewAssetName(spec.Name)
-	if err != nil {
-		return Asset{}, err
-	}
-	image := internal.NewImage(spec.Image)
-	return Asset{Name: name, Image: image}, nil
+	return l, linkSpec.Pipeline, nil
 }
 
 type v1ReadResource struct {
@@ -228,7 +197,7 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	}
 	r.Kind = obj.Kind
 	if r.Kind == "" {
-		return MissingKind
+		return ErrMissingKind
 	}
 	switch r.Kind {
 	case stageKind:
@@ -237,13 +206,11 @@ func (r *v1ReadResource) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		r.Spec = new(v1LinkSpec)
 	case pipelineKind:
 		r.Spec = new(v1PipelineSpec)
-	case assetKind:
-		r.Spec = new(v1AssetSpec)
 	default:
 		return &unknownKind{Kind: r.Kind}
 	}
 	if obj.Spec.unmarshal == nil {
-		return EmptySpec
+		return ErrEmptySpec
 	}
 	err := obj.Spec.unmarshal(r.Spec)
 	if err != nil {
@@ -273,12 +240,6 @@ func valV1ReadResource(r *v1ReadResource) error {
 			return errors.New("spec not v1PipelineSpec for pipeline kind")
 		}
 		return valV1PipelineSpec(spec)
-	case assetKind:
-		spec, ok := r.Spec.(*v1AssetSpec)
-		if !ok {
-			return errors.New("spec not v1AssetSpec for asset kind")
-		}
-		return valV1AssetSpec(spec)
 	default:
 		return &unknownKind{Kind: r.Kind}
 	}
@@ -317,33 +278,28 @@ func valV1LinkSpec(spec *v1LinkSpec) error {
 	return nil
 }
 
-func valV1AssetSpec(spec *v1AssetSpec) error {
-	if spec.Name == "" {
-		return &missingRequiredField{Field: "name"}
-	}
-	return nil
-}
-
 // WriteV1 stores the resources set in a single file as a
-func WriteV1(resources ResourceSet, file string, perm fs.FileMode) error {
+func WriteV1(pipeline *spec.Pipeline, file string, perm fs.FileMode) error {
 	var (
 		buf bytes.Buffer
 		err error
 	)
 	enc := yaml.NewEncoder(&buf)
-	err = encodeResources(enc, pipelineToResource, resources.Pipelines...)
+	err = encodeResources(enc, pipelineToResource, pipeline)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
-	err = encodeResources(enc, stageToResource, resources.Stages...)
+	stageEncFunc := func(r *v1WriteResource, s *spec.Stage) {
+		stageToResource(r, s, pipeline.Name)
+	}
+	err = encodeResources(enc, stageEncFunc, pipeline.Stages...)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
-	err = encodeResources(enc, linkToResource, resources.Links...)
-	if err != nil {
-		return fmt.Errorf("write v1: %w", err)
+	linkEncFunc := func(r *v1WriteResource, l *spec.Link) {
+		linkToResource(r, l, pipeline.Name)
 	}
-	err = encodeResources(enc, assetToResource, resources.Assets...)
+	err = encodeResources(enc, linkEncFunc, pipeline.Links...)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
@@ -373,53 +329,44 @@ type v1WriteResource struct {
 	Spec interface{} `yaml:"spec"`
 }
 
-func pipelineToResource(r *v1WriteResource, o Pipeline) {
-	var spec v1PipelineSpec
-	spec.Name = o.Name.Unwrap()
-	switch o.Mode {
+func pipelineToResource(r *v1WriteResource, p *spec.Pipeline) {
+	var pipelineSpec v1PipelineSpec
+	pipelineSpec.Name = p.Name
+	switch p.Mode {
 	// No need to specify offline as it is the default.
-	case internal.OfflineExecution:
-		spec.Mode = ""
-	case internal.OnlineExecution:
-		spec.Mode = "Online"
+	case spec.OfflineExecution:
+		pipelineSpec.Mode = ""
+	case spec.OnlineExecution:
+		pipelineSpec.Mode = "Online"
 	default:
-		spec.Mode = "Unknown"
+		pipelineSpec.Mode = "Unknown"
 	}
 
 	r.Kind = pipelineKind
-	r.Spec = spec
+	r.Spec = pipelineSpec
 }
 
-func stageToResource(r *v1WriteResource, s Stage) {
-	var spec v1StageSpec
-	spec.Name = s.Name.Unwrap()
-	spec.Address = s.Method.Address.Unwrap()
-	spec.Service = s.Method.Service.Unwrap()
-	spec.Method = s.Method.Method.Unwrap()
-	spec.Pipeline = s.Pipeline.Unwrap()
+func stageToResource(r *v1WriteResource, s *spec.Stage, pipelineName string) {
+	var stageSpec v1StageSpec
+	stageSpec.Name = s.Name
+	stageSpec.Address = s.MethodContext.Address
+	stageSpec.Service = s.MethodContext.Service
+	stageSpec.Method = s.MethodContext.Method
+	stageSpec.Pipeline = pipelineName
 
 	r.Kind = stageKind
-	r.Spec = spec
+	r.Spec = stageSpec
 }
 
-func linkToResource(r *v1WriteResource, l Link) {
-	var spec v1LinkSpec
-	spec.Name = l.Name.Unwrap()
-	spec.SourceStage = l.Source.Stage.Unwrap()
-	spec.SourceField = l.Source.Field.Unwrap()
-	spec.TargetStage = l.Target.Stage.Unwrap()
-	spec.TargetField = l.Target.Field.Unwrap()
-	spec.Pipeline = l.Pipeline.Unwrap()
+func linkToResource(r *v1WriteResource, l *spec.Link, pipelineName string) {
+	var linkSpec v1LinkSpec
+	linkSpec.Name = l.Name
+	linkSpec.SourceStage = l.SourceStage
+	linkSpec.SourceField = l.SourceField
+	linkSpec.TargetStage = l.TargetStage
+	linkSpec.TargetField = l.TargetField
+	linkSpec.Pipeline = pipelineName
 
 	r.Kind = linkKind
-	r.Spec = spec
-}
-
-func assetToResource(r *v1WriteResource, a Asset) {
-	var spec v1AssetSpec
-	spec.Name = a.Name.Unwrap()
-	spec.Image = a.Image.Unwrap()
-
-	r.Kind = assetKind
-	r.Spec = spec
+	r.Spec = linkSpec
 }

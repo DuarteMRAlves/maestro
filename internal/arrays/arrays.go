@@ -21,3 +21,16 @@ func Filter[T any](f FilterFn[T], elements ...T) []T {
 	}
 	return res
 }
+
+// Returns the first element in elements that matches
+// the filter function. In no element is found, the zero
+// value for T is returned.
+func FindFirst[T any](f FilterFn[T], elements ...T) T {
+	var res T
+	for _, el := range elements {
+		if f(el) {
+			return el
+		}
+	}
+	return res
+}

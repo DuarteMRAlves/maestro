@@ -2,23 +2,21 @@ package yaml
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"gopkg.in/yaml.v2"
 )
 
 // ReadV0 reads configuration files for the orchestrator
 // https://github.com/DuarteMRAlves/Pipeline-Orchestrator for compatibility
 // purposes.
-func ReadV0(file string) (ResourceSet, error) {
-	var (
-		resources ResourceSet
-		fileSpec  v0FileSpec
-	)
+func ReadV0(file string) (*spec.Pipeline, error) {
+	var fileSpec v0FileSpec
 
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
+		return nil, fmt.Errorf("read v0: %w", err)
 	}
 
 	err = yaml.UnmarshalStrict(data, &fileSpec)
@@ -26,66 +24,42 @@ func ReadV0(file string) (ResourceSet, error) {
 		if typeErr, ok := err.(*yaml.TypeError); ok {
 			err = typeErrorToError(typeErr)
 		}
-		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
+		return nil, fmt.Errorf("read v0: %w", err)
 	}
 	err = valV0FileSpec(fileSpec)
 	if err != nil {
-		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
+		return nil, fmt.Errorf("read v0: %w", err)
 	}
 
-	pipelineName, err := internal.NewPipelineName("v0-pipeline")
-	if err != nil {
-		return ResourceSet{}, fmt.Errorf("read v0: %w", err)
-	}
 	// v0 pipeline executes always online.
-	pipeline := Pipeline{Name: pipelineName, Mode: internal.OnlineExecution}
-	resources.Pipelines = append(resources.Pipelines, pipeline)
+	pipeline := &spec.Pipeline{Name: "v0-pipeline", Mode: spec.OnlineExecution}
 
-	for _, spec := range fileSpec.Stages {
-		name, err := internal.NewStageName(spec.Name)
-		if err != nil {
-			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
+	for _, stageSpec := range fileSpec.Stages {
+		methCtx := spec.MethodContext{
+			Address: fmt.Sprintf("%s:%d", stageSpec.Host, stageSpec.Port),
+			Service: stageSpec.Service,
+			Method:  stageSpec.Method,
 		}
-		addr := internal.NewAddress(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
-		serv := internal.NewService(spec.Service)
-		meth := internal.NewMethod(spec.Method)
-
-		methCtx := MethodContext{Address: addr, Service: serv, Method: meth}
-		s := Stage{Name: name, Method: methCtx, Pipeline: pipelineName}
-		resources.Stages = append(resources.Stages, s)
+		s := &spec.Stage{Name: stageSpec.Name, MethodContext: methCtx}
+		pipeline.Stages = append(pipeline.Stages, s)
 	}
 
-	for _, spec := range fileSpec.Links {
+	for _, linkSpec := range fileSpec.Links {
 		name := fmt.Sprintf(
-			"v0-link-%s-to-%s", spec.Source.Stage, spec.Target.Stage,
+			"v0-link-%s-to-%s", linkSpec.Source.Stage, linkSpec.Target.Stage,
 		)
-		linkName, err := internal.NewLinkName(name)
-		if err != nil {
-			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
-		}
 
-		srcStage, err := internal.NewStageName(spec.Source.Stage)
-		if err != nil {
-			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
+		l := &spec.Link{
+			Name:        name,
+			SourceStage: linkSpec.Source.Stage,
+			SourceField: linkSpec.Source.Field,
+			TargetStage: linkSpec.Target.Stage,
+			TargetField: linkSpec.Target.Field,
 		}
-		srcField := internal.NewMessageField(spec.Source.Field)
-
-		tgtStage, err := internal.NewStageName(spec.Target.Stage)
-		if err != nil {
-			return ResourceSet{}, fmt.Errorf("read v0: %w", err)
-		}
-		tgtField := internal.NewMessageField(spec.Target.Field)
-
-		l := Link{
-			Name:     linkName,
-			Source:   LinkEndpoint{Stage: srcStage, Field: srcField},
-			Target:   LinkEndpoint{Stage: tgtStage, Field: tgtField},
-			Pipeline: pipelineName,
-		}
-		resources.Links = append(resources.Links, l)
+		pipeline.Links = append(pipeline.Links, l)
 	}
 
-	return resources, nil
+	return pipeline, nil
 }
 
 func valV0FileSpec(spec v0FileSpec) error {

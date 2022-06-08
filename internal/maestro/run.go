@@ -9,14 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
 	"github.com/DuarteMRAlves/maestro/internal/arrays"
-	"github.com/DuarteMRAlves/maestro/internal/create"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpc"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
-	"github.com/DuarteMRAlves/maestro/internal/mapstore"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 )
@@ -108,76 +107,45 @@ func (opts *RunOpts) validate() error {
 
 func (opts *RunOpts) run() error {
 	var (
-		resources yaml.ResourceSet
-		err       error
-		backoff   retry.ExponentialBackoff
+		pipeline *spec.Pipeline
+		err      error
+		backoff  retry.ExponentialBackoff
 	)
 	switch opts.version {
 	case v0:
 		opts.logger.Debugf("read v0 from file %s", opts.files[0])
-		resources, err = yaml.ReadV0(opts.files[0])
+		pipeline, err = yaml.ReadV0(opts.files[0])
+		if err != nil {
+			return err
+		}
 	case v1:
+		var pipelines []*spec.Pipeline
 		opts.logger.Debugf("read v1 from files %s", opts.files)
-		resources, err = yaml.ReadV1(opts.files...)
+		pipelines, err = yaml.ReadV1(opts.files...)
+		if err != nil {
+			return err
+		}
+		pipeline, err = opts.pipelineToRun(pipelines...)
+		if err != nil {
+			return err
+		}
 	default:
 		// Should never happen if command was completed and validated.
 		return fmt.Errorf(
 			"unknown config version: expected %s or %s but found %s", v0, v1, opts.version,
 		)
 	}
-	if err != nil {
-		return err
-	}
-
-	pipelineStore := make(mapstore.Pipelines, len(resources.Pipelines))
-	stageStore := make(mapstore.Stages, len(resources.Stages))
-	linkStore := make(mapstore.Links, len(resources.Links))
-
-	createPipeline := create.Pipeline(pipelineStore)
-	createStage := create.Stage(stageStore, pipelineStore)
-	createLink := create.Link(linkStore, stageStore, pipelineStore)
-
-	for _, o := range resources.Pipelines {
-		if err := createPipeline(o.Name, o.Mode); err != nil {
-			return err
-		}
-	}
-	for _, s := range resources.Stages {
-		m := internal.NewMethodContext(
-			s.Method.Address, s.Method.Service, s.Method.Method,
-		)
-		if err := createStage(s.Name, m, s.Pipeline); err != nil {
-			return err
-		}
-	}
-	for _, l := range resources.Links {
-		s := internal.NewLinkEndpoint(l.Source.Stage, l.Source.Field)
-		t := internal.NewLinkEndpoint(l.Target.Stage, l.Target.Field)
-		if err := createLink(l.Name, s, t, l.Pipeline); err != nil {
-			return err
-		}
-	}
-
-	availablePipelines := arrays.Map(
-		func(o yaml.Pipeline) internal.PipelineName { return o.Name },
-		resources.Pipelines...,
-	)
-
-	pipelineName, err := opts.pipelineToRun(availablePipelines...)
-	if err != nil {
-		return err
-	}
-
-	pipeline, err := pipelineStore.Load(pipelineName)
-	if err != nil {
-		return err
-	}
 
 	r := grpc.NewReflectionMethodLoader(time.Minute, backoff, opts.logger)
-	b := execute.NewBuilder(stageStore, linkStore, r, opts.logger)
-	execution, err := b(pipeline)
+	compilationCtx := compiled.NewContext(r)
+	compiledPipeline, err := compiled.New(compilationCtx, pipeline)
 	if err != nil {
-		return fmt.Errorf("build %s: %w", pipelineName, err)
+		return fmt.Errorf("compile %s: %w", pipeline.Name, err)
+	}
+	b := execute.NewBuilder(opts.logger)
+	execution, err := b(compiledPipeline)
+	if err != nil {
+		return fmt.Errorf("build execution %s: %w", pipeline.Name, err)
 	}
 
 	errs := make(chan error, 1)
@@ -196,12 +164,10 @@ func (opts *RunOpts) run() error {
 	return err
 }
 
-func (opts *RunOpts) pipelineToRun(
-	available ...internal.PipelineName,
-) (internal.PipelineName, error) {
+func (opts *RunOpts) pipelineToRun(available ...*spec.Pipeline) (*spec.Pipeline, error) {
 	if opts.pipelineName != "" {
-		pred := func(v internal.PipelineName) bool {
-			return v.Unwrap() == opts.pipelineName
+		pred := func(v *spec.Pipeline) bool {
+			return v.Name == opts.pipelineName
 		}
 		available = arrays.Filter(pred, available...)
 	}
@@ -213,11 +179,15 @@ func (opts *RunOpts) pipelineToRun(
 		} else {
 			err = errors.New("no pipelines defined")
 		}
-		return internal.PipelineName{}, err
+		return nil, err
 	case 1:
 		return available[0], nil
 	default:
-		err := fmt.Errorf("only one pipeline can be executed but found %s", available)
-		return internal.PipelineName{}, err
+		names := arrays.Map(
+			func(o *spec.Pipeline) string { return o.Name },
+			available...,
+		)
+		err := fmt.Errorf("only one pipeline can be executed but found %s", names)
+		return nil, err
 	}
 }

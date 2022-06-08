@@ -1,11 +1,37 @@
-package internal
+package compiled
 
 import (
 	"fmt"
-	"regexp"
 )
 
-var linkNameRegExp, _ = regexp.Compile(`^[a-zA-Z0-9]+([-:_/][a-zA-Z0-9]+)*$|^$`)
+type Link struct {
+	name   LinkName
+	source *LinkEndpoint
+	target *LinkEndpoint
+}
+
+func (l Link) Name() LinkName {
+	return l.name
+}
+
+func (l Link) Source() *LinkEndpoint {
+	return l.source
+}
+
+func (l Link) Target() *LinkEndpoint {
+	return l.target
+}
+
+func NewLink(
+	name LinkName,
+	source, target *LinkEndpoint,
+) Link {
+	return Link{
+		name:   name,
+		source: source,
+		target: target,
+	}
+}
 
 type LinkName struct{ val string }
 
@@ -18,7 +44,7 @@ func (l LinkName) String() string {
 }
 
 func NewLinkName(name string) (LinkName, error) {
-	if !isValidLinkName(name) {
+	if !validateResourceName(name) {
 		return LinkName{}, &invalidLinkName{name: name}
 	}
 	return LinkName{val: name}, nil
@@ -28,10 +54,6 @@ type invalidLinkName struct{ name string }
 
 func (err *invalidLinkName) Error() string {
 	return fmt.Sprintf("invalid link name: '%s'", err.name)
-}
-
-func isValidLinkName(name string) bool {
-	return linkNameRegExp.MatchString(name)
 }
 
 type LinkEndpoint struct {
@@ -51,34 +73,5 @@ func NewLinkEndpoint(stage StageName, field MessageField) LinkEndpoint {
 	return LinkEndpoint{
 		stage: stage,
 		field: field,
-	}
-}
-
-type Link struct {
-	name   LinkName
-	source LinkEndpoint
-	target LinkEndpoint
-}
-
-func (l Link) Name() LinkName {
-	return l.name
-}
-
-func (l Link) Source() LinkEndpoint {
-	return l.source
-}
-
-func (l Link) Target() LinkEndpoint {
-	return l.target
-}
-
-func NewLink(
-	name LinkName,
-	source, target LinkEndpoint,
-) Link {
-	return Link{
-		name:   name,
-		source: source,
-		target: target,
 	}
 }

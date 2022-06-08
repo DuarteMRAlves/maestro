@@ -1,4 +1,4 @@
-kind: asset
+kind: pipeline
 spec:
   name: some-name
   unknown_2: unknown-2

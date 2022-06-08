@@ -2,7 +2,8 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/DuarteMRAlves/maestro/internal"
+
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
@@ -25,8 +26,8 @@ func newMessageFromDescriptor(desc *desc.MessageDescriptor) *message {
 }
 
 func (dm *message) SetField(
-	field internal.MessageField,
-	msg internal.Message,
+	field compiled.MessageField,
+	msg compiled.Message,
 ) error {
 	grpcMsg, ok := msg.(*message)
 	if !ok {
@@ -35,8 +36,8 @@ func (dm *message) SetField(
 	return dm.dynMsg.TrySetFieldByName(field.Unwrap(), grpcMsg.dynMsg)
 }
 
-func (dm *message) GetField(name internal.MessageField) (
-	internal.Message,
+func (dm *message) GetField(name compiled.MessageField) (
+	compiled.Message,
 	error,
 ) {
 	field, err := dm.dynMsg.TryGetFieldByName(name.Unwrap())

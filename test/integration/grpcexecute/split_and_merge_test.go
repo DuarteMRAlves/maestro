@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -38,10 +38,6 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 	sink.max = max
 	sink.collect = &collect
 	sink.done = done
-
-	sourceName := createStageName(t, "source")
-	transfName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
 
 	sourceAddr, sourceStart, sourceStop := createGrpcServer(
 		t,
@@ -70,61 +66,52 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	sourceCtx := createMethodContext(internal.NewAddress(sourceAddr.String()))
-	transfCtx := createMethodContext(internal.NewAddress(transfAddr.String()))
-	sinkCtx := createMethodContext(internal.NewAddress(sinkAddr.String()))
-
-	sourceStage := internal.NewStage(sourceName, sourceCtx)
-	transfStage := internal.NewStage(transfName, transfCtx)
-	sinkStage := internal.NewStage(sinkName, sinkCtx)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName: sourceStage,
-		transfName: transfStage,
-		sinkName:   sinkStage,
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Mode: spec.OfflineExecution,
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: sourceAddr.String()},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: transfAddr.String()},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: sinkAddr.String()},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-source-sink",
+				SourceStage: "source",
+				TargetStage: "sink",
+				TargetField: "original",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+				TargetField: "transformed",
+			},
+		},
 	}
-	stageLoader := &mock.StageStorage{Stages: stages}
 
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
-	)
-
-	sourceToSinkName := createLinkName(t, "link-source-sink")
-	sourceToSink := internal.NewLink(
-		sourceToSinkName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("original")),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("transformed")),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		sourceToSinkName:      sourceToSink,
-		transformToSinkName:   transformToSink,
+	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
 	}
-	linkLoader := &mock.LinkStorage{Links: links}
 
-	r := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
-	executionBuilder := execute.NewBuilder(
-		stageLoader, linkLoader, r, logs.New(true),
-	)
-
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transfName, sinkName),
-		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
-		internal.WithOfflineExec(),
-	)
-
+	executionBuilder := execute.NewBuilder(logs.New(true))
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -178,10 +165,6 @@ func TestOnlineSplitAndMerge(t *testing.T) {
 	sink.collect = &collect
 	sink.done = done
 
-	sourceName := createStageName(t, "source")
-	transfName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
 	sourceAddr, sourceStart, sourceStop := createGrpcServer(
 		t,
 		func(registrar grpc.ServiceRegistrar) {
@@ -209,61 +192,52 @@ func TestOnlineSplitAndMerge(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	sourceCtx := createMethodContext(internal.NewAddress(sourceAddr.String()))
-	transfCtx := createMethodContext(internal.NewAddress(transfAddr.String()))
-	sinkCtx := createMethodContext(internal.NewAddress(sinkAddr.String()))
-
-	sourceStage := internal.NewStage(sourceName, sourceCtx)
-	transfStage := internal.NewStage(transfName, transfCtx)
-	sinkStage := internal.NewStage(sinkName, sinkCtx)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName: sourceStage,
-		transfName: transfStage,
-		sinkName:   sinkStage,
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Mode: spec.OnlineExecution,
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: sourceAddr.String()},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: transfAddr.String()},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: sinkAddr.String()},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-source-sink",
+				SourceStage: "source",
+				TargetStage: "sink",
+				TargetField: "original",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+				TargetField: "transformed",
+			},
+		},
 	}
-	stageLoader := &mock.StageStorage{Stages: stages}
 
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
-	)
-
-	sourceToSinkName := createLinkName(t, "link-source-sink")
-	sourceToSink := internal.NewLink(
-		sourceToSinkName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("original")),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transfName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.NewMessageField("transformed")),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		sourceToSinkName:      sourceToSink,
-		transformToSinkName:   transformToSink,
+	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
 	}
-	linkLoader := &mock.LinkStorage{Links: links}
 
-	r := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
-	executionBuilder := execute.NewBuilder(
-		stageLoader, linkLoader, r, logs.New(true),
-	)
-
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transfName, sinkName),
-		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
-		internal.WithOnlineExec(),
-	)
-
+	executionBuilder := execute.NewBuilder(logs.New(true))
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)

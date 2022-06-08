@@ -3,14 +3,14 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 )
 
 type offlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []internal.MessageField
+	fields []compiled.MessageField
 	// input is the channel from which to receive the messages.
 	input <-chan offlineState
 	// outputs are the several channels where to send messages.
@@ -18,7 +18,7 @@ type offlineSplit struct {
 }
 
 func newOfflineSplit(
-	fields []internal.MessageField,
+	fields []compiled.MessageField,
 	input <-chan offlineState,
 	outputs []chan<- offlineState,
 ) Stage {
@@ -68,7 +68,7 @@ type onlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []internal.MessageField
+	fields []compiled.MessageField
 	// input is the channel from which to receive the messages.
 	input <-chan onlineState
 	// outputs are the several channels where to send messages.
@@ -76,7 +76,7 @@ type onlineSplit struct {
 }
 
 func newOnlineSplit(
-	fields []internal.MessageField,
+	fields []compiled.MessageField,
 	input <-chan onlineState,
 	outputs []chan<- onlineState,
 ) Stage {

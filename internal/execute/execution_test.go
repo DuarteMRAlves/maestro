@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal"
-	"github.com/DuarteMRAlves/maestro/internal/mock"
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -18,11 +18,16 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -49,10 +54,16 @@ func TestOnlineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupLinear(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 
 	e, err := executionBuilder(pipeline)
 	if err != nil {
@@ -82,92 +93,84 @@ func TestOnlineExecution_Linear(t *testing.T) {
 
 func setupLinear(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	sourceMethod := mock.Method{
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+
+	sourceMethod := testMethod{
 		MethodClientBuilder: linearSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
 
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: linearTransformClientBuilder(),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: linearSinkClientBuilder(max, collect, done),
 		In:                  testValDesc{},
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func linearSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func linearSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &linearSourceClient{counter: 0}, nil
 	}
 }
 
 type linearSourceClient struct{ counter int64 }
 
-func (c *linearSourceClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearSourceClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	_, ok := req.(*testEmptyMsg)
@@ -180,8 +183,8 @@ func (c *linearSourceClient) Call(_ context.Context, req internal.Message) (
 
 func (c *linearSourceClient) Close() error { return nil }
 
-func linearTransformClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func linearTransformClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &linearTransformClient{}
 		return c, nil
 	}
@@ -189,8 +192,8 @@ func linearTransformClientBuilder() internal.UnaryClientBuilder {
 
 type linearTransformClient struct{}
 
-func (c *linearTransformClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearTransformClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -206,8 +209,8 @@ func linearSinkClientBuilder(
 	max int,
 	collect *[]*testValMsg,
 	done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &linearSinkClient{
 			max:     max,
 			collect: collect,
@@ -225,8 +228,8 @@ type linearSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *linearSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -250,20 +253,20 @@ func (c *linearSinkClient) Call(_ context.Context, req internal.Message) (
 func (c *linearSinkClient) Close() error { return nil }
 
 func TestOfflineExecution_SplitAndMerge(t *testing.T) {
-	origFld := internal.NewMessageField("Orig")
-	transfFld := internal.NewMessageField("Transf")
-
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, origFld, transfFld, max, &collect, done,
-	)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
+	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -290,20 +293,20 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 }
 
 func TestOnlineExecution_SplitAndMerge(t *testing.T) {
-	origFld := internal.NewMessageField("Orig")
-	transfFld := internal.NewMessageField("Transf")
-
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSplitAndMerge(
-		t, origFld, transfFld, max, &collect, done,
-	)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
+	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
 
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -333,97 +336,84 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 }
 
 func setupSplitAndMerge(
-	t *testing.T,
-	originalField internal.MessageField,
-	transformField internal.MessageField,
-	max int,
-	collect *[]*testTwoValMsg,
-	done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	sourceMethod := mock.Method{
+	t *testing.T, max int, collect *[]*testTwoValMsg, done chan struct{},
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-source-sink",
+				SourceStage: "source",
+				TargetStage: "sink",
+				TargetField: "Orig",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+				TargetField: "Transf",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+
+	sourceMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: splitAndMergeTransformClientBuilder(),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, collect, done),
 		In:                  testTwoValDesc{},
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	sourceToSinkName := createLinkName(t, "link-source-sink")
-	sourceToSink := internal.NewLink(
-		sourceToSinkName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, originalField),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, transformField),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		sourceToSinkName:      sourceToSink,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, sourceToSinkName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
+
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func splitAndMergeSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &splitAndMergeSourceClient{counter: 0}, nil
 	}
 }
@@ -431,8 +421,8 @@ func splitAndMergeSourceClientBuilder() internal.UnaryClientBuilder {
 type splitAndMergeSourceClient struct{ counter int64 }
 
 func (c *splitAndMergeSourceClient) Call(
-	_ context.Context, req internal.Message,
-) (internal.Message, error) {
+	_ context.Context, req compiled.Message,
+) (compiled.Message, error) {
 	_, ok := req.(*testEmptyMsg)
 	if !ok {
 		panic("source request message is not testEmptyMsg")
@@ -442,8 +432,8 @@ func (c *splitAndMergeSourceClient) Call(
 
 func (c *splitAndMergeSourceClient) Close() error { return nil }
 
-func splitAndMergeTransformClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func splitAndMergeTransformClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &splitAndMergeTransformClient{}, nil
 	}
 }
@@ -451,8 +441,8 @@ func splitAndMergeTransformClientBuilder() internal.UnaryClientBuilder {
 type splitAndMergeTransformClient struct{}
 
 func (c *splitAndMergeTransformClient) Call(
-	_ context.Context, req internal.Message,
-) (internal.Message, error) {
+	_ context.Context, req compiled.Message,
+) (compiled.Message, error) {
 	reqMsg, ok := req.(*testValMsg)
 	if !ok {
 		panic("transform request message is not testValMsg")
@@ -464,8 +454,8 @@ func (c *splitAndMergeTransformClient) Close() error { return nil }
 
 func splitAndMergeSinkClientBuilder(
 	max int, collect *[]*testTwoValMsg, done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &splitAndMergeSinkClient{
 			max:     max,
 			collect: collect,
@@ -483,8 +473,8 @@ type splitAndMergeSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *splitAndMergeSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *splitAndMergeSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMock, ok := req.(*testTwoValMsg)
@@ -512,10 +502,16 @@ func TestOfflineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOfflineExec())
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OfflineExecution
 
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -542,10 +538,16 @@ func TestOnlineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipeline, stageLoader, linkLoader, methodLoader := setupSlow(t, max, &collect, done)
-	pipeline = internal.FromPipeline(pipeline, internal.WithOnlineExec())
-	executionBuilder := NewBuilder(stageLoader, linkLoader, methodLoader, logger{debug: true})
+	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineSpec.Mode = spec.OnlineExecution
 
+	compilationCtx := compiled.NewContext(methodLoader)
+	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
 	e, err := executionBuilder(pipeline)
 	if err != nil {
 		t.Fatalf("build error: %s", err)
@@ -574,92 +576,84 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 func setupSlow(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (internal.Pipeline, *mock.StageStorage, *mock.LinkStorage, *mock.MethodLoader) {
-	sourceMethod := mock.Method{
+) (*spec.Pipeline, compiled.MethodLoader) {
+	pipelineSpec := &spec.Pipeline{
+		Name: "pipeline",
+		Stages: []*spec.Stage{
+			{
+				Name:          "source",
+				MethodContext: spec.MethodContext{Address: "source"},
+			},
+			{
+				Name:          "transform",
+				MethodContext: spec.MethodContext{Address: "transform"},
+			},
+			{
+				Name:          "sink",
+				MethodContext: spec.MethodContext{Address: "sink"},
+			},
+		},
+		Links: []*spec.Link{
+			{
+				Name:        "link-source-transform",
+				SourceStage: "source",
+				TargetStage: "transform",
+			},
+			{
+				Name:        "link-transform-sink",
+				SourceStage: "transform",
+				TargetStage: "sink",
+			},
+		},
+	}
+
+	sourceContext := createMethodContext(compiled.NewAddress("source"))
+	transformContext := createMethodContext(compiled.NewAddress("transform"))
+	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+
+	sourceMethod := testMethod{
 		MethodClientBuilder: slowSourceClientBuilder(),
 		In:                  testEmptyDesc{},
 		Out:                 testValDesc{},
 	}
 
-	transformMethod := mock.Method{
+	transformMethod := testMethod{
 		MethodClientBuilder: slowTransformClientBuilder(1 * time.Millisecond),
 		In:                  testValDesc{},
 		Out:                 testValDesc{},
 	}
-	sinkMethod := mock.Method{
+	sinkMethod := testMethod{
 		MethodClientBuilder: slowSinkClientBuilder(max, collect, done),
 		In:                  testValDesc{},
 		Out:                 testEmptyDesc{},
 	}
 
-	sourceName := createStageName(t, "source")
-	transformName := createStageName(t, "transform")
-	sinkName := createStageName(t, "sink")
-
-	sourceAddr := internal.NewAddress("source")
-	transformAddr := internal.NewAddress("transform")
-	sinkAddr := internal.NewAddress("sink")
-
-	sourceContext := createMethodContext(sourceAddr)
-	transformContext := createMethodContext(transformAddr)
-	sinkContext := createMethodContext(sinkAddr)
-
-	sourceStage := internal.NewStage(sourceName, sourceContext)
-	transformStage := internal.NewStage(transformName, transformContext)
-	sinkStage := internal.NewStage(sinkName, sinkContext)
-
-	stages := map[internal.StageName]internal.Stage{
-		sourceName:    sourceStage,
-		transformName: transformStage,
-		sinkName:      sinkStage,
-	}
-	stageLoader := &mock.StageStorage{Stages: stages}
-
-	sourceToTransformName := createLinkName(t, "link-source-transform")
-	sourceToTransform := internal.NewLink(
-		sourceToTransformName,
-		internal.NewLinkEndpoint(sourceName, internal.MessageField{}),
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-	)
-
-	transformToSinkName := createLinkName(t, "link-transform-sink")
-	transformToSink := internal.NewLink(
-		transformToSinkName,
-		internal.NewLinkEndpoint(transformName, internal.MessageField{}),
-		internal.NewLinkEndpoint(sinkName, internal.MessageField{}),
-	)
-
-	links := map[internal.LinkName]internal.Link{
-		sourceToTransformName: sourceToTransform,
-		transformToSinkName:   transformToSink,
-	}
-	linkLoader := &mock.LinkStorage{Links: links}
-
-	methods := map[internal.MethodContext]internal.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.UnaryMethod{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := &mock.MethodLoader{Methods: methods}
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+		m, ok := methods[*methodCtx]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", methodCtx))
+		}
+		return m, nil
+	}
 
-	pipeline := internal.NewPipeline(
-		createPipelineName(t, "pipeline"),
-		internal.WithStages(sourceName, transformName, sinkName),
-		internal.WithLinks(sourceToTransformName, transformToSinkName),
-	)
-	return pipeline, stageLoader, linkLoader, methodLoader
+	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func slowSourceClientBuilder() internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func slowSourceClientBuilder() compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &slowSourceClient{counter: 0}, nil
 	}
 }
 
 type slowSourceClient struct{ counter int64 }
 
-func (c *slowSourceClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowSourceClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	_, ok := req.(*testEmptyMsg)
@@ -672,16 +666,16 @@ func (c *slowSourceClient) Call(_ context.Context, req internal.Message) (
 
 func (c *slowSourceClient) Close() error { return nil }
 
-func slowTransformClientBuilder(sleep time.Duration) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+func slowTransformClientBuilder(sleep time.Duration) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		return &slowTransformClient{sleep: sleep}, nil
 	}
 }
 
 type slowTransformClient struct{ sleep time.Duration }
 
-func (c *slowTransformClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowTransformClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	time.Sleep(c.sleep)
@@ -698,8 +692,8 @@ func slowSinkClientBuilder(
 	max int,
 	collect *[]*testValMsg,
 	done chan<- struct{},
-) internal.UnaryClientBuilder {
-	return func(_ internal.Address) (internal.UnaryClient, error) {
+) compiled.UnaryClientBuilder {
+	return func(_ compiled.Address) (compiled.UnaryClient, error) {
 		c := &slowSinkClient{
 			max:     max,
 			collect: collect,
@@ -717,8 +711,8 @@ type slowSinkClient struct {
 	mu      sync.Mutex
 }
 
-func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
-	internal.Message,
+func (c *slowSinkClient) Call(_ context.Context, req compiled.Message) (
+	compiled.Message,
 	error,
 ) {
 	reqMsg, ok := req.(*testValMsg)
@@ -741,85 +735,79 @@ func (c *slowSinkClient) Call(_ context.Context, req internal.Message) (
 
 func (c *slowSinkClient) Close() error { return nil }
 
-func createPipelineName(t *testing.T, name string) internal.PipelineName {
-	pipelineName, err := internal.NewPipelineName(name)
-	if err != nil {
-		t.Fatalf("create pipeline name %s: %s", name, err)
-	}
-	return pipelineName
-}
-
-func createStageName(t *testing.T, name string) internal.StageName {
-	stageName, err := internal.NewStageName(name)
-	if err != nil {
-		t.Fatalf("create stage name %s: %s", name, err)
-	}
-	return stageName
-}
-
-func createLinkName(t *testing.T, name string) internal.LinkName {
-	linkName, err := internal.NewLinkName(name)
-	if err != nil {
-		t.Fatalf("create link name %s: %s", name, err)
-	}
-	return linkName
-}
-
-func createMethodContext(addr internal.Address) internal.MethodContext {
+func createMethodContext(addr compiled.Address) compiled.MethodContext {
 	var (
-		emptyService internal.Service
-		emptyMethod  internal.Method
+		emptyService compiled.Service
+		emptyMethod  compiled.Method
 	)
-	return internal.NewMethodContext(addr, emptyService, emptyMethod)
+	return compiled.NewMethodContext(addr, emptyService, emptyMethod)
+}
+
+type testMethod struct {
+	MethodClientBuilder compiled.UnaryClientBuilder
+	In                  compiled.MessageDesc
+	Out                 compiled.MessageDesc
+}
+
+func (m testMethod) ClientBuilder() compiled.UnaryClientBuilder {
+	return m.MethodClientBuilder
+}
+
+func (m testMethod) Input() compiled.MessageDesc {
+	return m.In
+}
+
+func (m testMethod) Output() compiled.MessageDesc {
+	return m.Out
 }
 
 type testEmptyMsg struct{}
 
-func (m *testEmptyMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m *testEmptyMsg) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in empty message")
 }
 
-func (m *testEmptyMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testEmptyMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in empty message")
 }
 
 type testEmptyDesc struct{}
 
-func (d testEmptyDesc) Compatible(other internal.MessageDesc) bool {
+func (d testEmptyDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testEmptyDesc)
 	return ok
 }
 
-func (d testEmptyDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testEmptyMsg{} }
+func (d testEmptyDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testEmptyMsg{} }
 }
 
-func (d testEmptyDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testEmptyDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	panic("method get field should not be called for testEmptyDesc")
 }
 
 type testValMsg struct{ Val int64 }
 
-func (m *testValMsg) SetField(_ internal.MessageField, _ internal.Message) error {
+func (m *testValMsg) SetField(_ compiled.MessageField, _ compiled.Message) error {
 	panic("Should not set field in val message")
 }
 
-func (m *testValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testValMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in val message")
 }
 
 type testValDesc struct{}
 
-func (d testValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testValDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testValDesc)
 	return ok
 }
 
-func (d testValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testValMsg{} }
+func (d testValDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testValMsg{} }
 }
 
-func (d testValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testValDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	panic("method get field should not be called for testValDesc")
 }
 
@@ -828,7 +816,7 @@ type testTwoValMsg struct {
 	Transf *testValMsg
 }
 
-func (m *testTwoValMsg) SetField(f internal.MessageField, v internal.Message) error {
+func (m *testTwoValMsg) SetField(f compiled.MessageField, v compiled.Message) error {
 	inner, ok := v.(*testValMsg)
 	if !ok {
 		panic("v is not *testValMsg")
@@ -844,22 +832,22 @@ func (m *testTwoValMsg) SetField(f internal.MessageField, v internal.Message) er
 	return nil
 }
 
-func (m *testTwoValMsg) GetField(_ internal.MessageField) (internal.Message, error) {
+func (m *testTwoValMsg) GetField(_ compiled.MessageField) (compiled.Message, error) {
 	panic("Should not get field in two val message")
 }
 
 type testTwoValDesc struct{}
 
-func (d testTwoValDesc) Compatible(other internal.MessageDesc) bool {
+func (d testTwoValDesc) Compatible(other compiled.MessageDesc) bool {
 	_, ok := other.(testTwoValDesc)
 	return ok
 }
 
-func (d testTwoValDesc) EmptyGen() internal.EmptyMessageGen {
-	return func() internal.Message { return &testTwoValMsg{} }
+func (d testTwoValDesc) EmptyGen() compiled.EmptyMessageGen {
+	return func() compiled.Message { return &testTwoValMsg{} }
 }
 
-func (d testTwoValDesc) GetField(f internal.MessageField) (internal.MessageDesc, error) {
+func (d testTwoValDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
 	switch f.Unwrap() {
 	case "Orig", "Transf":
 		return testValDesc{}, nil
