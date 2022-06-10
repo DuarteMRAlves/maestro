@@ -7,6 +7,7 @@ import (
 // Stage defines a step of a Pipeline
 type Stage struct {
 	name    StageName
+	sType   StageType
 	address Address
 	method  UnaryMethod
 	inputs  []*Link
@@ -16,6 +17,8 @@ type Stage struct {
 func (s *Stage) Name() StageName {
 	return s.name
 }
+
+func (s *Stage) Type() StageType { return s.sType }
 
 func (s *Stage) Address() Address {
 	return s.address
@@ -55,6 +58,16 @@ type invalidStageName struct{ name string }
 func (err *invalidStageName) Error() string {
 	return fmt.Sprintf("invalid stage name: '%s'", err.name)
 }
+
+type StageType string
+
+const (
+	StageTypeUnary  StageType = "UnaryStage"
+	StageTypeSource StageType = "SourceStage"
+	StageTypeSink   StageType = "SinkStage"
+	StageTypeMerge  StageType = "MergeStage"
+	StageTypeSplit  StageType = "SplitStage"
+)
 
 type Service struct{ val string }
 

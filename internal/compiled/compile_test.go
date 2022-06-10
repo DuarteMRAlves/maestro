@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 		expected     *Pipeline
 		methodLoader MethodLoaderFunc
 	}{
-		"required fields": {
+		"linear specification": {
 			input: &spec.Pipeline{
 				Name: "pipeline",
 				Stages: []*spec.Stage{
@@ -50,11 +50,32 @@ func TestNew(t *testing.T) {
 				name: PipelineName{val: "pipeline"},
 				mode: OfflineExecution,
 				stages: stageGraph{
+					StageName{val: "stage-1:aux-source"}: &Stage{
+						name:    StageName{val: "stage-1:aux-source"},
+						sType:   StageTypeSource,
+						address: Address{},
+						method:  nil,
+						inputs:  []*Link{},
+						outputs: []*Link{
+							{
+								name:   LinkName{val: "stage-1:aux-source-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-source"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+							},
+						},
+					},
 					StageName{val: "stage-1"}: &Stage{
 						name:    StageName{val: "stage-1"},
+						sType:   StageTypeUnary,
 						address: Address{val: "address-1"},
-						method:  testStage1Method{},
-						inputs:  []*Link{},
+						method:  testLinearStage1Method{},
+						inputs: []*Link{
+							{
+								name:   LinkName{val: "stage-1:aux-source-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-source"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+							},
+						},
 						outputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -65,8 +86,9 @@ func TestNew(t *testing.T) {
 					},
 					StageName{val: "stage-2"}: &Stage{
 						name:    StageName{val: "stage-2"},
+						sType:   StageTypeUnary,
 						address: Address{val: "address-2"},
-						method:  testStage2Method{},
+						method:  testLinearStage2Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -84,13 +106,34 @@ func TestNew(t *testing.T) {
 					},
 					StageName{val: "stage-3"}: &Stage{
 						name:    StageName{val: "stage-3"},
+						sType:   StageTypeUnary,
 						address: Address{val: "address-3"},
-						method:  testStage3Method{},
+						method:  testLinearStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "2-to-3"},
 								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+							},
+						},
+						outputs: []*Link{
+							{
+								name:   LinkName{val: "stage-3:aux-sink-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3:aux-sink"}},
+							},
+						},
+					},
+					StageName{val: "stage-3:aux-sink"}: &Stage{
+						name:    StageName{val: "stage-3:aux-sink"},
+						sType:   StageTypeSink,
+						address: Address{},
+						method:  nil,
+						inputs: []*Link{
+							{
+								name:   LinkName{val: "stage-3:aux-sink-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3:aux-sink"}},
 							},
 						},
 						outputs: []*Link{},
@@ -103,9 +146,9 @@ func TestNew(t *testing.T) {
 				ctx3 := MethodContext{address: Address{val: "address-3"}}
 
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
-					ctx3: testStage3Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
+					ctx3: testLinearStage3Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -114,7 +157,7 @@ func TestNew(t *testing.T) {
 				return s, nil
 			},
 		},
-		"all fields": {
+		"split and merge": {
 			input: &spec.Pipeline{
 				Name: "pipeline",
 				Mode: spec.OnlineExecution,
@@ -148,21 +191,17 @@ func TestNew(t *testing.T) {
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
-						SourceField: "field1",
 						TargetStage: "stage-2",
-						TargetField: "field2",
 					},
 					{
 						Name:        "1-to-3",
 						SourceStage: "stage-1",
-						SourceField: "field1",
 						TargetStage: "stage-3",
 						TargetField: "field1",
 					},
 					{
 						Name:        "2-to-3",
 						SourceStage: "stage-2",
-						SourceField: "field1",
 						TargetStage: "stage-3",
 						TargetField: "field2",
 					},
@@ -172,31 +211,63 @@ func TestNew(t *testing.T) {
 				name: PipelineName{val: "pipeline"},
 				mode: OnlineExecution,
 				stages: stageGraph{
-					StageName{val: "stage-1"}: &Stage{
-						name:    StageName{val: "stage-1"},
-						address: Address{val: "address-1"},
-						method:  testStage1Method{},
+					StageName{val: "stage-1:aux-source"}: &Stage{
+						name:    StageName{val: "stage-1:aux-source"},
+						sType:   StageTypeSource,
+						address: Address{},
+						method:  nil,
 						inputs:  []*Link{},
 						outputs: []*Link{
 							{
-								name: LinkName{val: "1-to-2"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-1"},
-									field: MessageField{val: "field1"},
-								},
-								target: &LinkEndpoint{
-									stage: StageName{val: "stage-2"},
-									field: MessageField{val: "field2"},
-								},
+								name:   LinkName{val: "stage-1:aux-source-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-source"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+							},
+						},
+					},
+					StageName{val: "stage-1"}: &Stage{
+						name:    StageName{val: "stage-1"},
+						sType:   StageTypeUnary,
+						address: Address{val: "address-1"},
+						method:  testSplitAndMergeStage1Method{},
+						inputs: []*Link{
+							{
+								name:   LinkName{val: "stage-1:aux-source-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-source"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+							},
+						},
+						outputs: []*Link{
+							{
+								name:   LinkName{"stage-1:aux-split-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
+							},
+						},
+					},
+					StageName{val: "stage-1:aux-split"}: &Stage{
+						name:    StageName{val: "stage-1:aux-split"},
+						sType:   StageTypeSplit,
+						address: Address{},
+						method:  nil,
+						inputs: []*Link{
+							{
+								name:   LinkName{"stage-1:aux-split-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
+							},
+						},
+						outputs: []*Link{
+							{
+								name:   LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 							},
 							{
-								name: LinkName{val: "1-to-3"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-1"},
-									field: MessageField{val: "field1"},
-								},
+								name:   LinkName{val: "1-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
 								target: &LinkEndpoint{
-									stage: StageName{val: "stage-3"},
+									stage: StageName{val: "stage-3:aux-merge"},
 									field: MessageField{val: "field1"},
 								},
 							},
@@ -204,61 +275,88 @@ func TestNew(t *testing.T) {
 					},
 					StageName{val: "stage-2"}: &Stage{
 						name:    StageName{val: "stage-2"},
+						sType:   StageTypeUnary,
 						address: Address{val: "address-2"},
-						method:  testStage2Method{},
+						method:  testSplitAndMergeStage2Method{},
 						inputs: []*Link{
 							{
-								name: LinkName{val: "1-to-2"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-1"},
+								name:   LinkName{val: "1-to-2"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+							},
+						},
+						outputs: []*Link{
+							{
+								name:   LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3:aux-merge"},
+									field: MessageField{val: "field2"},
+								},
+							},
+						},
+					},
+					StageName{val: "stage-3:aux-merge"}: &Stage{
+						name:    StageName{val: "stage-3:aux-merge"},
+						sType:   StageTypeMerge,
+						address: Address{},
+						method:  nil,
+						inputs: []*Link{
+							{
+								name:   LinkName{val: "1-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
+								target: &LinkEndpoint{
+									stage: StageName{val: "stage-3:aux-merge"},
 									field: MessageField{val: "field1"},
 								},
+							},
+							{
+								name:   LinkName{val: "2-to-3"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{
-									stage: StageName{val: "stage-2"},
+									stage: StageName{val: "stage-3:aux-merge"},
 									field: MessageField{val: "field2"},
 								},
 							},
 						},
 						outputs: []*Link{
 							{
-								name: LinkName{val: "2-to-3"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-2"},
-									field: MessageField{val: "field1"},
-								},
-								target: &LinkEndpoint{
-									stage: StageName{val: "stage-3"},
-									field: MessageField{val: "field2"},
-								},
+								name:   LinkName{val: "stage-3:aux-merge-link"},
+								source: &LinkEndpoint{stage: StageName{"stage-3:aux-merge"}},
+								target: &LinkEndpoint{stage: StageName{"stage-3"}},
 							},
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
 						name:    StageName{val: "stage-3"},
+						sType:   StageTypeUnary,
 						address: Address{val: "address-3"},
-						method:  testStage3Method{},
+						method:  testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
-								name: LinkName{val: "1-to-3"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-1"},
-									field: MessageField{val: "field1"},
-								},
-								target: &LinkEndpoint{
-									stage: StageName{val: "stage-3"},
-									field: MessageField{val: "field1"},
-								},
+								name:   LinkName{val: "stage-3:aux-merge-link"},
+								source: &LinkEndpoint{stage: StageName{"stage-3:aux-merge"}},
+								target: &LinkEndpoint{stage: StageName{"stage-3"}},
 							},
+						},
+						outputs: []*Link{
 							{
-								name: LinkName{val: "2-to-3"},
-								source: &LinkEndpoint{
-									stage: StageName{val: "stage-2"},
-									field: MessageField{val: "field1"},
-								},
-								target: &LinkEndpoint{
-									stage: StageName{val: "stage-3"},
-									field: MessageField{val: "field2"},
-								},
+								name:   LinkName{val: "stage-3:aux-sink-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3:aux-sink"}},
+							},
+						},
+					},
+					StageName{val: "stage-3:aux-sink"}: &Stage{
+						name:    StageName{val: "stage-3:aux-sink"},
+						sType:   StageTypeSink,
+						address: Address{},
+						method:  nil,
+						inputs: []*Link{
+							{
+								name:   LinkName{val: "stage-3:aux-sink-link"},
+								source: &LinkEndpoint{stage: StageName{val: "stage-3"}},
+								target: &LinkEndpoint{stage: StageName{val: "stage-3:aux-sink"}},
 							},
 						},
 						outputs: []*Link{},
@@ -282,9 +380,9 @@ func TestNew(t *testing.T) {
 					NewMethod("method-3"),
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
-					ctx3: testStage3Method{},
+					ctx1: testSplitAndMergeStage1Method{},
+					ctx2: testSplitAndMergeStage2Method{},
+					ctx3: testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -410,8 +508,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -450,8 +548,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -490,8 +588,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -530,8 +628,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -576,8 +674,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -622,8 +720,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -689,9 +787,9 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
-					ctx3: testStage3Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
+					ctx3: testLinearStage3Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -757,9 +855,9 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
-					ctx3: testStage3Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
+					ctx3: testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -780,7 +878,8 @@ func TestNewIsErr(t *testing.T) {
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
-						TargetStage: "stage-2"},
+						TargetStage: "stage-2",
+					},
 					{
 						Name:        "1-to-3",
 						SourceStage: "stage-1",
@@ -827,9 +926,9 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
-					ctx3: testStage3Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
+					ctx3: testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -879,8 +978,8 @@ func TestNewIsErr(t *testing.T) {
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testStage1Method{},
-					ctx2: testStage2Method{},
+					ctx1: testLinearStage1Method{},
+					ctx2: testLinearStage2Method{},
 				}
 				s, ok := mapper[*methodCtx]
 				if !ok {
@@ -907,45 +1006,87 @@ func TestNewIsErr(t *testing.T) {
 	}
 }
 
-type testStage1Method struct{}
+type testLinearStage1Method struct{}
 
-func (m testStage1Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage1Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage1Method) Input() MessageDesc {
+func (m testLinearStage1Method) Input() MessageDesc {
 	return testEmptyDesc{}
 }
 
-func (m testStage1Method) Output() MessageDesc {
+func (m testLinearStage1Method) Output() MessageDesc {
 	return testOuterValDesc{}
 }
 
-type testStage2Method struct{}
+type testLinearStage2Method struct{}
 
-func (m testStage2Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage2Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage2Method) Input() MessageDesc {
+func (m testLinearStage2Method) Input() MessageDesc {
 	return testOuterValDesc{}
 }
 
-func (m testStage2Method) Output() MessageDesc {
+func (m testLinearStage2Method) Output() MessageDesc {
 	return testOuterValDesc{}
 }
 
-type testStage3Method struct{}
+type testLinearStage3Method struct{}
 
-func (m testStage3Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage3Method) ClientBuilder() UnaryClientBuilder {
 	return nil
 }
 
-func (m testStage3Method) Input() MessageDesc {
+func (m testLinearStage3Method) Input() MessageDesc {
 	return testOuterValDesc{}
 }
 
-func (m testStage3Method) Output() MessageDesc {
+func (m testLinearStage3Method) Output() MessageDesc {
+	return testEmptyDesc{}
+}
+
+type testSplitAndMergeStage1Method struct{}
+
+func (m testSplitAndMergeStage1Method) ClientBuilder() UnaryClientBuilder {
+	return nil
+}
+
+func (m testSplitAndMergeStage1Method) Input() MessageDesc {
+	return testEmptyDesc{}
+}
+
+func (m testSplitAndMergeStage1Method) Output() MessageDesc {
+	return testInnerValDesc{}
+}
+
+type testSplitAndMergeStage2Method struct{}
+
+func (m testSplitAndMergeStage2Method) ClientBuilder() UnaryClientBuilder {
+	return nil
+}
+
+func (m testSplitAndMergeStage2Method) Input() MessageDesc {
+	return testInnerValDesc{}
+}
+
+func (m testSplitAndMergeStage2Method) Output() MessageDesc {
+	return testInnerValDesc{}
+}
+
+type testSplitAndMergeStage3Method struct{}
+
+func (m testSplitAndMergeStage3Method) ClientBuilder() UnaryClientBuilder {
+	return nil
+}
+
+func (m testSplitAndMergeStage3Method) Input() MessageDesc {
+	return testOuterValDesc{}
+}
+
+func (m testSplitAndMergeStage3Method) Output() MessageDesc {
 	return testEmptyDesc{}
 }
 
