@@ -377,7 +377,8 @@ func compileSourceInput(s *Stage) *Stage {
 		name:    name,
 		sType:   StageTypeSource,
 		address: Address{},
-		method:  nil,
+		// give access to the method for later usage
+		method:  s.method,
 		inputs:  []*Link{},
 		outputs: []*Link{l},
 	}
@@ -396,7 +397,8 @@ func compileMergeInput(s *Stage) *Stage {
 		name:    name,
 		sType:   StageTypeMerge,
 		address: Address{},
-		method:  nil,
+		// give access to the method for later usage
+		method:  s.method,
 		inputs:  s.inputs,
 		outputs: []*Link{l},
 	}

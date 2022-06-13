@@ -54,7 +54,7 @@ func TestNew(t *testing.T) {
 						name:    StageName{val: "stage-1:aux-source"},
 						sType:   StageTypeSource,
 						address: Address{},
-						method:  nil,
+						method:  testLinearStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
 							{
@@ -215,7 +215,7 @@ func TestNew(t *testing.T) {
 						name:    StageName{val: "stage-1:aux-source"},
 						sType:   StageTypeSource,
 						address: Address{},
-						method:  nil,
+						method:  testSplitAndMergeStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
 							{
@@ -300,7 +300,7 @@ func TestNew(t *testing.T) {
 						name:    StageName{val: "stage-3:aux-merge"},
 						sType:   StageTypeMerge,
 						address: Address{},
-						method:  nil,
+						method:  testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-3"},
