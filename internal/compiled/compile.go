@@ -167,19 +167,16 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	methodCtx, err := compileMethodContext(&stageSpec.MethodContext)
-	if err != nil {
-		return nil, err
-	}
-	unaryMethod, err := ctx.methodLoader.Load(methodCtx)
+	service := NewService(stageSpec.MethodContext.Service)
+	method := NewMethod(stageSpec.MethodContext.Method)
+	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
 	if err != nil {
 		return nil, err
 	}
 	stage := &Stage{
 		name:    name,
 		sType:   StageTypeUnary,
-		address: address,
-		method:  unaryMethod,
+		ictx:    ictx,
 		inputs:  []*Link{},
 		outputs: []*Link{},
 	}
@@ -195,19 +192,6 @@ func compileStageName(name string) (StageName, error) {
 		return stageName, errEmptyStageName
 	}
 	return stageName, nil
-}
-
-func compileMethodContext(
-	methodContextSpec *spec.MethodContext,
-) (*MethodContext, error) {
-	address, err := compileAddress(methodContextSpec.Address)
-	if err != nil {
-		return nil, err
-	}
-	service := NewService(methodContextSpec.Service)
-	method := NewMethod(methodContextSpec.Method)
-	methodCtx := NewMethodContext(address, service, method)
-	return &methodCtx, nil
 }
 
 func compileAddress(address string) (Address, error) {
@@ -290,7 +274,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		return errEqualSourceAndTarget
 	}
 
-	sourceMsg := source.Method().Output()
+	sourceMsg := source.InvocationContext().Output()
 	if !link.Source().Field().IsEmpty() {
 		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
 		if err != nil {
@@ -298,7 +282,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		}
 	}
 
-	targetMsg := target.Method().Input()
+	targetMsg := target.InvocationContext().Input()
 	if !link.Target().Field().IsEmpty() {
 		targetMsg, err = targetMsg.GetField(link.Target().Field())
 		if err != nil {
@@ -374,11 +358,10 @@ func compileSourceInput(s *Stage) *Stage {
 		target: &LinkEndpoint{stage: s.name},
 	}
 	source := &Stage{
-		name:    name,
-		sType:   StageTypeSource,
-		address: Address{},
+		name:  name,
+		sType: StageTypeSource,
 		// give access to the method for later usage
-		method:  s.method,
+		ictx:    s.ictx,
 		inputs:  []*Link{},
 		outputs: []*Link{l},
 	}
@@ -394,11 +377,10 @@ func compileMergeInput(s *Stage) *Stage {
 		target: &LinkEndpoint{stage: s.name},
 	}
 	merge := &Stage{
-		name:    name,
-		sType:   StageTypeMerge,
-		address: Address{},
+		name:  name,
+		sType: StageTypeMerge,
 		// give access to the method for later usage
-		method:  s.method,
+		ictx:    s.ictx,
 		inputs:  s.inputs,
 		outputs: []*Link{l},
 	}
@@ -434,10 +416,10 @@ func compileSinkOutput(s *Stage) *Stage {
 		target: &LinkEndpoint{stage: name},
 	}
 	sink := &Stage{
-		name:    name,
-		sType:   StageTypeSink,
-		address: Address{},
-		method:  nil,
+		name:  name,
+		sType: StageTypeSink,
+		// give access to the method for later usage
+		ictx:    s.ictx,
 		inputs:  []*Link{l},
 		outputs: []*Link{},
 	}
@@ -453,10 +435,10 @@ func compileSplitOutput(s *Stage) *Stage {
 		target: &LinkEndpoint{stage: name},
 	}
 	split := &Stage{
-		name:    name,
-		sType:   StageTypeSplit,
-		address: Address{},
-		method:  nil,
+		name:  name,
+		sType: StageTypeSplit,
+		// give access to the method for later usage
+		ictx:    s.ictx,
 		inputs:  []*Link{l},
 		outputs: s.outputs,
 	}

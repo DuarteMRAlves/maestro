@@ -51,11 +51,13 @@ func TestNew(t *testing.T) {
 				mode: OfflineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:    StageName{val: "stage-1:aux-source"},
-						sType:   StageTypeSource,
-						address: Address{},
-						method:  testLinearStage1Method{},
-						inputs:  []*Link{},
+						name:  StageName{val: "stage-1:aux-source"},
+						sType: StageTypeSource,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-1"},
+							unaryMethod: testLinearStage1Method{},
+						},
+						inputs: []*Link{},
 						outputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -65,10 +67,12 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:    StageName{val: "stage-1"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-1"},
-						method:  testLinearStage1Method{},
+						name:  StageName{val: "stage-1"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-1"},
+							unaryMethod: testLinearStage1Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -85,10 +89,12 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:    StageName{val: "stage-2"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-2"},
-						method:  testLinearStage2Method{},
+						name:  StageName{val: "stage-2"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-2"},
+							unaryMethod: testLinearStage2Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -105,10 +111,12 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:    StageName{val: "stage-3"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-3"},
-						method:  testLinearStage3Method{},
+						name:  StageName{val: "stage-3"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-3"},
+							unaryMethod: testLinearStage3Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "2-to-3"},
@@ -125,10 +133,12 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:    StageName{val: "stage-3:aux-sink"},
-						sType:   StageTypeSink,
-						address: Address{},
-						method:  nil,
+						name:  StageName{val: "stage-3:aux-sink"},
+						sType: StageTypeSink,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-3"},
+							unaryMethod: testLinearStage3Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -212,11 +222,15 @@ func TestNew(t *testing.T) {
 				mode: OnlineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:    StageName{val: "stage-1:aux-source"},
-						sType:   StageTypeSource,
-						address: Address{},
-						method:  testSplitAndMergeStage1Method{},
-						inputs:  []*Link{},
+						name:  StageName{val: "stage-1:aux-source"},
+						sType: StageTypeSource,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-1"},
+							service:     Service{val: "service-1"},
+							method:      Method{val: "method-1"},
+							unaryMethod: testSplitAndMergeStage1Method{},
+						},
+						inputs: []*Link{},
 						outputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -226,10 +240,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:    StageName{val: "stage-1"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-1"},
-						method:  testSplitAndMergeStage1Method{},
+						name:  StageName{val: "stage-1"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-1"},
+							service:     Service{val: "service-1"},
+							method:      Method{val: "method-1"},
+							unaryMethod: testSplitAndMergeStage1Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -246,10 +264,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1:aux-split"}: &Stage{
-						name:    StageName{val: "stage-1:aux-split"},
-						sType:   StageTypeSplit,
-						address: Address{},
-						method:  nil,
+						name:  StageName{val: "stage-1:aux-split"},
+						sType: StageTypeSplit,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-1"},
+							service:     Service{val: "service-1"},
+							method:      Method{val: "method-1"},
+							unaryMethod: testSplitAndMergeStage1Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{"stage-1:aux-split-link"},
@@ -274,10 +296,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:    StageName{val: "stage-2"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-2"},
-						method:  testSplitAndMergeStage2Method{},
+						name:  StageName{val: "stage-2"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-2"},
+							service:     Service{val: "service-2"},
+							method:      Method{val: "method-2"},
+							unaryMethod: testSplitAndMergeStage2Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -297,10 +323,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-merge"}: &Stage{
-						name:    StageName{val: "stage-3:aux-merge"},
-						sType:   StageTypeMerge,
-						address: Address{},
-						method:  testSplitAndMergeStage3Method{},
+						name:  StageName{val: "stage-3:aux-merge"},
+						sType: StageTypeMerge,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-3"},
+							service:     Service{val: "service-3"},
+							method:      Method{val: "method-3"},
+							unaryMethod: testSplitAndMergeStage3Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-3"},
@@ -328,10 +358,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:    StageName{val: "stage-3"},
-						sType:   StageTypeUnary,
-						address: Address{val: "address-3"},
-						method:  testSplitAndMergeStage3Method{},
+						name:  StageName{val: "stage-3"},
+						sType: StageTypeUnary,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-3"},
+							service:     Service{val: "service-3"},
+							method:      Method{val: "method-3"},
+							unaryMethod: testSplitAndMergeStage3Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-merge-link"},
@@ -348,10 +382,14 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:    StageName{val: "stage-3:aux-sink"},
-						sType:   StageTypeSink,
-						address: Address{},
-						method:  nil,
+						name:  StageName{val: "stage-3:aux-sink"},
+						sType: StageTypeSink,
+						ictx: &InvocationContext{
+							address:     Address{val: "address-3"},
+							service:     Service{val: "service-3"},
+							method:      Method{val: "method-3"},
+							unaryMethod: testSplitAndMergeStage3Method{},
+						},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -405,6 +443,7 @@ func TestNew(t *testing.T) {
 				ExecutionMode{},
 				Stage{},
 				StageName{},
+				InvocationContext{},
 				Address{},
 				Service{},
 				Method{},

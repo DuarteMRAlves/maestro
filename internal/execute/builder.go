@@ -114,12 +114,8 @@ func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.Address()
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	clientBuilder := method.ClientBuilder()
+	addr := s.InvocationContext().Address()
+	clientBuilder := s.InvocationContext().ClientBuilder()
 	if clientBuilder == nil {
 		return nil, errors.New("nil client builder")
 	}
@@ -127,11 +123,7 @@ func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 }
 
 func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	input := method.Input()
+	input := s.InvocationContext().Input()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -195,11 +187,7 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	input := method.Input()
+	input := s.InvocationContext().Input()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -324,12 +312,8 @@ func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.Address()
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	clientBuilder := method.ClientBuilder()
+	addr := s.InvocationContext().Address()
+	clientBuilder := s.InvocationContext().ClientBuilder()
 	if clientBuilder == nil {
 		return nil, errors.New("nil client builder")
 	}
@@ -337,11 +321,7 @@ func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan online
 }
 
 func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	input := method.Input()
+	input := s.InvocationContext().Input()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -405,11 +385,7 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	method := s.Method()
-	if method == nil {
-		return nil, errors.New("nil method")
-	}
-	input := method.Input()
+	input := s.InvocationContext().Input()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
