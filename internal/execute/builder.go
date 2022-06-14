@@ -1,6 +1,7 @@
 package execute
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,115 +30,197 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan offlineState
 
-	linkChans := make(map[compiled.LinkName]chan offlineState)
+	chans := make(map[compiled.LinkName]chan offlineState)
 
-	pipeline.VisitLinks(func(l *compiled.Link) error {
+	err := pipeline.VisitLinks(func(l *compiled.Link) error {
 		ch := make(chan offlineState, defaultChanSize)
 		allChans = append(allChans, ch)
-		linkChans[l.Name()] = ch
+		chans[l.Name()] = ch
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	stages := newStageMap()
-	pipeline.VisitStages(func(s *compiled.Stage) error {
-		name := s.Name()
-		inChan, aux, err := buildInputResources(s, &allChans, linkChans)
+	stages := make(map[compiled.StageName]Stage)
+	err = pipeline.VisitStages(func(s *compiled.Stage) error {
+		execStage, err := buildOfflineStage(s, chans, logger)
 		if err != nil {
-			return err
+			return fmt.Errorf("build stage: %w", err)
 		}
-		if aux != nil {
-			stages.addInputStage(name, aux)
-		}
-		outChan, aux := buildOfflineOutputResources(s, &allChans, linkChans)
-		if aux != nil {
-			stages.addOutputStage(name, aux)
-		}
-		address := s.Address()
-		clientBuilder := s.Method().ClientBuilder()
-		rpcStage := newOfflineUnary(
-			name, inChan, outChan, address, clientBuilder, logger,
-		)
-		stages.addRpcStage(name, rpcStage)
+		stages[s.Name()] = execStage
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	return newOfflineExecution(stages, logger), nil
 }
 
-func buildInputResources(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
-) (chan offlineState, Stage, error) {
-	switch len(s.Inputs()) {
-	case 0:
-		ch := make(chan offlineState, defaultChanSize)
-		*allChans = append(*allChans, ch)
-		s := newOfflineSource(s.Method().Input().EmptyGen(), ch)
-		return ch, s, nil
-	case 1:
-		l := s.Inputs()[0]
-		if !l.Target().Field().IsEmpty() {
-			output, s := buildOfflineMergeStage(s, allChans, linkChans)
-			return output, s, nil
+func buildOfflineStage(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState, l Logger) (Stage, error) {
+	switch s.Type() {
+	case compiled.StageTypeUnary:
+		s, err := buildOfflineUnary(s, chans, l)
+		if err != nil {
+			return nil, fmt.Errorf("build unary: %w", err)
 		}
-		return linkChans[l.Name()], nil, nil
+		return s, nil
+	case compiled.StageTypeSource:
+		s, err := buildOfflineSource(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build source: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeSink:
+		s, err := buildOfflineSink(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build sink: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeMerge:
+		s, err := buildOfflineMerge(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build merge: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeSplit:
+		s, err := buildOfflineSplit(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build split: %w", err)
+		}
+		return s, nil
 	default:
-		output, s := buildOfflineMergeStage(s, allChans, linkChans)
-		return output, s, nil
+		return nil, fmt.Errorf("unknown stage type: %s", s.Type())
 	}
 }
 
-func buildOfflineMergeStage(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
-) (chan offlineState, Stage) {
-	fields := make([]compiled.MessageField, 0, len(s.Inputs()))
+func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState, l Logger) (Stage, error) {
+	name := s.Name()
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+	addr := s.InvocationContext().Address()
+	clientBuilder := s.InvocationContext().ClientBuilder()
+	if clientBuilder == nil {
+		return nil, errors.New("nil client builder")
+	}
+	return newOfflineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+}
+
+func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+	input := s.InvocationContext().Input()
+	if input == nil {
+		return nil, errors.New("nil method input")
+	}
+	inputGen := input.EmptyGen()
+	if inputGen == nil {
+		return nil, errors.New("nil method input empty gen")
+	}
+
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+	if len(inputs) != 0 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 0, actual %d", len(inputs))
+	}
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+	return newOfflineSource(inputGen, outChan), nil
+}
+
+func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	if len(outputs) != 0 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 0, actual %d", len(outputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+	return newOfflineSink(inChan), nil
+}
+
+func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+	inputs := s.Inputs()
+	fields := make([]compiled.MessageField, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan offlineState, 0, len(s.Inputs()))
-	// channel where the stage will send the constructed messages.
-	outputChan := make(chan offlineState, defaultChanSize)
-	*allChans = append(*allChans, outputChan)
-	for _, l := range s.Inputs() {
+	inChans := make([]<-chan offlineState, 0, len(inputs))
+	for _, l := range inputs {
 		fields = append(fields, l.Target().Field())
-		inputs = append(inputs, linkChans[l.Name()])
-	}
-	gen := s.Method().Input().EmptyGen()
-	return outputChan, newOfflineMerge(fields, inputs, outputChan, gen)
-}
-
-func buildOfflineOutputResources(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
-) (chan offlineState, Stage) {
-	switch len(s.Outputs()) {
-	case 0:
-		ch := make(chan offlineState, defaultChanSize)
-		*allChans = append(*allChans, ch)
-		return ch, newOfflineSink(ch)
-	case 1:
-		// We have only one link, but we want a sub message. We can use the
-		// split stage with just one output that retrieves the desired message
-		// part.
-		l := s.Outputs()[0]
-		if !l.Source().Field().IsEmpty() {
-			return buildOfflineSplitStage(s, allChans, linkChans)
+		inChan, exists := chans[l.Name()]
+		if !exists {
+			return nil, fmt.Errorf("unknown input link name: %s", l.Name())
 		}
-		return linkChans[l.Name()], nil
-	default:
-		return buildOfflineSplitStage(s, allChans, linkChans)
+		inChans = append(inChans, inChan)
 	}
+
+	outputs := s.Outputs()
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+
+	input := s.InvocationContext().Input()
+	if input == nil {
+		return nil, errors.New("nil method input")
+	}
+	inputGen := input.EmptyGen()
+	if inputGen == nil {
+		return nil, errors.New("nil method input empty gen")
+	}
+	return newOfflineMerge(fields, inChans, outChan, inputGen), nil
 }
 
-func buildOfflineSplitStage(
-	s *compiled.Stage, allChans *[]chan offlineState, linkChans map[compiled.LinkName]chan offlineState,
-) (chan offlineState, Stage) {
-	fields := make([]compiled.MessageField, 0, len(s.Outputs()))
-	// channel where the stage will send the produced states.
-	inputChan := make(chan offlineState, defaultChanSize)
-	*allChans = append(*allChans, inputChan)
+func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+	inputs := s.Inputs()
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+
+	outputs := s.Outputs()
+	fields := make([]compiled.MessageField, 0, len(outputs))
 	// channels to split the received states.
-	outputs := make([]chan<- offlineState, 0, len(s.Outputs()))
+	outChans := make([]chan<- offlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {
 		fields = append(fields, l.Source().Field())
-		outputs = append(outputs, linkChans[l.Name()])
+		outChan, exists := chans[l.Name()]
+		if !exists {
+			return nil, fmt.Errorf("unknown output link name: %s", l.Name())
+		}
+		outChans = append(outChans, outChan)
 	}
-	return inputChan, newOfflineSplit(fields, inputChan, outputs)
+	return newOfflineSplit(fields, inChan, outChans), nil
 }
 
 func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineExecution, error) {
@@ -145,114 +228,195 @@ func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineEx
 	// linkChans stores the channels associates with the pipeline links.
 	var allChans []chan onlineState
 
-	linkChans := make(map[compiled.LinkName]chan onlineState)
+	chans := make(map[compiled.LinkName]chan onlineState)
 
-	pipeline.VisitLinks(func(l *compiled.Link) error {
+	err := pipeline.VisitLinks(func(l *compiled.Link) error {
 		ch := make(chan onlineState, defaultChanSize)
 		allChans = append(allChans, ch)
-		linkChans[l.Name()] = ch
+		chans[l.Name()] = ch
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	stages := newStageMap()
-	pipeline.VisitStages(func(s *compiled.Stage) error {
-		name := s.Name()
-		inChan, aux, err := buildOnlineInputResources(s, &allChans, linkChans)
+	stages := make(map[compiled.StageName]Stage)
+	err = pipeline.VisitStages(func(s *compiled.Stage) error {
+		execStage, err := buildOnlineStage(s, chans, logger)
 		if err != nil {
-			return err
+			return fmt.Errorf("build stage: %w", err)
 		}
-		if aux != nil {
-			stages.addInputStage(name, aux)
-		}
-		outChan, aux := buildOnlineOutputResources(s, &allChans, linkChans)
-		if aux != nil {
-			stages.addOutputStage(name, aux)
-		}
-		address := s.Address()
-		clientBuilder := s.Method().ClientBuilder()
-		rpcStage := newOnlineUnary(
-			name, inChan, outChan, address, clientBuilder, logger,
-		)
-		stages.addRpcStage(name, rpcStage)
+		stages[s.Name()] = execStage
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	drainFunc := newChanDrainer(5*time.Millisecond, allChans...)
 	return newOnlineExecution(stages, drainFunc, logger), nil
 }
 
-func buildOnlineInputResources(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
-) (chan onlineState, Stage, error) {
-	switch len(s.Inputs()) {
-	case 0:
-		ch := make(chan onlineState, defaultChanSize)
-		*allChans = append(*allChans, ch)
-		s := newOnlineSource(1, s.Method().Input().EmptyGen(), ch)
-		return ch, s, nil
-	case 1:
-		l := s.Inputs()[0]
-		if !l.Target().Field().IsEmpty() {
-			output, s := buildOnlineMergeStage(s, allChans, linkChans)
-			return output, s, nil
+func buildOnlineStage(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState, l Logger) (Stage, error) {
+	switch s.Type() {
+	case compiled.StageTypeUnary:
+		s, err := buildOnlineUnary(s, chans, l)
+		if err != nil {
+			return nil, fmt.Errorf("build unary: %w", err)
 		}
-		return linkChans[l.Name()], nil, nil
+		return s, nil
+	case compiled.StageTypeSource:
+		s, err := buildOnlineSource(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build source: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeSink:
+		s, err := buildOnlineSink(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build sink: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeMerge:
+		s, err := buildOnlineMerge(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build merge: %w", err)
+		}
+		return s, nil
+	case compiled.StageTypeSplit:
+		s, err := buildOnlineSplit(s, chans)
+		if err != nil {
+			return nil, fmt.Errorf("build split: %w", err)
+		}
+		return s, nil
 	default:
-		output, s := buildOnlineMergeStage(s, allChans, linkChans)
-		return output, s, nil
+		return nil, fmt.Errorf("unknown stage type: %s", s.Type())
 	}
 }
 
-func buildOnlineMergeStage(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
-) (chan onlineState, Stage) {
-	fields := make([]compiled.MessageField, 0, len(s.Inputs()))
+func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState, l Logger) (Stage, error) {
+	name := s.Name()
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+	addr := s.InvocationContext().Address()
+	clientBuilder := s.InvocationContext().ClientBuilder()
+	if clientBuilder == nil {
+		return nil, errors.New("nil client builder")
+	}
+	return newOnlineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+}
+
+func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
+	input := s.InvocationContext().Input()
+	if input == nil {
+		return nil, errors.New("nil method input")
+	}
+	inputGen := input.EmptyGen()
+	if inputGen == nil {
+		return nil, errors.New("nil method input empty gen")
+	}
+
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+	if len(inputs) != 0 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 0, actual %d", len(inputs))
+	}
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+	return newOnlineSource(1, inputGen, outChan), nil
+}
+
+func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
+	inputs := s.Inputs()
+	outputs := s.Outputs()
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	if len(outputs) != 0 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 0, actual %d", len(outputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+	return newOnlineSink(inChan), nil
+}
+
+func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
+	inputs := s.Inputs()
+	fields := make([]compiled.MessageField, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
-	inputs := make([]<-chan onlineState, 0, len(s.Inputs()))
-	// channel where the stage will send the constructed messages.
-	outputChan := make(chan onlineState, defaultChanSize)
-	*allChans = append(*allChans, outputChan)
-	for _, l := range s.Inputs() {
+	inChans := make([]<-chan onlineState, 0, len(inputs))
+	for _, l := range inputs {
 		fields = append(fields, l.Target().Field())
-		inputs = append(inputs, linkChans[l.Name()])
-	}
-	gen := s.Method().Input().EmptyGen()
-	return outputChan, newOnlineMerge(fields, inputs, outputChan, gen)
-}
-
-func buildOnlineOutputResources(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
-) (chan onlineState, Stage) {
-	switch len(s.Outputs()) {
-	case 0:
-		ch := make(chan onlineState, defaultChanSize)
-		*allChans = append(*allChans, ch)
-		return ch, newOnlineSink(ch)
-	case 1:
-		// We have only one link, but we want a sub message. We can use the
-		// split stage with just one output that retrieves the desired message
-		// part.
-		l := s.Outputs()[0]
-		if !l.Source().Field().IsEmpty() {
-			return buildOnlineSplitStage(s, allChans, linkChans)
+		inChan, exists := chans[l.Name()]
+		if !exists {
+			return nil, fmt.Errorf("unknown input link name: %s", l.Name())
 		}
-		return linkChans[l.Name()], nil
-	default:
-		return buildOnlineSplitStage(s, allChans, linkChans)
+		inChans = append(inChans, inChan)
 	}
+
+	outputs := s.Outputs()
+	if len(outputs) != 1 {
+		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
+	}
+	outChan, exists := chans[outputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
+	}
+
+	input := s.InvocationContext().Input()
+	if input == nil {
+		return nil, errors.New("nil method input")
+	}
+	inputGen := input.EmptyGen()
+	if inputGen == nil {
+		return nil, errors.New("nil method input empty gen")
+	}
+	return newOnlineMerge(fields, inChans, outChan, inputGen), nil
 }
 
-func buildOnlineSplitStage(
-	s *compiled.Stage, allChans *[]chan onlineState, linkChans map[compiled.LinkName]chan onlineState,
-) (chan onlineState, Stage) {
-	fields := make([]compiled.MessageField, 0, len(s.Outputs()))
-	// channel where the stage will send the produced states.
-	inputChan := make(chan onlineState, defaultChanSize)
-	*allChans = append(*allChans, inputChan)
+func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
+	inputs := s.Inputs()
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
+	}
+	inChan, exists := chans[inputs[0].Name()]
+	if !exists {
+		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
+	}
+
+	outputs := s.Outputs()
+	fields := make([]compiled.MessageField, 0, len(outputs))
 	// channels to split the received states.
-	outputs := make([]chan<- onlineState, 0, len(s.Outputs()))
+	outChans := make([]chan<- onlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {
 		fields = append(fields, l.Source().Field())
-		outputs = append(outputs, linkChans[l.Name()])
+		outChan, exists := chans[l.Name()]
+		if !exists {
+			return nil, fmt.Errorf("unknown output link name: %s", l.Name())
+		}
+		outChans = append(outChans, outChan)
 	}
-	return inputChan, newOnlineSplit(fields, inputChan, outputs)
+	return newOnlineSplit(fields, inChan, outChans), nil
 }

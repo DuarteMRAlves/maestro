@@ -91,18 +91,19 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 		return nil, err
 	}
 
-	stages := make(stageGraph, len(pipelineSpec.Stages))
+	// condensed graph contains rpc stages with multiple inputs and outputs.
+	condensedGraph := make(stageGraph, len(pipelineSpec.Stages))
 	for _, stageSpec := range pipelineSpec.Stages {
 		stageName := stageSpec.Name
 		stage, err := compileStage(ctx, stageSpec)
 		if err != nil {
 			return nil, fmt.Errorf("compile stage '%s': %w", stageName, err)
 		}
-		err = validateStage(stages, stage)
+		err = validateStage(condensedGraph, stage)
 		if err != nil {
 			return nil, fmt.Errorf("validate stage '%s': %w", stageName, err)
 		}
-		stages[stage.name] = stage
+		condensedGraph[stage.name] = stage
 	}
 
 	for _, linkSpec := range pipelineSpec.Links {
@@ -111,22 +112,24 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 		if err != nil {
 			return nil, fmt.Errorf("compile link '%s': %w", linkName, err)
 		}
-		err = validateLink(stages, link)
+		err = validateLink(condensedGraph, link)
 		if err != nil {
 			return nil, fmt.Errorf("validate link '%s': %w", linkName, err)
 		}
 
-		source := stages[link.Source().Stage()]
-		target := stages[link.Target().Stage()]
+		source := condensedGraph[link.Source().Stage()]
+		target := condensedGraph[link.Target().Stage()]
 
 		target.inputs = append(target.inputs, link)
 		source.outputs = append(source.outputs, link)
 	}
 
+	augmentedGraph := augmentedGraphFromCondensed(condensedGraph)
+
 	p := &Pipeline{
 		name:   name,
 		mode:   mode,
-		stages: stages,
+		stages: augmentedGraph,
 	}
 	return p, nil
 }
@@ -164,18 +167,16 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	methodCtx, err := compileMethodContext(&stageSpec.MethodContext)
-	if err != nil {
-		return nil, err
-	}
-	unaryMethod, err := ctx.methodLoader.Load(methodCtx)
+	service := NewService(stageSpec.MethodContext.Service)
+	method := NewMethod(stageSpec.MethodContext.Method)
+	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
 	if err != nil {
 		return nil, err
 	}
 	stage := &Stage{
 		name:    name,
-		address: address,
-		method:  unaryMethod,
+		sType:   StageTypeUnary,
+		ictx:    ictx,
 		inputs:  []*Link{},
 		outputs: []*Link{},
 	}
@@ -191,19 +192,6 @@ func compileStageName(name string) (StageName, error) {
 		return stageName, errEmptyStageName
 	}
 	return stageName, nil
-}
-
-func compileMethodContext(
-	methodContextSpec *spec.MethodContext,
-) (*MethodContext, error) {
-	address, err := compileAddress(methodContextSpec.Address)
-	if err != nil {
-		return nil, err
-	}
-	service := NewService(methodContextSpec.Service)
-	method := NewMethod(methodContextSpec.Method)
-	methodCtx := NewMethodContext(address, service, method)
-	return &methodCtx, nil
 }
 
 func compileAddress(address string) (Address, error) {
@@ -286,7 +274,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		return errEqualSourceAndTarget
 	}
 
-	sourceMsg := source.Method().Output()
+	sourceMsg := source.InvocationContext().Output()
 	if !link.Source().Field().IsEmpty() {
 		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
 		if err != nil {
@@ -294,7 +282,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		}
 	}
 
-	targetMsg := target.Method().Input()
+	targetMsg := target.InvocationContext().Input()
 	if !link.Target().Field().IsEmpty() {
 		targetMsg, err = targetMsg.GetField(link.Target().Field())
 		if err != nil {
@@ -326,4 +314,137 @@ func validateLink(stages stageGraph, link *Link) error {
 		}
 	}
 	return nil
+}
+
+func augmentedGraphFromCondensed(condensedGraph stageGraph) stageGraph {
+	augmentedGraph := make(stageGraph)
+
+	for _, s := range condensedGraph {
+		if auxInput := compileAuxInputIfNecessary(s); auxInput != nil {
+			augmentedGraph[auxInput.name] = auxInput
+		}
+		if auxOutput := compileAuxOutputIfNecessary(s); auxOutput != nil {
+			augmentedGraph[auxOutput.name] = auxOutput
+		}
+		augmentedGraph[s.name] = s
+	}
+	return augmentedGraph
+}
+
+func compileAuxInputIfNecessary(s *Stage) *Stage {
+	switch len(s.inputs) {
+	// Stage s has no inputs and is a source of the pipeline. We create
+	// a source stage and add it as an input to s.
+	case 0:
+		return compileSourceInput(s)
+	case 1:
+		l := s.inputs[0]
+		// We only have one link but we have to set a field and so
+		// we use a single link merge stage.
+		if !l.Target().Field().IsEmpty() {
+			return compileMergeInput(s)
+		}
+		return nil
+	default:
+		return compileMergeInput(s)
+	}
+}
+
+func compileSourceInput(s *Stage) *Stage {
+	name := StageName{fmt.Sprintf("%s:aux-source", s.name.val)}
+	l := &Link{
+		name:   LinkName{fmt.Sprintf("%s:aux-source-link", s.name.val)},
+		source: &LinkEndpoint{stage: name},
+		target: &LinkEndpoint{stage: s.name},
+	}
+	source := &Stage{
+		name:  name,
+		sType: StageTypeSource,
+		// give access to the method for later usage
+		ictx:    s.ictx,
+		inputs:  []*Link{},
+		outputs: []*Link{l},
+	}
+	s.inputs = []*Link{l}
+	return source
+}
+
+func compileMergeInput(s *Stage) *Stage {
+	name := StageName{fmt.Sprintf("%s:aux-merge", s.name.val)}
+	l := &Link{
+		name:   LinkName{fmt.Sprintf("%s:aux-merge-link", s.name.val)},
+		source: &LinkEndpoint{stage: name},
+		target: &LinkEndpoint{stage: s.name},
+	}
+	merge := &Stage{
+		name:  name,
+		sType: StageTypeMerge,
+		// give access to the method for later usage
+		ictx:    s.ictx,
+		inputs:  s.inputs,
+		outputs: []*Link{l},
+	}
+	s.inputs = []*Link{l}
+	for _, i := range merge.inputs {
+		i.target.stage = name
+	}
+	return merge
+}
+
+func compileAuxOutputIfNecessary(s *Stage) *Stage {
+	switch len(s.outputs) {
+	// Stage s has no inputs and is a source of the pipeline. We create
+	// a source stage and add it as an input to s.
+	case 0:
+		return compileSinkOutput(s)
+	case 1:
+		l := s.inputs[0]
+		if !l.Target().Field().IsEmpty() {
+			return compileSplitOutput(s)
+		}
+		return nil
+	default:
+		return compileSplitOutput(s)
+	}
+}
+
+func compileSinkOutput(s *Stage) *Stage {
+	name := StageName{fmt.Sprintf("%s:aux-sink", s.name.val)}
+	l := &Link{
+		name:   LinkName{fmt.Sprintf("%s:aux-sink-link", s.name.val)},
+		source: &LinkEndpoint{stage: s.name},
+		target: &LinkEndpoint{stage: name},
+	}
+	sink := &Stage{
+		name:  name,
+		sType: StageTypeSink,
+		// give access to the method for later usage
+		ictx:    s.ictx,
+		inputs:  []*Link{l},
+		outputs: []*Link{},
+	}
+	s.outputs = []*Link{l}
+	return sink
+}
+
+func compileSplitOutput(s *Stage) *Stage {
+	name := StageName{fmt.Sprintf("%s:aux-split", s.name.val)}
+	l := &Link{
+		name:   LinkName{fmt.Sprintf("%s:aux-split-link", s.name.val)},
+		source: &LinkEndpoint{stage: s.name},
+		target: &LinkEndpoint{stage: name},
+	}
+	split := &Stage{
+		name:  name,
+		sType: StageTypeSplit,
+		// give access to the method for later usage
+		ictx:    s.ictx,
+		inputs:  []*Link{l},
+		outputs: s.outputs,
+	}
+	s.outputs = []*Link{l}
+	for _, i := range split.outputs {
+		i.source.stage = name
+	}
+	return split
 }

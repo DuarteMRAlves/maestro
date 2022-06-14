@@ -3,6 +3,7 @@ package execute
 import (
 	"context"
 
+	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -17,23 +18,23 @@ type Execution interface {
 }
 
 type offlineExecution struct {
-	stages *stageMap
+	stages map[compiled.StageName]Stage
 
 	runner *runner
 
 	logger Logger
 }
 
-func newOfflineExecution(stages *stageMap, logger Logger) *offlineExecution {
+func newOfflineExecution(stages map[compiled.StageName]Stage, logger Logger) *offlineExecution {
 	return &offlineExecution{stages: stages, logger: logger}
 }
 
 func (e *offlineExecution) Start() {
 	e.runner = newRunner()
 
-	e.stages.iter(func(s Stage) {
+	for _, s := range e.stages {
 		e.runner.goWithCtx(s.Run)
-	})
+	}
 
 	e.logger.Debugf("Execution started\n")
 }
@@ -45,7 +46,7 @@ func (e *offlineExecution) Stop() error {
 }
 
 type onlineExecution struct {
-	stages      *stageMap
+	stages      map[compiled.StageName]Stage
 	chanDrainer chanDrainer
 
 	runner *runner
@@ -53,7 +54,7 @@ type onlineExecution struct {
 	logger Logger
 }
 
-func newOnlineExecution(stages *stageMap, drainFunc chanDrainer, logger Logger) *onlineExecution {
+func newOnlineExecution(stages map[compiled.StageName]Stage, drainFunc chanDrainer, logger Logger) *onlineExecution {
 	return &onlineExecution{stages: stages, chanDrainer: drainFunc, logger: logger}
 }
 
@@ -65,9 +66,9 @@ func (e *onlineExecution) Start() {
 		return nil
 	})
 
-	e.stages.iter(func(s Stage) {
+	for _, s := range e.stages {
 		e.runner.goWithCtx(s.Run)
-	})
+	}
 
 	e.logger.Debugf("Execution started\n")
 }
