@@ -226,7 +226,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeSource,
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
-							service:     Service{val: "service-1"},
+							service:     Service("service-1"),
 							method:      Method{val: "method-1"},
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
@@ -244,7 +244,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
-							service:     Service{val: "service-1"},
+							service:     Service("service-1"),
 							method:      Method{val: "method-1"},
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
@@ -268,7 +268,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeSplit,
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
-							service:     Service{val: "service-1"},
+							service:     Service("service-1"),
 							method:      Method{val: "method-1"},
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
@@ -300,7 +300,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
 							address:     Address("address-2"),
-							service:     Service{val: "service-2"},
+							service:     Service("service-2"),
 							method:      Method{val: "method-2"},
 							unaryMethod: testSplitAndMergeStage2Method{},
 						},
@@ -327,7 +327,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeMerge,
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
-							service:     Service{val: "service-3"},
+							service:     Service("service-3"),
 							method:      Method{val: "method-3"},
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
@@ -362,7 +362,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
-							service:     Service{val: "service-3"},
+							service:     Service("service-3"),
 							method:      Method{val: "method-3"},
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
@@ -386,7 +386,7 @@ func TestNew(t *testing.T) {
 						sType: StageTypeSink,
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
-							service:     Service{val: "service-3"},
+							service:     Service("service-3"),
 							method:      Method{val: "method-3"},
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
@@ -403,19 +403,13 @@ func TestNew(t *testing.T) {
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
-					Address("address-1"),
-					NewService("service-1"),
-					NewMethod("method-1"),
+					Address("address-1"), Service("service-1"), NewMethod("method-1"),
 				)
 				ctx2 := NewMethodContext(
-					Address("address-2"),
-					NewService("service-2"),
-					NewMethod("method-2"),
+					Address("address-2"), Service("service-2"), NewMethod("method-2"),
 				)
 				ctx3 := NewMethodContext(
-					Address("address-3"),
-					NewService("service-3"),
-					NewMethod("method-3"),
+					Address("address-3"), Service("service-3"), NewMethod("method-3"),
 				)
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testSplitAndMergeStage1Method{},
@@ -444,7 +438,6 @@ func TestNew(t *testing.T) {
 				Stage{},
 				StageName{},
 				InvocationContext{},
-				Service{},
 				Method{},
 				Link{},
 				LinkName{},
@@ -537,12 +530,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -577,12 +570,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -617,12 +610,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -657,12 +650,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -703,12 +696,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -749,12 +742,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -811,17 +804,17 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx3 := NewMethodContext(
 					Address("address-3"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -879,17 +872,17 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx3 := NewMethodContext(
 					Address("address-3"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -950,17 +943,17 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx3 := NewMethodContext(
 					Address("address-3"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{
@@ -1007,12 +1000,12 @@ func TestNewIsErr(t *testing.T) {
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
 				ctx1 := NewMethodContext(
 					Address("address-1"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				ctx2 := NewMethodContext(
 					Address("address-2"),
-					Service{},
+					Service(""),
 					Method{},
 				)
 				mapper := map[MethodContext]UnaryMethod{

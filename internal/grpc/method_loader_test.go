@@ -51,11 +51,11 @@ func TestReflectionClient_ListServices(t *testing.T) {
 	}
 	counts := map[string]int{"unit.MethodLoaderTestService": 0}
 	for _, s := range services {
-		_, serviceExists := counts[s.Unwrap()]
+		_, serviceExists := counts[string(s)]
 		if !serviceExists {
 			t.Fatalf("unexpected service %s", s)
 		}
-		counts[s.Unwrap()]++
+		counts[string(s)]++
 	}
 	for service, count := range counts {
 		if diff := cmp.Diff(1, count); diff != "" {
@@ -126,7 +126,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("unit.MethodLoaderTestService")
+	serviceName := compiled.Service("unit.MethodLoaderTestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
@@ -269,7 +269,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("pb.TestService")
+	serviceName := compiled.Service("pb.TestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
@@ -311,7 +311,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("pb.UnknownService")
+	serviceName := compiled.Service("pb.UnknownService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
@@ -327,7 +327,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		format := "Wrong error type: expected %s, got %s"
 		t.Fatalf(format, reflect.TypeOf(nf), reflect.TypeOf(err))
 	}
-	expError := &serviceNotFound{srv: serviceName.Unwrap()}
+	expError := &serviceNotFound{srv: string(serviceName)}
 	cmpOpts := cmp.AllowUnexported(serviceNotFound{})
 	if diff := cmp.Diff(expError, nf, cmpOpts); diff != "" {
 		t.Fatalf("error mismatch:\n%s", diff)

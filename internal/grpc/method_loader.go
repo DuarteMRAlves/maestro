@@ -90,7 +90,7 @@ func (m *ReflectionMethodLoader) listServices(
 	services := make([]compiled.Service, 0, len(all)-1)
 	for _, s := range all {
 		if s != reflectionServiceName {
-			services = append(services, compiled.NewService(s))
+			services = append(services, compiled.Service(s))
 		}
 	}
 	return services, nil
@@ -100,18 +100,18 @@ func findService(
 	available []compiled.Service,
 	search compiled.Service,
 ) (compiled.Service, error) {
-	if search.IsEmpty() {
+	if search.IsUnspecified() {
 		if len(available) == 1 {
 			return available[0], nil
 		}
-		return compiled.Service{}, notOneService
+		return "", notOneService
 	} else {
 		for _, s := range available {
 			if search == s {
 				return search, nil
 			}
 		}
-		return compiled.Service{}, &serviceNotFound{srv: search.Unwrap()}
+		return "", &serviceNotFound{srv: string(search)}
 	}
 }
 
@@ -128,7 +128,7 @@ func (m *ReflectionMethodLoader) resolveService(
 	c := grpcreflect.NewClient(ctx, stub)
 
 	retry.WhileTrue(func() bool {
-		descriptor, err = c.ResolveService(service.Unwrap())
+		descriptor, err = c.ResolveService(string(service))
 		st, _ := status.FromError(err)
 		return st.Code() == codes.Unavailable
 	}, &m.expBackoff)
@@ -138,18 +138,18 @@ func (m *ReflectionMethodLoader) resolveService(
 		case isGrpcErr(err):
 			st, _ := status.FromError(err)
 			err := st.Err()
-			err = fmt.Errorf("resolve service %s: %w", service.Unwrap(), err)
+			err = fmt.Errorf("resolve service %s: %w", service, err)
 			return nil, err
 		case isElementNotFoundErr(err):
-			err := &serviceNotFound{srv: service.Unwrap()}
+			err := &serviceNotFound{srv: string(service)}
 			return nil, fmt.Errorf("resolve service: %w", err)
 		case isProtocolError(err):
-			err := fmt.Errorf("resolve service %s: %w", service.Unwrap(), err)
+			err := fmt.Errorf("resolve service %s: %w", service, err)
 			return nil, err
 		default:
 			// Should never happen as all errors should be caught by one
 			// of the above options
-			err := fmt.Errorf("resolve service %s: %w", service.Unwrap(), err)
+			err := fmt.Errorf("resolve service %s: %w", service, err)
 			return nil, err
 		}
 	}

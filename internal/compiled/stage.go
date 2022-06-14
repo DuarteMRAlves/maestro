@@ -77,7 +77,7 @@ func (ictx *InvocationContext) Address() Address {
 
 func (ictx *InvocationContext) Service() Service {
 	if ictx == nil {
-		return Service{}
+		return ""
 	}
 	return ictx.service
 }
@@ -161,16 +161,17 @@ func (a Address) String() string {
 	return string(a)
 }
 
-type Service struct{ val string }
+// Service specifies the name of the grpc service to execute.
+type Service string
 
-func (s Service) Unwrap() string {
-	return s.val
-}
+// IsUnspecified reports whether this service is either "" or "*".
+func (s Service) IsUnspecified() bool { return s == "" || s == "*" }
 
-func (s Service) IsEmpty() bool { return s.val == "" }
-
-func NewService(s string) Service {
-	return Service{val: s}
+func (s Service) String() string {
+	if s.IsUnspecified() {
+		return "*"
+	}
+	return string(s)
 }
 
 type Method struct{ val string }
@@ -212,13 +213,9 @@ func NewMethodContext(
 }
 
 func joinAddressServiceMethod(address Address, service Service, method Method) string {
-	srv := "*"
 	meth := "*"
-	if !service.IsEmpty() {
-		srv = service.val
-	}
 	if !method.IsEmpty() {
 		meth = method.val
 	}
-	return fmt.Sprintf("%s/%s/%s", address, srv, meth)
+	return fmt.Sprintf("%s/%s/%s", address, service, meth)
 }

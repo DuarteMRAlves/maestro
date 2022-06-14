@@ -167,7 +167,7 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if address.IsEmpty() {
 		return nil, errEmptyAddress
 	}
-	service := NewService(stageSpec.MethodContext.Service)
+	service := Service(stageSpec.MethodContext.Service)
 	method := NewMethod(stageSpec.MethodContext.Method)
 	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
 	if err != nil {
