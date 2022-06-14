@@ -52,7 +52,7 @@ func newClientBuilder(
 	emptyGen compiled.EmptyMessageGen,
 ) compiled.UnaryClientBuilder {
 	return func(address compiled.Address) (compiled.UnaryClient, error) {
-		conn, err := grpc.Dial(address.Unwrap(), grpc.WithInsecure())
+		conn, err := grpc.Dial(string(address), grpc.WithInsecure())
 		if err != nil {
 			return nil, err
 		}

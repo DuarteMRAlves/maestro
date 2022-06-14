@@ -26,7 +26,7 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	output := make(chan offlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.NewAddress("some-address")
+	address := compiled.Address("some-address")
 	clientBuilder := testUnaryClientBuilder()
 	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 
@@ -90,7 +90,7 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	output := make(chan onlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.NewAddress("some-address")
+	address := compiled.Address("some-address")
 	clientBuilder := testUnaryClientBuilder()
 	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
 

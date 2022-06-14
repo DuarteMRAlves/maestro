@@ -124,9 +124,9 @@ func setupLinear(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.NewAddress("source"))
-	transformContext := createMethodContext(compiled.NewAddress("transform"))
-	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.Address("source"))
+	transformContext := createMethodContext(compiled.Address("transform"))
+	sinkContext := createMethodContext(compiled.Address("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: linearSourceClientBuilder(),
@@ -375,9 +375,9 @@ func setupSplitAndMerge(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.NewAddress("source"))
-	transformContext := createMethodContext(compiled.NewAddress("transform"))
-	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.Address("source"))
+	transformContext := createMethodContext(compiled.Address("transform"))
+	sinkContext := createMethodContext(compiled.Address("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
@@ -607,9 +607,9 @@ func setupSlow(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.NewAddress("source"))
-	transformContext := createMethodContext(compiled.NewAddress("transform"))
-	sinkContext := createMethodContext(compiled.NewAddress("sink"))
+	sourceContext := createMethodContext(compiled.Address("source"))
+	transformContext := createMethodContext(compiled.Address("transform"))
+	sinkContext := createMethodContext(compiled.Address("sink"))
 
 	sourceMethod := testMethod{
 		MethodClientBuilder: slowSourceClientBuilder(),

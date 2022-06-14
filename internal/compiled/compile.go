@@ -163,9 +163,9 @@ func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	address, err := compileAddress(stageSpec.MethodContext.Address)
-	if err != nil {
-		return nil, err
+	address := Address(stageSpec.MethodContext.Address)
+	if address.IsEmpty() {
+		return nil, errEmptyAddress
 	}
 	service := NewService(stageSpec.MethodContext.Service)
 	method := NewMethod(stageSpec.MethodContext.Method)
@@ -192,14 +192,6 @@ func compileStageName(name string) (StageName, error) {
 		return stageName, errEmptyStageName
 	}
 	return stageName, nil
-}
-
-func compileAddress(address string) (Address, error) {
-	addr := NewAddress(address)
-	if addr.IsEmpty() {
-		return addr, errEmptyAddress
-	}
-	return addr, nil
 }
 
 func compileLink(linkSpec *spec.Link) (*Link, error) {

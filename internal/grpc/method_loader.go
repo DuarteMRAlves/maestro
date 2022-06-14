@@ -44,7 +44,7 @@ func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
 	error,
 ) {
 	m.logger.Debugf("Load method with reflection: %#v", methodCtx)
-	conn, err := grpc.Dial(methodCtx.Address().Unwrap(), grpc.WithInsecure())
+	conn, err := grpc.Dial(string(methodCtx.Address()), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}

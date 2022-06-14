@@ -70,7 +70,7 @@ func newInvocationContext(
 
 func (ictx *InvocationContext) Address() Address {
 	if ictx == nil {
-		return Address{}
+		return ""
 	}
 	return ictx.address
 }
@@ -148,6 +148,19 @@ const (
 	StageTypeSplit  StageType = "SplitStage"
 )
 
+// Address specifies the location of the server executing the
+// stage method.
+type Address string
+
+func (a Address) IsEmpty() bool { return a == "" }
+
+func (a Address) String() string {
+	if a.IsEmpty() {
+		return "*"
+	}
+	return string(a)
+}
+
 type Service struct{ val string }
 
 func (s Service) Unwrap() string {
@@ -169,14 +182,6 @@ func (m Method) Unwrap() string {
 func (m Method) IsEmpty() bool { return m.val == "" }
 
 func NewMethod(m string) Method { return Method{val: m} }
-
-type Address struct{ val string }
-
-func (a Address) Unwrap() string { return a.val }
-
-func (a Address) IsEmpty() bool { return a.val == "" }
-
-func NewAddress(a string) Address { return Address{val: a} }
 
 type MethodContext struct {
 	address Address
@@ -207,17 +212,13 @@ func NewMethodContext(
 }
 
 func joinAddressServiceMethod(address Address, service Service, method Method) string {
-	addr := "*"
 	srv := "*"
 	meth := "*"
-	if !address.IsEmpty() {
-		addr = address.val
-	}
 	if !service.IsEmpty() {
 		srv = service.val
 	}
 	if !method.IsEmpty() {
 		meth = method.val
 	}
-	return fmt.Sprintf("%s/%s/%s", addr, srv, meth)
+	return fmt.Sprintf("%s/%s/%s", address, srv, meth)
 }

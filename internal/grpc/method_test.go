@@ -73,7 +73,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.NewAddress(addr))
+	client, err := clientBuilder(compiled.Address(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}
@@ -137,7 +137,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.NewAddress(addr))
+	client, err := clientBuilder(compiled.Address(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}
@@ -195,7 +195,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	method := newUnaryMethod(methodName, inDesc, outDesc)
 
 	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.NewAddress(addr))
+	client, err := clientBuilder(compiled.Address(addr))
 	if err != nil {
 		t.Fatalf("build client: %s", err)
 	}
