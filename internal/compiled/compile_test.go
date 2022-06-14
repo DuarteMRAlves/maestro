@@ -6,34 +6,33 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestNew(t *testing.T) {
 	tests := map[string]struct {
-		input        *spec.Pipeline
+		input        *PipelineConfig
 		expected     *Pipeline
 		methodLoader MethodLoaderFunc
 	}{
 		"linear specification": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "pipeline",
-				Stages: []*spec.Stage{
+				Stages: []*StageConfig{
 					{
 						Name:          "stage-1",
-						MethodContext: spec.MethodContext{Address: "address-1"},
+						MethodContext: MethodContextConfig{Address: "address-1"},
 					},
 					{
 						Name:          "stage-2",
-						MethodContext: spec.MethodContext{Address: "address-2"},
+						MethodContext: MethodContextConfig{Address: "address-2"},
 					},
 					{
 						Name:          "stage-3",
-						MethodContext: spec.MethodContext{Address: "address-3"},
+						MethodContext: MethodContextConfig{Address: "address-3"},
 					},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -168,13 +167,13 @@ func TestNew(t *testing.T) {
 			},
 		},
 		"split and merge": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "pipeline",
-				Mode: spec.OnlineExecution,
-				Stages: []*spec.Stage{
+				Mode: OnlineExecution,
+				Stages: []*StageConfig{
 					{
 						Name: "stage-1",
-						MethodContext: spec.MethodContext{
+						MethodContext: MethodContextConfig{
 							Address: "address-1",
 							Service: "service-1",
 							Method:  "method-1",
@@ -182,7 +181,7 @@ func TestNew(t *testing.T) {
 					},
 					{
 						Name: "stage-2",
-						MethodContext: spec.MethodContext{
+						MethodContext: MethodContextConfig{
 							Address: "address-2",
 							Service: "service-2",
 							Method:  "method-2",
@@ -190,14 +189,14 @@ func TestNew(t *testing.T) {
 					},
 					{
 						Name: "stage-3",
-						MethodContext: spec.MethodContext{
+						MethodContext: MethodContextConfig{
 							Address: "address-3",
 							Service: "service-3",
 							Method:  "method-3",
 						},
 					},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -445,12 +444,12 @@ func TestNew(t *testing.T) {
 
 func TestNewIsErr(t *testing.T) {
 	tests := map[string]struct {
-		input        *spec.Pipeline
+		input        *PipelineConfig
 		validateErr  func(err error) string
 		methodLoader MethodLoaderFunc
 	}{
 		"empty pipeline name": {
-			input: &spec.Pipeline{},
+			input: &PipelineConfig{},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyPipelineName) {
 					format := "error mismatch: expected %s, received %s"
@@ -464,10 +463,10 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty stage name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{MethodContext: spec.MethodContext{Address: "address"}},
+				Stages: []*StageConfig{
+					{MethodContext: MethodContextConfig{Address: "address"}},
 				},
 			},
 			validateErr: func(err error) string {
@@ -483,9 +482,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty address": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
+				Stages: []*StageConfig{
 					{Name: "stage-1"},
 				},
 			},
@@ -502,13 +501,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{SourceStage: "stage-1", TargetStage: "stage-2"},
 				},
 			},
@@ -534,13 +533,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link source name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", TargetStage: "stage-2"},
 				},
 			},
@@ -566,13 +565,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link target name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1"},
 				},
 			},
@@ -598,13 +597,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"equal link source and target": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-1"},
 				},
 			},
@@ -630,13 +629,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"source does not exist": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-3", TargetStage: "stage-1"},
 				},
 			},
@@ -668,13 +667,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"target does not exist": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-4"},
 				},
 			},
@@ -706,14 +705,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"new link set full message": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -762,14 +761,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"old link set full message": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -818,14 +817,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"new and old links set same": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -877,13 +876,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"incompatible message descriptor": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
+					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",

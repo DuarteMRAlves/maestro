@@ -3,8 +3,6 @@ package compiled
 import (
 	"errors"
 	"fmt"
-
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 )
 
 // MethodLoader resolves a method from its context.
@@ -40,12 +38,6 @@ var (
 	errEqualSourceAndTarget = errors.New("equal source and target stages")
 )
 
-type unsupportedExecutionMode struct{ mode spec.ExecutionMode }
-
-func (err *unsupportedExecutionMode) Error() string {
-	return fmt.Sprintf("unsupported execution mode: %s", err.mode)
-}
-
 type stageAlreadyExists struct{ name string }
 
 func (err *stageAlreadyExists) Error() string {
@@ -80,22 +72,17 @@ func (err *incompatibleMessageDesc) Error() string {
 }
 
 // New compiles a Pipeline from its specification.
-func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
-	name, err := compileName(pipelineSpec.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	mode, err := compileExecutionMode(pipelineSpec.Mode)
+func New(ctx Context, cfg *PipelineConfig) (*Pipeline, error) {
+	name, err := compileName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	// condensed graph contains rpc stages with multiple inputs and outputs.
-	condensedGraph := make(stageGraph, len(pipelineSpec.Stages))
-	for _, stageSpec := range pipelineSpec.Stages {
-		stageName := stageSpec.Name
-		stage, err := compileStage(ctx, stageSpec)
+	condensedGraph := make(stageGraph, len(cfg.Stages))
+	for _, stageCfg := range cfg.Stages {
+		stageName := stageCfg.Name
+		stage, err := compileStage(ctx, stageCfg)
 		if err != nil {
 			return nil, fmt.Errorf("compile stage '%s': %w", stageName, err)
 		}
@@ -106,9 +93,9 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 		condensedGraph[stage.name] = stage
 	}
 
-	for _, linkSpec := range pipelineSpec.Links {
-		linkName := linkSpec.Name
-		link, err := compileLink(linkSpec)
+	for _, linkCfg := range cfg.Links {
+		linkName := linkCfg.Name
+		link, err := compileLink(linkCfg)
 		if err != nil {
 			return nil, fmt.Errorf("compile link '%s': %w", linkName, err)
 		}
@@ -128,7 +115,7 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 
 	p := &Pipeline{
 		name:   name,
-		mode:   mode,
+		mode:   cfg.Mode,
 		stages: augmentedGraph,
 	}
 	return p, nil
@@ -145,30 +132,17 @@ func compileName(name string) (PipelineName, error) {
 	return pipelineName, nil
 }
 
-func compileExecutionMode(mode spec.ExecutionMode) (ExecutionMode, error) {
-	var executionMode ExecutionMode
-	switch mode {
-	case spec.OfflineExecution:
-		executionMode = OfflineExecution
-	case spec.OnlineExecution:
-		executionMode = OnlineExecution
-	default:
-		return executionMode, &unsupportedExecutionMode{mode: mode}
-	}
-	return executionMode, nil
-}
-
-func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
-	name, err := compileStageName(stageSpec.Name)
+func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
+	name, err := compileStageName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
-	address := Address(stageSpec.MethodContext.Address)
+	address := Address(cfg.MethodContext.Address)
 	if address.IsEmpty() {
 		return nil, errEmptyAddress
 	}
-	service := Service(stageSpec.MethodContext.Service)
-	method := Method(stageSpec.MethodContext.Method)
+	service := Service(cfg.MethodContext.Service)
+	method := Method(cfg.MethodContext.Method)
 	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
 	if err != nil {
 		return nil, err
@@ -194,19 +168,19 @@ func compileStageName(name string) (StageName, error) {
 	return stageName, nil
 }
 
-func compileLink(linkSpec *spec.Link) (*Link, error) {
-	name, err := compileLinkName(linkSpec.Name)
+func compileLink(cfg *LinkConfig) (*Link, error) {
+	name, err := compileLinkName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
-	source, err := compileEndpoint(linkSpec.SourceStage, linkSpec.SourceField)
+	source, err := compileEndpoint(cfg.SourceStage, cfg.SourceField)
 	if err != nil {
 		return nil, err
 	}
 	if source.Stage().IsEmpty() {
 		return nil, errEmptySourceName
 	}
-	target, err := compileEndpoint(linkSpec.TargetStage, linkSpec.TargetField)
+	target, err := compileEndpoint(cfg.TargetStage, cfg.TargetField)
 	if err != nil {
 		return nil, err
 	}

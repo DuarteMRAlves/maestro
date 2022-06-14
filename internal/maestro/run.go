@@ -107,14 +107,15 @@ func (opts *RunOpts) validate() error {
 
 func (opts *RunOpts) run() error {
 	var (
-		pipeline *spec.Pipeline
-		err      error
-		backoff  retry.ExponentialBackoff
+		pipelineSpec *spec.Pipeline
+		pipelineCfg  compiled.PipelineConfig
+		err          error
+		backoff      retry.ExponentialBackoff
 	)
 	switch opts.version {
 	case v0:
 		opts.logger.Debugf("read v0 from file %s", opts.files[0])
-		pipeline, err = yaml.ReadV0(opts.files[0])
+		pipelineSpec, err = yaml.ReadV0(opts.files[0])
 		if err != nil {
 			return err
 		}
@@ -125,7 +126,7 @@ func (opts *RunOpts) run() error {
 		if err != nil {
 			return err
 		}
-		pipeline, err = opts.pipelineToRun(pipelines...)
+		pipelineSpec, err = opts.pipelineToRun(pipelines...)
 		if err != nil {
 			return err
 		}
@@ -137,15 +138,18 @@ func (opts *RunOpts) run() error {
 	}
 
 	r := grpc.NewReflectionMethodLoader(time.Minute, backoff, opts.logger)
+	if err := opts.specToCfg(&pipelineCfg, pipelineSpec); err != nil {
+		return fmt.Errorf("build config from spec: %w", err)
+	}
 	compilationCtx := compiled.NewContext(r)
-	compiledPipeline, err := compiled.New(compilationCtx, pipeline)
+	compiledPipeline, err := compiled.New(compilationCtx, &pipelineCfg)
 	if err != nil {
-		return fmt.Errorf("compile %s: %w", pipeline.Name, err)
+		return fmt.Errorf("compile %s: %w", pipelineSpec.Name, err)
 	}
 	b := execute.NewBuilder(opts.logger)
 	execution, err := b(compiledPipeline)
 	if err != nil {
-		return fmt.Errorf("build execution %s: %w", pipeline.Name, err)
+		return fmt.Errorf("build execution %s: %w", pipelineSpec.Name, err)
 	}
 
 	errs := make(chan error, 1)
@@ -190,4 +194,44 @@ func (opts *RunOpts) pipelineToRun(available ...*spec.Pipeline) (*spec.Pipeline,
 		err := fmt.Errorf("only one pipeline can be executed but found %s", names)
 		return nil, err
 	}
+}
+
+func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *spec.Pipeline) error {
+	pCfg.Name = pSpec.Name
+	switch m := pSpec.Mode; m {
+	case spec.OfflineExecution:
+		pCfg.Mode = compiled.OfflineExecution
+	case spec.OnlineExecution:
+		pCfg.Mode = compiled.OnlineExecution
+	default:
+		return fmt.Errorf("unknown execution mode: %s", m)
+	}
+	for _, s := range pSpec.Stages {
+		var sCfg compiled.StageConfig
+		opts.stageSpecToCfg(&sCfg, s)
+		pCfg.Stages = append(pCfg.Stages, &sCfg)
+	}
+	for _, l := range pSpec.Links {
+		var lCfg compiled.LinkConfig
+		opts.linkSpecToCfg(&lCfg, l)
+		pCfg.Links = append(pCfg.Links, &lCfg)
+	}
+	return nil
+}
+
+func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *spec.Stage) {
+	cfg.Name = sSpec.Name
+	cfg.MethodContext = compiled.MethodContextConfig{
+		Address: sSpec.MethodContext.Address,
+		Service: sSpec.MethodContext.Service,
+		Method:  sSpec.MethodContext.Method,
+	}
+}
+
+func (opts *RunOpts) linkSpecToCfg(cfg *compiled.LinkConfig, lSpec *spec.Link) {
+	cfg.Name = lSpec.Name
+	cfg.SourceStage = lSpec.SourceStage
+	cfg.SourceField = lSpec.SourceField
+	cfg.TargetStage = lSpec.TargetStage
+	cfg.TargetField = lSpec.TargetField
 }

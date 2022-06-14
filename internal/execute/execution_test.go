@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -18,11 +17,11 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OfflineExecution
+	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -54,11 +53,11 @@ func TestOnlineExecution_Linear(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OnlineExecution
+	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -93,24 +92,24 @@ func TestOnlineExecution_Linear(t *testing.T) {
 
 func setupLinear(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (*spec.Pipeline, compiled.MethodLoader) {
-	pipelineSpec := &spec.Pipeline{
+) (*compiled.PipelineConfig, compiled.MethodLoader) {
+	cfg := &compiled.PipelineConfig{
 		Name: "pipeline",
-		Stages: []*spec.Stage{
+		Stages: []*compiled.StageConfig{
 			{
 				Name:          "source",
-				MethodContext: spec.MethodContext{Address: "source"},
+				MethodContext: compiled.MethodContextConfig{Address: "source"},
 			},
 			{
 				Name:          "transform",
-				MethodContext: spec.MethodContext{Address: "transform"},
+				MethodContext: compiled.MethodContextConfig{Address: "transform"},
 			},
 			{
 				Name:          "sink",
-				MethodContext: spec.MethodContext{Address: "sink"},
+				MethodContext: compiled.MethodContextConfig{Address: "sink"},
 			},
 		},
-		Links: []*spec.Link{
+		Links: []*compiled.LinkConfig{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -158,7 +157,7 @@ func setupLinear(
 		return m, nil
 	}
 
-	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
+	return cfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func linearSourceClientBuilder() compiled.UnaryClientBuilder {
@@ -257,11 +256,11 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OfflineExecution
+	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -297,11 +296,11 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OnlineExecution
+	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -337,24 +336,24 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 
 func setupSplitAndMerge(
 	t *testing.T, max int, collect *[]*testTwoValMsg, done chan struct{},
-) (*spec.Pipeline, compiled.MethodLoader) {
-	pipelineSpec := &spec.Pipeline{
+) (*compiled.PipelineConfig, compiled.MethodLoader) {
+	pipelineCfg := &compiled.PipelineConfig{
 		Name: "pipeline",
-		Stages: []*spec.Stage{
+		Stages: []*compiled.StageConfig{
 			{
 				Name:          "source",
-				MethodContext: spec.MethodContext{Address: "source"},
+				MethodContext: compiled.MethodContextConfig{Address: "source"},
 			},
 			{
 				Name:          "transform",
-				MethodContext: spec.MethodContext{Address: "transform"},
+				MethodContext: compiled.MethodContextConfig{Address: "transform"},
 			},
 			{
 				Name:          "sink",
-				MethodContext: spec.MethodContext{Address: "sink"},
+				MethodContext: compiled.MethodContextConfig{Address: "sink"},
 			},
 		},
-		Links: []*spec.Link{
+		Links: []*compiled.LinkConfig{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -409,7 +408,7 @@ func setupSplitAndMerge(
 		return m, nil
 	}
 
-	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
+	return pipelineCfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func splitAndMergeSourceClientBuilder() compiled.UnaryClientBuilder {
@@ -502,11 +501,11 @@ func TestOfflineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OfflineExecution
+	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -538,11 +537,11 @@ func TestOnlineExecution_Slow(t *testing.T) {
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
-	pipelineSpec, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineSpec.Mode = spec.OnlineExecution
+	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
+	pipelineCfg.Mode = compiled.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -576,24 +575,24 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 func setupSlow(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (*spec.Pipeline, compiled.MethodLoader) {
-	pipelineSpec := &spec.Pipeline{
+) (*compiled.PipelineConfig, compiled.MethodLoader) {
+	pipelineCfg := &compiled.PipelineConfig{
 		Name: "pipeline",
-		Stages: []*spec.Stage{
+		Stages: []*compiled.StageConfig{
 			{
 				Name:          "source",
-				MethodContext: spec.MethodContext{Address: "source"},
+				MethodContext: compiled.MethodContextConfig{Address: "source"},
 			},
 			{
 				Name:          "transform",
-				MethodContext: spec.MethodContext{Address: "transform"},
+				MethodContext: compiled.MethodContextConfig{Address: "transform"},
 			},
 			{
 				Name:          "sink",
-				MethodContext: spec.MethodContext{Address: "sink"},
+				MethodContext: compiled.MethodContextConfig{Address: "sink"},
 			},
 		},
-		Links: []*spec.Link{
+		Links: []*compiled.LinkConfig{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -641,7 +640,7 @@ func setupSlow(
 		return m, nil
 	}
 
-	return pipelineSpec, compiled.MethodLoaderFunc(methodLoader)
+	return pipelineCfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
 func slowSourceClientBuilder() compiled.UnaryClientBuilder {
