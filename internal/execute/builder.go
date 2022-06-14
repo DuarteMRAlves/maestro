@@ -42,13 +42,13 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 		return nil, err
 	}
 
-	stages := newStageMap()
+	stages := make(map[compiled.StageName]Stage)
 	err = pipeline.VisitStages(func(s *compiled.Stage) error {
 		execStage, err := buildOfflineStage(s, chans, logger)
 		if err != nil {
 			return fmt.Errorf("build stage: %w", err)
 		}
-		stages.addRpcStage(s.Name(), execStage)
+		stages[s.Name()] = execStage
 		return nil
 	})
 	if err != nil {
@@ -240,13 +240,13 @@ func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineEx
 		return nil, err
 	}
 
-	stages := newStageMap()
+	stages := make(map[compiled.StageName]Stage)
 	err = pipeline.VisitStages(func(s *compiled.Stage) error {
 		execStage, err := buildOnlineStage(s, chans, logger)
 		if err != nil {
 			return fmt.Errorf("build stage: %w", err)
 		}
-		stages.addRpcStage(s.Name(), execStage)
+		stages[s.Name()] = execStage
 		return nil
 	})
 	if err != nil {
