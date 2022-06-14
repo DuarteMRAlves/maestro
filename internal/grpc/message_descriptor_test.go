@@ -15,7 +15,7 @@ func TestMessageDescriptor_GetField(t *testing.T) {
 		t.Fatalf("create message descriptor: %s", err)
 	}
 
-	field := compiled.NewMessageField("field4")
+	field := compiled.MessageField("field4")
 
 	fieldDesc, err := msgDesc.GetField(field)
 	if err != nil {

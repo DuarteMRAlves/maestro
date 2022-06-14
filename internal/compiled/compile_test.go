@@ -290,7 +290,7 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field1"},
+									field: MessageField("field1"),
 								},
 							},
 						},
@@ -317,7 +317,7 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field2"},
+									field: MessageField("field2"),
 								},
 							},
 						},
@@ -337,7 +337,7 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field1"},
+									field: MessageField("field1"),
 								},
 							},
 							{
@@ -345,7 +345,7 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field2"},
+									field: MessageField("field2"),
 								},
 							},
 						},
@@ -435,7 +435,6 @@ func TestNew(t *testing.T) {
 				Link{},
 				LinkName{},
 				LinkEndpoint{},
-				MessageField{},
 			)
 			if diff := cmp.Diff(tc.expected, output, cmpOpts); diff != "" {
 				t.Fatalf("output mismatch:\n%s", diff)
@@ -1051,11 +1050,11 @@ func (d testOuterValDesc) EmptyGen() EmptyMessageGen {
 }
 
 func (d testOuterValDesc) GetField(f MessageField) (MessageDesc, error) {
-	switch f.Unwrap() {
+	switch f {
 	case "field1", "field2":
 		return testInnerValDesc{}, nil
 	default:
-		panic(fmt.Sprintf("Unknown field for testOuterValDesc: %s", f.Unwrap()))
+		panic(fmt.Sprintf("Unknown field for testOuterValDesc: %s", string(f)))
 	}
 }
 

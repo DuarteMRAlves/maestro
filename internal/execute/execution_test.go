@@ -821,13 +821,13 @@ func (m *testTwoValMsg) SetField(f compiled.MessageField, v compiled.Message) er
 	if !ok {
 		panic("v is not *testValMsg")
 	}
-	switch f.Unwrap() {
+	switch f {
 	case "Orig":
 		m.Orig = inner
 	case "Transf":
 		m.Transf = inner
 	default:
-		panic(fmt.Sprintf("Unknown field for testTwoValMsg: %s", f.Unwrap()))
+		panic(fmt.Sprintf("Unknown field for testTwoValMsg: %s", f))
 	}
 	return nil
 }
@@ -848,10 +848,10 @@ func (d testTwoValDesc) EmptyGen() compiled.EmptyMessageGen {
 }
 
 func (d testTwoValDesc) GetField(f compiled.MessageField) (compiled.MessageDesc, error) {
-	switch f.Unwrap() {
+	switch f {
 	case "Orig", "Transf":
 		return testValDesc{}, nil
 	default:
-		panic(fmt.Sprintf("Unknown field for testTwoValDesc: %s", f.Unwrap()))
+		panic(fmt.Sprintf("Unknown field for testTwoValDesc: %s", f))
 	}
 }

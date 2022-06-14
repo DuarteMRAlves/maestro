@@ -10,10 +10,8 @@ import (
 )
 
 func TestOfflineSplitStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner3 := compiled.NewMessageField("inner3")
 	// Send full message through second output
-	fields := []compiled.MessageField{inner1, {}, inner3}
+	fields := []compiled.MessageField{"inner1", "", "inner3"}
 
 	input := make(chan offlineState)
 	defer close(input)
@@ -94,10 +92,8 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 }
 
 func TestOnlineSplitStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner3 := compiled.NewMessageField("inner3")
 	// Send full message through second output
-	fields := []compiled.MessageField{inner1, {}, inner3}
+	fields := []compiled.MessageField{"inner1", "", "inner3"}
 
 	input := make(chan onlineState)
 	defer close(input)
@@ -198,7 +194,7 @@ func (m *testSplitOuterMessage) SetField(f compiled.MessageField, v compiled.Mes
 }
 
 func (m *testSplitOuterMessage) GetField(f compiled.MessageField) (compiled.Message, error) {
-	switch f.Unwrap() {
+	switch f {
 	case "inner1":
 		return m.inner1, nil
 	case "inner2":
@@ -206,7 +202,7 @@ func (m *testSplitOuterMessage) GetField(f compiled.MessageField) (compiled.Mess
 	case "inner3":
 		return m.inner3, nil
 	default:
-		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f.Unwrap())
+		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f)
 		panic(msg)
 	}
 }

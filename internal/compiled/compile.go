@@ -234,7 +234,7 @@ func compileEndpoint(stage string, field string) (*LinkEndpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	fieldName := NewMessageField(field)
+	fieldName := MessageField(field)
 	endpt = NewLinkEndpoint(StageName(stageName), fieldName)
 	return &endpt, nil
 }
@@ -267,7 +267,7 @@ func validateLink(stages stageGraph, link *Link) error {
 	}
 
 	sourceMsg := source.InvocationContext().Output()
-	if !link.Source().Field().IsEmpty() {
+	if !link.Source().Field().IsUnspecified() {
 		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
 		if err != nil {
 			return err
@@ -275,7 +275,7 @@ func validateLink(stages stageGraph, link *Link) error {
 	}
 
 	targetMsg := target.InvocationContext().Input()
-	if !link.Target().Field().IsEmpty() {
+	if !link.Target().Field().IsUnspecified() {
 		targetMsg, err = targetMsg.GetField(link.Target().Field())
 		if err != nil {
 			return err
@@ -289,19 +289,19 @@ func validateLink(stages stageGraph, link *Link) error {
 		targetFieldLink := link.Target().Field()
 		targetFieldPrev := prev.Target().Field()
 		// Target receives entire message from this link but another exists.
-		if targetFieldLink.IsEmpty() {
+		if targetFieldLink.IsUnspecified() {
 			return &linkSetsFullMessage{name: link.Name().Unwrap()}
 		}
 		// 2. Target already receives entire message from existing link.
-		if targetFieldPrev.IsEmpty() {
+		if targetFieldPrev.IsUnspecified() {
 			return &linkSetsFullMessage{name: prev.Name().Unwrap()}
 		}
 		// 3. Target receives same field from both links.
-		if targetFieldLink.Unwrap() == targetFieldPrev.Unwrap() {
+		if targetFieldLink == targetFieldPrev {
 			return &linksSetSameField{
 				A:     link.Name().Unwrap(),
 				B:     prev.Name().Unwrap(),
-				field: targetFieldPrev.Unwrap(),
+				field: string(targetFieldPrev),
 			}
 		}
 	}
@@ -333,7 +333,7 @@ func compileAuxInputIfNecessary(s *Stage) *Stage {
 		l := s.inputs[0]
 		// We only have one link but we have to set a field and so
 		// we use a single link merge stage.
-		if !l.Target().Field().IsEmpty() {
+		if !l.Target().Field().IsUnspecified() {
 			return compileMergeInput(s)
 		}
 		return nil
@@ -391,7 +391,7 @@ func compileAuxOutputIfNecessary(s *Stage) *Stage {
 		return compileSinkOutput(s)
 	case 1:
 		l := s.inputs[0]
-		if !l.Target().Field().IsEmpty() {
+		if !l.Target().Field().IsUnspecified() {
 			return compileSplitOutput(s)
 		}
 		return nil

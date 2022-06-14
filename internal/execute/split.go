@@ -44,7 +44,7 @@ func (s *offlineSplit) Run(ctx context.Context) error {
 		for i, out := range s.outputs {
 			send := msg
 			field := s.fields[i]
-			if !field.IsEmpty() {
+			if !field.IsUnspecified() {
 				fieldMsg, err := msg.GetField(field)
 				if err != nil {
 					return err
@@ -102,7 +102,7 @@ func (s *onlineSplit) Run(ctx context.Context) error {
 		for i, out := range s.outputs {
 			send := msg
 			field := s.fields[i]
-			if !field.IsEmpty() {
+			if !field.IsUnspecified() {
 				fieldMsg, err := msg.GetField(field)
 				if err != nil {
 					return err

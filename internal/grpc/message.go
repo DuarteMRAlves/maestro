@@ -33,14 +33,14 @@ func (dm *message) SetField(
 	if !ok {
 		return notGrpcMessage
 	}
-	return dm.dynMsg.TrySetFieldByName(field.Unwrap(), grpcMsg.dynMsg)
+	return dm.dynMsg.TrySetFieldByName(string(field), grpcMsg.dynMsg)
 }
 
 func (dm *message) GetField(name compiled.MessageField) (
 	compiled.Message,
 	error,
 ) {
-	field, err := dm.dynMsg.TryGetFieldByName(name.Unwrap())
+	field, err := dm.dynMsg.TryGetFieldByName(string(name))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (dm *message) GetField(name compiled.MessageField) (
 	if !ok {
 		return nil, &fieldNotMessage{
 			MsgType: dm.dynMsg.XXX_MessageName(),
-			Field:   name.Unwrap(),
+			Field:   string(name),
 		}
 	}
 	dyn, err := newMessage(msg)

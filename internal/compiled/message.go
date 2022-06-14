@@ -4,15 +4,11 @@ import (
 	"context"
 )
 
-type MessageField struct{ val string }
+// MessageField specifies the name of a field in a message in the pipeline.
+type MessageField string
 
-func (m MessageField) Unwrap() string { return m.val }
-
-func (m MessageField) IsEmpty() bool { return m.val == "" }
-
-func NewMessageField(field string) MessageField {
-	return MessageField{val: field}
-}
+// IsUnspecified reports whether this field is "".
+func (m MessageField) IsUnspecified() bool { return m == "" }
 
 // Message specifies an interface to send messages for the several stages.
 type Message interface {

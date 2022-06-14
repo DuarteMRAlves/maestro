@@ -177,7 +177,7 @@ func (s Service) String() string {
 // Method specified the name of the grpc method to execute.
 type Method string
 
-// IsUnspecified reports whether this service is either "" or "*".
+// IsUnspecified reports whether this method is either "" or "*".
 func (m Method) IsUnspecified() bool { return m == "" || m == "*" }
 
 func (m Method) String() string {

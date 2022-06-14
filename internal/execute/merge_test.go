@@ -10,11 +10,7 @@ import (
 )
 
 func TestOfflineMergeStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner2 := compiled.NewMessageField("inner2")
-	inner3 := compiled.NewMessageField("inner3")
-
-	fields := []compiled.MessageField{inner1, inner2, inner3}
+	fields := []compiled.MessageField{"inner1", "inner2", "inner3"}
 
 	input1 := make(chan offlineState)
 	defer close(input1)
@@ -89,11 +85,7 @@ func TestOfflineMergeStage_Run(t *testing.T) {
 }
 
 func TestOnlineMergeStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner2 := compiled.NewMessageField("inner2")
-	inner3 := compiled.NewMessageField("inner3")
-
-	fields := []compiled.MessageField{inner1, inner2, inner3}
+	fields := []compiled.MessageField{"inner1", "inner2", "inner3"}
 
 	input1 := make(chan onlineState)
 	defer close(input1)
@@ -187,7 +179,7 @@ func (m *testMergeOuterMessage) SetField(f compiled.MessageField, v compiled.Mes
 	if !ok {
 		panic("Set field for merge outer message did not receive inner message")
 	}
-	switch f.Unwrap() {
+	switch f {
 	case "inner1":
 		m.inner1 = inner
 	case "inner2":
@@ -195,7 +187,7 @@ func (m *testMergeOuterMessage) SetField(f compiled.MessageField, v compiled.Mes
 	case "inner3":
 		m.inner3 = inner
 	default:
-		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f.Unwrap())
+		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f)
 		panic(msg)
 	}
 	return nil

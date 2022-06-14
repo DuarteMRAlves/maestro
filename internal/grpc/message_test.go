@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewFieldSetter(t *testing.T) {
-	field := compiled.NewMessageField("inner")
+	field := compiled.MessageField("inner")
 	pbInner := &unit.TestMessageInner{Val: "val"}
 
 	msg, err := newMessage(&unit.TestMessage{})
@@ -29,7 +29,7 @@ func TestNewFieldSetter(t *testing.T) {
 		t.Fatalf("set field error: %s", err)
 	}
 
-	fieldDyn, ok := msg.dynMsg.GetFieldByName(field.Unwrap()).(*dynamic.Message)
+	fieldDyn, ok := msg.dynMsg.GetFieldByName(string(field)).(*dynamic.Message)
 	if !ok {
 		t.Fatalf("unable to cast to dynamic message on fieldDyn")
 	}
@@ -47,7 +47,7 @@ func TestNewFieldSetter(t *testing.T) {
 }
 
 func TestNewFieldGetter(t *testing.T) {
-	field := compiled.NewMessageField("inner")
+	field := compiled.MessageField("inner")
 
 	pbInner := &unit.TestMessageInner{Val: "val"}
 	pbMsg := &unit.TestMessage{Inner: pbInner}
