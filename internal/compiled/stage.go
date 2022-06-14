@@ -84,7 +84,7 @@ func (ictx *InvocationContext) Service() Service {
 
 func (ictx *InvocationContext) Method() Method {
 	if ictx == nil {
-		return Method{}
+		return ""
 	}
 	return ictx.method
 }
@@ -111,7 +111,7 @@ func (ictx *InvocationContext) Output() MessageDesc {
 }
 
 func (ictx *InvocationContext) String() string {
-	methodInfo := joinAddressServiceMethod(ictx.address, ictx.service, ictx.method)
+	methodInfo := fmt.Sprintf("%s/%s/%s", ictx.address, ictx.service, ictx.method)
 	return fmt.Sprintf("InvokationContext{%s}", methodInfo)
 }
 
@@ -174,15 +174,18 @@ func (s Service) String() string {
 	return string(s)
 }
 
-type Method struct{ val string }
+// Method specified the name of the grpc method to execute.
+type Method string
 
-func (m Method) Unwrap() string {
-	return m.val
+// IsUnspecified reports whether this service is either "" or "*".
+func (m Method) IsUnspecified() bool { return m == "" || m == "*" }
+
+func (m Method) String() string {
+	if m.IsUnspecified() {
+		return "*"
+	}
+	return string(m)
 }
-
-func (m Method) IsEmpty() bool { return m.val == "" }
-
-func NewMethod(m string) Method { return Method{val: m} }
 
 type MethodContext struct {
 	address Address
@@ -197,7 +200,7 @@ func (m MethodContext) Service() Service { return m.service }
 func (m MethodContext) Method() Method { return m.method }
 
 func (m MethodContext) String() string {
-	return joinAddressServiceMethod(m.address, m.service, m.method)
+	return fmt.Sprintf("%s/%s/%s", m.address, m.service, m.method)
 }
 
 func NewMethodContext(
@@ -210,12 +213,4 @@ func NewMethodContext(
 		service: service,
 		method:  method,
 	}
-}
-
-func joinAddressServiceMethod(address Address, service Service, method Method) string {
-	meth := "*"
-	if !method.IsEmpty() {
-		meth = method.val
-	}
-	return fmt.Sprintf("%s/%s/%s", address, service, meth)
 }

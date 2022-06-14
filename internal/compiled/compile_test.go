@@ -227,7 +227,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
 							service:     Service("service-1"),
-							method:      Method{val: "method-1"},
+							method:      Method("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{},
@@ -245,7 +245,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
 							service:     Service("service-1"),
-							method:      Method{val: "method-1"},
+							method:      Method("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{
@@ -269,7 +269,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-1"),
 							service:     Service("service-1"),
-							method:      Method{val: "method-1"},
+							method:      Method("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{
@@ -301,7 +301,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-2"),
 							service:     Service("service-2"),
-							method:      Method{val: "method-2"},
+							method:      Method("method-2"),
 							unaryMethod: testSplitAndMergeStage2Method{},
 						},
 						inputs: []*Link{
@@ -328,7 +328,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
 							service:     Service("service-3"),
-							method:      Method{val: "method-3"},
+							method:      Method("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -363,7 +363,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
 							service:     Service("service-3"),
-							method:      Method{val: "method-3"},
+							method:      Method("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -387,7 +387,7 @@ func TestNew(t *testing.T) {
 						ictx: &InvocationContext{
 							address:     Address("address-3"),
 							service:     Service("service-3"),
-							method:      Method{val: "method-3"},
+							method:      Method("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -402,15 +402,9 @@ func TestNew(t *testing.T) {
 				},
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"), Service("service-1"), NewMethod("method-1"),
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"), Service("service-2"), NewMethod("method-2"),
-				)
-				ctx3 := NewMethodContext(
-					Address("address-3"), Service("service-3"), NewMethod("method-3"),
-				)
+				ctx1 := NewMethodContext("address-1", "service-1", "method-1")
+				ctx2 := NewMethodContext("address-2", "service-2", "method-2")
+				ctx3 := NewMethodContext("address-3", "service-3", "method-3")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testSplitAndMergeStage1Method{},
 					ctx2: testSplitAndMergeStage2Method{},
@@ -438,7 +432,6 @@ func TestNew(t *testing.T) {
 				Stage{},
 				StageName{},
 				InvocationContext{},
-				Method{},
 				Link{},
 				LinkName{},
 				LinkEndpoint{},
@@ -528,16 +521,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -568,16 +553,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -608,16 +585,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -648,16 +617,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -694,16 +655,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -740,16 +693,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -802,21 +747,9 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					Address("address-3"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
+				ctx3 := NewMethodContext("address-3", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -870,21 +803,9 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					Address("address-3"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
+				ctx3 := NewMethodContext("address-3", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -941,21 +862,9 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					Address("address-3"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
+				ctx3 := NewMethodContext("address-3", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},
@@ -998,16 +907,8 @@ func TestNewIsErr(t *testing.T) {
 				return ""
 			},
 			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					Address("address-1"),
-					Service(""),
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					Address("address-2"),
-					Service(""),
-					Method{},
-				)
+				ctx1 := NewMethodContext("address-1", "", "")
+				ctx2 := NewMethodContext("address-2", "", "")
 				mapper := map[MethodContext]UnaryMethod{
 					ctx1: testLinearStage1Method{},
 					ctx2: testLinearStage2Method{},

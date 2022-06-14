@@ -174,17 +174,17 @@ func findMethod(
 	available []*desc.MethodDescriptor,
 	search compiled.Method,
 ) (unaryMethod, error) {
-	if search.IsEmpty() {
+	if search.IsUnspecified() {
 		if len(available) == 1 {
 			return newUnaryMethodFromDescriptor(available[0]), nil
 		}
 		return unaryMethod{}, notOneMethod
 	} else {
 		for _, m := range available {
-			if search.Unwrap() == m.GetName() {
+			if string(search) == m.GetName() {
 				return newUnaryMethodFromDescriptor(m), nil
 			}
 		}
-		return unaryMethod{}, &methodNotFound{meth: search.Unwrap()}
+		return unaryMethod{}, &methodNotFound{meth: string(search)}
 	}
 }
