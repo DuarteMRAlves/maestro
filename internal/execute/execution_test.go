@@ -144,12 +144,12 @@ func setupLinear(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.MethodDesc{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
 		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -161,7 +161,7 @@ func setupLinear(
 }
 
 func linearSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return &linearSourceClient{counter: 0}, nil
 	}
 }
@@ -183,7 +183,7 @@ func (c *linearSourceClient) Call(_ context.Context, req compiled.Message) (
 func (c *linearSourceClient) Close() error { return nil }
 
 func linearTransformClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		c := &linearTransformClient{}
 		return c, nil
 	}
@@ -209,7 +209,7 @@ func linearSinkClientBuilder(
 	collect *[]*testValMsg,
 	done chan<- struct{},
 ) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		c := &linearSinkClient{
 			max:     max,
 			collect: collect,
@@ -394,13 +394,13 @@ func setupSplitAndMerge(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.MethodDesc{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
 
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
 		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -412,7 +412,7 @@ func setupSplitAndMerge(
 }
 
 func splitAndMergeSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return &splitAndMergeSourceClient{counter: 0}, nil
 	}
 }
@@ -432,7 +432,7 @@ func (c *splitAndMergeSourceClient) Call(
 func (c *splitAndMergeSourceClient) Close() error { return nil }
 
 func splitAndMergeTransformClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return &splitAndMergeTransformClient{}, nil
 	}
 }
@@ -454,7 +454,7 @@ func (c *splitAndMergeTransformClient) Close() error { return nil }
 func splitAndMergeSinkClientBuilder(
 	max int, collect *[]*testTwoValMsg, done chan<- struct{},
 ) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		c := &splitAndMergeSinkClient{
 			max:     max,
 			collect: collect,
@@ -627,12 +627,12 @@ func setupSlow(
 		Out:                 testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.UnaryMethod{
+	methods := map[compiled.MethodContext]compiled.MethodDesc{
 		sourceContext:    sourceMethod,
 		transformContext: transformMethod,
 		sinkContext:      sinkMethod,
 	}
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.UnaryMethod, error) {
+	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
 		m, ok := methods[*methodCtx]
 		if !ok {
 			panic(fmt.Sprintf("No such method: %s", methodCtx))
@@ -644,7 +644,7 @@ func setupSlow(
 }
 
 func slowSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return &slowSourceClient{counter: 0}, nil
 	}
 }
@@ -666,7 +666,7 @@ func (c *slowSourceClient) Call(_ context.Context, req compiled.Message) (
 func (c *slowSourceClient) Close() error { return nil }
 
 func slowTransformClientBuilder(sleep time.Duration) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return &slowTransformClient{sleep: sleep}, nil
 	}
 }
@@ -692,7 +692,7 @@ func slowSinkClientBuilder(
 	collect *[]*testValMsg,
 	done chan<- struct{},
 ) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		c := &slowSinkClient{
 			max:     max,
 			collect: collect,

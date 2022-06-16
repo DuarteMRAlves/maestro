@@ -40,7 +40,7 @@ func NewReflectionMethodLoader(
 }
 
 func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
-	compiled.UnaryMethod,
+	compiled.MethodDesc,
 	error,
 ) {
 	m.logger.Debugf("Load method with reflection: %#v", methodCtx)

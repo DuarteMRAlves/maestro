@@ -50,12 +50,10 @@ func TestNew(t *testing.T) {
 				mode: OfflineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:  StageName{val: "stage-1:aux-source"},
-						sType: StageTypeSource,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-1"),
-							unaryMethod: testLinearStage1Method{},
-						},
+						name:   StageName{val: "stage-1:aux-source"},
+						sType:  StageTypeSource,
+						mid:    testMethodID("method-1"),
+						method: testLinearStage1Method{},
 						inputs: []*Link{},
 						outputs: []*Link{
 							{
@@ -66,12 +64,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:  StageName{val: "stage-1"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-1"),
-							unaryMethod: testLinearStage1Method{},
-						},
+						name:   StageName{val: "stage-1"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-1"),
+						method: testLinearStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -88,12 +84,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:  StageName{val: "stage-2"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-2"),
-							unaryMethod: testLinearStage2Method{},
-						},
+						name:   StageName{val: "stage-2"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-2"),
+						method: testLinearStage2Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -110,12 +104,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:  StageName{val: "stage-3"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-3"),
-							unaryMethod: testLinearStage3Method{},
-						},
+						name:   StageName{val: "stage-3"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-3"),
+						method: testLinearStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "2-to-3"},
@@ -132,12 +124,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:  StageName{val: "stage-3:aux-sink"},
-						sType: StageTypeSink,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-3"),
-							unaryMethod: testLinearStage3Method{},
-						},
+						name:   StageName{val: "stage-3:aux-sink"},
+						sType:  StageTypeSink,
+						mid:    testMethodID("method-3"),
+						method: testLinearStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -149,8 +139,8 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 					testMethodID("method-3"): testLinearStage3Method{},
@@ -209,12 +199,10 @@ func TestNew(t *testing.T) {
 				mode: OnlineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:  StageName{val: "stage-1:aux-source"},
-						sType: StageTypeSource,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-1"),
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
+						name:   StageName{val: "stage-1:aux-source"},
+						sType:  StageTypeSource,
+						mid:    testMethodID("method-1"),
+						method: testSplitAndMergeStage1Method{},
 						inputs: []*Link{},
 						outputs: []*Link{
 							{
@@ -225,12 +213,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:  StageName{val: "stage-1"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-1"),
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
+						name:   StageName{val: "stage-1"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-1"),
+						method: testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -247,12 +233,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1:aux-split"}: &Stage{
-						name:  StageName{val: "stage-1:aux-split"},
-						sType: StageTypeSplit,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-1"),
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
+						name:   StageName{val: "stage-1:aux-split"},
+						sType:  StageTypeSplit,
+						mid:    testMethodID("method-1"),
+						method: testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{"stage-1:aux-split-link"},
@@ -277,12 +261,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:  StageName{val: "stage-2"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-2"),
-							unaryMethod: testSplitAndMergeStage2Method{},
-						},
+						name:   StageName{val: "stage-2"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-2"),
+						method: testSplitAndMergeStage2Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -302,12 +284,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-merge"}: &Stage{
-						name:  StageName{val: "stage-3:aux-merge"},
-						sType: StageTypeMerge,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-3"),
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:   StageName{val: "stage-3:aux-merge"},
+						sType:  StageTypeMerge,
+						mid:    testMethodID("method-3"),
+						method: testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-3"},
@@ -335,12 +315,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:  StageName{val: "stage-3"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-3"),
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:   StageName{val: "stage-3"},
+						sType:  StageTypeUnary,
+						mid:    testMethodID("method-3"),
+						method: testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-merge-link"},
@@ -357,12 +335,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:  StageName{val: "stage-3:aux-sink"},
-						sType: StageTypeSink,
-						ictx: &InvocationContext{
-							mid:         testMethodID("method-3"),
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:   StageName{val: "stage-3:aux-sink"},
+						sType:  StageTypeSink,
+						mid:    testMethodID("method-3"),
+						method: testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -374,8 +350,8 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testSplitAndMergeStage1Method{},
 					testMethodID("method-2"): testSplitAndMergeStage2Method{},
 					testMethodID("method-3"): testSplitAndMergeStage3Method{},
@@ -405,7 +381,6 @@ func TestNew(t *testing.T) {
 				ExecutionMode{},
 				Stage{},
 				StageName{},
-				InvocationContext{},
 				Link{},
 				LinkName{},
 				LinkEndpoint{},
@@ -432,7 +407,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
 				t.Fatalf("No such method: %s", mid)
 				return nil, nil
 			},
@@ -449,7 +424,7 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
 				t.Fatalf("No such method: %s", mid)
 				return nil, nil
 			},
@@ -472,8 +447,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -506,8 +481,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -540,8 +515,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -574,8 +549,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -614,8 +589,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -654,8 +629,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -710,8 +685,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 					testMethodID("method-3"): testLinearStage3Method{},
@@ -767,8 +742,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 					testMethodID("method-3"): testSplitAndMergeStage3Method{},
@@ -827,8 +802,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 					testMethodID("method-3"): testSplitAndMergeStage3Method{},
@@ -873,8 +848,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(mid MethodID) (UnaryMethod, error) {
-				mapper := map[testMethodID]UnaryMethod{
+			methodLoader: func(mid MethodID) (MethodDesc, error) {
+				mapper := map[testMethodID]MethodDesc{
 					testMethodID("method-1"): testLinearStage1Method{},
 					testMethodID("method-2"): testLinearStage2Method{},
 				}
@@ -915,7 +890,7 @@ func (mid testMethodID) String() string {
 
 type testLinearStage1Method struct{}
 
-func (m testLinearStage1Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage1Method) Dial() Conn {
 	return nil
 }
 
@@ -929,7 +904,7 @@ func (m testLinearStage1Method) Output() MessageDesc {
 
 type testLinearStage2Method struct{}
 
-func (m testLinearStage2Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage2Method) Dial() Conn {
 	return nil
 }
 
@@ -943,7 +918,7 @@ func (m testLinearStage2Method) Output() MessageDesc {
 
 type testLinearStage3Method struct{}
 
-func (m testLinearStage3Method) ClientBuilder() UnaryClientBuilder {
+func (m testLinearStage3Method) Dial() Conn {
 	return nil
 }
 
@@ -957,7 +932,7 @@ func (m testLinearStage3Method) Output() MessageDesc {
 
 type testSplitAndMergeStage1Method struct{}
 
-func (m testSplitAndMergeStage1Method) ClientBuilder() UnaryClientBuilder {
+func (m testSplitAndMergeStage1Method) Dial() Conn {
 	return nil
 }
 
@@ -971,7 +946,7 @@ func (m testSplitAndMergeStage1Method) Output() MessageDesc {
 
 type testSplitAndMergeStage2Method struct{}
 
-func (m testSplitAndMergeStage2Method) ClientBuilder() UnaryClientBuilder {
+func (m testSplitAndMergeStage2Method) Dial() Conn {
 	return nil
 }
 
@@ -985,7 +960,7 @@ func (m testSplitAndMergeStage2Method) Output() MessageDesc {
 
 type testSplitAndMergeStage3Method struct{}
 
-func (m testSplitAndMergeStage3Method) ClientBuilder() UnaryClientBuilder {
+func (m testSplitAndMergeStage3Method) Dial() Conn {
 	return nil
 }
 

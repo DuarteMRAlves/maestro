@@ -1,9 +1,5 @@
 package compiled
 
-import (
-	"context"
-)
-
 // MessageField specifies the name of a field in a message in the pipeline.
 type MessageField string
 
@@ -22,17 +18,4 @@ type MessageDesc interface {
 	Compatible(MessageDesc) bool
 	EmptyGen() EmptyMessageGen
 	GetField(MessageField) (MessageDesc, error)
-}
-
-type UnaryClientBuilder func(Address) (UnaryClient, error)
-
-type UnaryClient interface {
-	Call(ctx context.Context, req Message) (Message, error)
-	Close() error
-}
-
-type UnaryMethod interface {
-	ClientBuilder() UnaryClientBuilder
-	Input() MessageDesc
-	Output() MessageDesc
 }

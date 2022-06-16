@@ -83,7 +83,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 
 func (s *offlineUnary) call(
 	ctx context.Context,
-	client compiled.UnaryClient,
+	client compiled.Conn,
 	req compiled.Message,
 ) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
@@ -167,7 +167,7 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 
 func (s *onlineUnary) call(
 	ctx context.Context,
-	client compiled.UnaryClient,
+	client compiled.Conn,
 	req compiled.Message,
 ) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)

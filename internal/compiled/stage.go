@@ -1,6 +1,7 @@
 package compiled
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -9,11 +10,12 @@ type Stage struct {
 	name  StageName
 	sType StageType
 
-	// ictx stores all the necessary information
-	// to invoke the method for this stage. In the case of aux
-	// stages, this information is also filled to allow for
-	// generation of messages.
-	ictx *InvocationContext
+	// static attributes for the method invocation
+	mid MethodID
+
+	// runtime attributes that can be computed from
+	// the static attributes
+	method MethodDesc
 
 	// define the connections for this stage.
 	inputs  []*Link
@@ -26,73 +28,12 @@ func (s *Stage) Name() StageName {
 
 func (s *Stage) Type() StageType { return s.sType }
 
-func (s *Stage) InvocationContext() *InvocationContext {
-	return s.ictx
-}
-
 func (s *Stage) Inputs() []*Link {
 	return s.inputs
 }
 
 func (s *Stage) Outputs() []*Link {
 	return s.outputs
-}
-
-// InvocationContext stores all necessary information to invoke a
-// remote method.
-type InvocationContext struct {
-	// static attributes for the method invocation
-	mid MethodID
-
-	// runtime attributes that can be computed from
-	// the static attributes
-	unaryMethod UnaryMethod
-}
-
-func newInvocationContext(
-	methodLoader MethodLoader, mid MethodID,
-) (*InvocationContext, error) {
-	unaryMethod, err := methodLoader.Load(mid)
-	if err != nil {
-		return nil, fmt.Errorf("load method id %s: %w", mid.String(), err)
-	}
-	ictx := &InvocationContext{
-		mid:         mid,
-		unaryMethod: unaryMethod,
-	}
-	return ictx, nil
-}
-
-func (ictx *InvocationContext) MethodID() MethodID {
-	if ictx == nil {
-		return nil
-	}
-	return ictx.mid
-}
-
-func (ictx *InvocationContext) ClientBuilder() UnaryClientBuilder {
-	if ictx == nil {
-		return nil
-	}
-	return ictx.unaryMethod.ClientBuilder()
-}
-
-func (ictx *InvocationContext) Input() MessageDesc {
-	if ictx == nil {
-		return nil
-	}
-	return ictx.unaryMethod.Input()
-}
-
-func (ictx *InvocationContext) Output() MessageDesc {
-	if ictx == nil {
-		return nil
-	}
-	return ictx.unaryMethod.Output()
-}
-
-func (ictx *InvocationContext) String() string {
-	return fmt.Sprintf("InvokationContext{%v}", ictx.mid)
 }
 
 type StageName struct{ val string }
@@ -131,6 +72,18 @@ const (
 // MethodID uniquely identifies a given method.
 type MethodID interface {
 	String() string
+}
+
+// MethodDesc contains the information to create a method.
+type MethodDesc interface {
+	Dial() Conn
+	Input() MessageDesc
+	Output() MessageDesc
+}
+
+type Conn interface {
+	Call(ctx context.Context, req Message) (Message, error)
+	Close() error
 }
 
 // Address specifies the location of the server executing the

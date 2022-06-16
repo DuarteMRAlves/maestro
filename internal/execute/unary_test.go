@@ -158,7 +158,7 @@ func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, e
 }
 
 func testUnaryClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
+	return func(_ compiled.Address) (compiled.Conn, error) {
 		return testUnaryClient{}, nil
 	}
 }

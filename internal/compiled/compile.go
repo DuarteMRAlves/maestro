@@ -7,13 +7,13 @@ import (
 
 // MethodLoader resolves a method from its identifier.
 type MethodLoader interface {
-	Load(MethodID) (UnaryMethod, error)
+	Load(MethodID) (MethodDesc, error)
 }
 
 // MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(MethodID) (UnaryMethod, error)
+type MethodLoaderFunc func(MethodID) (MethodDesc, error)
 
-func (fn MethodLoaderFunc) Load(mid MethodID) (UnaryMethod, error) {
+func (fn MethodLoaderFunc) Load(mid MethodID) (MethodDesc, error) {
 	return fn(mid)
 }
 
@@ -137,14 +137,15 @@ func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	ictx, err := newInvocationContext(ctx.methodLoader, cfg.MethodID)
+	method, err := ctx.methodLoader.Load(cfg.MethodID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("load method id %s: %w", cfg.MethodID, err)
 	}
 	stage := &Stage{
 		name:    name,
 		sType:   StageTypeUnary,
-		ictx:    ictx,
+		mid:     cfg.MethodID,
+		method:  method,
 		inputs:  []*Link{},
 		outputs: []*Link{},
 	}
@@ -234,7 +235,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		return errEqualSourceAndTarget
 	}
 
-	sourceMsg := source.InvocationContext().Output()
+	sourceMsg := source.method.Output()
 	if !link.Source().Field().IsUnspecified() {
 		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
 		if err != nil {
@@ -242,7 +243,7 @@ func validateLink(stages stageGraph, link *Link) error {
 		}
 	}
 
-	targetMsg := target.InvocationContext().Input()
+	targetMsg := target.method.Input()
 	if !link.Target().Field().IsUnspecified() {
 		targetMsg, err = targetMsg.GetField(link.Target().Field())
 		if err != nil {
@@ -320,8 +321,9 @@ func compileSourceInput(s *Stage) *Stage {
 	source := &Stage{
 		name:  name,
 		sType: StageTypeSource,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		mid:     s.mid,
+		method:  s.method,
 		inputs:  []*Link{},
 		outputs: []*Link{l},
 	}
@@ -339,8 +341,9 @@ func compileMergeInput(s *Stage) *Stage {
 	merge := &Stage{
 		name:  name,
 		sType: StageTypeMerge,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		mid:     s.mid,
+		method:  s.method,
 		inputs:  s.inputs,
 		outputs: []*Link{l},
 	}
@@ -378,8 +381,9 @@ func compileSinkOutput(s *Stage) *Stage {
 	sink := &Stage{
 		name:  name,
 		sType: StageTypeSink,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		mid:     s.mid,
+		method:  s.method,
 		inputs:  []*Link{l},
 		outputs: []*Link{},
 	}
@@ -397,8 +401,9 @@ func compileSplitOutput(s *Stage) *Stage {
 	split := &Stage{
 		name:  name,
 		sType: StageTypeSplit,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		mid:     s.mid,
+		method:  s.method,
 		inputs:  []*Link{l},
 		outputs: s.outputs,
 	}

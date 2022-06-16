@@ -51,7 +51,7 @@ func newClientBuilder(
 	invokePath string,
 	emptyGen compiled.EmptyMessageGen,
 ) compiled.UnaryClientBuilder {
-	return func(address compiled.Address) (compiled.UnaryClient, error) {
+	return func(address compiled.Address) (compiled.Conn, error) {
 		conn, err := grpc.Dial(string(address), grpc.WithInsecure())
 		if err != nil {
 			return nil, err
