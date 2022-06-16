@@ -114,16 +114,15 @@ func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.InvocationContext().Address()
-	clientBuilder := s.InvocationContext().ClientBuilder()
-	if clientBuilder == nil {
-		return nil, errors.New("nil client builder")
+	dialer := s.Dialer()
+	if dialer == nil {
+		return nil, errors.New("nil dialer")
 	}
-	return newOfflineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+	return newOfflineUnary(name, inChan, outChan, dialer, l), nil
 }
 
 func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -187,7 +186,7 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -312,16 +311,15 @@ func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.InvocationContext().Address()
-	clientBuilder := s.InvocationContext().ClientBuilder()
-	if clientBuilder == nil {
-		return nil, errors.New("nil client builder")
+	dialer := s.Dialer()
+	if dialer == nil {
+		return nil, errors.New("nil dialer")
 	}
-	return newOnlineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+	return newOnlineUnary(name, inChan, outChan, dialer, l), nil
 }
 
 func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
@@ -385,7 +383,7 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}

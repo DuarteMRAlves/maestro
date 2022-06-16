@@ -28,6 +28,27 @@ func (s *Stage) Name() StageName {
 
 func (s *Stage) Type() StageType { return s.sType }
 
+func (s *Stage) Dialer() Dialer {
+	if s == nil {
+		return nil
+	}
+	return s.method
+}
+
+func (s *Stage) InputDesc() MessageDesc {
+	if s == nil {
+		return nil
+	}
+	return s.method.Input()
+}
+
+func (s *Stage) OutputDesc() MessageDesc {
+	if s == nil {
+		return nil
+	}
+	return s.method.Output()
+}
+
 func (s *Stage) Inputs() []*Link {
 	return s.inputs
 }
@@ -76,10 +97,18 @@ type MethodID interface {
 
 // MethodDesc contains the information to create a method.
 type MethodDesc interface {
-	Dial() Conn
+	Dialer
 	Input() MessageDesc
 	Output() MessageDesc
 }
+
+type Dialer interface {
+	Dial() Conn
+}
+
+type DialFunc func() Conn
+
+func (fn DialFunc) Dial() Conn { return fn() }
 
 type Conn interface {
 	Call(ctx context.Context, req Message) (Message, error)

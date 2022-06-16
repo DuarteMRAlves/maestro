@@ -8,13 +8,12 @@ import (
 )
 
 type offlineUnary struct {
-	name    compiled.StageName
-	address compiled.Address
+	name compiled.StageName
 
 	input  <-chan offlineState
 	output chan<- offlineState
 
-	clientBuilder compiled.UnaryClientBuilder
+	dialer compiled.Dialer
 
 	logger Logger
 }
@@ -23,17 +22,15 @@ func newOfflineUnary(
 	name compiled.StageName,
 	input <-chan offlineState,
 	output chan<- offlineState,
-	address compiled.Address,
-	clientBuilder compiled.UnaryClientBuilder,
+	dialer compiled.Dialer,
 	logger Logger,
 ) Stage {
 	return &offlineUnary{
-		name:          name,
-		input:         input,
-		output:        output,
-		address:       address,
-		clientBuilder: clientBuilder,
-		logger:        logger,
+		name:   name,
+		input:  input,
+		output: output,
+		dialer: dialer,
+		logger: logger,
 	}
 }
 
@@ -42,11 +39,8 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 		in, out offlineState
 		more    bool
 	)
-	client, err := s.clientBuilder(s.address)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
+	conn := s.dialer.Dial()
+	defer conn.Close()
 	s.logger.Infof("'%s': started\n", s.name)
 	for {
 		select {
@@ -64,7 +58,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 		}
 		s.logger.Debugf("'%s': recv msg: %#v\n", s.name, in.msg)
 		req := in.msg
-		rep, err := s.call(ctx, client, req)
+		rep, err := s.call(ctx, conn, req)
 		if err != nil {
 			return err
 		}
@@ -83,12 +77,12 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 
 func (s *offlineUnary) call(
 	ctx context.Context,
-	client compiled.Conn,
+	conn compiled.Conn,
 	req compiled.Message,
 ) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	return client.Call(ctx, req)
+	return conn.Call(ctx, req)
 }
 
 type onlineUnary struct {
@@ -98,7 +92,7 @@ type onlineUnary struct {
 	input  <-chan onlineState
 	output chan<- onlineState
 
-	clientBuilder compiled.UnaryClientBuilder
+	dialer compiled.Dialer
 
 	logger Logger
 }
@@ -107,17 +101,15 @@ func newOnlineUnary(
 	name compiled.StageName,
 	input <-chan onlineState,
 	output chan<- onlineState,
-	address compiled.Address,
-	clientBuilder compiled.UnaryClientBuilder,
+	dialer compiled.Dialer,
 	logger Logger,
 ) Stage {
 	return &onlineUnary{
-		name:          name,
-		input:         input,
-		output:        output,
-		address:       address,
-		clientBuilder: clientBuilder,
-		logger:        logger,
+		name:   name,
+		input:  input,
+		output: output,
+		dialer: dialer,
+		logger: logger,
 	}
 }
 
@@ -126,11 +118,8 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 		in, out onlineState
 		more    bool
 	)
-	client, err := s.clientBuilder(s.address)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
+	conn := s.dialer.Dial()
+	defer conn.Close()
 	s.logger.Infof("'%s': started\n", s.name)
 	for {
 		select {
@@ -148,7 +137,7 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 		}
 		s.logger.Debugf("'%s': recv id: %d, msg: %#v\n", s.name, in.id, in.msg)
 		req := in.msg
-		rep, err := s.call(ctx, client, req)
+		rep, err := s.call(ctx, conn, req)
 		if err != nil {
 			return err
 		}
@@ -167,10 +156,10 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 
 func (s *onlineUnary) call(
 	ctx context.Context,
-	client compiled.Conn,
+	conn compiled.Conn,
 	req compiled.Message,
 ) (compiled.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	return client.Call(ctx, req)
+	return conn.Call(ctx, req)
 }

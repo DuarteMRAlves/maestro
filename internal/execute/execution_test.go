@@ -97,16 +97,16 @@ func setupLinear(
 		Name: "pipeline",
 		Stages: []*compiled.StageConfig{
 			{
-				Name:          "source",
-				MethodContext: compiled.MethodContextConfig{Address: "source"},
+				Name:     "source",
+				MethodID: testMethodID("source"),
 			},
 			{
-				Name:          "transform",
-				MethodContext: compiled.MethodContextConfig{Address: "transform"},
+				Name:     "transform",
+				MethodID: testMethodID("transform"),
 			},
 			{
-				Name:          "sink",
-				MethodContext: compiled.MethodContextConfig{Address: "sink"},
+				Name:     "sink",
+				MethodID: testMethodID("sink"),
 			},
 		},
 		Links: []*compiled.LinkConfig{
@@ -123,36 +123,32 @@ func setupLinear(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.Address("source"))
-	transformContext := createMethodContext(compiled.Address("transform"))
-	sinkContext := createMethodContext(compiled.Address("sink"))
-
 	sourceMethod := testMethod{
-		MethodClientBuilder: linearSourceClientBuilder(),
-		In:                  testEmptyDesc{},
-		Out:                 testValDesc{},
+		D:   linearSourceDialFunc(),
+		In:  testEmptyDesc{},
+		Out: testValDesc{},
 	}
 
 	transformMethod := testMethod{
-		MethodClientBuilder: linearTransformClientBuilder(),
-		In:                  testValDesc{},
-		Out:                 testValDesc{},
+		D:   linearTransformDialFunc(),
+		In:  testValDesc{},
+		Out: testValDesc{},
 	}
 	sinkMethod := testMethod{
-		MethodClientBuilder: linearSinkClientBuilder(max, collect, done),
-		In:                  testValDesc{},
-		Out:                 testEmptyDesc{},
+		D:   linearSinkDialFunc(max, collect, done),
+		In:  testValDesc{},
+		Out: testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.MethodDesc{
-		sourceContext:    sourceMethod,
-		transformContext: transformMethod,
-		sinkContext:      sinkMethod,
+	methods := map[compiled.MethodID]compiled.MethodDesc{
+		testMethodID("source"):    sourceMethod,
+		testMethodID("transform"): transformMethod,
+		testMethodID("sink"):      sinkMethod,
 	}
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
-		m, ok := methods[*methodCtx]
+	methodLoader := func(mid compiled.MethodID) (compiled.MethodDesc, error) {
+		m, ok := methods[mid]
 		if !ok {
-			panic(fmt.Sprintf("No such method: %s", methodCtx))
+			panic(fmt.Sprintf("No such method: %s", mid))
 		}
 		return m, nil
 	}
@@ -160,15 +156,15 @@ func setupLinear(
 	return cfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func linearSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return &linearSourceClient{counter: 0}, nil
+func linearSourceDialFunc() compiled.DialFunc {
+	return func() compiled.Conn {
+		return &linearSourceConn{counter: 0}
 	}
 }
 
-type linearSourceClient struct{ counter int64 }
+type linearSourceConn struct{ counter int64 }
 
-func (c *linearSourceClient) Call(_ context.Context, req compiled.Message) (
+func (c *linearSourceConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -180,18 +176,17 @@ func (c *linearSourceClient) Call(_ context.Context, req compiled.Message) (
 	return &testValMsg{Val: val}, nil
 }
 
-func (c *linearSourceClient) Close() error { return nil }
+func (c *linearSourceConn) Close() error { return nil }
 
-func linearTransformClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		c := &linearTransformClient{}
-		return c, nil
+func linearTransformDialFunc() compiled.DialFunc {
+	return func() compiled.Conn {
+		return &linearTransformConn{}
 	}
 }
 
-type linearTransformClient struct{}
+type linearTransformConn struct{}
 
-func (c *linearTransformClient) Call(_ context.Context, req compiled.Message) (
+func (c *linearTransformConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -202,32 +197,29 @@ func (c *linearTransformClient) Call(_ context.Context, req compiled.Message) (
 	return &testValMsg{Val: 2 * reqMsg.Val}, nil
 }
 
-func (c *linearTransformClient) Close() error { return nil }
+func (c *linearTransformConn) Close() error { return nil }
 
-func linearSinkClientBuilder(
-	max int,
-	collect *[]*testValMsg,
-	done chan<- struct{},
-) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		c := &linearSinkClient{
+func linearSinkDialFunc(
+	max int, collect *[]*testValMsg, done chan<- struct{},
+) compiled.DialFunc {
+	return func() compiled.Conn {
+		return &linearSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
 		}
-		return c, nil
 	}
 }
 
-type linearSinkClient struct {
+type linearSinkConn struct {
 	max     int
 	collect *[]*testValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
-func (c *linearSinkClient) Call(_ context.Context, req compiled.Message) (
+func (c *linearSinkConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -249,7 +241,7 @@ func (c *linearSinkClient) Call(_ context.Context, req compiled.Message) (
 	return &testEmptyMsg{}, nil
 }
 
-func (c *linearSinkClient) Close() error { return nil }
+func (c *linearSinkConn) Close() error { return nil }
 
 func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	max := 100
@@ -341,16 +333,16 @@ func setupSplitAndMerge(
 		Name: "pipeline",
 		Stages: []*compiled.StageConfig{
 			{
-				Name:          "source",
-				MethodContext: compiled.MethodContextConfig{Address: "source"},
+				Name:     "source",
+				MethodID: testMethodID("source"),
 			},
 			{
-				Name:          "transform",
-				MethodContext: compiled.MethodContextConfig{Address: "transform"},
+				Name:     "transform",
+				MethodID: testMethodID("transform"),
 			},
 			{
-				Name:          "sink",
-				MethodContext: compiled.MethodContextConfig{Address: "sink"},
+				Name:     "sink",
+				MethodID: testMethodID("sink"),
 			},
 		},
 		Links: []*compiled.LinkConfig{
@@ -374,36 +366,32 @@ func setupSplitAndMerge(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.Address("source"))
-	transformContext := createMethodContext(compiled.Address("transform"))
-	sinkContext := createMethodContext(compiled.Address("sink"))
-
 	sourceMethod := testMethod{
-		MethodClientBuilder: splitAndMergeSourceClientBuilder(),
-		In:                  testEmptyDesc{},
-		Out:                 testValDesc{},
+		D:   splitAndMergeSourceDialFunc(),
+		In:  testEmptyDesc{},
+		Out: testValDesc{},
 	}
 	transformMethod := testMethod{
-		MethodClientBuilder: splitAndMergeTransformClientBuilder(),
-		In:                  testValDesc{},
-		Out:                 testValDesc{},
+		D:   splitAndMergeTransformDialFunc(),
+		In:  testValDesc{},
+		Out: testValDesc{},
 	}
 	sinkMethod := testMethod{
-		MethodClientBuilder: splitAndMergeSinkClientBuilder(max, collect, done),
-		In:                  testTwoValDesc{},
-		Out:                 testEmptyDesc{},
+		D:   splitAndMergeSinkDialFunc(max, collect, done),
+		In:  testTwoValDesc{},
+		Out: testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.MethodDesc{
-		sourceContext:    sourceMethod,
-		transformContext: transformMethod,
-		sinkContext:      sinkMethod,
+	methods := map[compiled.MethodID]compiled.MethodDesc{
+		testMethodID("source"):    sourceMethod,
+		testMethodID("transform"): transformMethod,
+		testMethodID("sink"):      sinkMethod,
 	}
 
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
-		m, ok := methods[*methodCtx]
+	methodLoader := func(mid compiled.MethodID) (compiled.MethodDesc, error) {
+		m, ok := methods[mid]
 		if !ok {
-			panic(fmt.Sprintf("No such method: %s", methodCtx))
+			panic(fmt.Sprintf("No such method: %s", mid))
 		}
 		return m, nil
 	}
@@ -411,15 +399,15 @@ func setupSplitAndMerge(
 	return pipelineCfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func splitAndMergeSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return &splitAndMergeSourceClient{counter: 0}, nil
+func splitAndMergeSourceDialFunc() compiled.DialFunc {
+	return func() compiled.Conn {
+		return &splitAndMergeSourceConn{counter: 0}
 	}
 }
 
-type splitAndMergeSourceClient struct{ counter int64 }
+type splitAndMergeSourceConn struct{ counter int64 }
 
-func (c *splitAndMergeSourceClient) Call(
+func (c *splitAndMergeSourceConn) Call(
 	_ context.Context, req compiled.Message,
 ) (compiled.Message, error) {
 	_, ok := req.(*testEmptyMsg)
@@ -429,17 +417,17 @@ func (c *splitAndMergeSourceClient) Call(
 	return &testValMsg{Val: atomic.AddInt64(&c.counter, 1)}, nil
 }
 
-func (c *splitAndMergeSourceClient) Close() error { return nil }
+func (c *splitAndMergeSourceConn) Close() error { return nil }
 
-func splitAndMergeTransformClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return &splitAndMergeTransformClient{}, nil
+func splitAndMergeTransformDialFunc() compiled.DialFunc {
+	return func() compiled.Conn {
+		return &splitAndMergeTransformConn{}
 	}
 }
 
-type splitAndMergeTransformClient struct{}
+type splitAndMergeTransformConn struct{}
 
-func (c *splitAndMergeTransformClient) Call(
+func (c *splitAndMergeTransformConn) Call(
 	_ context.Context, req compiled.Message,
 ) (compiled.Message, error) {
 	reqMsg, ok := req.(*testValMsg)
@@ -449,30 +437,29 @@ func (c *splitAndMergeTransformClient) Call(
 	return &testValMsg{Val: 3 * reqMsg.Val}, nil
 }
 
-func (c *splitAndMergeTransformClient) Close() error { return nil }
+func (c *splitAndMergeTransformConn) Close() error { return nil }
 
-func splitAndMergeSinkClientBuilder(
+func splitAndMergeSinkDialFunc(
 	max int, collect *[]*testTwoValMsg, done chan<- struct{},
-) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		c := &splitAndMergeSinkClient{
+) compiled.DialFunc {
+	return func() compiled.Conn {
+		return &splitAndMergeSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
 		}
-		return c, nil
 	}
 }
 
-type splitAndMergeSinkClient struct {
+type splitAndMergeSinkConn struct {
 	max     int
 	collect *[]*testTwoValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
-func (c *splitAndMergeSinkClient) Call(_ context.Context, req compiled.Message) (
+func (c *splitAndMergeSinkConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -494,7 +481,7 @@ func (c *splitAndMergeSinkClient) Call(_ context.Context, req compiled.Message) 
 	return &testEmptyMsg{}, nil
 }
 
-func (c *splitAndMergeSinkClient) Close() error { return nil }
+func (c *splitAndMergeSinkConn) Close() error { return nil }
 
 func TestOfflineExecution_Slow(t *testing.T) {
 	max := 100
@@ -580,16 +567,16 @@ func setupSlow(
 		Name: "pipeline",
 		Stages: []*compiled.StageConfig{
 			{
-				Name:          "source",
-				MethodContext: compiled.MethodContextConfig{Address: "source"},
+				Name:     "source",
+				MethodID: testMethodID("source"),
 			},
 			{
-				Name:          "transform",
-				MethodContext: compiled.MethodContextConfig{Address: "transform"},
+				Name:     "transform",
+				MethodID: testMethodID("transform"),
 			},
 			{
-				Name:          "sink",
-				MethodContext: compiled.MethodContextConfig{Address: "sink"},
+				Name:     "sink",
+				MethodID: testMethodID("sink"),
 			},
 		},
 		Links: []*compiled.LinkConfig{
@@ -606,36 +593,33 @@ func setupSlow(
 		},
 	}
 
-	sourceContext := createMethodContext(compiled.Address("source"))
-	transformContext := createMethodContext(compiled.Address("transform"))
-	sinkContext := createMethodContext(compiled.Address("sink"))
-
 	sourceMethod := testMethod{
-		MethodClientBuilder: slowSourceClientBuilder(),
-		In:                  testEmptyDesc{},
-		Out:                 testValDesc{},
+		D:   slowSourceDialFunc(),
+		In:  testEmptyDesc{},
+		Out: testValDesc{},
 	}
 
 	transformMethod := testMethod{
-		MethodClientBuilder: slowTransformClientBuilder(1 * time.Millisecond),
-		In:                  testValDesc{},
-		Out:                 testValDesc{},
+		D:   slowTransformDialFunc(1 * time.Millisecond),
+		In:  testValDesc{},
+		Out: testValDesc{},
 	}
 	sinkMethod := testMethod{
-		MethodClientBuilder: slowSinkClientBuilder(max, collect, done),
-		In:                  testValDesc{},
-		Out:                 testEmptyDesc{},
+		D:   slowSinkDialFunc(max, collect, done),
+		In:  testValDesc{},
+		Out: testEmptyDesc{},
 	}
 
-	methods := map[compiled.MethodContext]compiled.MethodDesc{
-		sourceContext:    sourceMethod,
-		transformContext: transformMethod,
-		sinkContext:      sinkMethod,
+	methods := map[compiled.MethodID]compiled.MethodDesc{
+		testMethodID("source"):    sourceMethod,
+		testMethodID("transform"): transformMethod,
+		testMethodID("sink"):      sinkMethod,
 	}
-	methodLoader := func(methodCtx *compiled.MethodContext) (compiled.MethodDesc, error) {
-		m, ok := methods[*methodCtx]
+
+	methodLoader := func(mid compiled.MethodID) (compiled.MethodDesc, error) {
+		m, ok := methods[mid]
 		if !ok {
-			panic(fmt.Sprintf("No such method: %s", methodCtx))
+			panic(fmt.Sprintf("No such method: %s", mid))
 		}
 		return m, nil
 	}
@@ -643,15 +627,15 @@ func setupSlow(
 	return pipelineCfg, compiled.MethodLoaderFunc(methodLoader)
 }
 
-func slowSourceClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return &slowSourceClient{counter: 0}, nil
+func slowSourceDialFunc() compiled.DialFunc {
+	return func() compiled.Conn {
+		return &slowSourceConn{counter: 0}
 	}
 }
 
-type slowSourceClient struct{ counter int64 }
+type slowSourceConn struct{ counter int64 }
 
-func (c *slowSourceClient) Call(_ context.Context, req compiled.Message) (
+func (c *slowSourceConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -663,17 +647,17 @@ func (c *slowSourceClient) Call(_ context.Context, req compiled.Message) (
 	return &testValMsg{Val: val}, nil
 }
 
-func (c *slowSourceClient) Close() error { return nil }
+func (c *slowSourceConn) Close() error { return nil }
 
-func slowTransformClientBuilder(sleep time.Duration) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return &slowTransformClient{sleep: sleep}, nil
+func slowTransformDialFunc(sleep time.Duration) compiled.DialFunc {
+	return func() compiled.Conn {
+		return &slowTransformConn{sleep: sleep}
 	}
 }
 
-type slowTransformClient struct{ sleep time.Duration }
+type slowTransformConn struct{ sleep time.Duration }
 
-func (c *slowTransformClient) Call(_ context.Context, req compiled.Message) (
+func (c *slowTransformConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -685,32 +669,31 @@ func (c *slowTransformClient) Call(_ context.Context, req compiled.Message) (
 	return &testValMsg{Val: 2 * reqMsg.Val}, nil
 }
 
-func (c *slowTransformClient) Close() error { return nil }
+func (c *slowTransformConn) Close() error { return nil }
 
-func slowSinkClientBuilder(
+func slowSinkDialFunc(
 	max int,
 	collect *[]*testValMsg,
 	done chan<- struct{},
-) compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		c := &slowSinkClient{
+) compiled.DialFunc {
+	return func() compiled.Conn {
+		return &slowSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
 		}
-		return c, nil
 	}
 }
 
-type slowSinkClient struct {
+type slowSinkConn struct {
 	max     int
 	collect *[]*testValMsg
 	done    chan<- struct{}
 	mu      sync.Mutex
 }
 
-func (c *slowSinkClient) Call(_ context.Context, req compiled.Message) (
+func (c *slowSinkConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -732,24 +715,22 @@ func (c *slowSinkClient) Call(_ context.Context, req compiled.Message) (
 	return &testEmptyMsg{}, nil
 }
 
-func (c *slowSinkClient) Close() error { return nil }
+func (c *slowSinkConn) Close() error { return nil }
 
-func createMethodContext(addr compiled.Address) compiled.MethodContext {
-	var (
-		emptyService compiled.Service
-		emptyMethod  compiled.Method
-	)
-	return compiled.NewMethodContext(addr, emptyService, emptyMethod)
+type testMethodID string
+
+func (mid testMethodID) String() string {
+	return string(mid)
 }
 
 type testMethod struct {
-	MethodClientBuilder compiled.UnaryClientBuilder
-	In                  compiled.MessageDesc
-	Out                 compiled.MessageDesc
+	D   compiled.Dialer
+	In  compiled.MessageDesc
+	Out compiled.MessageDesc
 }
 
-func (m testMethod) ClientBuilder() compiled.UnaryClientBuilder {
-	return m.MethodClientBuilder
+func (m testMethod) Dial() compiled.Conn {
+	return m.D.Dial()
 }
 
 func (m testMethod) Input() compiled.MessageDesc {

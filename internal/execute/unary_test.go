@@ -26,9 +26,8 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	output := make(chan offlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.Address("some-address")
-	clientBuilder := testUnaryClientBuilder()
-	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
+	dialer := testDialer{}
+	stage := newOfflineUnary(name, input, output, dialer, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -90,9 +89,8 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	output := make(chan onlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.Address("some-address")
-	clientBuilder := testUnaryClientBuilder()
-	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
+	dialer := testDialer{}
+	stage := newOnlineUnary(name, input, output, dialer, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -157,15 +155,13 @@ func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, e
 	panic("Should not get field in unary test")
 }
 
-func testUnaryClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.Conn, error) {
-		return testUnaryClient{}, nil
-	}
-}
+type testDialer struct{}
 
-type testUnaryClient struct{}
+func (d testDialer) Dial() compiled.Conn { return testUnaryConn{} }
 
-func (c testUnaryClient) Call(_ context.Context, req compiled.Message) (
+type testUnaryConn struct{}
+
+func (c testUnaryConn) Call(_ context.Context, req compiled.Message) (
 	compiled.Message,
 	error,
 ) {
@@ -177,4 +173,4 @@ func (c testUnaryClient) Call(_ context.Context, req compiled.Message) (
 	return testUnaryMessage{replyVal}, nil
 }
 
-func (c testUnaryClient) Close() error { return nil }
+func (c testUnaryConn) Close() error { return nil }
