@@ -10,16 +10,8 @@ type PipelineConfig struct {
 
 // Stage specifies a given step of the Pipeline.
 type StageConfig struct {
-	Name          string
-	MethodContext MethodContextConfig
-}
-
-// MethodContext specifies the method to be executed in a given
-// Stage.
-type MethodContextConfig struct {
-	Address string
-	Service string
-	Method  string
+	Name     string
+	MethodID MethodID
 }
 
 // Link defines a connection between two Stage objects in a Pipeline.

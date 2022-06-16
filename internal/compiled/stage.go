@@ -42,9 +42,7 @@ func (s *Stage) Outputs() []*Link {
 // remote method.
 type InvocationContext struct {
 	// static attributes for the method invocation
-	address Address
-	service Service
-	method  Method
+	mid MethodID
 
 	// runtime attributes that can be computed from
 	// the static attributes
@@ -52,41 +50,24 @@ type InvocationContext struct {
 }
 
 func newInvocationContext(
-	methodLoader MethodLoader, address Address, service Service, method Method,
+	methodLoader MethodLoader, mid MethodID,
 ) (*InvocationContext, error) {
-	methodCtx := NewMethodContext(address, service, method)
-	unaryMethod, err := methodLoader.Load(&methodCtx)
+	unaryMethod, err := methodLoader.Load(mid)
 	if err != nil {
-		return nil, fmt.Errorf("load method context %s: %w", methodCtx, err)
+		return nil, fmt.Errorf("load method id %s: %w", mid.String(), err)
 	}
 	ictx := &InvocationContext{
-		address:     address,
-		service:     service,
-		method:      method,
+		mid:         mid,
 		unaryMethod: unaryMethod,
 	}
 	return ictx, nil
 }
 
-func (ictx *InvocationContext) Address() Address {
+func (ictx *InvocationContext) MethodID() MethodID {
 	if ictx == nil {
-		return ""
+		return nil
 	}
-	return ictx.address
-}
-
-func (ictx *InvocationContext) Service() Service {
-	if ictx == nil {
-		return ""
-	}
-	return ictx.service
-}
-
-func (ictx *InvocationContext) Method() Method {
-	if ictx == nil {
-		return ""
-	}
-	return ictx.method
+	return ictx.mid
 }
 
 func (ictx *InvocationContext) ClientBuilder() UnaryClientBuilder {
@@ -111,8 +92,7 @@ func (ictx *InvocationContext) Output() MessageDesc {
 }
 
 func (ictx *InvocationContext) String() string {
-	methodInfo := fmt.Sprintf("%s/%s/%s", ictx.address, ictx.service, ictx.method)
-	return fmt.Sprintf("InvokationContext{%s}", methodInfo)
+	return fmt.Sprintf("InvokationContext{%v}", ictx.mid)
 }
 
 type StageName struct{ val string }
@@ -147,6 +127,11 @@ const (
 	StageTypeMerge  StageType = "MergeStage"
 	StageTypeSplit  StageType = "SplitStage"
 )
+
+// MethodID uniquely identifies a given method.
+type MethodID interface {
+	String() string
+}
 
 // Address specifies the location of the server executing the
 // stage method.

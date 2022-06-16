@@ -20,16 +20,16 @@ func TestNew(t *testing.T) {
 				Name: "pipeline",
 				Stages: []*StageConfig{
 					{
-						Name:          "stage-1",
-						MethodContext: MethodContextConfig{Address: "address-1"},
+						Name:     "stage-1",
+						MethodID: testMethodID("method-1"),
 					},
 					{
-						Name:          "stage-2",
-						MethodContext: MethodContextConfig{Address: "address-2"},
+						Name:     "stage-2",
+						MethodID: testMethodID("method-2"),
 					},
 					{
-						Name:          "stage-3",
-						MethodContext: MethodContextConfig{Address: "address-3"},
+						Name:     "stage-3",
+						MethodID: testMethodID("method-3"),
 					},
 				},
 				Links: []*LinkConfig{
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-1:aux-source"},
 						sType: StageTypeSource,
 						ictx: &InvocationContext{
-							address:     Address("address-1"),
+							mid:         testMethodID("method-1"),
 							unaryMethod: testLinearStage1Method{},
 						},
 						inputs: []*Link{},
@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-1"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-1"),
+							mid:         testMethodID("method-1"),
 							unaryMethod: testLinearStage1Method{},
 						},
 						inputs: []*Link{
@@ -91,7 +91,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-2"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-2"),
+							mid:         testMethodID("method-2"),
 							unaryMethod: testLinearStage2Method{},
 						},
 						inputs: []*Link{
@@ -113,7 +113,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-3"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-3"),
+							mid:         testMethodID("method-3"),
 							unaryMethod: testLinearStage3Method{},
 						},
 						inputs: []*Link{
@@ -135,7 +135,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-3:aux-sink"},
 						sType: StageTypeSink,
 						ictx: &InvocationContext{
-							address:     Address("address-3"),
+							mid:         testMethodID("method-3"),
 							unaryMethod: testLinearStage3Method{},
 						},
 						inputs: []*Link{
@@ -149,19 +149,19 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := MethodContext{address: Address("address-1")}
-				ctx2 := MethodContext{address: Address("address-2")}
-				ctx3 := MethodContext{address: Address("address-3")}
-
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testLinearStage3Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
+					testMethodID("method-3"): testLinearStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %q", mid))
 				}
 				return s, nil
 			},
@@ -172,28 +172,16 @@ func TestNew(t *testing.T) {
 				Mode: OnlineExecution,
 				Stages: []*StageConfig{
 					{
-						Name: "stage-1",
-						MethodContext: MethodContextConfig{
-							Address: "address-1",
-							Service: "service-1",
-							Method:  "method-1",
-						},
+						Name:     "stage-1",
+						MethodID: testMethodID("method-1"),
 					},
 					{
-						Name: "stage-2",
-						MethodContext: MethodContextConfig{
-							Address: "address-2",
-							Service: "service-2",
-							Method:  "method-2",
-						},
+						Name:     "stage-2",
+						MethodID: testMethodID("method-2"),
 					},
 					{
-						Name: "stage-3",
-						MethodContext: MethodContextConfig{
-							Address: "address-3",
-							Service: "service-3",
-							Method:  "method-3",
-						},
+						Name:     "stage-3",
+						MethodID: testMethodID("method-3"),
 					},
 				},
 				Links: []*LinkConfig{
@@ -224,9 +212,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-1:aux-source"},
 						sType: StageTypeSource,
 						ictx: &InvocationContext{
-							address:     Address("address-1"),
-							service:     Service("service-1"),
-							method:      Method("method-1"),
+							mid:         testMethodID("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{},
@@ -242,9 +228,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-1"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-1"),
-							service:     Service("service-1"),
-							method:      Method("method-1"),
+							mid:         testMethodID("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{
@@ -266,9 +250,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-1:aux-split"},
 						sType: StageTypeSplit,
 						ictx: &InvocationContext{
-							address:     Address("address-1"),
-							service:     Service("service-1"),
-							method:      Method("method-1"),
+							mid:         testMethodID("method-1"),
 							unaryMethod: testSplitAndMergeStage1Method{},
 						},
 						inputs: []*Link{
@@ -298,9 +280,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-2"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-2"),
-							service:     Service("service-2"),
-							method:      Method("method-2"),
+							mid:         testMethodID("method-2"),
 							unaryMethod: testSplitAndMergeStage2Method{},
 						},
 						inputs: []*Link{
@@ -325,9 +305,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-3:aux-merge"},
 						sType: StageTypeMerge,
 						ictx: &InvocationContext{
-							address:     Address("address-3"),
-							service:     Service("service-3"),
-							method:      Method("method-3"),
+							mid:         testMethodID("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -360,9 +338,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-3"},
 						sType: StageTypeUnary,
 						ictx: &InvocationContext{
-							address:     Address("address-3"),
-							service:     Service("service-3"),
-							method:      Method("method-3"),
+							mid:         testMethodID("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -384,9 +360,7 @@ func TestNew(t *testing.T) {
 						name:  StageName{val: "stage-3:aux-sink"},
 						sType: StageTypeSink,
 						ictx: &InvocationContext{
-							address:     Address("address-3"),
-							service:     Service("service-3"),
-							method:      Method("method-3"),
+							mid:         testMethodID("method-3"),
 							unaryMethod: testSplitAndMergeStage3Method{},
 						},
 						inputs: []*Link{
@@ -400,18 +374,19 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "service-1", "method-1")
-				ctx2 := NewMethodContext("address-2", "service-2", "method-2")
-				ctx3 := NewMethodContext("address-3", "service-3", "method-3")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testSplitAndMergeStage1Method{},
-					ctx2: testSplitAndMergeStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testSplitAndMergeStage1Method{},
+					testMethodID("method-2"): testSplitAndMergeStage2Method{},
+					testMethodID("method-3"): testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -457,17 +432,15 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				t.Fatalf("No such method: %s", mid)
 				return nil, nil
 			},
 		},
 		"empty stage name": {
 			input: &PipelineConfig{
-				Name: "Pipeline",
-				Stages: []*StageConfig{
-					{MethodContext: MethodContextConfig{Address: "address"}},
-				},
+				Name:   "Pipeline",
+				Stages: []*StageConfig{{MethodID: testMethodID("method")}},
 			},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyStageName) {
@@ -476,27 +449,8 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
-				return nil, nil
-			},
-		},
-		"empty address": {
-			input: &PipelineConfig{
-				Name: "Pipeline",
-				Stages: []*StageConfig{
-					{Name: "stage-1"},
-				},
-			},
-			validateErr: func(err error) string {
-				if !errors.Is(err, errEmptyAddress) {
-					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyAddress)
-				}
-				return ""
-			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				t.Fatalf("No such method: %s", mid)
 				return nil, nil
 			},
 		},
@@ -504,8 +458,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{SourceStage: "stage-1", TargetStage: "stage-2"},
@@ -518,16 +472,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -536,8 +492,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{Name: "1-to-2", TargetStage: "stage-2"},
@@ -550,16 +506,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -568,8 +526,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1"},
@@ -582,16 +540,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -600,8 +560,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-1"},
@@ -614,16 +574,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -632,8 +594,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-3", TargetStage: "stage-1"},
@@ -652,16 +614,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -670,8 +634,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-4"},
@@ -690,16 +654,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -708,9 +674,9 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
+					{Name: "stage-3", MethodID: testMethodID("method-3")},
 				},
 				Links: []*LinkConfig{
 					{
@@ -744,18 +710,19 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				ctx3 := NewMethodContext("address-3", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testLinearStage3Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
+					testMethodID("method-3"): testLinearStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -764,9 +731,9 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
+					{Name: "stage-3", MethodID: testMethodID("method-3")},
 				},
 				Links: []*LinkConfig{
 					{
@@ -800,18 +767,19 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				ctx3 := NewMethodContext("address-3", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
+					testMethodID("method-3"): testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -820,9 +788,9 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: MethodContextConfig{Address: "address-3"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
+					{Name: "stage-3", MethodID: testMethodID("method-3")},
 				},
 				Links: []*LinkConfig{
 					{
@@ -859,18 +827,19 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				ctx3 := NewMethodContext("address-3", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
+					testMethodID("method-3"): testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -879,8 +848,8 @@ func TestNewIsErr(t *testing.T) {
 			input: &PipelineConfig{
 				Name: "Pipeline",
 				Stages: []*StageConfig{
-					{Name: "stage-1", MethodContext: MethodContextConfig{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: MethodContextConfig{Address: "address-2"}},
+					{Name: "stage-1", MethodID: testMethodID("method-1")},
+					{Name: "stage-2", MethodID: testMethodID("method-2")},
 				},
 				Links: []*LinkConfig{
 					{
@@ -904,16 +873,18 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext("address-1", "", "")
-				ctx2 := NewMethodContext("address-2", "", "")
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			methodLoader: func(mid MethodID) (UnaryMethod, error) {
+				mapper := map[testMethodID]UnaryMethod{
+					testMethodID("method-1"): testLinearStage1Method{},
+					testMethodID("method-2"): testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				v, ok := mid.(testMethodID)
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("Invalid method type: expected testMethodID, got %s", reflect.TypeOf(mid)))
+				}
+				s, ok := mapper[v]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", mid))
 				}
 				return s, nil
 			},
@@ -934,6 +905,12 @@ func TestNewIsErr(t *testing.T) {
 			}
 		})
 	}
+}
+
+type testMethodID string
+
+func (mid testMethodID) String() string {
+	return string(mid)
 }
 
 type testLinearStage1Method struct{}

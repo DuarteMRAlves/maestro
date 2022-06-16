@@ -5,16 +5,16 @@ import (
 	"fmt"
 )
 
-// MethodLoader resolves a method from its context.
+// MethodLoader resolves a method from its identifier.
 type MethodLoader interface {
-	Load(*MethodContext) (UnaryMethod, error)
+	Load(MethodID) (UnaryMethod, error)
 }
 
 // MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(*MethodContext) (UnaryMethod, error)
+type MethodLoaderFunc func(MethodID) (UnaryMethod, error)
 
-func (fn MethodLoaderFunc) Load(methodContext *MethodContext) (UnaryMethod, error) {
-	return fn(methodContext)
+func (fn MethodLoaderFunc) Load(mid MethodID) (UnaryMethod, error) {
+	return fn(mid)
 }
 
 // Context specifies a compilation context to create the pipeline.
@@ -137,13 +137,7 @@ func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	address := Address(cfg.MethodContext.Address)
-	if address.IsEmpty() {
-		return nil, errEmptyAddress
-	}
-	service := Service(cfg.MethodContext.Service)
-	method := Method(cfg.MethodContext.Method)
-	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
+	ictx, err := newInvocationContext(ctx.methodLoader, cfg.MethodID)
 	if err != nil {
 		return nil, err
 	}
