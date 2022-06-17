@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -70,16 +69,15 @@ func TestUnaryClient_Invoke(t *testing.T) {
 	}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
-	method := newUnaryMethod(methodName, inDesc, outDesc)
+	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
 
-	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.Address(addr))
+	conn, err := method.Dial()
 	if err != nil {
-		t.Fatalf("build client: %s", err)
+		t.Fatalf("build conn: %s", err)
 	}
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Fatalf("close client: %s", err)
+		if err := conn.Close(); err != nil {
+			t.Fatalf("close conn: %s", err)
 		}
 	}()
 
@@ -90,7 +88,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	reply, err := client.Call(ctx, req)
+	reply, err := conn.Call(ctx, req)
 	if err != nil {
 		t.Fatalf("call method: %s", err)
 	}
@@ -134,16 +132,15 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
-	method := newUnaryMethod(methodName, inDesc, outDesc)
+	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
 
-	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.Address(addr))
+	conn, err := method.Dial()
 	if err != nil {
-		t.Fatalf("build client: %s", err)
+		t.Fatalf("build conn: %s", err)
 	}
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Fatalf("close client: %s", err)
+		if err := conn.Close(); err != nil {
+			t.Fatalf("close conn: %s", err)
 		}
 	}()
 
@@ -154,7 +151,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	reply, err := client.Call(ctx, req)
+	reply, err := conn.Call(ctx, req)
 	if reply != nil {
 		t.Fatalf("replay is not nil")
 	}
@@ -192,16 +189,15 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	}
 
 	methodName := "unit.TestMethodService/UnimplementedMethod"
-	method := newUnaryMethod(methodName, inDesc, outDesc)
+	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
 
-	clientBuilder := method.ClientBuilder()
-	client, err := clientBuilder(compiled.Address(addr))
+	conn, err := method.Dial()
 	if err != nil {
-		t.Fatalf("build client: %s", err)
+		t.Fatalf("build conn: %s", err)
 	}
 	defer func() {
-		if err := client.Close(); err != nil {
-			t.Fatalf("close client: %s", err)
+		if err := conn.Close(); err != nil {
+			t.Fatalf("close conn: %s", err)
 		}
 	}()
 
@@ -212,7 +208,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	reply, err := client.Call(ctx, req)
+	reply, err := conn.Call(ctx, req)
 	if reply != nil {
 		t.Fatalf("replay is not nil")
 	}
@@ -231,7 +227,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 	}
 }
 
-var dummyErr = errors.New("dummy error")
+var errDummy = errors.New("dummy error")
 
 type testMethodService struct {
 	unit.UnimplementedTestMethodServiceServer
@@ -242,7 +238,7 @@ func (s *testMethodService) CorrectMethod(
 	request *unit.TestMethodRequest,
 ) (*unit.TestMethodReply, error) {
 	if request.StringField == "error" {
-		return nil, dummyErr
+		return nil, errDummy
 	} else {
 		return testReplyFromRequest(request), nil
 	}

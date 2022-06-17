@@ -39,7 +39,10 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 		in, out offlineState
 		more    bool
 	)
-	conn := s.dialer.Dial()
+	conn, err := s.dialer.Dial()
+	if err != nil {
+		return err
+	}
 	defer conn.Close()
 	s.logger.Infof("'%s': started\n", s.name)
 	for {
@@ -86,8 +89,7 @@ func (s *offlineUnary) call(
 }
 
 type onlineUnary struct {
-	name    compiled.StageName
-	address compiled.Address
+	name compiled.StageName
 
 	input  <-chan onlineState
 	output chan<- onlineState
@@ -118,7 +120,10 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 		in, out onlineState
 		more    bool
 	)
-	conn := s.dialer.Dial()
+	conn, err := s.dialer.Dial()
+	if err != nil {
+		return err
+	}
 	defer conn.Close()
 	s.logger.Infof("'%s': started\n", s.name)
 	for {

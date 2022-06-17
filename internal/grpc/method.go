@@ -11,13 +11,13 @@ import (
 )
 
 type unaryMethod struct {
-	clientBuilder compiled.UnaryClientBuilder
-	input         messageDescriptor
-	output        messageDescriptor
+	dialer compiled.DialFunc
+	input  messageDescriptor
+	output messageDescriptor
 }
 
-func (d unaryMethod) ClientBuilder() compiled.UnaryClientBuilder {
-	return d.clientBuilder
+func (d unaryMethod) Dial() (compiled.Conn, error) {
+	return d.dialer.Dial()
 }
 
 func (d unaryMethod) Input() compiled.MessageDesc {
@@ -29,29 +29,31 @@ func (d unaryMethod) Output() compiled.MessageDesc {
 }
 
 func newUnaryMethod(
+	address string,
 	invokePath string,
 	inDesc, outDesc messageDescriptor,
 ) unaryMethod {
 	return unaryMethod{
-		input:         inDesc,
-		output:        outDesc,
-		clientBuilder: newClientBuilder(invokePath, outDesc.EmptyGen()),
+		input:  inDesc,
+		output: outDesc,
+		dialer: newDialFunc(address, invokePath, outDesc.EmptyGen()),
 	}
 }
 
-func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor) unaryMethod {
+func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor, address string) unaryMethod {
 	invokePath := methodInvokePath(desc)
 	input := messageDescriptor{desc: desc.GetInputType()}
 	output := messageDescriptor{desc: desc.GetOutputType()}
 
-	return newUnaryMethod(invokePath, input, output)
+	return newUnaryMethod(address, invokePath, input, output)
 }
 
-func newClientBuilder(
+func newDialFunc(
+	address string,
 	invokePath string,
 	emptyGen compiled.EmptyMessageGen,
-) compiled.UnaryClientBuilder {
-	return func(address compiled.Address) (compiled.Conn, error) {
+) compiled.DialFunc {
+	return func() (compiled.Conn, error) {
 		conn, err := grpc.Dial(string(address), grpc.WithInsecure())
 		if err != nil {
 			return nil, err

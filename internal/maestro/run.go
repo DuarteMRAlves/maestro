@@ -221,11 +221,11 @@ func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *spec.Pipeli
 
 func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *spec.Stage) {
 	cfg.Name = sSpec.Name
-	cfg.MethodContext = compiled.MethodContextConfig{
-		Address: sSpec.MethodContext.Address,
-		Service: sSpec.MethodContext.Service,
-		Method:  sSpec.MethodContext.Method,
-	}
+	cfg.MethodID = grpc.NewMethodID(
+		grpc.Address(sSpec.MethodContext.Address),
+		grpc.Service(sSpec.MethodContext.Service),
+		grpc.Method(sSpec.MethodContext.Method),
+	)
 }
 
 func (opts *RunOpts) linkSpecToCfg(cfg *compiled.LinkConfig, lSpec *spec.Link) {

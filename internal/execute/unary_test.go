@@ -157,7 +157,7 @@ func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, e
 
 type testDialer struct{}
 
-func (d testDialer) Dial() compiled.Conn { return testUnaryConn{} }
+func (d testDialer) Dial() (compiled.Conn, error) { return testUnaryConn{}, nil }
 
 type testUnaryConn struct{}
 

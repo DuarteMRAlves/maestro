@@ -70,16 +70,16 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 		Mode: compiled.OfflineExecution,
 		Stages: []*compiled.StageConfig{
 			{
-				Name:          "source",
-				MethodContext: compiled.MethodContextConfig{Address: sourceAddr.String()},
+				Name:     "source",
+				MethodID: igrpc.NewMethodID(igrpc.Address(sourceAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 			{
-				Name:          "transform",
-				MethodContext: compiled.MethodContextConfig{Address: transfAddr.String()},
+				Name:     "transform",
+				MethodID: igrpc.NewMethodID(igrpc.Address(transfAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 			{
-				Name:          "sink",
-				MethodContext: compiled.MethodContextConfig{Address: sinkAddr.String()},
+				Name:     "sink",
+				MethodID: igrpc.NewMethodID(igrpc.Address(sinkAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 		},
 		Links: []*compiled.LinkConfig{
@@ -196,16 +196,16 @@ func TestOnlineSplitAndMerge(t *testing.T) {
 		Mode: compiled.OnlineExecution,
 		Stages: []*compiled.StageConfig{
 			{
-				Name:          "source",
-				MethodContext: compiled.MethodContextConfig{Address: sourceAddr.String()},
+				Name:     "source",
+				MethodID: igrpc.NewMethodID(igrpc.Address(sourceAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 			{
-				Name:          "transform",
-				MethodContext: compiled.MethodContextConfig{Address: transfAddr.String()},
+				Name:     "transform",
+				MethodID: igrpc.NewMethodID(igrpc.Address(transfAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 			{
-				Name:          "sink",
-				MethodContext: compiled.MethodContextConfig{Address: sinkAddr.String()},
+				Name:     "sink",
+				MethodID: igrpc.NewMethodID(igrpc.Address(sinkAddr.String()), igrpc.Service(""), igrpc.Method("")),
 			},
 		},
 		Links: []*compiled.LinkConfig{

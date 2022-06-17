@@ -103,81 +103,14 @@ type MethodDesc interface {
 }
 
 type Dialer interface {
-	Dial() Conn
+	Dial() (Conn, error)
 }
 
-type DialFunc func() Conn
+type DialFunc func() (Conn, error)
 
-func (fn DialFunc) Dial() Conn { return fn() }
+func (fn DialFunc) Dial() (Conn, error) { return fn() }
 
 type Conn interface {
 	Call(ctx context.Context, req Message) (Message, error)
 	Close() error
-}
-
-// Address specifies the location of the server executing the
-// stage method.
-type Address string
-
-func (a Address) IsEmpty() bool { return a == "" }
-
-func (a Address) String() string {
-	if a.IsEmpty() {
-		return "*"
-	}
-	return string(a)
-}
-
-// Service specifies the name of the grpc service to execute.
-type Service string
-
-// IsUnspecified reports whether this service is either "" or "*".
-func (s Service) IsUnspecified() bool { return s == "" || s == "*" }
-
-func (s Service) String() string {
-	if s.IsUnspecified() {
-		return "*"
-	}
-	return string(s)
-}
-
-// Method specified the name of the grpc method to execute.
-type Method string
-
-// IsUnspecified reports whether this method is either "" or "*".
-func (m Method) IsUnspecified() bool { return m == "" || m == "*" }
-
-func (m Method) String() string {
-	if m.IsUnspecified() {
-		return "*"
-	}
-	return string(m)
-}
-
-type MethodContext struct {
-	address Address
-	service Service
-	method  Method
-}
-
-func (m MethodContext) Address() Address { return m.address }
-
-func (m MethodContext) Service() Service { return m.service }
-
-func (m MethodContext) Method() Method { return m.method }
-
-func (m MethodContext) String() string {
-	return fmt.Sprintf("%s/%s/%s", m.address, m.service, m.method)
-}
-
-func NewMethodContext(
-	address Address,
-	service Service,
-	method Method,
-) MethodContext {
-	return MethodContext{
-		address: address,
-		service: service,
-		method:  method,
-	}
 }

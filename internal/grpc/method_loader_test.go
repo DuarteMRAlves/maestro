@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/google/go-cmp/cmp"
@@ -126,7 +125,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.Service("unit.MethodLoaderTestService")
+	serviceName := Service("unit.MethodLoaderTestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
@@ -269,7 +268,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.Service("pb.TestService")
+	serviceName := Service("pb.TestService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
@@ -311,7 +310,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.Service("pb.UnknownService")
+	serviceName := Service("pb.UnknownService")
 	m := ReflectionMethodLoader{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {

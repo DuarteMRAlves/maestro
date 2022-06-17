@@ -890,8 +890,8 @@ func (mid testMethodID) String() string {
 
 type testLinearStage1Method struct{}
 
-func (m testLinearStage1Method) Dial() Conn {
-	return nil
+func (m testLinearStage1Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testLinearStage1Method) Input() MessageDesc {
@@ -904,8 +904,8 @@ func (m testLinearStage1Method) Output() MessageDesc {
 
 type testLinearStage2Method struct{}
 
-func (m testLinearStage2Method) Dial() Conn {
-	return nil
+func (m testLinearStage2Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testLinearStage2Method) Input() MessageDesc {
@@ -918,8 +918,8 @@ func (m testLinearStage2Method) Output() MessageDesc {
 
 type testLinearStage3Method struct{}
 
-func (m testLinearStage3Method) Dial() Conn {
-	return nil
+func (m testLinearStage3Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testLinearStage3Method) Input() MessageDesc {
@@ -932,8 +932,8 @@ func (m testLinearStage3Method) Output() MessageDesc {
 
 type testSplitAndMergeStage1Method struct{}
 
-func (m testSplitAndMergeStage1Method) Dial() Conn {
-	return nil
+func (m testSplitAndMergeStage1Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testSplitAndMergeStage1Method) Input() MessageDesc {
@@ -946,8 +946,8 @@ func (m testSplitAndMergeStage1Method) Output() MessageDesc {
 
 type testSplitAndMergeStage2Method struct{}
 
-func (m testSplitAndMergeStage2Method) Dial() Conn {
-	return nil
+func (m testSplitAndMergeStage2Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testSplitAndMergeStage2Method) Input() MessageDesc {
@@ -960,8 +960,8 @@ func (m testSplitAndMergeStage2Method) Output() MessageDesc {
 
 type testSplitAndMergeStage3Method struct{}
 
-func (m testSplitAndMergeStage3Method) Dial() Conn {
-	return nil
+func (m testSplitAndMergeStage3Method) Dial() (Conn, error) {
+	return nil, nil
 }
 
 func (m testSplitAndMergeStage3Method) Input() MessageDesc {

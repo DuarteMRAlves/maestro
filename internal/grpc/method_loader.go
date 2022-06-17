@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
@@ -39,12 +40,16 @@ func NewReflectionMethodLoader(
 	}
 }
 
-func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
-	compiled.MethodDesc,
-	error,
-) {
-	m.logger.Debugf("Load method with reflection: %#v", methodCtx)
-	conn, err := grpc.Dial(string(methodCtx.Address()), grpc.WithInsecure())
+func (m *ReflectionMethodLoader) Load(mid compiled.MethodID) (compiled.MethodDesc, error) {
+	m.logger.Debugf("Load method with reflection: %#v", mid)
+
+	mctx, ok := mid.(MethodID)
+	if !ok {
+		err := fmt.Errorf("unexpected type for method id: expected MethodContext, got %s", reflect.TypeOf(mid))
+		return nil, err
+	}
+
+	conn, err := grpc.Dial(string(mctx.Address()), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +61,7 @@ func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
 	if err != nil {
 		return nil, err
 	}
-	service, err := findService(services, methodCtx.Service())
+	service, err := findService(services, mctx.Service())
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +69,16 @@ func (m *ReflectionMethodLoader) Load(methodCtx *compiled.MethodContext) (
 	if err != nil {
 		return nil, err
 	}
-	return findMethod(serviceDesc.GetMethods(), methodCtx.Method())
+	method, err := findMethod(serviceDesc.GetMethods(), mctx.Method())
+	if err != nil {
+		return nil, err
+	}
+	return newUnaryMethodFromDescriptor(method, mctx.Address().String()), nil
 }
 
 func (m *ReflectionMethodLoader) listServices(
 	ctx context.Context, conn grpc.ClientConnInterface,
-) ([]compiled.Service, error) {
+) ([]Service, error) {
 	var (
 		all []string
 		err error
@@ -87,19 +96,16 @@ func (m *ReflectionMethodLoader) listServices(
 		return nil, fmt.Errorf("list services: %w", err)
 	}
 	// Filter the reflection service
-	services := make([]compiled.Service, 0, len(all)-1)
+	services := make([]Service, 0, len(all)-1)
 	for _, s := range all {
 		if s != reflectionServiceName {
-			services = append(services, compiled.Service(s))
+			services = append(services, Service(s))
 		}
 	}
 	return services, nil
 }
 
-func findService(
-	available []compiled.Service,
-	search compiled.Service,
-) (compiled.Service, error) {
+func findService(available []Service, search Service) (Service, error) {
 	if search.IsUnspecified() {
 		if len(available) == 1 {
 			return available[0], nil
@@ -116,9 +122,7 @@ func findService(
 }
 
 func (m *ReflectionMethodLoader) resolveService(
-	ctx context.Context,
-	conn grpc.ClientConnInterface,
-	service compiled.Service,
+	ctx context.Context, conn grpc.ClientConnInterface, service Service,
 ) (*desc.ServiceDescriptor, error) {
 	var (
 		descriptor *desc.ServiceDescriptor
@@ -171,20 +175,86 @@ func isProtocolError(err error) bool {
 }
 
 func findMethod(
-	available []*desc.MethodDescriptor,
-	search compiled.Method,
-) (unaryMethod, error) {
+	available []*desc.MethodDescriptor, search Method,
+) (*desc.MethodDescriptor, error) {
 	if search.IsUnspecified() {
 		if len(available) == 1 {
-			return newUnaryMethodFromDescriptor(available[0]), nil
+			return available[0], nil
 		}
-		return unaryMethod{}, notOneMethod
+		return nil, notOneMethod
 	} else {
 		for _, m := range available {
 			if string(search) == m.GetName() {
-				return newUnaryMethodFromDescriptor(m), nil
+				return m, nil
 			}
 		}
-		return unaryMethod{}, &methodNotFound{meth: string(search)}
+		return nil, &methodNotFound{meth: string(search)}
 	}
+}
+
+type MethodID struct {
+	address Address
+	service Service
+	method  Method
+}
+
+func (m MethodID) Address() Address { return m.address }
+
+func (m MethodID) Service() Service { return m.service }
+
+func (m MethodID) Method() Method { return m.method }
+
+func (m MethodID) String() string {
+	return fmt.Sprintf("%s/%s/%s", m.address, m.service, m.method)
+}
+
+func NewMethodID(
+	address Address,
+	service Service,
+	method Method,
+) MethodID {
+	return MethodID{
+		address: address,
+		service: service,
+		method:  method,
+	}
+}
+
+// Address specifies the location of the server executing the
+// stage method.
+type Address string
+
+func (a Address) IsEmpty() bool { return a == "" }
+
+func (a Address) String() string {
+	if a.IsEmpty() {
+		return "*"
+	}
+	return string(a)
+}
+
+// Service specifies the name of the grpc service to execute.
+type Service string
+
+// IsUnspecified reports whether this service is either "" or "*".
+func (s Service) IsUnspecified() bool { return s == "" || s == "*" }
+
+func (s Service) String() string {
+	if s.IsUnspecified() {
+		return "*"
+	}
+	return string(s)
+}
+
+// Method specified the name of the grpc method to execute.
+type Method string
+
+// IsUnspecified reports whether this method is either "" or "*".
+func (m Method) IsUnspecified() bool { return m == "" || m == "*" }
+
+func (m Method) String() string {
+	if m.IsUnspecified() {
+		return "*"
+	}
+	return string(m)
 }

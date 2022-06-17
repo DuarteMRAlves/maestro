@@ -157,8 +157,8 @@ func setupLinear(
 }
 
 func linearSourceDialFunc() compiled.DialFunc {
-	return func() compiled.Conn {
-		return &linearSourceConn{counter: 0}
+	return func() (compiled.Conn, error) {
+		return &linearSourceConn{counter: 0}, nil
 	}
 }
 
@@ -179,8 +179,8 @@ func (c *linearSourceConn) Call(_ context.Context, req compiled.Message) (
 func (c *linearSourceConn) Close() error { return nil }
 
 func linearTransformDialFunc() compiled.DialFunc {
-	return func() compiled.Conn {
-		return &linearTransformConn{}
+	return func() (compiled.Conn, error) {
+		return &linearTransformConn{}, nil
 	}
 }
 
@@ -202,13 +202,13 @@ func (c *linearTransformConn) Close() error { return nil }
 func linearSinkDialFunc(
 	max int, collect *[]*testValMsg, done chan<- struct{},
 ) compiled.DialFunc {
-	return func() compiled.Conn {
+	return func() (compiled.Conn, error) {
 		return &linearSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
-		}
+		}, nil
 	}
 }
 
@@ -400,8 +400,8 @@ func setupSplitAndMerge(
 }
 
 func splitAndMergeSourceDialFunc() compiled.DialFunc {
-	return func() compiled.Conn {
-		return &splitAndMergeSourceConn{counter: 0}
+	return func() (compiled.Conn, error) {
+		return &splitAndMergeSourceConn{counter: 0}, nil
 	}
 }
 
@@ -420,8 +420,8 @@ func (c *splitAndMergeSourceConn) Call(
 func (c *splitAndMergeSourceConn) Close() error { return nil }
 
 func splitAndMergeTransformDialFunc() compiled.DialFunc {
-	return func() compiled.Conn {
-		return &splitAndMergeTransformConn{}
+	return func() (compiled.Conn, error) {
+		return &splitAndMergeTransformConn{}, nil
 	}
 }
 
@@ -442,13 +442,13 @@ func (c *splitAndMergeTransformConn) Close() error { return nil }
 func splitAndMergeSinkDialFunc(
 	max int, collect *[]*testTwoValMsg, done chan<- struct{},
 ) compiled.DialFunc {
-	return func() compiled.Conn {
+	return func() (compiled.Conn, error) {
 		return &splitAndMergeSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
-		}
+		}, nil
 	}
 }
 
@@ -628,8 +628,8 @@ func setupSlow(
 }
 
 func slowSourceDialFunc() compiled.DialFunc {
-	return func() compiled.Conn {
-		return &slowSourceConn{counter: 0}
+	return func() (compiled.Conn, error) {
+		return &slowSourceConn{counter: 0}, nil
 	}
 }
 
@@ -650,8 +650,8 @@ func (c *slowSourceConn) Call(_ context.Context, req compiled.Message) (
 func (c *slowSourceConn) Close() error { return nil }
 
 func slowTransformDialFunc(sleep time.Duration) compiled.DialFunc {
-	return func() compiled.Conn {
-		return &slowTransformConn{sleep: sleep}
+	return func() (compiled.Conn, error) {
+		return &slowTransformConn{sleep: sleep}, nil
 	}
 }
 
@@ -676,13 +676,13 @@ func slowSinkDialFunc(
 	collect *[]*testValMsg,
 	done chan<- struct{},
 ) compiled.DialFunc {
-	return func() compiled.Conn {
+	return func() (compiled.Conn, error) {
 		return &slowSinkConn{
 			max:     max,
 			collect: collect,
 			done:    done,
 			mu:      sync.Mutex{},
-		}
+		}, nil
 	}
 }
 
@@ -729,7 +729,7 @@ type testMethod struct {
 	Out compiled.MessageDesc
 }
 
-func (m testMethod) Dial() compiled.Conn {
+func (m testMethod) Dial() (compiled.Conn, error) {
 	return m.D.Dial()
 }
 
