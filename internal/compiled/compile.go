@@ -1,30 +1,22 @@
 package compiled
 
 import (
+	"context"
 	"errors"
 	"fmt"
+
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 )
-
-// MethodLoader resolves a method from its identifier.
-type MethodLoader interface {
-	Load(MethodID) (MethodDesc, error)
-}
-
-// MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(MethodID) (MethodDesc, error)
-
-func (fn MethodLoaderFunc) Load(mid MethodID) (MethodDesc, error) {
-	return fn(mid)
-}
 
 // Context specifies a compilation context to create the pipeline.
 type Context struct {
-	methodLoader MethodLoader
+	resolver method.Resolver
 }
 
-func NewContext(methodLoader MethodLoader) Context {
+func NewContext(methodLoader method.Resolver) Context {
 	c := Context{}
-	c.methodLoader = methodLoader
+	c.resolver = methodLoader
 	return c
 }
 
@@ -65,7 +57,7 @@ func (err *linksSetSameField) Error() string {
 	return fmt.Sprintf("links '%s' and '%s' set same field '%s'", err.A, err.B, err.field)
 }
 
-type incompatibleMessageDesc struct{ A, B MessageDesc }
+type incompatibleMessageDesc struct{ A, B message.Type }
 
 func (err *incompatibleMessageDesc) Error() string {
 	return fmt.Sprintf("incompatible message descriptors: %s, %s", err.A, err.B)
@@ -137,15 +129,15 @@ func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	method, err := ctx.methodLoader.Load(cfg.MethodID)
+	method, err := ctx.resolver.Resolve(context.Background(), cfg.Address)
 	if err != nil {
-		return nil, fmt.Errorf("load method id %s: %w", cfg.MethodID, err)
+		return nil, fmt.Errorf("load method %q: %w", cfg.Address, err)
 	}
 	stage := &Stage{
 		name:    name,
 		sType:   StageTypeUnary,
-		mid:     cfg.MethodID,
-		method:  method,
+		address: cfg.Address,
+		desc:    method,
 		inputs:  []*Link{},
 		outputs: []*Link{},
 	}
@@ -203,7 +195,7 @@ func compileEndpoint(stage string, field string) (*LinkEndpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	fieldName := MessageField(field)
+	fieldName := message.Field(field)
 	endpt = NewLinkEndpoint(StageName(stageName), fieldName)
 	return &endpt, nil
 }
@@ -235,17 +227,17 @@ func validateLink(stages stageGraph, link *Link) error {
 		return errEqualSourceAndTarget
 	}
 
-	sourceMsg := source.method.Output()
+	sourceMsg := source.desc.Output()
 	if !link.Source().Field().IsUnspecified() {
-		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
+		sourceMsg, err = sourceMsg.Subfield(link.Source().Field())
 		if err != nil {
 			return err
 		}
 	}
 
-	targetMsg := target.method.Input()
+	targetMsg := target.desc.Input()
 	if !link.Target().Field().IsUnspecified() {
-		targetMsg, err = targetMsg.GetField(link.Target().Field())
+		targetMsg, err = targetMsg.Subfield(link.Target().Field())
 		if err != nil {
 			return err
 		}
@@ -322,8 +314,8 @@ func compileSourceInput(s *Stage) *Stage {
 		name:  name,
 		sType: StageTypeSource,
 		// give access to method information for later usage
-		mid:     s.mid,
-		method:  s.method,
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{},
 		outputs: []*Link{l},
 	}
@@ -342,8 +334,8 @@ func compileMergeInput(s *Stage) *Stage {
 		name:  name,
 		sType: StageTypeMerge,
 		// give access to method information for later usage
-		mid:     s.mid,
-		method:  s.method,
+		address: s.address,
+		desc:    s.desc,
 		inputs:  s.inputs,
 		outputs: []*Link{l},
 	}
@@ -382,8 +374,8 @@ func compileSinkOutput(s *Stage) *Stage {
 		name:  name,
 		sType: StageTypeSink,
 		// give access to method information for later usage
-		mid:     s.mid,
-		method:  s.method,
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{l},
 		outputs: []*Link{},
 	}
@@ -402,8 +394,8 @@ func compileSplitOutput(s *Stage) *Stage {
 		name:  name,
 		sType: StageTypeSplit,
 		// give access to method information for later usage
-		mid:     s.mid,
-		method:  s.method,
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{l},
 		outputs: s.outputs,
 	}

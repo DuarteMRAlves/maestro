@@ -10,8 +10,8 @@ type PipelineConfig struct {
 
 // Stage specifies a given step of the Pipeline.
 type StageConfig struct {
-	Name     string
-	MethodID MethodID
+	Name    string
+	Address string
 }
 
 // Link defines a connection between two Stage objects in a Pipeline.

@@ -69,18 +69,9 @@ func TestOfflineLinear(t *testing.T) {
 		Name: "pipeline",
 		Mode: compiled.OfflineExecution,
 		Stages: []*compiled.StageConfig{
-			{
-				Name:     "source",
-				MethodID: igrpc.NewMethodID(igrpc.Address(sourceAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
-			{
-				Name:     "transform",
-				MethodID: igrpc.NewMethodID(igrpc.Address(transfAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
-			{
-				Name:     "sink",
-				MethodID: igrpc.NewMethodID(igrpc.Address(sinkAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
+			{Name: "source", Address: sourceAddr.String()},
+			{Name: "transform", Address: transfAddr.String()},
+			{Name: "sink", Address: sinkAddr.String()},
 		},
 		Links: []*compiled.LinkConfig{
 			{
@@ -183,18 +174,9 @@ func TestOnlineLinear(t *testing.T) {
 		Name: "pipeline",
 		Mode: compiled.OnlineExecution,
 		Stages: []*compiled.StageConfig{
-			{
-				Name:     "source",
-				MethodID: igrpc.NewMethodID(igrpc.Address(sourceAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
-			{
-				Name:     "transform",
-				MethodID: igrpc.NewMethodID(igrpc.Address(transfAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
-			{
-				Name:     "sink",
-				MethodID: igrpc.NewMethodID(igrpc.Address(sinkAddr.String()), igrpc.Service(""), igrpc.Method("")),
-			},
+			{Name: "source", Address: sourceAddr.String()},
+			{Name: "transform", Address: transfAddr.String()},
+			{Name: "sink", Address: sinkAddr.String()},
 		},
 		Links: []*compiled.LinkConfig{
 			{

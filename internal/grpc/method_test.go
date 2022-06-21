@@ -93,7 +93,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		t.Fatalf("call method: %s", err)
 	}
 
-	grpcMsg, ok := reply.(*message)
+	grpcMsg, ok := reply.(*messageInstance)
 	if !ok {
 		t.Fatalf("cast reply to grpcMsg")
 	}

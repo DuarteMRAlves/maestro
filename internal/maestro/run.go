@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -221,11 +222,10 @@ func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *spec.Pipeli
 
 func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *spec.Stage) {
 	cfg.Name = sSpec.Name
-	cfg.MethodID = grpc.NewMethodID(
-		grpc.Address(sSpec.MethodContext.Address),
-		grpc.Service(sSpec.MethodContext.Service),
-		grpc.Method(sSpec.MethodContext.Method),
-	)
+	addrParts := []string{
+		sSpec.MethodContext.Address, sSpec.MethodContext.Service, sSpec.MethodContext.Method,
+	}
+	cfg.Address = strings.Join(addrParts, "/")
 }
 
 func (opts *RunOpts) linkSpecToCfg(cfg *compiled.LinkConfig, lSpec *spec.Link) {

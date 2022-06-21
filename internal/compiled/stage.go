@@ -1,8 +1,10 @@
 package compiled
 
 import (
-	"context"
 	"fmt"
+
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 )
 
 // Stage defines a step of a Pipeline
@@ -11,11 +13,11 @@ type Stage struct {
 	sType StageType
 
 	// static attributes for the method invocation
-	mid MethodID
+	address string
 
 	// runtime attributes that can be computed from
 	// the static attributes
-	method MethodDesc
+	desc method.Desc
 
 	// define the connections for this stage.
 	inputs  []*Link
@@ -28,25 +30,25 @@ func (s *Stage) Name() StageName {
 
 func (s *Stage) Type() StageType { return s.sType }
 
-func (s *Stage) Dialer() Dialer {
+func (s *Stage) Dialer() method.Dialer {
 	if s == nil {
 		return nil
 	}
-	return s.method
+	return s.desc
 }
 
-func (s *Stage) InputDesc() MessageDesc {
+func (s *Stage) InputDesc() message.Type {
 	if s == nil {
 		return nil
 	}
-	return s.method.Input()
+	return s.desc.Input()
 }
 
-func (s *Stage) OutputDesc() MessageDesc {
+func (s *Stage) OutputDesc() message.Type {
 	if s == nil {
 		return nil
 	}
-	return s.method.Output()
+	return s.desc.Output()
 }
 
 func (s *Stage) Inputs() []*Link {
@@ -89,28 +91,3 @@ const (
 	StageTypeMerge  StageType = "MergeStage"
 	StageTypeSplit  StageType = "SplitStage"
 )
-
-// MethodID uniquely identifies a given method.
-type MethodID interface {
-	String() string
-}
-
-// MethodDesc contains the information to create a method.
-type MethodDesc interface {
-	Dialer
-	Input() MessageDesc
-	Output() MessageDesc
-}
-
-type Dialer interface {
-	Dial() (Conn, error)
-}
-
-type DialFunc func() (Conn, error)
-
-func (fn DialFunc) Dial() (Conn, error) { return fn() }
-
-type Conn interface {
-	Call(ctx context.Context, req Message) (Message, error)
-	Close() error
-}

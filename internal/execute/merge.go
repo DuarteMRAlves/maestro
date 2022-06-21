@@ -3,32 +3,32 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 type offlineMerge struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
-	fields []compiled.MessageField
+	fields []message.Field
 	// inputs are the several input channels from which to collect the messages.
 	inputs []<-chan offlineState
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- offlineState
-	// gen generates empty messages for the output type.
-	gen compiled.EmptyMessageGen
+	// builder generates empty messages for the output type.
+	builder message.Builder
 }
 
 func newOfflineMerge(
-	fields []compiled.MessageField,
+	fields []message.Field,
 	inputs []<-chan offlineState,
 	output chan<- offlineState,
-	gen compiled.EmptyMessageGen,
+	gen message.Builder,
 ) Stage {
 	return &offlineMerge{
-		fields: fields,
-		inputs: inputs,
-		output: output,
-		gen:    gen,
+		fields:  fields,
+		inputs:  inputs,
+		output:  output,
+		builder: gen,
 	}
 }
 
@@ -39,7 +39,7 @@ func (s *offlineMerge) Run(ctx context.Context) error {
 			more      bool
 		)
 		// partial is the current message being constructed.
-		partial := s.gen()
+		partial := s.builder.Build()
 		for i, input := range s.inputs {
 			select {
 			case currState, more = <-input:
@@ -51,7 +51,7 @@ func (s *offlineMerge) Run(ctx context.Context) error {
 				close(s.output)
 				return nil
 			}
-			err := partial.SetField(s.fields[i], currState.msg)
+			err := partial.Set(s.fields[i], currState.msg)
 			if err != nil {
 				return err
 			}
@@ -69,36 +69,36 @@ func (s *offlineMerge) Run(ctx context.Context) error {
 type onlineMerge struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
-	fields []compiled.MessageField
+	fields []message.Field
 	// inputs are the several input channels from which to collect the messages.
 	inputs []<-chan onlineState
 	// output is the channel used to send messages to the downstream stage.
 	output chan<- onlineState
-	// gen generates empty messages for the output type.
-	gen compiled.EmptyMessageGen
+	// builder generates empty messages for the output type.
+	builder message.Builder
 	// currId is the current id being constructed.
 	currId id
 }
 
 func newOnlineMerge(
-	fields []compiled.MessageField,
+	fields []message.Field,
 	inputs []<-chan onlineState,
 	output chan<- onlineState,
-	gen compiled.EmptyMessageGen,
+	gen message.Builder,
 ) Stage {
 	return &onlineMerge{
-		fields: fields,
-		inputs: inputs,
-		output: output,
-		gen:    gen,
-		currId: 0,
+		fields:  fields,
+		inputs:  inputs,
+		output:  output,
+		builder: gen,
+		currId:  0,
 	}
 }
 
 func (s *onlineMerge) Run(ctx context.Context) error {
 	var (
 		// partial is the current message being constructed.
-		partial   compiled.Message
+		partial   message.Instance
 		currState onlineState
 		done      bool
 	)
@@ -108,7 +108,7 @@ func (s *onlineMerge) Run(ctx context.Context) error {
 		latest = append(latest, emptyOnlineState)
 	}
 	for {
-		partial = s.gen()
+		partial = s.builder.Build()
 		// number of fields in the partial message that are set.
 		setFields := 0
 		for i, input := range s.inputs {
@@ -129,7 +129,7 @@ func (s *onlineMerge) Run(ctx context.Context) error {
 				s.currId = currState.id
 				break
 			}
-			err := partial.SetField(s.fields[i], currState.msg)
+			err := partial.Set(s.fields[i], currState.msg)
 			if err != nil {
 				return err
 			}

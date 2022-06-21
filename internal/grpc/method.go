@@ -4,46 +4,47 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 type unaryMethod struct {
-	dialer compiled.DialFunc
-	input  messageDescriptor
-	output messageDescriptor
+	dialer method.DialFunc
+	input  messageType
+	output messageType
 }
 
-func (d unaryMethod) Dial() (compiled.Conn, error) {
+func (d unaryMethod) Dial() (method.Conn, error) {
 	return d.dialer.Dial()
 }
 
-func (d unaryMethod) Input() compiled.MessageDesc {
+func (d unaryMethod) Input() message.Type {
 	return d.input
 }
 
-func (d unaryMethod) Output() compiled.MessageDesc {
+func (d unaryMethod) Output() message.Type {
 	return d.output
 }
 
 func newUnaryMethod(
 	address string,
 	invokePath string,
-	inDesc, outDesc messageDescriptor,
+	inDesc, outDesc messageType,
 ) unaryMethod {
 	return unaryMethod{
 		input:  inDesc,
 		output: outDesc,
-		dialer: newDialFunc(address, invokePath, outDesc.EmptyGen()),
+		dialer: newDialFunc(address, invokePath, outDesc.Build),
 	}
 }
 
 func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor, address string) unaryMethod {
 	invokePath := methodInvokePath(desc)
-	input := messageDescriptor{desc: desc.GetInputType()}
-	output := messageDescriptor{desc: desc.GetOutputType()}
+	input := messageType{desc: desc.GetInputType()}
+	output := messageType{desc: desc.GetOutputType()}
 
 	return newUnaryMethod(address, invokePath, input, output)
 }
@@ -51,9 +52,9 @@ func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor, address string) u
 func newDialFunc(
 	address string,
 	invokePath string,
-	emptyGen compiled.EmptyMessageGen,
-) compiled.DialFunc {
-	return func() (compiled.Conn, error) {
+	emptyGen message.BuildFunc,
+) method.DialFunc {
+	return func() (method.Conn, error) {
 		conn, err := grpc.Dial(string(address), grpc.WithInsecure())
 		if err != nil {
 			return nil, err
@@ -61,7 +62,7 @@ func newDialFunc(
 		return unaryClient{
 			conn:       conn,
 			invokePath: invokePath,
-			emptyGen:   emptyGen,
+			buildFunc:  emptyGen,
 		}, nil
 	}
 }
@@ -77,20 +78,20 @@ func methodInvokePath(desc *desc.MethodDescriptor) string {
 type unaryClient struct {
 	conn       *grpc.ClientConn
 	invokePath string
-	emptyGen   compiled.EmptyMessageGen
+	buildFunc  message.BuildFunc
 }
 
 func (c unaryClient) Call(
 	ctx context.Context,
-	req compiled.Message,
-) (compiled.Message, error) {
-	rep := c.emptyGen()
+	req message.Instance,
+) (message.Instance, error) {
+	rep := c.buildFunc()
 
-	grpcReq, ok := req.(*message)
+	grpcReq, ok := req.(*messageInstance)
 	if !ok {
 		return nil, notGrpcMessage
 	}
-	grpcRep, ok := rep.(*message)
+	grpcRep, ok := rep.(*messageInstance)
 	if !ok {
 		return nil, notGrpcMessage
 	}

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 )
 
 type offlineUnary struct {
@@ -13,7 +15,7 @@ type offlineUnary struct {
 	input  <-chan offlineState
 	output chan<- offlineState
 
-	dialer compiled.Dialer
+	dialer method.Dialer
 
 	logger Logger
 }
@@ -22,7 +24,7 @@ func newOfflineUnary(
 	name compiled.StageName,
 	input <-chan offlineState,
 	output chan<- offlineState,
-	dialer compiled.Dialer,
+	dialer method.Dialer,
 	logger Logger,
 ) Stage {
 	return &offlineUnary{
@@ -79,10 +81,8 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 }
 
 func (s *offlineUnary) call(
-	ctx context.Context,
-	conn compiled.Conn,
-	req compiled.Message,
-) (compiled.Message, error) {
+	ctx context.Context, conn method.Conn, req message.Instance,
+) (message.Instance, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return conn.Call(ctx, req)
@@ -94,7 +94,7 @@ type onlineUnary struct {
 	input  <-chan onlineState
 	output chan<- onlineState
 
-	dialer compiled.Dialer
+	dialer method.Dialer
 
 	logger Logger
 }
@@ -103,7 +103,7 @@ func newOnlineUnary(
 	name compiled.StageName,
 	input <-chan onlineState,
 	output chan<- onlineState,
-	dialer compiled.Dialer,
+	dialer method.Dialer,
 	logger Logger,
 ) Stage {
 	return &onlineUnary{
@@ -160,10 +160,8 @@ func (s *onlineUnary) Run(ctx context.Context) error {
 }
 
 func (s *onlineUnary) call(
-	ctx context.Context,
-	conn compiled.Conn,
-	req compiled.Message,
-) (compiled.Message, error) {
+	ctx context.Context, conn method.Conn, req message.Instance,
+) (message.Instance, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	return conn.Call(ctx, req)

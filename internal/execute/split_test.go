@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestOfflineSplitStage_Run(t *testing.T) {
 	// Send full message through second output
-	fields := []compiled.MessageField{"inner1", "", "inner3"}
+	fields := []message.Field{"inner1", "", "inner3"}
 
 	input := make(chan offlineState)
 	defer close(input)
@@ -93,7 +93,7 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 
 func TestOnlineSplitStage_Run(t *testing.T) {
 	// Send full message through second output
-	fields := []compiled.MessageField{"inner1", "", "inner3"}
+	fields := []message.Field{"inner1", "", "inner3"}
 
 	input := make(chan onlineState)
 	defer close(input)
@@ -175,11 +175,11 @@ func TestOnlineSplitStage_Run(t *testing.T) {
 
 type testSplitInnerMessage struct{ val int32 }
 
-func (m *testSplitInnerMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
+func (m *testSplitInnerMessage) Set(_ message.Field, _ message.Instance) error {
 	panic("Should not set field for inner message in split test")
 }
 
-func (m *testSplitInnerMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
+func (m *testSplitInnerMessage) Get(_ message.Field) (message.Instance, error) {
 	panic("Should not get field for inner message in split test")
 }
 
@@ -189,11 +189,11 @@ type testSplitOuterMessage struct {
 	inner3 *testSplitInnerMessage
 }
 
-func (m *testSplitOuterMessage) SetField(f compiled.MessageField, v compiled.Message) error {
+func (m *testSplitOuterMessage) Set(f message.Field, v message.Instance) error {
 	panic("Should not set field for outer message in split test")
 }
 
-func (m *testSplitOuterMessage) GetField(f compiled.MessageField) (compiled.Message, error) {
+func (m *testSplitOuterMessage) Get(f message.Field) (message.Instance, error) {
 	switch f {
 	case "inner1":
 		return m.inner1, nil

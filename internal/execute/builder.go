@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 const defaultChanSize = 10
@@ -126,10 +127,6 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
 
 	inputs := s.Inputs()
 	outputs := s.Outputs()
@@ -144,7 +141,7 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	return newOfflineSource(inputGen, outChan), nil
+	return newOfflineSource(message.BuildFunc(input.Build), outChan), nil
 }
 
 func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
@@ -165,7 +162,7 @@ func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlin
 
 func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
 	inputs := s.Inputs()
-	fields := make([]compiled.MessageField, 0, len(inputs))
+	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan offlineState, 0, len(inputs))
 	for _, l := range inputs {
@@ -190,11 +187,7 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
-	return newOfflineMerge(fields, inChans, outChan, inputGen), nil
+	return newOfflineMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
 }
 
 func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
@@ -208,7 +201,7 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	}
 
 	outputs := s.Outputs()
-	fields := make([]compiled.MessageField, 0, len(outputs))
+	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- offlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {
@@ -323,10 +316,6 @@ func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlin
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
 
 	inputs := s.Inputs()
 	outputs := s.Outputs()
@@ -341,7 +330,7 @@ func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlin
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	return newOnlineSource(1, inputGen, outChan), nil
+	return newOnlineSource(1, message.BuildFunc(input.Build), outChan), nil
 }
 
 func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
@@ -362,7 +351,7 @@ func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineS
 
 func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
 	inputs := s.Inputs()
-	fields := make([]compiled.MessageField, 0, len(inputs))
+	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan onlineState, 0, len(inputs))
 	for _, l := range inputs {
@@ -387,11 +376,7 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
-	return newOnlineMerge(fields, inChans, outChan, inputGen), nil
+	return newOnlineMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
 }
 
 func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
@@ -405,7 +390,7 @@ func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	}
 
 	outputs := s.Outputs()
-	fields := make([]compiled.MessageField, 0, len(outputs))
+	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- onlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {

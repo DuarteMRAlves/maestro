@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -147,22 +149,22 @@ func createStageName(t *testing.T, name string) compiled.StageName {
 
 type testUnaryMessage struct{ val string }
 
-func (m testUnaryMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
+func (m testUnaryMessage) Set(_ message.Field, _ message.Instance) error {
 	panic("Should not set field in unary test")
 }
 
-func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
+func (m testUnaryMessage) Get(_ message.Field) (message.Instance, error) {
 	panic("Should not get field in unary test")
 }
 
 type testDialer struct{}
 
-func (d testDialer) Dial() (compiled.Conn, error) { return testUnaryConn{}, nil }
+func (d testDialer) Dial() (method.Conn, error) { return testUnaryConn{}, nil }
 
 type testUnaryConn struct{}
 
-func (c testUnaryConn) Call(_ context.Context, req compiled.Message) (
-	compiled.Message,
+func (c testUnaryConn) Call(_ context.Context, req message.Instance) (
+	message.Instance,
 	error,
 ) {
 	reqMsg, ok := req.(testUnaryMessage)

@@ -2,11 +2,12 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"reflect"
+	"strings"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
@@ -18,12 +19,16 @@ import (
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
+var (
+	ErrMalFormedAddress = errors.New("malformed address")
+)
+
 type Logger interface {
 	Debugf(format string, args ...any)
 	Infof(format string, args ...any)
 }
 
-type ReflectionMethodLoader struct {
+type ReflectionResolver struct {
 	timeout    time.Duration
 	expBackoff retry.ExponentialBackoff
 
@@ -32,36 +37,35 @@ type ReflectionMethodLoader struct {
 
 func NewReflectionMethodLoader(
 	timeout time.Duration, backoff retry.ExponentialBackoff, logger Logger,
-) *ReflectionMethodLoader {
-	return &ReflectionMethodLoader{
+) *ReflectionResolver {
+	return &ReflectionResolver{
 		timeout:    timeout,
 		expBackoff: backoff,
 		logger:     logger,
 	}
 }
 
-func (m *ReflectionMethodLoader) Load(mid compiled.MethodID) (compiled.MethodDesc, error) {
-	m.logger.Debugf("Load method with reflection: %#v", mid)
+func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (method.Desc, error) {
+	m.logger.Debugf("Load method with reflection: %#v", address)
 
-	mctx, ok := mid.(MethodID)
-	if !ok {
-		err := fmt.Errorf("unexpected type for method id: expected MethodContext, got %s", reflect.TypeOf(mid))
+	addr, err := m.parseAddress(address)
+	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.Dial(string(mctx.Address()), grpc.WithInsecure())
+	conn, err := grpc.Dial(string(addr.Address()), grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), m.timeout)
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
 	defer cancel()
 
 	services, err := m.listServices(ctx, conn)
 	if err != nil {
 		return nil, err
 	}
-	service, err := findService(services, mctx.Service())
+	service, err := findService(services, addr.Service())
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +73,36 @@ func (m *ReflectionMethodLoader) Load(mid compiled.MethodID) (compiled.MethodDes
 	if err != nil {
 		return nil, err
 	}
-	method, err := findMethod(serviceDesc.GetMethods(), mctx.Method())
+	method, err := findMethod(serviceDesc.GetMethods(), addr.Method())
 	if err != nil {
 		return nil, err
 	}
-	return newUnaryMethodFromDescriptor(method, mctx.Address().String()), nil
+	return newUnaryMethodFromDescriptor(method, addr.Address().String()), nil
 }
 
-func (m *ReflectionMethodLoader) listServices(
+func (r *ReflectionResolver) parseAddress(address string) (addr, error) {
+	var addr addr
+	splits := strings.Split(address, "/")
+	switch n := len(splits); n {
+	// No backslash, only address was specified.
+	case 1:
+		addr.server = Address(splits[0])
+	// Single backslash, this should divide the server address from the service.
+	case 2:
+		addr.server = Address(splits[0])
+		addr.service = Service(splits[1])
+	// Double backslash, this divides into server address, service and method.
+	case 3:
+		addr.server = Address(splits[0])
+		addr.service = Service(splits[1])
+		addr.method = Method(splits[2])
+	default:
+		return addr, ErrMalFormedAddress
+	}
+	return addr, nil
+}
+
+func (m *ReflectionResolver) listServices(
 	ctx context.Context, conn grpc.ClientConnInterface,
 ) ([]Service, error) {
 	var (
@@ -121,7 +147,7 @@ func findService(available []Service, search Service) (Service, error) {
 	}
 }
 
-func (m *ReflectionMethodLoader) resolveService(
+func (m *ReflectionResolver) resolveService(
 	ctx context.Context, conn grpc.ClientConnInterface, service Service,
 ) (*desc.ServiceDescriptor, error) {
 	var (
@@ -192,29 +218,29 @@ func findMethod(
 	}
 }
 
-type MethodID struct {
-	address Address
+type addr struct {
+	server  Address
 	service Service
 	method  Method
 }
 
-func (m MethodID) Address() Address { return m.address }
+func (m addr) Address() Address { return m.server }
 
-func (m MethodID) Service() Service { return m.service }
+func (m addr) Service() Service { return m.service }
 
-func (m MethodID) Method() Method { return m.method }
+func (m addr) Method() Method { return m.method }
 
-func (m MethodID) String() string {
-	return fmt.Sprintf("%s/%s/%s", m.address, m.service, m.method)
+func (m addr) String() string {
+	return fmt.Sprintf("%s/%s/%s", m.server, m.service, m.method)
 }
 
-func NewMethodID(
+func NewAddress(
 	address Address,
 	service Service,
 	method Method,
-) MethodID {
-	return MethodID{
-		address: address,
+) addr {
+	return addr{
+		server:  address,
 		service: service,
 		method:  method,
 	}
