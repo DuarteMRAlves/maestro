@@ -16,9 +16,10 @@ type StageConfig struct {
 
 // Link defines a connection between two Stage objects in a Pipeline.
 type LinkConfig struct {
-	Name        string
-	SourceStage string
-	SourceField string
-	TargetStage string
-	TargetField string
+	Name             string
+	SourceStage      string
+	SourceField      string
+	TargetStage      string
+	TargetField      string
+	NumEmptyMessages uint
 }

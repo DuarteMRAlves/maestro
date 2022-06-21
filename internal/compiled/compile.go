@@ -24,7 +24,6 @@ var (
 	errEmptyPipelineName    = errors.New("empty pipeline name")
 	errEmptyStageName       = errors.New("empty stage name")
 	errEmptyLinkName        = errors.New("empty link name")
-	errEmptyAddress         = errors.New("empty address")
 	errEmptySourceName      = errors.New("empty source name")
 	errEmptyTargetName      = errors.New("empty target name")
 	errEqualSourceAndTarget = errors.New("equal source and target stages")
@@ -174,7 +173,7 @@ func compileLink(cfg *LinkConfig) (*Link, error) {
 	if target.Stage().IsEmpty() {
 		return nil, errEmptyTargetName
 	}
-	l := NewLink(name, source, target)
+	l := NewLink(name, source, target, cfg.NumEmptyMessages)
 	return &l, nil
 }
 

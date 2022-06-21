@@ -7,9 +7,10 @@ import (
 )
 
 type Link struct {
-	name   LinkName
-	source *LinkEndpoint
-	target *LinkEndpoint
+	name             LinkName
+	source           *LinkEndpoint
+	target           *LinkEndpoint
+	numEmptyMessages uint
 }
 
 func (l Link) Name() LinkName {
@@ -24,14 +25,20 @@ func (l Link) Target() *LinkEndpoint {
 	return l.target
 }
 
+func (l Link) NumEmptyMessages() uint {
+	return l.numEmptyMessages
+}
+
 func NewLink(
 	name LinkName,
 	source, target *LinkEndpoint,
+	numEmptyMessages uint,
 ) Link {
 	return Link{
-		name:   name,
-		source: source,
-		target: target,
+		name:             name,
+		source:           source,
+		target:           target,
+		numEmptyMessages: numEmptyMessages,
 	}
 }
 

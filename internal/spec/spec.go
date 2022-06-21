@@ -47,4 +47,6 @@ type Link struct {
 	SourceField string
 	TargetStage string
 	TargetField string
+	// Number of empty messages to fill the link with.
+	NumEmptyMessages uint
 }
