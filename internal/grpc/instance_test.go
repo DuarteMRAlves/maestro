@@ -3,7 +3,7 @@ package grpc
 import (
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewFieldSetter(t *testing.T) {
-	field := compiled.NewMessageField("inner")
+	field := message.Field("inner")
 	pbInner := &unit.TestMessageInner{Val: "val"}
 
 	msg, err := newMessage(&unit.TestMessage{})
@@ -24,12 +24,12 @@ func TestNewFieldSetter(t *testing.T) {
 		t.Fatalf("create inner message: %s", err)
 	}
 
-	err = msg.SetField(field, inner)
+	err = msg.Set(field, inner)
 	if err != nil {
 		t.Fatalf("set field error: %s", err)
 	}
 
-	fieldDyn, ok := msg.dynMsg.GetFieldByName(field.Unwrap()).(*dynamic.Message)
+	fieldDyn, ok := msg.dynMsg.GetFieldByName(string(field)).(*dynamic.Message)
 	if !ok {
 		t.Fatalf("unable to cast to dynamic message on fieldDyn")
 	}
@@ -47,7 +47,7 @@ func TestNewFieldSetter(t *testing.T) {
 }
 
 func TestNewFieldGetter(t *testing.T) {
-	field := compiled.NewMessageField("inner")
+	field := message.Field("inner")
 
 	pbInner := &unit.TestMessageInner{Val: "val"}
 	pbMsg := &unit.TestMessage{Inner: pbInner}
@@ -57,12 +57,12 @@ func TestNewFieldGetter(t *testing.T) {
 		t.Fatalf("create message: %s", err)
 	}
 
-	fieldVal, err := msg.GetField(field)
+	fieldVal, err := msg.Get(field)
 	if err != nil {
 		t.Fatalf("get field: %s", err)
 	}
 
-	fieldGrpc, ok := fieldVal.(*message)
+	fieldGrpc, ok := fieldVal.(*messageInstance)
 	if !ok {
 		t.Fatalf("unable to cast to fieldVal to fieldGrpc")
 	}

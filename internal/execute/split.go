@@ -3,14 +3,14 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 type offlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []compiled.MessageField
+	fields []message.Field
 	// input is the channel from which to receive the messages.
 	input <-chan offlineState
 	// outputs are the several channels where to send messages.
@@ -18,7 +18,7 @@ type offlineSplit struct {
 }
 
 func newOfflineSplit(
-	fields []compiled.MessageField,
+	fields []message.Field,
 	input <-chan offlineState,
 	outputs []chan<- offlineState,
 ) Stage {
@@ -44,8 +44,8 @@ func (s *offlineSplit) Run(ctx context.Context) error {
 		for i, out := range s.outputs {
 			send := msg
 			field := s.fields[i]
-			if !field.IsEmpty() {
-				fieldMsg, err := msg.GetField(field)
+			if !field.IsUnspecified() {
+				fieldMsg, err := msg.Get(field)
 				if err != nil {
 					return err
 				}
@@ -68,7 +68,7 @@ type onlineSplit struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
-	fields []compiled.MessageField
+	fields []message.Field
 	// input is the channel from which to receive the messages.
 	input <-chan onlineState
 	// outputs are the several channels where to send messages.
@@ -76,7 +76,7 @@ type onlineSplit struct {
 }
 
 func newOnlineSplit(
-	fields []compiled.MessageField,
+	fields []message.Field,
 	input <-chan onlineState,
 	outputs []chan<- onlineState,
 ) Stage {
@@ -102,8 +102,8 @@ func (s *onlineSplit) Run(ctx context.Context) error {
 		for i, out := range s.outputs {
 			send := msg
 			field := s.fields[i]
-			if !field.IsEmpty() {
-				fieldMsg, err := msg.GetField(field)
+			if !field.IsUnspecified() {
+				fieldMsg, err := msg.Get(field)
 				if err != nil {
 					return err
 				}

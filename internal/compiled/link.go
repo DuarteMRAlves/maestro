@@ -2,6 +2,8 @@ package compiled
 
 import (
 	"fmt"
+
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 type Link struct {
@@ -58,18 +60,18 @@ func (err *invalidLinkName) Error() string {
 
 type LinkEndpoint struct {
 	stage StageName
-	field MessageField
+	field message.Field
 }
 
 func (e LinkEndpoint) Stage() StageName {
 	return e.stage
 }
 
-func (e LinkEndpoint) Field() MessageField {
+func (e LinkEndpoint) Field() message.Field {
 	return e.field
 }
 
-func NewLinkEndpoint(stage StageName, field MessageField) LinkEndpoint {
+func NewLinkEndpoint(stage StageName, field message.Field) LinkEndpoint {
 	return LinkEndpoint{
 		stage: stage,
 		field: field,

@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -26,9 +28,8 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 	output := make(chan offlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.NewAddress("some-address")
-	clientBuilder := testUnaryClientBuilder()
-	stage := newOfflineUnary(name, input, output, address, clientBuilder, logger{debug: true})
+	dialer := testDialer{}
+	stage := newOfflineUnary(name, input, output, dialer, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -90,9 +91,8 @@ func TestOnlineUnaryStage_Run(t *testing.T) {
 	output := make(chan onlineState, len(requests))
 
 	name := createStageName(t, "test-stage")
-	address := compiled.NewAddress("some-address")
-	clientBuilder := testUnaryClientBuilder()
-	stage := newOnlineUnary(name, input, output, address, clientBuilder, logger{debug: true})
+	dialer := testDialer{}
+	stage := newOnlineUnary(name, input, output, dialer, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -149,24 +149,22 @@ func createStageName(t *testing.T, name string) compiled.StageName {
 
 type testUnaryMessage struct{ val string }
 
-func (m testUnaryMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
+func (m testUnaryMessage) Set(_ message.Field, _ message.Instance) error {
 	panic("Should not set field in unary test")
 }
 
-func (m testUnaryMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
+func (m testUnaryMessage) Get(_ message.Field) (message.Instance, error) {
 	panic("Should not get field in unary test")
 }
 
-func testUnaryClientBuilder() compiled.UnaryClientBuilder {
-	return func(_ compiled.Address) (compiled.UnaryClient, error) {
-		return testUnaryClient{}, nil
-	}
-}
+type testDialer struct{}
 
-type testUnaryClient struct{}
+func (d testDialer) Dial() (method.Conn, error) { return testUnaryConn{}, nil }
 
-func (c testUnaryClient) Call(_ context.Context, req compiled.Message) (
-	compiled.Message,
+type testUnaryConn struct{}
+
+func (c testUnaryConn) Call(_ context.Context, req message.Instance) (
+	message.Instance,
 	error,
 ) {
 	reqMsg, ok := req.(testUnaryMessage)
@@ -177,4 +175,4 @@ func (c testUnaryClient) Call(_ context.Context, req compiled.Message) (
 	return testUnaryMessage{replyVal}, nil
 }
 
-func (c testUnaryClient) Close() error { return nil }
+func (c testUnaryConn) Close() error { return nil }

@@ -1,49 +1,34 @@
 package compiled
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestNew(t *testing.T) {
 	tests := map[string]struct {
-		input        *spec.Pipeline
-		expected     *Pipeline
-		methodLoader MethodLoaderFunc
+		input    *PipelineConfig
+		expected *Pipeline
+		resolver method.ResolveFunc
 	}{
 		"linear specification": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "pipeline",
-				Stages: []*spec.Stage{
-					{
-						Name:          "stage-1",
-						MethodContext: spec.MethodContext{Address: "address-1"},
-					},
-					{
-						Name:          "stage-2",
-						MethodContext: spec.MethodContext{Address: "address-2"},
-					},
-					{
-						Name:          "stage-3",
-						MethodContext: spec.MethodContext{Address: "address-3"},
-					},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
+					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*spec.Link{
-					{
-						Name:        "1-to-2",
-						SourceStage: "stage-1",
-						TargetStage: "stage-2",
-					},
-					{
-						Name:        "2-to-3",
-						SourceStage: "stage-2",
-						TargetStage: "stage-3",
-					},
+				Links: []*LinkConfig{
+					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-2"},
+					{Name: "2-to-3", SourceStage: "stage-2", TargetStage: "stage-3"},
 				},
 			},
 			expected: &Pipeline{
@@ -51,13 +36,11 @@ func TestNew(t *testing.T) {
 				mode: OfflineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:  StageName{val: "stage-1:aux-source"},
-						sType: StageTypeSource,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-1"},
-							unaryMethod: testLinearStage1Method{},
-						},
-						inputs: []*Link{},
+						name:    StageName{val: "stage-1:aux-source"},
+						sType:   StageTypeSource,
+						address: "method-1",
+						desc:    testLinearStage1Method{},
+						inputs:  []*Link{},
 						outputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -67,12 +50,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:  StageName{val: "stage-1"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-1"},
-							unaryMethod: testLinearStage1Method{},
-						},
+						name:    StageName{val: "stage-1"},
+						sType:   StageTypeUnary,
+						address: "method-1",
+						desc:    testLinearStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -89,12 +70,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:  StageName{val: "stage-2"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-2"},
-							unaryMethod: testLinearStage2Method{},
-						},
+						name:    StageName{val: "stage-2"},
+						sType:   StageTypeUnary,
+						address: "method-2",
+						desc:    testLinearStage2Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -111,12 +90,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:  StageName{val: "stage-3"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-3"},
-							unaryMethod: testLinearStage3Method{},
-						},
+						name:    StageName{val: "stage-3"},
+						sType:   StageTypeUnary,
+						address: "method-3",
+						desc:    testLinearStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "2-to-3"},
@@ -133,12 +110,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:  StageName{val: "stage-3:aux-sink"},
-						sType: StageTypeSink,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-3"},
-							unaryMethod: testLinearStage3Method{},
-						},
+						name:    StageName{val: "stage-3:aux-sink"},
+						sType:   StageTypeSink,
+						address: "method-3",
+						desc:    testLinearStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -150,54 +125,29 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := MethodContext{address: Address{val: "address-1"}}
-				ctx2 := MethodContext{address: Address{val: "address-2"}}
-				ctx3 := MethodContext{address: Address{val: "address-3"}}
-
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testLinearStage3Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
+					"method-3": testLinearStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %q", address))
 				}
 				return s, nil
 			},
 		},
 		"split and merge": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "pipeline",
-				Mode: spec.OnlineExecution,
-				Stages: []*spec.Stage{
-					{
-						Name: "stage-1",
-						MethodContext: spec.MethodContext{
-							Address: "address-1",
-							Service: "service-1",
-							Method:  "method-1",
-						},
-					},
-					{
-						Name: "stage-2",
-						MethodContext: spec.MethodContext{
-							Address: "address-2",
-							Service: "service-2",
-							Method:  "method-2",
-						},
-					},
-					{
-						Name: "stage-3",
-						MethodContext: spec.MethodContext{
-							Address: "address-3",
-							Service: "service-3",
-							Method:  "method-3",
-						},
-					},
+				Mode: OnlineExecution,
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
+					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -222,15 +172,11 @@ func TestNew(t *testing.T) {
 				mode: OnlineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
-						name:  StageName{val: "stage-1:aux-source"},
-						sType: StageTypeSource,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-1"},
-							service:     Service{val: "service-1"},
-							method:      Method{val: "method-1"},
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
-						inputs: []*Link{},
+						name:    StageName{val: "stage-1:aux-source"},
+						sType:   StageTypeSource,
+						address: "method-1",
+						desc:    testSplitAndMergeStage1Method{},
+						inputs:  []*Link{},
 						outputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -240,14 +186,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1"}: &Stage{
-						name:  StageName{val: "stage-1"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-1"},
-							service:     Service{val: "service-1"},
-							method:      Method{val: "method-1"},
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
+						name:    StageName{val: "stage-1"},
+						sType:   StageTypeUnary,
+						address: "method-1",
+						desc:    testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-1:aux-source-link"},
@@ -264,14 +206,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-1:aux-split"}: &Stage{
-						name:  StageName{val: "stage-1:aux-split"},
-						sType: StageTypeSplit,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-1"},
-							service:     Service{val: "service-1"},
-							method:      Method{val: "method-1"},
-							unaryMethod: testSplitAndMergeStage1Method{},
-						},
+						name:    StageName{val: "stage-1:aux-split"},
+						sType:   StageTypeSplit,
+						address: "method-1",
+						desc:    testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{"stage-1:aux-split-link"},
@@ -290,20 +228,16 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field1"},
+									field: message.Field("field1"),
 								},
 							},
 						},
 					},
 					StageName{val: "stage-2"}: &Stage{
-						name:  StageName{val: "stage-2"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-2"},
-							service:     Service{val: "service-2"},
-							method:      Method{val: "method-2"},
-							unaryMethod: testSplitAndMergeStage2Method{},
-						},
+						name:    StageName{val: "stage-2"},
+						sType:   StageTypeUnary,
+						address: "method-2",
+						desc:    testSplitAndMergeStage2Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-2"},
@@ -317,27 +251,23 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field2"},
+									field: message.Field("field2"),
 								},
 							},
 						},
 					},
 					StageName{val: "stage-3:aux-merge"}: &Stage{
-						name:  StageName{val: "stage-3:aux-merge"},
-						sType: StageTypeMerge,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-3"},
-							service:     Service{val: "service-3"},
-							method:      Method{val: "method-3"},
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:    StageName{val: "stage-3:aux-merge"},
+						sType:   StageTypeMerge,
+						address: "method-3",
+						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "1-to-3"},
 								source: &LinkEndpoint{stage: StageName{val: "stage-1:aux-split"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field1"},
+									field: message.Field("field1"),
 								},
 							},
 							{
@@ -345,7 +275,7 @@ func TestNew(t *testing.T) {
 								source: &LinkEndpoint{stage: StageName{val: "stage-2"}},
 								target: &LinkEndpoint{
 									stage: StageName{val: "stage-3:aux-merge"},
-									field: MessageField{val: "field2"},
+									field: message.Field("field2"),
 								},
 							},
 						},
@@ -358,14 +288,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3"}: &Stage{
-						name:  StageName{val: "stage-3"},
-						sType: StageTypeUnary,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-3"},
-							service:     Service{val: "service-3"},
-							method:      Method{val: "method-3"},
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:    StageName{val: "stage-3"},
+						sType:   StageTypeUnary,
+						address: "method-3",
+						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-merge-link"},
@@ -382,14 +308,10 @@ func TestNew(t *testing.T) {
 						},
 					},
 					StageName{val: "stage-3:aux-sink"}: &Stage{
-						name:  StageName{val: "stage-3:aux-sink"},
-						sType: StageTypeSink,
-						ictx: &InvocationContext{
-							address:     Address{val: "address-3"},
-							service:     Service{val: "service-3"},
-							method:      Method{val: "method-3"},
-							unaryMethod: testSplitAndMergeStage3Method{},
-						},
+						name:    StageName{val: "stage-3:aux-sink"},
+						sType:   StageTypeSink,
+						address: "method-3",
+						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
 								name:   LinkName{val: "stage-3:aux-sink-link"},
@@ -401,30 +323,15 @@ func TestNew(t *testing.T) {
 					},
 				},
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					NewService("service-1"),
-					NewMethod("method-1"),
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					NewService("service-2"),
-					NewMethod("method-2"),
-				)
-				ctx3 := NewMethodContext(
-					NewAddress("address-3"),
-					NewService("service-3"),
-					NewMethod("method-3"),
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testSplitAndMergeStage1Method{},
-					ctx2: testSplitAndMergeStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testSplitAndMergeStage1Method{},
+					"method-2": testSplitAndMergeStage2Method{},
+					"method-3": testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
@@ -432,7 +339,7 @@ func TestNew(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			ctx := NewContext(tc.methodLoader)
+			ctx := NewContext(tc.resolver)
 			output, err := New(ctx, tc.input)
 			if err != nil {
 				t.Fatalf("new error: %s", err)
@@ -443,14 +350,9 @@ func TestNew(t *testing.T) {
 				ExecutionMode{},
 				Stage{},
 				StageName{},
-				InvocationContext{},
-				Address{},
-				Service{},
-				Method{},
 				Link{},
 				LinkName{},
 				LinkEndpoint{},
-				MessageField{},
 			)
 			if diff := cmp.Diff(tc.expected, output, cmpOpts); diff != "" {
 				t.Fatalf("output mismatch:\n%s", diff)
@@ -461,12 +363,12 @@ func TestNew(t *testing.T) {
 
 func TestNewIsErr(t *testing.T) {
 	tests := map[string]struct {
-		input        *spec.Pipeline
-		validateErr  func(err error) string
-		methodLoader MethodLoaderFunc
+		input       *PipelineConfig
+		validateErr func(err error) string
+		resolver    method.ResolveFunc
 	}{
 		"empty pipeline name": {
-			input: &spec.Pipeline{},
+			input: &PipelineConfig{},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyPipelineName) {
 					format := "error mismatch: expected %s, received %s"
@@ -474,17 +376,15 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				t.Fatalf("No such method: %s", address)
 				return nil, nil
 			},
 		},
 		"empty stage name": {
-			input: &spec.Pipeline{
-				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{MethodContext: spec.MethodContext{Address: "address"}},
-				},
+			input: &PipelineConfig{
+				Name:   "Pipeline",
+				Stages: []*StageConfig{{Address: "method"}},
 			},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyStageName) {
@@ -493,38 +393,19 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
-				return nil, nil
-			},
-		},
-		"empty address": {
-			input: &spec.Pipeline{
-				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1"},
-				},
-			},
-			validateErr: func(err error) string {
-				if !errors.Is(err, errEmptyAddress) {
-					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyAddress)
-				}
-				return ""
-			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				t.Fatalf("No such method: %s", methodCtx)
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				t.Fatalf("No such method: %s", address)
 				return nil, nil
 			},
 		},
 		"empty link name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{SourceStage: "stage-1", TargetStage: "stage-2"},
 				},
 			},
@@ -535,36 +416,26 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"empty link source name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", TargetStage: "stage-2"},
 				},
 			},
@@ -575,36 +446,26 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"empty link target name": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1"},
 				},
 			},
@@ -615,36 +476,26 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"equal link source and target": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-1"},
 				},
 			},
@@ -655,36 +506,26 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"source does not exist": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-3", TargetStage: "stage-1"},
 				},
 			},
@@ -701,36 +542,26 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"target does not exist": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-4"},
 				},
 			},
@@ -747,37 +578,27 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"new link set full message": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
+					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -809,43 +630,28 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					NewAddress("address-3"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testLinearStage3Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
+					"method-3": testLinearStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"old link set full message": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
+					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -877,43 +683,28 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					NewAddress("address-3"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
+					"method-3": testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"new and old links set same": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
-					{Name: "stage-3", MethodContext: spec.MethodContext{Address: "address-3"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
+					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -948,42 +739,27 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				ctx3 := NewMethodContext(
-					NewAddress("address-3"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
-					ctx3: testSplitAndMergeStage3Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
+					"method-3": testSplitAndMergeStage3Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
 		},
 		"incompatible message descriptor": {
-			input: &spec.Pipeline{
+			input: &PipelineConfig{
 				Name: "Pipeline",
-				Stages: []*spec.Stage{
-					{Name: "stage-1", MethodContext: spec.MethodContext{Address: "address-1"}},
-					{Name: "stage-2", MethodContext: spec.MethodContext{Address: "address-2"}},
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*spec.Link{
+				Links: []*LinkConfig{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -1005,24 +781,14 @@ func TestNewIsErr(t *testing.T) {
 				}
 				return ""
 			},
-			methodLoader: func(methodCtx *MethodContext) (UnaryMethod, error) {
-				ctx1 := NewMethodContext(
-					NewAddress("address-1"),
-					Service{},
-					Method{},
-				)
-				ctx2 := NewMethodContext(
-					NewAddress("address-2"),
-					Service{},
-					Method{},
-				)
-				mapper := map[MethodContext]UnaryMethod{
-					ctx1: testLinearStage1Method{},
-					ctx2: testLinearStage2Method{},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					"method-2": testLinearStage2Method{},
 				}
-				s, ok := mapper[*methodCtx]
+				s, ok := mapper[address]
 				if !ok {
-					panic(fmt.Sprintf("No such method: %s", methodCtx))
+					panic(fmt.Sprintf("No such method: %v", address))
 				}
 				return s, nil
 			},
@@ -1030,7 +796,7 @@ func TestNewIsErr(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			ctx := NewContext(tc.methodLoader)
+			ctx := NewContext(tc.resolver)
 			output, err := New(ctx, tc.input)
 			if err == nil {
 				t.Fatalf("error expected but received nil")
@@ -1047,124 +813,120 @@ func TestNewIsErr(t *testing.T) {
 
 type testLinearStage1Method struct{}
 
-func (m testLinearStage1Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testLinearStage1Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testLinearStage1Method) Input() MessageDesc {
+func (m testLinearStage1Method) Input() message.Type {
 	return testEmptyDesc{}
 }
 
-func (m testLinearStage1Method) Output() MessageDesc {
+func (m testLinearStage1Method) Output() message.Type {
 	return testOuterValDesc{}
 }
 
 type testLinearStage2Method struct{}
 
-func (m testLinearStage2Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testLinearStage2Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testLinearStage2Method) Input() MessageDesc {
+func (m testLinearStage2Method) Input() message.Type {
 	return testOuterValDesc{}
 }
 
-func (m testLinearStage2Method) Output() MessageDesc {
+func (m testLinearStage2Method) Output() message.Type {
 	return testOuterValDesc{}
 }
 
 type testLinearStage3Method struct{}
 
-func (m testLinearStage3Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testLinearStage3Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testLinearStage3Method) Input() MessageDesc {
+func (m testLinearStage3Method) Input() message.Type {
 	return testOuterValDesc{}
 }
 
-func (m testLinearStage3Method) Output() MessageDesc {
+func (m testLinearStage3Method) Output() message.Type {
 	return testEmptyDesc{}
 }
 
 type testSplitAndMergeStage1Method struct{}
 
-func (m testSplitAndMergeStage1Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testSplitAndMergeStage1Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testSplitAndMergeStage1Method) Input() MessageDesc {
+func (m testSplitAndMergeStage1Method) Input() message.Type {
 	return testEmptyDesc{}
 }
 
-func (m testSplitAndMergeStage1Method) Output() MessageDesc {
+func (m testSplitAndMergeStage1Method) Output() message.Type {
 	return testInnerValDesc{}
 }
 
 type testSplitAndMergeStage2Method struct{}
 
-func (m testSplitAndMergeStage2Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testSplitAndMergeStage2Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testSplitAndMergeStage2Method) Input() MessageDesc {
+func (m testSplitAndMergeStage2Method) Input() message.Type {
 	return testInnerValDesc{}
 }
 
-func (m testSplitAndMergeStage2Method) Output() MessageDesc {
+func (m testSplitAndMergeStage2Method) Output() message.Type {
 	return testInnerValDesc{}
 }
 
 type testSplitAndMergeStage3Method struct{}
 
-func (m testSplitAndMergeStage3Method) ClientBuilder() UnaryClientBuilder {
-	return nil
+func (m testSplitAndMergeStage3Method) Dial() (method.Conn, error) {
+	return nil, nil
 }
 
-func (m testSplitAndMergeStage3Method) Input() MessageDesc {
+func (m testSplitAndMergeStage3Method) Input() message.Type {
 	return testOuterValDesc{}
 }
 
-func (m testSplitAndMergeStage3Method) Output() MessageDesc {
+func (m testSplitAndMergeStage3Method) Output() message.Type {
 	return testEmptyDesc{}
 }
 
 type testEmptyDesc struct{}
 
-func (d testEmptyDesc) Compatible(other MessageDesc) bool {
+func (d testEmptyDesc) Compatible(other message.Type) bool {
 	_, ok := other.(testEmptyDesc)
 	return ok
 }
 
-func (d testEmptyDesc) EmptyGen() EmptyMessageGen {
-	return func() Message { return nil }
-}
-
-func (d testEmptyDesc) GetField(f MessageField) (MessageDesc, error) {
+func (d testEmptyDesc) Subfield(f message.Field) (message.Type, error) {
 	panic("method get field should not be called for testEmptyDesc")
 }
+
+func (d testEmptyDesc) Build() message.Instance { panic("called build method") }
 
 // Represents a descriptor of a message with two inner fields: field1 and field2.
 // Each field is associated with a descriptor of type testInnerValDesc
 type testOuterValDesc struct{}
 
-func (d testOuterValDesc) Compatible(other MessageDesc) bool {
+func (d testOuterValDesc) Compatible(other message.Type) bool {
 	_, ok := other.(testOuterValDesc)
 	return ok
 }
 
-func (d testOuterValDesc) EmptyGen() EmptyMessageGen {
-	return func() Message { return nil }
-}
-
-func (d testOuterValDesc) GetField(f MessageField) (MessageDesc, error) {
-	switch f.Unwrap() {
+func (d testOuterValDesc) Subfield(f message.Field) (message.Type, error) {
+	switch f {
 	case "field1", "field2":
 		return testInnerValDesc{}, nil
 	default:
-		panic(fmt.Sprintf("Unknown field for testOuterValDesc: %s", f.Unwrap()))
+		panic(fmt.Sprintf("Unknown field for testOuterValDesc: %s", string(f)))
 	}
 }
+
+func (d testOuterValDesc) Build() message.Instance { panic("called build method") }
 
 func (d testOuterValDesc) String() string {
 	return "testOuterValDesc"
@@ -1172,18 +934,16 @@ func (d testOuterValDesc) String() string {
 
 type testInnerValDesc struct{}
 
-func (d testInnerValDesc) Compatible(other MessageDesc) bool {
+func (d testInnerValDesc) Compatible(other message.Type) bool {
 	_, ok := other.(testInnerValDesc)
 	return ok
 }
 
-func (d testInnerValDesc) EmptyGen() EmptyMessageGen {
-	return func() Message { return nil }
-}
-
-func (d testInnerValDesc) GetField(f MessageField) (MessageDesc, error) {
+func (d testInnerValDesc) Subfield(f message.Field) (message.Type, error) {
 	panic("method get field should not be called for testInnerValDesc")
 }
+
+func (d testInnerValDesc) Build() message.Instance { panic("called build method") }
 
 func (d testInnerValDesc) String() string {
 	return "testInnerValDesc"

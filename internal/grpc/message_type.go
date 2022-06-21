@@ -1,50 +1,50 @@
 package grpc
 
 import (
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 )
 
-type messageDescriptor struct {
+type messageType struct {
 	desc *desc.MessageDescriptor
 }
 
-func newMessageDescriptor(msg proto.Message) (messageDescriptor, error) {
+func newMessageDescriptor(msg proto.Message) (messageType, error) {
 	d, err := desc.LoadMessageDescriptorForMessage(msg)
 	if err != nil {
-		return messageDescriptor{}, err
+		return messageType{}, err
 	}
-	return messageDescriptor{desc: d}, nil
+	return messageType{desc: d}, nil
 }
 
-func (d messageDescriptor) EmptyGen() compiled.EmptyMessageGen {
-	return func() compiled.Message { return newMessageFromDescriptor(d.desc) }
+func (d messageType) Build() message.Instance {
+	return newMessageFromDescriptor(d.desc)
 }
 
-func (d messageDescriptor) GetField(name compiled.MessageField) (
-	compiled.MessageDesc,
+func (d messageType) Subfield(name message.Field) (
+	message.Type,
 	error,
 ) {
-	field := d.desc.FindFieldByName(name.Unwrap())
+	field := d.desc.FindFieldByName(string(name))
 	if field == nil {
 		err := &fieldNotFound{
-			msgType: d.desc.GetFullyQualifiedName(), field: name.Unwrap(),
+			msgType: d.desc.GetFullyQualifiedName(), field: string(name),
 		}
 		return nil, err
 	}
 	if field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 		return nil, &fieldNotMessage{
 			MsgType: d.desc.GetFullyQualifiedName(),
-			Field:   name.Unwrap(),
+			Field:   string(name),
 		}
 	}
-	return messageDescriptor{desc: field.GetMessageType()}, nil
+	return messageType{desc: field.GetMessageType()}, nil
 }
 
-func (d messageDescriptor) Compatible(other compiled.MessageDesc) bool {
-	grpcOther, ok := other.(messageDescriptor)
+func (d messageType) Compatible(other message.Type) bool {
+	grpcOther, ok := other.(messageType)
 	if !ok {
 		return false
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 const defaultChanSize = 10
@@ -114,22 +115,17 @@ func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.InvocationContext().Address()
-	clientBuilder := s.InvocationContext().ClientBuilder()
-	if clientBuilder == nil {
-		return nil, errors.New("nil client builder")
+	dialer := s.Dialer()
+	if dialer == nil {
+		return nil, errors.New("nil dialer")
 	}
-	return newOfflineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+	return newOfflineUnary(name, inChan, outChan, dialer, l), nil
 }
 
 func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
-	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
 	}
 
 	inputs := s.Inputs()
@@ -145,7 +141,7 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	return newOfflineSource(inputGen, outChan), nil
+	return newOfflineSource(message.BuildFunc(input.Build), outChan), nil
 }
 
 func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
@@ -166,7 +162,7 @@ func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlin
 
 func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
 	inputs := s.Inputs()
-	fields := make([]compiled.MessageField, 0, len(inputs))
+	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan offlineState, 0, len(inputs))
 	for _, l := range inputs {
@@ -187,15 +183,11 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
-	return newOfflineMerge(fields, inChans, outChan, inputGen), nil
+	return newOfflineMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
 }
 
 func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
@@ -209,7 +201,7 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	}
 
 	outputs := s.Outputs()
-	fields := make([]compiled.MessageField, 0, len(outputs))
+	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- offlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {
@@ -312,22 +304,17 @@ func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	addr := s.InvocationContext().Address()
-	clientBuilder := s.InvocationContext().ClientBuilder()
-	if clientBuilder == nil {
-		return nil, errors.New("nil client builder")
+	dialer := s.Dialer()
+	if dialer == nil {
+		return nil, errors.New("nil dialer")
 	}
-	return newOnlineUnary(name, inChan, outChan, addr, clientBuilder, l), nil
+	return newOnlineUnary(name, inChan, outChan, dialer, l), nil
 }
 
 func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
-	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
 	}
 
 	inputs := s.Inputs()
@@ -343,7 +330,7 @@ func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlin
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	return newOnlineSource(1, inputGen, outChan), nil
+	return newOnlineSource(1, message.BuildFunc(input.Build), outChan), nil
 }
 
 func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
@@ -364,7 +351,7 @@ func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineS
 
 func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
 	inputs := s.Inputs()
-	fields := make([]compiled.MessageField, 0, len(inputs))
+	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan onlineState, 0, len(inputs))
 	for _, l := range inputs {
@@ -385,15 +372,11 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
 
-	input := s.InvocationContext().Input()
+	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	inputGen := input.EmptyGen()
-	if inputGen == nil {
-		return nil, errors.New("nil method input empty gen")
-	}
-	return newOnlineMerge(fields, inChans, outChan, inputGen), nil
+	return newOnlineMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
 }
 
 func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
@@ -407,7 +390,7 @@ func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan online
 	}
 
 	outputs := s.Outputs()
-	fields := make([]compiled.MessageField, 0, len(outputs))
+	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- onlineState, 0, len(outputs))
 	for _, l := range s.Outputs() {

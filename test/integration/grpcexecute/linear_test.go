@@ -14,7 +14,6 @@ import (
 	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -66,24 +65,15 @@ func TestOfflineLinear(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	pipelineSpec := &spec.Pipeline{
+	cfg := &compiled.PipelineConfig{
 		Name: "pipeline",
-		Mode: spec.OfflineExecution,
-		Stages: []*spec.Stage{
-			{
-				Name:          "source",
-				MethodContext: spec.MethodContext{Address: sourceAddr.String()},
-			},
-			{
-				Name:          "transform",
-				MethodContext: spec.MethodContext{Address: transfAddr.String()},
-			},
-			{
-				Name:          "sink",
-				MethodContext: spec.MethodContext{Address: sinkAddr.String()},
-			},
+		Mode: compiled.OfflineExecution,
+		Stages: []*compiled.StageConfig{
+			{Name: "source", Address: sourceAddr.String()},
+			{Name: "transform", Address: transfAddr.String()},
+			{Name: "sink", Address: sinkAddr.String()},
 		},
-		Links: []*spec.Link{
+		Links: []*compiled.LinkConfig{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -99,7 +89,7 @@ func TestOfflineLinear(t *testing.T) {
 
 	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, cfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}
@@ -180,24 +170,15 @@ func TestOnlineLinear(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	pipelineSpec := &spec.Pipeline{
+	cfg := &compiled.PipelineConfig{
 		Name: "pipeline",
-		Mode: spec.OnlineExecution,
-		Stages: []*spec.Stage{
-			{
-				Name:          "source",
-				MethodContext: spec.MethodContext{Address: sourceAddr.String()},
-			},
-			{
-				Name:          "transform",
-				MethodContext: spec.MethodContext{Address: transfAddr.String()},
-			},
-			{
-				Name:          "sink",
-				MethodContext: spec.MethodContext{Address: sinkAddr.String()},
-			},
+		Mode: compiled.OnlineExecution,
+		Stages: []*compiled.StageConfig{
+			{Name: "source", Address: sourceAddr.String()},
+			{Name: "transform", Address: transfAddr.String()},
+			{Name: "sink", Address: sinkAddr.String()},
 		},
-		Links: []*spec.Link{
+		Links: []*compiled.LinkConfig{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -213,7 +194,7 @@ func TestOnlineLinear(t *testing.T) {
 
 	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
 	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineSpec)
+	pipeline, err := compiled.New(compilationCtx, cfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
 	}

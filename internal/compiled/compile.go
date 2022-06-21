@@ -1,32 +1,22 @@
 package compiled
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"github.com/DuarteMRAlves/maestro/internal/message"
+	"github.com/DuarteMRAlves/maestro/internal/method"
 )
-
-// MethodLoader resolves a method from its context.
-type MethodLoader interface {
-	Load(*MethodContext) (UnaryMethod, error)
-}
-
-// MethodLoaderFunc is an adapter to use functions as MethodLoader objects.
-type MethodLoaderFunc func(*MethodContext) (UnaryMethod, error)
-
-func (fn MethodLoaderFunc) Load(methodContext *MethodContext) (UnaryMethod, error) {
-	return fn(methodContext)
-}
 
 // Context specifies a compilation context to create the pipeline.
 type Context struct {
-	methodLoader MethodLoader
+	resolver method.Resolver
 }
 
-func NewContext(methodLoader MethodLoader) Context {
+func NewContext(methodLoader method.Resolver) Context {
 	c := Context{}
-	c.methodLoader = methodLoader
+	c.resolver = methodLoader
 	return c
 }
 
@@ -39,12 +29,6 @@ var (
 	errEmptyTargetName      = errors.New("empty target name")
 	errEqualSourceAndTarget = errors.New("equal source and target stages")
 )
-
-type unsupportedExecutionMode struct{ mode spec.ExecutionMode }
-
-func (err *unsupportedExecutionMode) Error() string {
-	return fmt.Sprintf("unsupported execution mode: %s", err.mode)
-}
 
 type stageAlreadyExists struct{ name string }
 
@@ -73,29 +57,24 @@ func (err *linksSetSameField) Error() string {
 	return fmt.Sprintf("links '%s' and '%s' set same field '%s'", err.A, err.B, err.field)
 }
 
-type incompatibleMessageDesc struct{ A, B MessageDesc }
+type incompatibleMessageDesc struct{ A, B message.Type }
 
 func (err *incompatibleMessageDesc) Error() string {
 	return fmt.Sprintf("incompatible message descriptors: %s, %s", err.A, err.B)
 }
 
 // New compiles a Pipeline from its specification.
-func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
-	name, err := compileName(pipelineSpec.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	mode, err := compileExecutionMode(pipelineSpec.Mode)
+func New(ctx Context, cfg *PipelineConfig) (*Pipeline, error) {
+	name, err := compileName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	// condensed graph contains rpc stages with multiple inputs and outputs.
-	condensedGraph := make(stageGraph, len(pipelineSpec.Stages))
-	for _, stageSpec := range pipelineSpec.Stages {
-		stageName := stageSpec.Name
-		stage, err := compileStage(ctx, stageSpec)
+	condensedGraph := make(stageGraph, len(cfg.Stages))
+	for _, stageCfg := range cfg.Stages {
+		stageName := stageCfg.Name
+		stage, err := compileStage(ctx, stageCfg)
 		if err != nil {
 			return nil, fmt.Errorf("compile stage '%s': %w", stageName, err)
 		}
@@ -106,9 +85,9 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 		condensedGraph[stage.name] = stage
 	}
 
-	for _, linkSpec := range pipelineSpec.Links {
-		linkName := linkSpec.Name
-		link, err := compileLink(linkSpec)
+	for _, linkCfg := range cfg.Links {
+		linkName := linkCfg.Name
+		link, err := compileLink(linkCfg)
 		if err != nil {
 			return nil, fmt.Errorf("compile link '%s': %w", linkName, err)
 		}
@@ -128,7 +107,7 @@ func New(ctx Context, pipelineSpec *spec.Pipeline) (*Pipeline, error) {
 
 	p := &Pipeline{
 		name:   name,
-		mode:   mode,
+		mode:   cfg.Mode,
 		stages: augmentedGraph,
 	}
 	return p, nil
@@ -145,38 +124,20 @@ func compileName(name string) (PipelineName, error) {
 	return pipelineName, nil
 }
 
-func compileExecutionMode(mode spec.ExecutionMode) (ExecutionMode, error) {
-	var executionMode ExecutionMode
-	switch mode {
-	case spec.OfflineExecution:
-		executionMode = OfflineExecution
-	case spec.OnlineExecution:
-		executionMode = OnlineExecution
-	default:
-		return executionMode, &unsupportedExecutionMode{mode: mode}
-	}
-	return executionMode, nil
-}
-
-func compileStage(ctx Context, stageSpec *spec.Stage) (*Stage, error) {
-	name, err := compileStageName(stageSpec.Name)
+func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
+	name, err := compileStageName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
-	address, err := compileAddress(stageSpec.MethodContext.Address)
+	method, err := ctx.resolver.Resolve(context.Background(), cfg.Address)
 	if err != nil {
-		return nil, err
-	}
-	service := NewService(stageSpec.MethodContext.Service)
-	method := NewMethod(stageSpec.MethodContext.Method)
-	ictx, err := newInvocationContext(ctx.methodLoader, address, service, method)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("load method %q: %w", cfg.Address, err)
 	}
 	stage := &Stage{
 		name:    name,
 		sType:   StageTypeUnary,
-		ictx:    ictx,
+		address: cfg.Address,
+		desc:    method,
 		inputs:  []*Link{},
 		outputs: []*Link{},
 	}
@@ -194,27 +155,19 @@ func compileStageName(name string) (StageName, error) {
 	return stageName, nil
 }
 
-func compileAddress(address string) (Address, error) {
-	addr := NewAddress(address)
-	if addr.IsEmpty() {
-		return addr, errEmptyAddress
-	}
-	return addr, nil
-}
-
-func compileLink(linkSpec *spec.Link) (*Link, error) {
-	name, err := compileLinkName(linkSpec.Name)
+func compileLink(cfg *LinkConfig) (*Link, error) {
+	name, err := compileLinkName(cfg.Name)
 	if err != nil {
 		return nil, err
 	}
-	source, err := compileEndpoint(linkSpec.SourceStage, linkSpec.SourceField)
+	source, err := compileEndpoint(cfg.SourceStage, cfg.SourceField)
 	if err != nil {
 		return nil, err
 	}
 	if source.Stage().IsEmpty() {
 		return nil, errEmptySourceName
 	}
-	target, err := compileEndpoint(linkSpec.TargetStage, linkSpec.TargetField)
+	target, err := compileEndpoint(cfg.TargetStage, cfg.TargetField)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +195,7 @@ func compileEndpoint(stage string, field string) (*LinkEndpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	fieldName := NewMessageField(field)
+	fieldName := message.Field(field)
 	endpt = NewLinkEndpoint(StageName(stageName), fieldName)
 	return &endpt, nil
 }
@@ -274,17 +227,17 @@ func validateLink(stages stageGraph, link *Link) error {
 		return errEqualSourceAndTarget
 	}
 
-	sourceMsg := source.InvocationContext().Output()
-	if !link.Source().Field().IsEmpty() {
-		sourceMsg, err = sourceMsg.GetField(link.Source().Field())
+	sourceMsg := source.desc.Output()
+	if !link.Source().Field().IsUnspecified() {
+		sourceMsg, err = sourceMsg.Subfield(link.Source().Field())
 		if err != nil {
 			return err
 		}
 	}
 
-	targetMsg := target.InvocationContext().Input()
-	if !link.Target().Field().IsEmpty() {
-		targetMsg, err = targetMsg.GetField(link.Target().Field())
+	targetMsg := target.desc.Input()
+	if !link.Target().Field().IsUnspecified() {
+		targetMsg, err = targetMsg.Subfield(link.Target().Field())
 		if err != nil {
 			return err
 		}
@@ -297,19 +250,19 @@ func validateLink(stages stageGraph, link *Link) error {
 		targetFieldLink := link.Target().Field()
 		targetFieldPrev := prev.Target().Field()
 		// Target receives entire message from this link but another exists.
-		if targetFieldLink.IsEmpty() {
+		if targetFieldLink.IsUnspecified() {
 			return &linkSetsFullMessage{name: link.Name().Unwrap()}
 		}
 		// 2. Target already receives entire message from existing link.
-		if targetFieldPrev.IsEmpty() {
+		if targetFieldPrev.IsUnspecified() {
 			return &linkSetsFullMessage{name: prev.Name().Unwrap()}
 		}
 		// 3. Target receives same field from both links.
-		if targetFieldLink.Unwrap() == targetFieldPrev.Unwrap() {
+		if targetFieldLink == targetFieldPrev {
 			return &linksSetSameField{
 				A:     link.Name().Unwrap(),
 				B:     prev.Name().Unwrap(),
-				field: targetFieldPrev.Unwrap(),
+				field: string(targetFieldPrev),
 			}
 		}
 	}
@@ -341,7 +294,7 @@ func compileAuxInputIfNecessary(s *Stage) *Stage {
 		l := s.inputs[0]
 		// We only have one link but we have to set a field and so
 		// we use a single link merge stage.
-		if !l.Target().Field().IsEmpty() {
+		if !l.Target().Field().IsUnspecified() {
 			return compileMergeInput(s)
 		}
 		return nil
@@ -360,8 +313,9 @@ func compileSourceInput(s *Stage) *Stage {
 	source := &Stage{
 		name:  name,
 		sType: StageTypeSource,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{},
 		outputs: []*Link{l},
 	}
@@ -379,8 +333,9 @@ func compileMergeInput(s *Stage) *Stage {
 	merge := &Stage{
 		name:  name,
 		sType: StageTypeMerge,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		address: s.address,
+		desc:    s.desc,
 		inputs:  s.inputs,
 		outputs: []*Link{l},
 	}
@@ -399,7 +354,7 @@ func compileAuxOutputIfNecessary(s *Stage) *Stage {
 		return compileSinkOutput(s)
 	case 1:
 		l := s.inputs[0]
-		if !l.Target().Field().IsEmpty() {
+		if !l.Target().Field().IsUnspecified() {
 			return compileSplitOutput(s)
 		}
 		return nil
@@ -418,8 +373,9 @@ func compileSinkOutput(s *Stage) *Stage {
 	sink := &Stage{
 		name:  name,
 		sType: StageTypeSink,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{l},
 		outputs: []*Link{},
 	}
@@ -437,8 +393,9 @@ func compileSplitOutput(s *Stage) *Stage {
 	split := &Stage{
 		name:  name,
 		sType: StageTypeSplit,
-		// give access to the method for later usage
-		ictx:    s.ictx,
+		// give access to method information for later usage
+		address: s.address,
+		desc:    s.desc,
 		inputs:  []*Link{l},
 		outputs: s.outputs,
 	}

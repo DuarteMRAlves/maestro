@@ -3,15 +3,15 @@ package execute
 import (
 	"fmt"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 // offlineState defines a structure to store the state of an offline pipeline.
 type offlineState struct {
-	msg compiled.Message
+	msg message.Instance
 }
 
-func newOfflineState(msg compiled.Message) offlineState {
+func newOfflineState(msg message.Instance) offlineState {
 	return offlineState{msg: msg}
 }
 
@@ -28,19 +28,19 @@ type id int
 // be synchronized.
 type onlineState struct {
 	id  id
-	msg compiled.Message
+	msg message.Instance
 }
 
 var emptyOnlineState = newOnlineState(-1, nil)
 
-func newOnlineState(id id, msg compiled.Message) onlineState {
+func newOnlineState(id id, msg message.Instance) onlineState {
 	return onlineState{
 		id:  id,
 		msg: msg,
 	}
 }
 
-func fromOnlineState(s onlineState, msg compiled.Message) onlineState {
+func fromOnlineState(s onlineState, msg message.Instance) onlineState {
 	return newOnlineState(s.id, msg)
 }
 

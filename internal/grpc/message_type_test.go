@@ -3,7 +3,7 @@ package grpc
 import (
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
@@ -15,14 +15,14 @@ func TestMessageDescriptor_GetField(t *testing.T) {
 		t.Fatalf("create message descriptor: %s", err)
 	}
 
-	field := compiled.NewMessageField("field4")
+	field := message.Field("field4")
 
-	fieldDesc, err := msgDesc.GetField(field)
+	fieldDesc, err := msgDesc.Subfield(field)
 	if err != nil {
 		t.Fatalf("get field: %s", err)
 	}
 
-	grpcFieldDesc, ok := fieldDesc.(messageDescriptor)
+	grpcFieldDesc, ok := fieldDesc.(messageType)
 	if !ok {
 		t.Fatalf("unable to cast to fieldDesc to grpcFieldDesc")
 	}

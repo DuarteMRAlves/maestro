@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
 	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/google/go-cmp/cmp"
@@ -40,7 +39,7 @@ func TestReflectionClient_ListServices(t *testing.T) {
 		}
 	}(conn)
 
-	m := ReflectionMethodLoader{timeout: 5 * time.Second}
+	m := ReflectionResolver{timeout: 5 * time.Second}
 	services, err := m.listServices(ctx, conn)
 	if err != nil {
 		t.Fatalf("list services: %s", err)
@@ -51,11 +50,11 @@ func TestReflectionClient_ListServices(t *testing.T) {
 	}
 	counts := map[string]int{"unit.MethodLoaderTestService": 0}
 	for _, s := range services {
-		_, serviceExists := counts[s.Unwrap()]
+		_, serviceExists := counts[string(s)]
 		if !serviceExists {
 			t.Fatalf("unexpected service %s", s)
 		}
-		counts[s.Unwrap()]++
+		counts[string(s)]++
 	}
 	for service, count := range counts {
 		if diff := cmp.Diff(1, count); diff != "" {
@@ -85,7 +84,7 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	m := ReflectionMethodLoader{timeout: 5 * time.Second}
+	m := ReflectionResolver{timeout: 5 * time.Second}
 	services, err := m.listServices(ctx, conn)
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
@@ -126,8 +125,8 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("unit.MethodLoaderTestService")
-	m := ReflectionMethodLoader{timeout: 5 * time.Second}
+	serviceName := Service("unit.MethodLoaderTestService")
+	m := ReflectionResolver{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
 		t.Fatalf("resolve service: %s", err)
@@ -269,8 +268,8 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("pb.TestService")
-	m := ReflectionMethodLoader{timeout: 5 * time.Second}
+	serviceName := Service("pb.TestService")
+	m := ReflectionResolver{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
 		t.Fatalf("expected non nil error at resolveService")
@@ -311,8 +310,8 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		}
 	}(conn)
 
-	serviceName := compiled.NewService("pb.UnknownService")
-	m := ReflectionMethodLoader{timeout: 5 * time.Second}
+	serviceName := Service("pb.UnknownService")
+	m := ReflectionResolver{timeout: 5 * time.Second}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
@@ -327,7 +326,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		format := "Wrong error type: expected %s, got %s"
 		t.Fatalf(format, reflect.TypeOf(nf), reflect.TypeOf(err))
 	}
-	expError := &serviceNotFound{srv: serviceName.Unwrap()}
+	expError := &serviceNotFound{srv: string(serviceName)}
 	cmpOpts := cmp.AllowUnexported(serviceNotFound{})
 	if diff := cmp.Diff(expError, nf, cmpOpts); diff != "" {
 		t.Fatalf("error mismatch:\n%s", diff)

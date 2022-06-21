@@ -5,16 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestOfflineMergeStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner2 := compiled.NewMessageField("inner2")
-	inner3 := compiled.NewMessageField("inner3")
-
-	fields := []compiled.MessageField{inner1, inner2, inner3}
+	fields := []message.Field{"inner1", "inner2", "inner3"}
 
 	input1 := make(chan offlineState)
 	defer close(input1)
@@ -26,9 +22,9 @@ func TestOfflineMergeStage_Run(t *testing.T) {
 
 	output := make(chan offlineState)
 
-	gen := func() compiled.Message { return &testMergeOuterMessage{} }
+	builder := message.BuildFunc(func() message.Instance { return &testMergeOuterMessage{} })
 
-	s := newOfflineMerge(fields, inputs, output, gen)
+	s := newOfflineMerge(fields, inputs, output, builder)
 
 	inputs1 := []*testMergeInnerMessage{{1}, {4}, {7}, {10}}
 	inputs2 := []*testMergeInnerMessage{{2}, {5}, {8}, {11}}
@@ -89,11 +85,7 @@ func TestOfflineMergeStage_Run(t *testing.T) {
 }
 
 func TestOnlineMergeStage_Run(t *testing.T) {
-	inner1 := compiled.NewMessageField("inner1")
-	inner2 := compiled.NewMessageField("inner2")
-	inner3 := compiled.NewMessageField("inner3")
-
-	fields := []compiled.MessageField{inner1, inner2, inner3}
+	fields := []message.Field{"inner1", "inner2", "inner3"}
 
 	input1 := make(chan onlineState)
 	defer close(input1)
@@ -105,9 +97,9 @@ func TestOnlineMergeStage_Run(t *testing.T) {
 
 	output := make(chan onlineState)
 
-	gen := func() compiled.Message { return &testMergeOuterMessage{} }
+	builder := message.BuildFunc(func() message.Instance { return &testMergeOuterMessage{} })
 
-	s := newOnlineMerge(fields, inputs, output, gen)
+	s := newOnlineMerge(fields, inputs, output, builder)
 
 	inputs1 := []*testMergeInnerMessage{{1}, {4}, {7}, {10}}
 	inputs2 := []*testMergeInnerMessage{{2}, {5}, {8}, {11}}
@@ -168,11 +160,11 @@ func TestOnlineMergeStage_Run(t *testing.T) {
 
 type testMergeInnerMessage struct{ val int32 }
 
-func (m *testMergeInnerMessage) SetField(_ compiled.MessageField, _ compiled.Message) error {
+func (m *testMergeInnerMessage) Set(_ message.Field, _ message.Instance) error {
 	panic("Should not set field for inner message in merge test")
 }
 
-func (m *testMergeInnerMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
+func (m *testMergeInnerMessage) Get(_ message.Field) (message.Instance, error) {
 	panic("Should not get field for inner message in merge test")
 }
 
@@ -182,12 +174,12 @@ type testMergeOuterMessage struct {
 	inner3 *testMergeInnerMessage
 }
 
-func (m *testMergeOuterMessage) SetField(f compiled.MessageField, v compiled.Message) error {
+func (m *testMergeOuterMessage) Set(f message.Field, v message.Instance) error {
 	inner, ok := v.(*testMergeInnerMessage)
 	if !ok {
 		panic("Set field for merge outer message did not receive inner message")
 	}
-	switch f.Unwrap() {
+	switch f {
 	case "inner1":
 		m.inner1 = inner
 	case "inner2":
@@ -195,12 +187,12 @@ func (m *testMergeOuterMessage) SetField(f compiled.MessageField, v compiled.Mes
 	case "inner3":
 		m.inner3 = inner
 	default:
-		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f.Unwrap())
+		msg := fmt.Sprintf("Set field for merge outer message received unknown field: %s", f)
 		panic(msg)
 	}
 	return nil
 }
 
-func (m *testMergeOuterMessage) GetField(_ compiled.MessageField) (compiled.Message, error) {
+func (m *testMergeOuterMessage) Get(_ message.Field) (message.Instance, error) {
 	panic("Should not get field for outer message in merge test")
 }

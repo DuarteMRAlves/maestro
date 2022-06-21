@@ -3,28 +3,28 @@ package execute
 import (
 	"context"
 
-	"github.com/DuarteMRAlves/maestro/internal/compiled"
+	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
 // offlineSource is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type offlineSource struct {
-	gen    compiled.EmptyMessageGen
-	output chan<- offlineState
+	builder message.Builder
+	output  chan<- offlineState
 }
 
 func newOfflineSource(
-	gen compiled.EmptyMessageGen, output chan<- offlineState,
+	gen message.Builder, output chan<- offlineState,
 ) Stage {
 	return &offlineSource{
-		gen:    gen,
-		output: output,
+		builder: gen,
+		output:  output,
 	}
 }
 
 func (s *offlineSource) Run(ctx context.Context) error {
 	for {
-		next := newOfflineState(s.gen())
+		next := newOfflineState(s.builder.Build())
 		select {
 		case s.output <- next:
 		case <-ctx.Done():
@@ -37,24 +37,24 @@ func (s *offlineSource) Run(ctx context.Context) error {
 // onlineSource is the source of the pipeline. It defines the initial ids of
 // the states and sends empty messages of the received type.
 type onlineSource struct {
-	count  int32
-	gen    compiled.EmptyMessageGen
-	output chan<- onlineState
+	count   int32
+	builder message.Builder
+	output  chan<- onlineState
 }
 
 func newOnlineSource(
-	start int32, gen compiled.EmptyMessageGen, output chan<- onlineState,
+	start int32, gen message.Builder, output chan<- onlineState,
 ) Stage {
 	return &onlineSource{
-		count:  start,
-		gen:    gen,
-		output: output,
+		count:   start,
+		builder: gen,
+		output:  output,
 	}
 }
 
 func (s *onlineSource) Run(ctx context.Context) error {
 	for {
-		next := newOnlineState(id(s.count), s.gen())
+		next := newOnlineState(id(s.count), s.builder.Build())
 		select {
 		case s.output <- next:
 		case <-ctx.Done():
