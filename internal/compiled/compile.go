@@ -27,6 +27,7 @@ var (
 	errEmptySourceName      = errors.New("empty source name")
 	errEmptyTargetName      = errors.New("empty target name")
 	errEqualSourceAndTarget = errors.New("equal source and target stages")
+	errCyclesAndOnline      = errors.New("pipeline with cycles and online mode")
 )
 
 type stageAlreadyExists struct{ name string }
@@ -103,6 +104,10 @@ func New(ctx Context, cfg *PipelineConfig) (*Pipeline, error) {
 	}
 
 	augmentedGraph := augmentedGraphFromCondensed(condensedGraph)
+
+	if cfg.Mode == OnlineExecution && hasLoops(augmentedGraph) {
+		return nil, errCyclesAndOnline
+	}
 
 	p := &Pipeline{
 		name:   name,
@@ -403,4 +408,36 @@ func compileSplitOutput(s *Stage) *Stage {
 		i.source.stage = name
 	}
 	return split
+}
+
+func hasLoops(g stageGraph) bool {
+	visited := make(map[StageName]bool, len(g))
+	for name := range g {
+		visited[name] = false
+	}
+	for n, curr := range g {
+		if !visited[n] {
+			inStack := make(map[StageName]bool)
+			if visitStage(g, curr, visited, inStack) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func visitStage(g stageGraph, curr *Stage, visited map[StageName]bool, inStack map[StageName]bool) bool {
+	inStack[curr.name] = true
+	visited[curr.name] = true
+	for _, o := range curr.outputs {
+		neigh := g[o.target.stage]
+		if inStack[neigh.name] {
+			return true
+		}
+		if !visited[neigh.name] && visitStage(g, neigh, visited, inStack) {
+			return true
+		}
+	}
+	inStack[curr.name] = false
+	return false
 }
