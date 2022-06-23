@@ -692,6 +692,145 @@ func (c *slowSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *slowSinkConn) Close() error { return nil }
 
+func TestOfflineExecution_Cycle(t *testing.T) {
+	max := 100
+	evenCollect := make([]*testValMsg, 0, max)
+	evenDone := make(chan struct{})
+	oddCollect := make([]*testValMsg, 0, max)
+	oddDone := make(chan struct{})
+
+	pipelineCfg := &compiled.PipelineConfig{
+		Name: "pipeline",
+		Stages: []*compiled.StageConfig{
+			{Name: "even", Address: "even"},
+			{Name: "odd", Address: "odd"},
+		},
+		Links: []*compiled.LinkConfig{
+			{
+				Name:        "link-even-odd",
+				SourceStage: "even",
+				TargetStage: "odd",
+			},
+			{
+				Name:             "link-odd-even",
+				SourceStage:      "odd",
+				TargetStage:      "even",
+				NumEmptyMessages: 1,
+			},
+		},
+	}
+
+	evenMethod := testMethod{
+		D:   cycleDialFunc(max, &evenCollect, evenDone),
+		In:  testValDesc{},
+		Out: testValDesc{},
+	}
+
+	oddMethod := testMethod{
+		D:   cycleDialFunc(max, &oddCollect, oddDone),
+		In:  testValDesc{},
+		Out: testValDesc{},
+	}
+
+	methods := map[string]method.Desc{
+		"even": evenMethod,
+		"odd":  oddMethod,
+	}
+
+	resolver := func(_ context.Context, address string) (method.Desc, error) {
+		m, ok := methods[address]
+		if !ok {
+			panic(fmt.Sprintf("No such method: %s", address))
+		}
+		return m, nil
+	}
+
+	compilationCtx := compiled.NewContext(method.ResolveFunc(resolver))
+	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
+	if err != nil {
+		t.Fatalf("compile error: %s", err)
+	}
+
+	executionBuilder := NewBuilder(logger{debug: true})
+	e, err := executionBuilder(pipeline)
+	if err != nil {
+		t.Fatalf("build error: %s", err)
+	}
+
+	e.Start()
+	// Even starts before done (with initial message)
+	// and so should finish before done
+	<-evenDone
+	<-oddDone
+	if err := e.Stop(); err != nil {
+		t.Fatalf("stop error: %s", err)
+	}
+	if diff := cmp.Diff(max, len(evenCollect)); diff != "" {
+		t.Fatalf("mismatch on number of collected even messages:\n%s", diff)
+	}
+
+	if diff := cmp.Diff(max, len(oddCollect)); diff != "" {
+		t.Fatalf("mismatch on number of collected even messages:\n%s", diff)
+	}
+
+	for i, msg := range evenCollect {
+		if diff := cmp.Diff(int64(i*2), msg.Val); diff != "" {
+			t.Fatalf("mismatch on even value %d:\n%s", i, diff)
+		}
+	}
+	for i, msg := range oddCollect {
+		if diff := cmp.Diff(int64(i*2+1), msg.Val); diff != "" {
+			t.Fatalf("mismatch on odd value %d:\n%s", i, diff)
+		}
+	}
+}
+
+type testCycleConn struct {
+	max     int
+	collect *[]*testValMsg
+	done    chan<- struct{}
+	mu      sync.Mutex
+}
+
+func cycleDialFunc(
+	max int,
+	collect *[]*testValMsg,
+	done chan<- struct{},
+) method.DialFunc {
+	return func() (method.Conn, error) {
+		return &testCycleConn{
+			max:     max,
+			collect: collect,
+			done:    done,
+			mu:      sync.Mutex{},
+		}, nil
+	}
+}
+
+func (c *testCycleConn) Call(_ context.Context, req message.Instance) (
+	message.Instance,
+	error,
+) {
+	reqMsg, ok := req.(*testValMsg)
+	if !ok {
+		panic("sink request message is not testValMsg")
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// Receive while not at full capacity
+	if len(*c.collect) < c.max {
+		*c.collect = append(*c.collect, reqMsg)
+	}
+	// Notify when full. Remaining messages are discarded.
+	if len(*c.collect) == c.max && c.done != nil {
+		close(c.done)
+		c.done = nil
+	}
+	return &testValMsg{Val: reqMsg.Val + 1}, nil
+}
+
+func (c *testCycleConn) Close() error { return nil }
+
 type testMethod struct {
 	D   method.Dialer
 	In  message.Type
