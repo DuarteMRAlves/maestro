@@ -57,6 +57,11 @@ type v1LinkSpec struct {
 	// message is sent as input to the TargetStage.
 	// (optional)
 	TargetField string `yaml:"target_field,omitempty"`
+	// NumEmptyMessages specifies the number of empty messages to fill this link with
+	// when the pipeline is starting. It allows for cycles, but providing a mechanism
+	// to send a first empty message for one of the stages.
+	// (optional)
+	NumEmptyMessages uint `yaml:"num_empty_messages,omitempty"`
 	// Pipeline specifies the pipeline where this link is inserted.
 	// (required)
 	Pipeline string `yaml:"pipeline"`
