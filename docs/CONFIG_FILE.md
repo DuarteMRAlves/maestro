@@ -83,3 +83,5 @@ A Link spec accepts the following fields:
 `target_stage` is the name of the stage that is the target of the link. Messages that are transferred through this link are used as input for the rpc method in this stage. (Required)
 
 `target_field` specifies the field of the input message for `target_stage` that should be set with the messages transferred with this link. If not specified, the entire message is sent as input to `target_stage`. (Optional)
+
+`num_empty_messages` specifies the number of empty messages to fill this link with when the pipeline is starting. It allows for cycles, by providing a mechanism to send a first empty message for one of the stages. (Optional, Requires Offline execution mode).
