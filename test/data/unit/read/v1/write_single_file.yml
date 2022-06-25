@@ -30,6 +30,7 @@ spec:
   name: link-stage-2-stage-1
   source_stage: stage-2
   target_stage: stage-1
+  num_empty_messages: 2
   pipeline: pipeline-1
 ---
 kind: link

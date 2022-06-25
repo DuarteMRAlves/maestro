@@ -156,11 +156,12 @@ func resourceToLink(r v1ReadResource) (*spec.Link, string, error) {
 	}
 
 	l := &spec.Link{
-		Name:        linkSpec.Name,
-		SourceStage: linkSpec.SourceStage,
-		SourceField: linkSpec.SourceField,
-		TargetStage: linkSpec.TargetStage,
-		TargetField: linkSpec.TargetField,
+		Name:             linkSpec.Name,
+		SourceStage:      linkSpec.SourceStage,
+		SourceField:      linkSpec.SourceField,
+		TargetStage:      linkSpec.TargetStage,
+		TargetField:      linkSpec.TargetField,
+		NumEmptyMessages: linkSpec.NumEmptyMessages,
 	}
 	return l, linkSpec.Pipeline, nil
 }
@@ -365,6 +366,7 @@ func linkToResource(r *v1WriteResource, l *spec.Link, pipelineName string) {
 	linkSpec.SourceField = l.SourceField
 	linkSpec.TargetStage = l.TargetStage
 	linkSpec.TargetField = l.TargetField
+	linkSpec.NumEmptyMessages = l.NumEmptyMessages
 	linkSpec.Pipeline = pipelineName
 
 	r.Kind = linkKind

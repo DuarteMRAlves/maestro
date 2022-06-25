@@ -51,9 +51,10 @@ func TestReadV1(t *testing.T) {
 					},
 					Links: []*spec.Link{
 						{
-							Name:        "link-stage-2-stage-1",
-							SourceStage: "stage-2",
-							TargetStage: "stage-1",
+							Name:             "link-stage-2-stage-1",
+							SourceStage:      "stage-2",
+							TargetStage:      "stage-1",
+							NumEmptyMessages: 2,
 						},
 						{
 							Name:        "link-stage-1-stage-2",
@@ -260,9 +261,10 @@ func TestWriteV1(t *testing.T) {
 		},
 		Links: []*spec.Link{
 			{
-				Name:        "link-stage-2-stage-1",
-				SourceStage: "stage-2",
-				TargetStage: "stage-1",
+				Name:             "link-stage-2-stage-1",
+				SourceStage:      "stage-2",
+				TargetStage:      "stage-1",
+				NumEmptyMessages: 2,
 			},
 			{
 				Name:        "link-stage-1-stage-2",

@@ -56,6 +56,8 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 		return nil, err
 	}
 
+	initOfflineChans(pipeline, chans)
+
 	return newOfflineExecution(stages, logger), nil
 }
 
@@ -213,6 +215,39 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		outChans = append(outChans, outChan)
 	}
 	return newOfflineSplit(fields, inChan, outChans), nil
+}
+
+func initOfflineChans(
+	pipeline *compiled.Pipeline, chans map[compiled.LinkName]chan offlineState,
+) error {
+	return pipeline.VisitLinks(func(l *compiled.Link) error {
+		if l.NumEmptyMessages() == 0 {
+			return nil
+		}
+		if l.NumEmptyMessages() > defaultChanSize {
+			return fmt.Errorf("link %q: too many empty messages", l.Name())
+		}
+		ch, ok := chans[l.Name()]
+		if !ok {
+			return fmt.Errorf("link %q: chan not found", l.Name())
+		}
+		src, ok := pipeline.Stage(l.Source().Stage())
+		if !ok {
+			return fmt.Errorf("link %q: source %q not found", l.Name(), l.Source().Stage())
+		}
+		msgType := src.InputDesc()
+		if !l.Source().Field().IsUnspecified() {
+			var err error
+			msgType, err = msgType.Subfield(l.Source().Field())
+			if err != nil {
+				return err
+			}
+		}
+		for i := 0; i < int(l.NumEmptyMessages()); i++ {
+			ch <- newOfflineState(msgType.Build())
+		}
+		return nil
+	})
 }
 
 func buildOnlineExecution(pipeline *compiled.Pipeline, logger Logger) (*onlineExecution, error) {

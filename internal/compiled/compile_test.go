@@ -372,7 +372,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyPipelineName) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyPipelineName)
+					return fmt.Sprintf(format, errEmptyPipelineName, err)
 				}
 				return ""
 			},
@@ -389,7 +389,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyStageName) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyStageName)
+					return fmt.Sprintf(format, errEmptyStageName, err)
 				}
 				return ""
 			},
@@ -412,7 +412,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyLinkName) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyLinkName)
+					return fmt.Sprintf(format, errEmptyLinkName, err)
 				}
 				return ""
 			},
@@ -442,7 +442,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptySourceName) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptySourceName)
+					return fmt.Sprintf(format, errEmptySourceName, err)
 				}
 				return ""
 			},
@@ -472,7 +472,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyTargetName) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEmptyTargetName)
+					return fmt.Sprintf(format, errEmptyTargetName, err)
 				}
 				return ""
 			},
@@ -502,7 +502,7 @@ func TestNewIsErr(t *testing.T) {
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEqualSourceAndTarget) {
 					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, err, errEqualSourceAndTarget)
+					return fmt.Sprintf(format, errEqualSourceAndTarget, err)
 				}
 				return ""
 			},
@@ -510,6 +510,39 @@ func TestNewIsErr(t *testing.T) {
 				mapper := map[string]method.Desc{
 					"method-1": testLinearStage1Method{},
 					"method-2": testLinearStage2Method{},
+				}
+				s, ok := mapper[address]
+				if !ok {
+					panic(fmt.Sprintf("No such method: %v", address))
+				}
+				return s, nil
+			},
+		},
+		"cycle and online": {
+			input: &PipelineConfig{
+				Name: "Pipeline",
+				Mode: OnlineExecution,
+				Stages: []*StageConfig{
+					{Name: "stage-1", Address: "method-1"},
+					{Name: "stage-3", Address: "method-3"},
+				},
+				Links: []*LinkConfig{
+					{Name: "1-to-3", SourceStage: "stage-1", TargetStage: "stage-3"},
+					{Name: "3-to-1", SourceStage: "stage-3", TargetStage: "stage-1"},
+				},
+			},
+			validateErr: func(err error) string {
+				if !errors.Is(err, errCyclesAndOnline) {
+					format := "error mismatch: expected %s, received %s"
+					return fmt.Sprintf(format, errCyclesAndOnline, err)
+				}
+				return ""
+			},
+			resolver: func(_ context.Context, address string) (method.Desc, error) {
+				mapper := map[string]method.Desc{
+					"method-1": testLinearStage1Method{},
+					// Use method 3 to match method 1 message types
+					"method-3": testLinearStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {

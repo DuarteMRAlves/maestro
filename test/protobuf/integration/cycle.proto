@@ -1,0 +1,38 @@
+// This file defines messages to be used in integration tests for execution with grpc.
+// The pipeline has the following architecture:
+//                |-----------|
+//             /- | Increment | <-\
+//            /   |-----------|    \
+//            \                    /
+//             \----> |-----|     /
+// |--------|         | Sum | ---/
+// | Offset | ------> |-----|
+// |--------|
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/integration";
+
+package integration;
+
+import "google/protobuf/empty.proto";
+
+service CycleCounter {
+  rpc Generate(google.protobuf.Empty) returns (CycleValMessage);
+}
+
+service CycleSum {
+  rpc Sum(CycleSumMessage) returns (CycleValMessage);
+}
+
+service CycleInc {
+  rpc Inc(CycleValMessage) returns (CycleValMessage);
+}
+
+message CycleSumMessage {
+  CycleValMessage inc = 1;
+  CycleValMessage counter = 2;
+}
+
+message CycleValMessage {
+  int64 val = 1;
+}

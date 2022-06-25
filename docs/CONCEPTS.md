@@ -23,3 +23,5 @@ A `Link` specifies a connection between two stages. A Link has:
 * `TargetStage` to identify the stage that is the target of the link. Messages that are transferred through this link are used as input for the rpc method in this stage.
 
 * `TargetField` to specify the field of the input message for `TargetStage` that should be set with the messages transferred with this link. If not specified, the entire message is sent as input to `TargetStage`.
+
+* `NumEmptyMessages` to add empty messages to this link when the pipeline starts. This allows for an initial jump-start for cyclical pipelines.
