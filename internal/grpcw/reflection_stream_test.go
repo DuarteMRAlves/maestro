@@ -2,7 +2,6 @@ package grpcw
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -104,7 +103,7 @@ func TestNoReflection(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
 	}
-	cause, ok := errors.Unwrap(err).(interface {
+	cause, ok := err.(interface {
 		GRPCStatus() *status.Status
 	})
 	if !ok {

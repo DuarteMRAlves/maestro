@@ -6,7 +6,9 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+	"google.golang.org/grpc/status"
 )
 
 type blockingReflectionStream struct {
@@ -42,11 +44,11 @@ func (s *blockingReflectionStream) listServiceNames() ([]string, error) {
 		},
 	}
 	if err := s.stream.Send(req); err != nil {
-		return nil, fmt.Errorf("send list services request: %w", err)
+		return nil, err
 	}
 	rep, err := s.stream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("recv list services response: %w", err)
+		return nil, err
 	}
 
 	switch r := rep.MessageResponse.(type) {
@@ -56,6 +58,8 @@ func (s *blockingReflectionStream) listServiceNames() ([]string, error) {
 			names = append(names, s.Name)
 		}
 		return names, nil
+	case *grpc_reflection_v1alpha.ServerReflectionResponse_ErrorResponse:
+		return nil, status.Error(codes.Code(r.ErrorResponse.ErrorCode), r.ErrorResponse.ErrorMessage)
 	default:
 		return nil, fmt.Errorf("invalid list services response type: %q", r)
 	}
@@ -75,17 +79,19 @@ func (s *blockingReflectionStream) filesForSymbol(symb string) ([][]byte, error)
 	}
 
 	if err := s.stream.Send(req); err != nil {
-		return nil, fmt.Errorf("send find file containing symbol request: %w", err)
+		return nil, err
 	}
 	rep, err := s.stream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("recv find file containing symbol response: %w", err)
+		return nil, err
 	}
 	switch r := rep.MessageResponse.(type) {
 	case *grpc_reflection_v1alpha.ServerReflectionResponse_FileDescriptorResponse:
 		fds := make([][]byte, 0, len(r.FileDescriptorResponse.FileDescriptorProto))
 		fds = append(fds, r.FileDescriptorResponse.FileDescriptorProto...)
 		return fds, nil
+	case *grpc_reflection_v1alpha.ServerReflectionResponse_ErrorResponse:
+		return nil, status.Error(codes.Code(r.ErrorResponse.ErrorCode), r.ErrorResponse.ErrorMessage)
 	default:
 		return nil, fmt.Errorf("invalid find file containing symbol response type: %q", r)
 	}
