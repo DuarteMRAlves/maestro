@@ -1,4 +1,4 @@
-package grpc
+package grpcw
 
 import (
 	"context"
@@ -8,14 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/unit"
-	protocdesc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/google/go-cmp/cmp"
-	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protowire"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func TestReflectionClient_ListServices(t *testing.T) {
@@ -24,7 +25,7 @@ func TestReflectionClient_ListServices(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, true)
+	testServer := startTestResolverServer(t, lis, true)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -69,7 +70,7 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, false)
+	testServer := startTestResolverServer(t, lis, false)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -89,6 +90,7 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected non nil error at listServices")
 	}
+
 	cause, ok := errors.Unwrap(err).(interface {
 		GRPCStatus() *status.Status
 	})
@@ -110,7 +112,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, true)
+	testServer := startTestResolverServer(t, lis, true)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -126,7 +128,11 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	}(conn)
 
 	serviceName := Service("unit.MethodLoaderTestService")
-	m := ReflectionResolver{timeout: 5 * time.Second}
+	var backoff retry.ExponentialBackoff
+	m, err := NewReflectionResolver(5*time.Second, backoff, nil)
+	if err != nil {
+		t.Fatalf("create resolver: %v", err)
+	}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
 		t.Fatalf("resolve service: %s", err)
@@ -134,116 +140,108 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	assertTestService(t, serv)
 }
 
-func assertTestService(t *testing.T, descriptor *desc.ServiceDescriptor) {
-	methods := descriptor.GetMethods()
-	if diff := cmp.Diff(4, len(methods)); diff != "" {
+func assertTestService(t *testing.T, descriptor protoreflect.ServiceDescriptor) {
+	methods := descriptor.Methods()
+	if diff := cmp.Diff(4, methods.Len()); diff != "" {
 		t.Fatalf("number of methods mismatch:\n%s", diff)
 	}
 
-	names := []string{
+	names := []protoreflect.FullName{
 		"unit.MethodLoaderTestService.Unary",
 		"unit.MethodLoaderTestService.ClientStream",
 		"unit.MethodLoaderTestService.ServerStream",
 		"unit.MethodLoaderTestService.BidiStream",
 	}
-	for _, m := range methods {
+	for i := 0; i < methods.Len(); i++ {
+		m := methods.Get(i)
 		foundName := false
 		for _, n := range names {
-			if n == m.GetFullyQualifiedName() {
+			if n == m.FullName() {
 				foundName = true
 			}
 		}
 		if !foundName {
-			t.Fatalf("unknown method name '%v'", m.GetFullyQualifiedName())
+			t.Fatalf("unknown method name '%v'", m.FullName())
 		}
-		assertRequestType(t, m.GetInputType())
-		assertReplyType(t, m.GetOutputType())
+		assertRequestType(t, m.Input())
+		assertReplyType(t, m.Output())
 	}
 }
 
-func assertRequestType(t *testing.T, descriptor *desc.MessageDescriptor) {
-	stringField := descriptor.FindFieldByName("stringField")
-	if diff := cmp.Diff(int32(1), stringField.GetNumber()); diff != "" {
+func assertRequestType(t *testing.T, descriptor protoreflect.MessageDescriptor) {
+	fields := descriptor.Fields()
+	stringField := fields.ByName("stringField")
+	if diff := cmp.Diff(protowire.Number(1), stringField.Number()); diff != "" {
 		t.Fatalf("stringField number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_STRING, stringField.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.StringKind, stringField.Kind()); diff != "" {
 		t.Fatalf("stringField type mismatch:\n%s", diff)
 	}
 
-	repeatedField := descriptor.FindFieldByName("repeatedField")
-	if diff := cmp.Diff(int32(2), repeatedField.GetNumber()); diff != "" {
+	repeatedField := fields.ByName("repeatedField")
+	if diff := cmp.Diff(protowire.Number(2), repeatedField.Number()); diff != "" {
 		t.Fatalf("repeatedField number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_INT64, repeatedField.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.Int64Kind, repeatedField.Kind()); diff != "" {
 		t.Fatalf("repeatedField type mismatch:\n%s", diff)
 	}
-	if !repeatedField.IsRepeated() {
-		t.Fatalf("repeatedField is not repeated")
+	if diff := cmp.Diff(protoreflect.Repeated, repeatedField.Cardinality()); diff != "" {
+		t.Fatalf("repeatedField cardinality mismatch:\n%s", diff)
 	}
 
-	repeatedInnerMsg := descriptor.FindFieldByName("repeatedInnerMsg")
-	if diff := cmp.Diff(int32(3), repeatedInnerMsg.GetNumber()); diff != "" {
+	repeatedInnerMsg := fields.ByName("repeatedInnerMsg")
+	if diff := cmp.Diff(protowire.Number(3), repeatedInnerMsg.Number()); diff != "" {
 		t.Fatalf("repeatedInnerMsg number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE, repeatedInnerMsg.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.MessageKind, repeatedInnerMsg.Kind()); diff != "" {
 		t.Fatalf("repeatedInnerMsg type mismatch:\n%s", diff)
 	}
-	if !repeatedInnerMsg.IsRepeated() {
-		t.Fatalf("repeatedInnerMsg is not repeated")
+	if diff := cmp.Diff(protoreflect.Repeated, repeatedInnerMsg.Cardinality()); diff != "" {
+		t.Fatalf("repeatedInnerMsg cardinality mismatch:\n%s", diff)
 	}
 
-	innerType := repeatedInnerMsg.GetMessageType()
+	innerType := repeatedInnerMsg.Message()
 	if innerType == nil {
 		t.Fatalf("inner type is nil")
 	}
 	assertInnerMessageType(t, innerType)
 }
 
-func assertReplyType(t *testing.T, descriptor *desc.MessageDescriptor) {
-	doubleField := descriptor.FindFieldByName("doubleField")
-	if diff := cmp.Diff(int32(1), doubleField.GetNumber()); diff != "" {
+func assertReplyType(t *testing.T, descriptor protoreflect.MessageDescriptor) {
+	fields := descriptor.Fields()
+	doubleField := fields.ByName("doubleField")
+	if diff := cmp.Diff(protowire.Number(1), doubleField.Number()); diff != "" {
 		t.Fatalf("doubleField number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_DOUBLE, doubleField.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.DoubleKind, doubleField.Kind()); diff != "" {
 		t.Fatalf("doubleField type mismatch:\n%s", diff)
 	}
 
-	innerMsg := descriptor.FindFieldByName("innerMsg")
-	if diff := cmp.Diff(int32(2), innerMsg.GetNumber()); diff != "" {
+	innerMsg := fields.ByName("innerMsg")
+	if diff := cmp.Diff(protowire.Number(2), innerMsg.Number()); diff != "" {
 		t.Fatalf("innerMsg number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_MESSAGE, innerMsg.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.MessageKind, innerMsg.Kind()); diff != "" {
 		t.Fatalf("innerMsg type mismatch:\n%s", diff)
 	}
-	innerType := innerMsg.GetMessageType()
+	innerType := innerMsg.Message()
 	if innerType == nil {
 		t.Fatalf("inner type is nil")
 	}
 	assertInnerMessageType(t, innerType)
 }
 
-func assertInnerMessageType(t *testing.T, descriptor *desc.MessageDescriptor) {
-	repeatedString := descriptor.FindFieldByName("repeatedString")
-	if diff := cmp.Diff(int32(1), repeatedString.GetNumber()); diff != "" {
+func assertInnerMessageType(t *testing.T, descriptor protoreflect.MessageDescriptor) {
+	fields := descriptor.Fields()
+	repeatedString := fields.ByName("repeatedString")
+	if diff := cmp.Diff(protowire.Number(1), repeatedString.Number()); diff != "" {
 		t.Fatalf("repeatedString number mismatch:\n%s", diff)
 	}
-	if diff := cmp.Diff(
-		protocdesc.FieldDescriptorProto_TYPE_STRING, repeatedString.GetType(),
-	); diff != "" {
+	if diff := cmp.Diff(protoreflect.StringKind, repeatedString.Kind()); diff != "" {
 		t.Fatalf("repeatedString type mismatch:\n%s", diff)
 	}
-	if !repeatedString.IsRepeated() {
-		t.Fatalf("repeatedString is not repeated")
+	if diff := cmp.Diff(protoreflect.Repeated, repeatedString.Cardinality()); diff != "" {
+		t.Fatalf("repeatedString cardinality mismatch:\n%s", diff)
 	}
 }
 
@@ -253,7 +251,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, false)
+	testServer := startTestResolverServer(t, lis, false)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -295,7 +293,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, true)
+	testServer := startTestResolverServer(t, lis, true)
 	defer testServer.GracefulStop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -336,24 +334,24 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	}
 }
 
-type testService struct {
+type testResolverService struct {
 	unit.UnimplementedMethodLoaderTestServiceServer
 }
 
-func (s *testService) Unary(
+func (s *testResolverService) Unary(
 	_ context.Context,
 	_ *unit.MethodLoaderRequest,
 ) (*unit.MethodLoaderReply, error) {
 	panic("Not implemented should not be called.")
 }
 
-func startServer(
+func startTestResolverServer(
 	t *testing.T,
 	lis net.Listener,
 	reflectionFlag bool,
 ) *grpc.Server {
 	testServer := grpc.NewServer()
-	unit.RegisterMethodLoaderTestServiceServer(testServer, &testService{})
+	unit.RegisterMethodLoaderTestServiceServer(testServer, &testResolverService{})
 
 	if reflectionFlag {
 		reflection.Register(testServer)

@@ -1,4 +1,4 @@
-package grpc
+package grpcw
 
 import (
 	"context"
@@ -59,14 +59,11 @@ func TestUnaryClient_Invoke(t *testing.T) {
 	testServer := testMethodStartServer(t, lis)
 	defer testServer.Stop()
 
-	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	if err != nil {
-		t.Fatalf("create input message descriptor: %s", err)
-	}
-	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	if err != nil {
-		t.Fatalf("create output message descriptor: %s", err)
-	}
+	inMsg := &unit.TestMethodRequest{}
+	inDesc := messageType{t: inMsg.ProtoReflect().Type()}
+
+	outMsg := &unit.TestMethodReply{}
+	outDesc := messageType{t: outMsg.ProtoReflect().Type()}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
 	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
@@ -81,10 +78,7 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		}
 	}()
 
-	req, err := newMessage(correctRequest)
-	if err != nil {
-		t.Fatalf("create request: %s", err)
-	}
+	req := messageInstance{m: correctRequest.ProtoReflect()}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -93,22 +87,21 @@ func TestUnaryClient_Invoke(t *testing.T) {
 		t.Fatalf("call method: %s", err)
 	}
 
-	grpcMsg, ok := reply.(*messageInstance)
+	msg, ok := reply.(messageInstance)
 	if !ok {
 		t.Fatalf("cast reply to grpcMsg")
 	}
 
-	pbReply := &unit.TestMethodReply{}
-	err = grpcMsg.dynMsg.ConvertTo(pbReply)
-	if err != nil {
-		t.Fatalf("convert grpcMsg to pbReply: %s", err)
+	pbMsg, ok := msg.m.Interface().(*unit.TestMethodReply)
+	if !ok {
+		t.Fatalf("cast reflect message to proto message")
 	}
 
 	cmpOpts := cmpopts.IgnoreUnexported(
 		unit.TestMethodReply{},
 		unit.TestMethodInnerMessage{},
 	)
-	if diff := cmp.Diff(expectedReply, pbReply, cmpOpts); diff != "" {
+	if diff := cmp.Diff(expectedReply, pbMsg, cmpOpts); diff != "" {
 		t.Fatalf("reply mismatch:\n%s", diff)
 	}
 }
@@ -122,14 +115,11 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 	testServer := testMethodStartServer(t, lis)
 	defer testServer.Stop()
 
-	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	if err != nil {
-		t.Fatalf("create input message descriptor: %s", err)
-	}
-	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	if err != nil {
-		t.Fatalf("create input output descriptor: %s", err)
-	}
+	inMsg := &unit.TestMethodRequest{}
+	inDesc := messageType{t: inMsg.ProtoReflect().Type()}
+
+	outMsg := &unit.TestMethodReply{}
+	outDesc := messageType{t: outMsg.ProtoReflect().Type()}
 
 	methodName := "unit.TestMethodService/CorrectMethod"
 	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
@@ -144,10 +134,7 @@ func TestUnaryClient_Invoke_ErrorReturned(t *testing.T) {
 		}
 	}()
 
-	req, err := newMessage(errorRequest)
-	if err != nil {
-		t.Fatalf("create request: %s", err)
-	}
+	req := messageInstance{m: errorRequest.ProtoReflect()}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -176,17 +163,14 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startServer(t, lis, false)
+	testServer := testMethodStartServer(t, lis)
 	defer testServer.Stop()
 
-	inDesc, err := newMessageDescriptor(&unit.TestMethodRequest{})
-	if err != nil {
-		t.Fatalf("create input input descriptor: %s", err)
-	}
-	outDesc, err := newMessageDescriptor(&unit.TestMethodReply{})
-	if err != nil {
-		t.Fatalf("create input output descriptor: %s", err)
-	}
+	inMsg := &unit.TestMethodRequest{}
+	inDesc := messageType{t: inMsg.ProtoReflect().Type()}
+
+	outMsg := &unit.TestMethodReply{}
+	outDesc := messageType{t: outMsg.ProtoReflect().Type()}
 
 	methodName := "unit.TestMethodService/UnimplementedMethod"
 	method := newUnaryMethod(addr, methodName, inDesc, outDesc)
@@ -201,10 +185,7 @@ func TestUnaryClient_Invoke_MethodUnimplemented(t *testing.T) {
 		}
 	}()
 
-	req, err := newMessage(errorRequest)
-	if err != nil {
-		t.Fatalf("create request: %s", err)
-	}
+	req := messageInstance{m: correctRequest.ProtoReflect()}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

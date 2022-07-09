@@ -1,4 +1,4 @@
-package grpc
+package grpcw
 
 import (
 	"context"
@@ -9,18 +9,23 @@ import (
 
 	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	gr "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
 
 var (
-	ErrMalFormedAddress = errors.New("malformed address")
+	errMalFormedAddress = errors.New("malformed address")
+	errNotOneService    = errors.New("expected 1 available service")
+	errNotOneMethod     = errors.New("expected 1 available method")
 )
 
 type Logger interface {
@@ -32,17 +37,25 @@ type ReflectionResolver struct {
 	timeout    time.Duration
 	expBackoff retry.ExponentialBackoff
 
+	registry *protoregistry.Files
+
 	logger Logger
 }
 
-func NewReflectionMethodLoader(
+func NewReflectionResolver(
 	timeout time.Duration, backoff retry.ExponentialBackoff, logger Logger,
-) *ReflectionResolver {
-	return &ReflectionResolver{
+) (*ReflectionResolver, error) {
+	var registry protoregistry.Files
+	if err := registry.RegisterFile(emptypb.File_google_protobuf_empty_proto); err != nil {
+		return nil, err
+	}
+	r := &ReflectionResolver{
 		timeout:    timeout,
 		expBackoff: backoff,
+		registry:   &registry,
 		logger:     logger,
 	}
+	return r, nil
 }
 
 func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (method.Desc, error) {
@@ -73,7 +86,7 @@ func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (metho
 	if err != nil {
 		return nil, err
 	}
-	method, err := findMethod(serviceDesc.GetMethods(), addr.Method())
+	method, err := findMethod(serviceDesc.Methods(), addr.Method())
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +110,7 @@ func (r *ReflectionResolver) parseAddress(address string) (addr, error) {
 		addr.service = Service(splits[1])
 		addr.method = Method(splits[2])
 	default:
-		return addr, ErrMalFormedAddress
+		return addr, errMalFormedAddress
 	}
 	return addr, nil
 }
@@ -107,19 +120,20 @@ func (m *ReflectionResolver) listServices(
 ) ([]Service, error) {
 	var (
 		all []string
-		err error
+		st  *status.Status
 	)
-	stub := gr.NewServerReflectionClient(conn)
-	c := grpcreflect.NewClient(ctx, stub)
+	stream, err := newBlockingReflectionStream(ctx, conn)
+	if err != nil {
+		return nil, err
+	}
 
 	retry.WhileTrue(func() bool {
-		all, err = c.ListServices()
-		st, _ := status.FromError(err)
-		err = st.Err()
+		all, err = stream.listServiceNames()
+		st, _ = status.FromError(err)
 		return st.Code() == codes.Unavailable
 	}, &m.expBackoff)
 	if err != nil {
-		return nil, fmt.Errorf("list services: %w", err)
+		return nil, fmt.Errorf("list services: %w", st.Err())
 	}
 	// Filter the reflection service
 	services := make([]Service, 0, len(all)-1)
@@ -136,7 +150,7 @@ func findService(available []Service, search Service) (Service, error) {
 		if len(available) == 1 {
 			return available[0], nil
 		}
-		return "", notOneService
+		return "", errNotOneService
 	} else {
 		for _, s := range available {
 			if search == s {
@@ -149,72 +163,85 @@ func findService(available []Service, search Service) (Service, error) {
 
 func (m *ReflectionResolver) resolveService(
 	ctx context.Context, conn grpc.ClientConnInterface, service Service,
-) (*desc.ServiceDescriptor, error) {
+) (protoreflect.ServiceDescriptor, error) {
 	var (
-		descriptor *desc.ServiceDescriptor
-		err        error
+		data [][]byte
+		st   *status.Status
 	)
-	stub := gr.NewServerReflectionClient(conn)
-	c := grpcreflect.NewClient(ctx, stub)
+	stream, err := newBlockingReflectionStream(ctx, conn)
+	if err != nil {
+		return nil, err
+	}
 
 	retry.WhileTrue(func() bool {
-		descriptor, err = c.ResolveService(string(service))
-		st, _ := status.FromError(err)
+		data, err = stream.filesForSymbol(string(service))
+		st, _ = status.FromError(err)
 		return st.Code() == codes.Unavailable
 	}, &m.expBackoff)
-
 	if err != nil {
-		switch {
-		case isGrpcErr(err):
-			st, _ := status.FromError(err)
-			err := st.Err()
-			err = fmt.Errorf("resolve service %s: %w", service, err)
-			return nil, err
-		case isElementNotFoundErr(err):
-			err := &serviceNotFound{srv: string(service)}
-			return nil, fmt.Errorf("resolve service: %w", err)
-		case isProtocolError(err):
-			err := fmt.Errorf("resolve service %s: %w", service, err)
-			return nil, err
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, &serviceNotFound{srv: string(service)}
 		default:
-			// Should never happen as all errors should be caught by one
-			// of the above options
-			err := fmt.Errorf("resolve service %s: %w", service, err)
-			return nil, err
+			return nil, fmt.Errorf("resolve service %s: %w", service, st.Err())
 		}
 	}
-	return descriptor, nil
+	if err := m.registerFiles(data); err != nil {
+		return nil, fmt.Errorf("resolve service %s: %w", service, err)
+	}
+	d, err := m.registry.FindDescriptorByName(protoreflect.FullName(service))
+	if err != nil {
+		return nil, err
+	}
+	desc, ok := d.(protoreflect.ServiceDescriptor)
+	if !ok {
+		return nil, &notService{symb: string(service)}
+	}
+	return desc, nil
 }
 
-func isGrpcErr(err error) bool {
-	_, ok := status.FromError(err)
-	return ok
-}
-
-func isElementNotFoundErr(err error) bool {
-	return grpcreflect.IsElementNotFoundError(err)
-}
-
-func isProtocolError(err error) bool {
-	_, ok := err.(*grpcreflect.ProtocolError)
-	return ok
+func (m *ReflectionResolver) registerFiles(data [][]byte) error {
+	for _, buf := range data {
+		var descPb descriptorpb.FileDescriptorProto
+		if err := proto.Unmarshal(buf, &descPb); err != nil {
+			return err
+		}
+		desc, err := protodesc.NewFile(&descPb, m.registry)
+		if err != nil {
+			return err
+		}
+		alreadyExists := false
+		m.registry.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
+			if fd.FullName() == desc.FullName() {
+				alreadyExists = true
+				return false
+			}
+			return true
+		})
+		if alreadyExists {
+			continue
+		}
+		if err := m.registry.RegisterFile(desc); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func findMethod(
-	available []*desc.MethodDescriptor, search Method,
-) (*desc.MethodDescriptor, error) {
+	available protoreflect.MethodDescriptors, search Method,
+) (protoreflect.MethodDescriptor, error) {
 	if search.IsUnspecified() {
-		if len(available) == 1 {
-			return available[0], nil
+		if available.Len() == 1 {
+			return available.Get(0), nil
 		}
-		return nil, notOneMethod
+		return nil, errNotOneMethod
 	} else {
-		for _, m := range available {
-			if string(search) == m.GetName() {
-				return m, nil
-			}
+		m := available.ByName(protoreflect.Name(search))
+		if m == nil {
+			return nil, &methodNotFound{meth: string(search)}
 		}
-		return nil, &methodNotFound{meth: string(search)}
+		return m, nil
 	}
 }
 
@@ -283,4 +310,32 @@ func (m Method) String() string {
 		return "*"
 	}
 	return string(m)
+}
+
+type serviceNotFound struct {
+	srv string
+}
+
+func (err *serviceNotFound) NotFound() {}
+
+func (err *serviceNotFound) Error() string {
+	return fmt.Sprintf("service not found: %s", err.srv)
+}
+
+type notService struct {
+	symb string
+}
+
+func (err *notService) Error() string {
+	return fmt.Sprintf("symbol not a service: %q", err.symb)
+}
+
+type methodNotFound struct {
+	meth string
+}
+
+func (err *methodNotFound) NotFound() {}
+
+func (err *methodNotFound) Error() string {
+	return fmt.Sprintf("method not found: %s", err.meth)
 }

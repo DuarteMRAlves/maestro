@@ -11,7 +11,7 @@ import (
 
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
-	igrpc "github.com/DuarteMRAlves/maestro/internal/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/grpcw"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/test/protobuf/integration"
@@ -94,8 +94,11 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 		},
 	}
 
-	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
-	compilationCtx := compiled.NewContext(methodLoader)
+	resolver, err := grpcw.NewReflectionResolver(5*time.Minute, backoff, logs.New(true))
+	if err != nil {
+		t.Fatalf("create resolver: %v", err)
+	}
+	compilationCtx := compiled.NewContext(resolver)
 	pipeline, err := compiled.New(compilationCtx, cfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)
@@ -211,8 +214,11 @@ func TestOnlineSplitAndMerge(t *testing.T) {
 		},
 	}
 
-	methodLoader := igrpc.NewReflectionMethodLoader(5*time.Minute, backoff, logs.New(true))
-	compilationCtx := compiled.NewContext(methodLoader)
+	resolver, err := grpcw.NewReflectionResolver(5*time.Minute, backoff, logs.New(true))
+	if err != nil {
+		t.Fatalf("create resolver: %v", err)
+	}
+	compilationCtx := compiled.NewContext(resolver)
 	pipeline, err := compiled.New(compilationCtx, cfg)
 	if err != nil {
 		t.Fatalf("compile error: %s", err)

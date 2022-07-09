@@ -3,9 +3,7 @@ module github.com/DuarteMRAlves/maestro
 go 1.18
 
 require (
-	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.6
-	github.com/jhump/protoreflect v1.10.1
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.42.0
@@ -14,7 +12,9 @@ require (
 )
 
 require (
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect

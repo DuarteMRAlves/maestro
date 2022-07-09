@@ -1,14 +1,20 @@
-package grpc
+package grpcw
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/internal/method"
-	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
+)
+
+var (
+	errNotGrpcMessage = errors.New("message is not grpc")
 )
 
 type unaryMethod struct {
@@ -41,10 +47,10 @@ func newUnaryMethod(
 	}
 }
 
-func newUnaryMethodFromDescriptor(desc *desc.MethodDescriptor, address string) unaryMethod {
+func newUnaryMethodFromDescriptor(desc protoreflect.MethodDescriptor, address string) unaryMethod {
 	invokePath := methodInvokePath(desc)
-	input := messageType{desc: desc.GetInputType()}
-	output := messageType{desc: desc.GetOutputType()}
+	input := messageType{t: dynamicpb.NewMessageType(desc.Input())}
+	output := messageType{t: dynamicpb.NewMessageType(desc.Output())}
 
 	return newUnaryMethod(address, invokePath, input, output)
 }
@@ -67,11 +73,11 @@ func newDialFunc(
 	}
 }
 
-func methodInvokePath(desc *desc.MethodDescriptor) string {
+func methodInvokePath(desc protoreflect.MethodDescriptor) string {
 	return fmt.Sprintf(
 		"/%s/%s",
-		desc.GetService().GetFullyQualifiedName(),
-		desc.GetName(),
+		desc.FullName().Parent(),
+		desc.FullName().Name(),
 	)
 }
 
@@ -87,21 +93,21 @@ func (c unaryClient) Call(
 ) (message.Instance, error) {
 	rep := c.buildFunc()
 
-	grpcReq, ok := req.(*messageInstance)
+	reqInst, ok := req.(messageInstance)
 	if !ok {
-		return nil, notGrpcMessage
+		return nil, errNotGrpcMessage
 	}
-	grpcRep, ok := rep.(*messageInstance)
+	repInst, ok := rep.(messageInstance)
 	if !ok {
-		return nil, notGrpcMessage
+		return nil, errNotGrpcMessage
 	}
 
-	err := c.conn.Invoke(ctx, c.invokePath, grpcReq.dynMsg, grpcRep.dynMsg)
+	err := c.conn.Invoke(ctx, c.invokePath, reqInst.m.Interface(), repInst.m.Interface())
 	if err != nil {
 		st, _ := status.FromError(err)
 		return nil, fmt.Errorf("invoke %s: %w", c.invokePath, st.Err())
 	}
-	return grpcRep, nil
+	return repInst, nil
 }
 
 func (c unaryClient) Close() error {
