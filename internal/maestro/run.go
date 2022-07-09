@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/arrays"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpcw"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
 )
@@ -108,7 +108,7 @@ func (opts *RunOpts) validate() error {
 
 func (opts *RunOpts) run() error {
 	var (
-		pipelineSpec *spec.Pipeline
+		pipelineSpec *api.Pipeline
 		pipelineCfg  compiled.PipelineConfig
 		err          error
 		backoff      retry.ExponentialBackoff
@@ -121,7 +121,7 @@ func (opts *RunOpts) run() error {
 			return err
 		}
 	case v1:
-		var pipelines []*spec.Pipeline
+		var pipelines []*api.Pipeline
 		opts.logger.Debugf("read v1 from files %s", opts.files)
 		pipelines, err = yaml.ReadV1(opts.files...)
 		if err != nil {
@@ -172,9 +172,9 @@ func (opts *RunOpts) run() error {
 	return err
 }
 
-func (opts *RunOpts) pipelineToRun(available ...*spec.Pipeline) (*spec.Pipeline, error) {
+func (opts *RunOpts) pipelineToRun(available ...*api.Pipeline) (*api.Pipeline, error) {
 	if opts.pipelineName != "" {
-		pred := func(v *spec.Pipeline) bool {
+		pred := func(v *api.Pipeline) bool {
 			return v.Name == opts.pipelineName
 		}
 		available = arrays.Filter(pred, available...)
@@ -192,7 +192,7 @@ func (opts *RunOpts) pipelineToRun(available ...*spec.Pipeline) (*spec.Pipeline,
 		return available[0], nil
 	default:
 		names := arrays.Map(
-			func(o *spec.Pipeline) string { return o.Name },
+			func(o *api.Pipeline) string { return o.Name },
 			available...,
 		)
 		err := fmt.Errorf("only one pipeline can be executed but found %s", names)
@@ -200,12 +200,12 @@ func (opts *RunOpts) pipelineToRun(available ...*spec.Pipeline) (*spec.Pipeline,
 	}
 }
 
-func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *spec.Pipeline) error {
+func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *api.Pipeline) error {
 	pCfg.Name = pSpec.Name
 	switch m := pSpec.Mode; m {
-	case spec.OfflineExecution:
+	case api.OfflineExecution:
 		pCfg.Mode = compiled.OfflineExecution
-	case spec.OnlineExecution:
+	case api.OnlineExecution:
 		pCfg.Mode = compiled.OnlineExecution
 	default:
 		return fmt.Errorf("unknown execution mode: %s", m)
@@ -223,7 +223,7 @@ func (opts *RunOpts) specToCfg(pCfg *compiled.PipelineConfig, pSpec *spec.Pipeli
 	return nil
 }
 
-func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *spec.Stage) {
+func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *api.Stage) {
 	cfg.Name = sSpec.Name
 	addrParts := []string{
 		sSpec.MethodContext.Address, sSpec.MethodContext.Service, sSpec.MethodContext.Method,
@@ -231,7 +231,7 @@ func (opts *RunOpts) stageSpecToCfg(cfg *compiled.StageConfig, sSpec *spec.Stage
 	cfg.Address = strings.Join(addrParts, "/")
 }
 
-func (opts *RunOpts) linkSpecToCfg(cfg *compiled.LinkConfig, lSpec *spec.Link) {
+func (opts *RunOpts) linkSpecToCfg(cfg *compiled.LinkConfig, lSpec *api.Link) {
 	cfg.Name = lSpec.Name
 	cfg.SourceStage = lSpec.SourceStage
 	cfg.SourceField = lSpec.SourceField

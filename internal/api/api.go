@@ -1,4 +1,4 @@
-package spec
+package api
 
 // Pipeline specifies the schema of a pipeline to be orchestrated.
 type Pipeline struct {

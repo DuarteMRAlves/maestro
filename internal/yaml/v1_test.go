@@ -6,29 +6,29 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadV1(t *testing.T) {
 	tests := map[string]struct {
 		files    []string
-		expected []*spec.Pipeline
+		expected []*api.Pipeline
 	}{
 		"single file": {
 			files: []string{"../../test/data/unit/read/v1/read_single_file.yml"},
-			expected: []*spec.Pipeline{
+			expected: []*api.Pipeline{
 				{
 					Name: "pipeline-2",
-					Mode: spec.OfflineExecution,
+					Mode: api.OfflineExecution,
 				},
 				{
 					Name: "pipeline-1",
-					Mode: spec.OnlineExecution,
-					Stages: []*spec.Stage{
+					Mode: api.OnlineExecution,
+					Stages: []*api.Stage{
 						{
 							Name: "stage-1",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-1",
 								Service: "Service1",
 								Method:  "Method1",
@@ -36,20 +36,20 @@ func TestReadV1(t *testing.T) {
 						},
 						{
 							Name: "stage-2",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-2",
 								Service: "Service2",
 							},
 						},
 						{
 							Name: "stage-3",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-3",
 								Method:  "Method3",
 							},
 						},
 					},
-					Links: []*spec.Link{
+					Links: []*api.Link{
 						{
 							Name:             "link-stage-2-stage-1",
 							SourceStage:      "stage-2",
@@ -73,28 +73,28 @@ func TestReadV1(t *testing.T) {
 				"../../test/data/unit/read/v1/multi_file2.yml",
 				"../../test/data/unit/read/v1/multi_file3.yml",
 			},
-			expected: []*spec.Pipeline{
+			expected: []*api.Pipeline{
 				{
 					Name: "pipeline-3",
-					Mode: spec.OfflineExecution,
-					Stages: []*spec.Stage{
+					Mode: api.OfflineExecution,
+					Stages: []*api.Stage{
 						{
 							Name: "stage-5",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-5",
 								Method:  "Method5",
 							},
 						},
 						{
 							Name: "stage-6",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-6",
 								Service: "Service6",
 								Method:  "Method6",
 							},
 						},
 					},
-					Links: []*spec.Link{
+					Links: []*api.Link{
 						{
 							Name:        "link-stage-5-stage-6",
 							SourceStage: "stage-5",
@@ -105,23 +105,23 @@ func TestReadV1(t *testing.T) {
 				},
 				{
 					Name: "pipeline-4",
-					Mode: spec.OfflineExecution,
-					Stages: []*spec.Stage{
+					Mode: api.OfflineExecution,
+					Stages: []*api.Stage{
 						{
 							Name: "stage-4",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-4",
 							},
 						},
 						{
 							Name: "stage-7",
-							MethodContext: spec.MethodContext{
+							MethodContext: api.MethodContext{
 								Address: "address-7",
 								Service: "Service7",
 							},
 						},
 					},
-					Links: []*spec.Link{
+					Links: []*api.Link{
 						{
 							Name:        "link-stage-4-stage-5",
 							SourceStage: "stage-4",
@@ -232,13 +232,13 @@ func TestReadV1_Err(t *testing.T) {
 }
 
 func TestWriteV1(t *testing.T) {
-	pipeline := spec.Pipeline{
+	pipeline := api.Pipeline{
 		Name: "pipeline-1",
-		Mode: spec.OnlineExecution,
-		Stages: []*spec.Stage{
+		Mode: api.OnlineExecution,
+		Stages: []*api.Stage{
 			{
 				Name: "stage-1",
-				MethodContext: spec.MethodContext{
+				MethodContext: api.MethodContext{
 					Address: "address-1",
 					Service: "Service1",
 					Method:  "Method1",
@@ -246,20 +246,20 @@ func TestWriteV1(t *testing.T) {
 			},
 			{
 				Name: "stage-2",
-				MethodContext: spec.MethodContext{
+				MethodContext: api.MethodContext{
 					Address: "address-2",
 					Service: "Service2",
 				},
 			},
 			{
 				Name: "stage-3",
-				MethodContext: spec.MethodContext{
+				MethodContext: api.MethodContext{
 					Address: "address-3",
 					Method:  "Method3",
 				},
 			},
 		},
-		Links: []*spec.Link{
+		Links: []*api.Link{
 			{
 				Name:             "link-stage-2-stage-1",
 				SourceStage:      "stage-2",
