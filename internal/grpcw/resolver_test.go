@@ -129,7 +129,10 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 
 	serviceName := Service("unit.MethodLoaderTestService")
 	var backoff retry.ExponentialBackoff
-	m := NewReflectionResolver(5*time.Second, backoff, nil)
+	m, err := NewReflectionResolver(5*time.Second, backoff, nil)
+	if err != nil {
+		t.Fatalf("create resolver: %v", err)
+	}
 	serv, err := m.resolveService(ctx, conn, serviceName)
 	if err != nil {
 		t.Fatalf("resolve service: %s", err)

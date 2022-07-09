@@ -13,7 +13,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/arrays"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
-	"github.com/DuarteMRAlves/maestro/internal/grpc"
+	"github.com/DuarteMRAlves/maestro/internal/grpcw"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/internal/spec"
@@ -138,7 +138,10 @@ func (opts *RunOpts) run() error {
 		)
 	}
 
-	r := grpc.NewReflectionMethodLoader(time.Minute, backoff, opts.logger)
+	r, err := grpcw.NewReflectionResolver(time.Minute, backoff, opts.logger)
+	if err != nil {
+		return err
+	}
 	if err := opts.specToCfg(&pipelineCfg, pipelineSpec); err != nil {
 		return fmt.Errorf("build config from spec: %w", err)
 	}

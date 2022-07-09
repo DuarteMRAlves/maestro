@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const reflectionServiceName = "grpc.reflection.v1alpha.ServerReflection"
@@ -43,13 +44,18 @@ type ReflectionResolver struct {
 
 func NewReflectionResolver(
 	timeout time.Duration, backoff retry.ExponentialBackoff, logger Logger,
-) *ReflectionResolver {
-	return &ReflectionResolver{
+) (*ReflectionResolver, error) {
+	var registry protoregistry.Files
+	if err := registry.RegisterFile(emptypb.File_google_protobuf_empty_proto); err != nil {
+		return nil, err
+	}
+	r := &ReflectionResolver{
 		timeout:    timeout,
 		expBackoff: backoff,
-		registry:   &protoregistry.Files{},
+		registry:   &registry,
 		logger:     logger,
 	}
+	return r, nil
 }
 
 func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (method.Desc, error) {
@@ -200,10 +206,20 @@ func (m *ReflectionResolver) registerFiles(data [][]byte) error {
 		if err := proto.Unmarshal(buf, &descPb); err != nil {
 			return err
 		}
-		fmt.Println(descPb)
 		desc, err := protodesc.NewFile(&descPb, m.registry)
 		if err != nil {
 			return err
+		}
+		alreadyExists := false
+		m.registry.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
+			if fd.FullName() == desc.FullName() {
+				alreadyExists = true
+				return false
+			}
+			return true
+		})
+		if alreadyExists {
+			continue
 		}
 		if err := m.registry.RegisterFile(desc); err != nil {
 			return err
