@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -16,40 +16,32 @@ func TestReadV0(t *testing.T) {
 		t.Fatalf("read error: %s", err)
 	}
 
-	expected := &spec.Pipeline{
+	expected := &api.Pipeline{
 		Name: "v0-pipeline",
-		Mode: spec.OnlineExecution,
-		Stages: []*spec.Stage{
+		Mode: api.OnlineExecution,
+		Stages: []*api.Stage{
 			{
-				Name: "stage-1",
-				MethodContext: spec.MethodContext{
-					Address: "host-1:1",
-				},
+				Name:    "stage-1",
+				Address: "host-1:1",
 			},
 			{
-				Name: "stage-2",
-				MethodContext: spec.MethodContext{
-					Address: "host-2:2",
-					Service: "Service2",
-				},
+				Name:    "stage-2",
+				Address: "host-2:2",
+				Service: "Service2",
 			},
 			{
-				Name: "stage-3",
-				MethodContext: spec.MethodContext{
-					Address: "host-3:3",
-					Method:  "Method3",
-				},
+				Name:    "stage-3",
+				Address: "host-3:3",
+				Method:  "Method3",
 			},
 			{
-				Name: "stage-4",
-				MethodContext: spec.MethodContext{
-					Address: "host-4:4",
-					Service: "Service4",
-					Method:  "Method4",
-				},
+				Name:    "stage-4",
+				Address: "host-4:4",
+				Service: "Service4",
+				Method:  "Method4",
 			},
 		},
-		Links: []*spec.Link{
+		Links: []*api.Link{
 			{
 				Name:        "v0-link-stage-1-to-stage-2",
 				SourceStage: "stage-1",

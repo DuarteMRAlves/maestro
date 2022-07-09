@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/internal/method"
 )
@@ -64,7 +65,7 @@ func (err *incompatibleMessageDesc) Error() string {
 }
 
 // New compiles a Pipeline from its specification.
-func New(ctx Context, cfg *PipelineConfig) (*Pipeline, error) {
+func New(ctx Context, cfg *api.Pipeline) (*Pipeline, error) {
 	name, err := compileName(cfg.Name)
 	if err != nil {
 		return nil, err
@@ -105,13 +106,18 @@ func New(ctx Context, cfg *PipelineConfig) (*Pipeline, error) {
 
 	augmentedGraph := augmentedGraphFromCondensed(condensedGraph)
 
-	if cfg.Mode == OnlineExecution && hasLoops(augmentedGraph) {
+	if cfg.Mode == api.OnlineExecution && hasLoops(augmentedGraph) {
 		return nil, errCyclesAndOnline
+	}
+
+	m, err := modeFromApi(cfg.Mode)
+	if err != nil {
+		return nil, err
 	}
 
 	p := &Pipeline{
 		name:   name,
-		mode:   cfg.Mode,
+		mode:   m,
 		stages: augmentedGraph,
 	}
 	return p, nil
@@ -128,7 +134,7 @@ func compileName(name string) (PipelineName, error) {
 	return pipelineName, nil
 }
 
-func compileStage(ctx Context, cfg *StageConfig) (*Stage, error) {
+func compileStage(ctx Context, cfg *api.Stage) (*Stage, error) {
 	name, err := compileStageName(cfg.Name)
 	if err != nil {
 		return nil, err
@@ -159,7 +165,7 @@ func compileStageName(name string) (StageName, error) {
 	return stageName, nil
 }
 
-func compileLink(cfg *LinkConfig) (*Link, error) {
+func compileLink(cfg *api.Link) (*Link, error) {
 	name, err := compileLinkName(cfg.Name)
 	if err != nil {
 		return nil, err

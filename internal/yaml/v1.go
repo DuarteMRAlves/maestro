@@ -8,8 +8,8 @@ import (
 	"io/fs"
 	"io/ioutil"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/arrays"
-	"github.com/DuarteMRAlves/maestro/internal/spec"
 	"gopkg.in/yaml.v2"
 )
 
@@ -34,8 +34,8 @@ func (err *unknownKind) Error() string {
 
 // ReadV1 reads a set of files in the Maestro V1 format and returns the
 // discovered resources.
-func ReadV1(files ...string) ([]*spec.Pipeline, error) {
-	var pipelines []*spec.Pipeline
+func ReadV1(files ...string) ([]*api.Pipeline, error) {
+	var pipelines []*api.Pipeline
 	for _, f := range files {
 		data, err := ioutil.ReadFile(f)
 		if err != nil {
@@ -101,14 +101,14 @@ func ReadV1(files ...string) ([]*spec.Pipeline, error) {
 	return pipelines, nil
 }
 
-func pipelineWithName(pipelines []*spec.Pipeline, name string) *spec.Pipeline {
-	filterFn := func(p *spec.Pipeline) bool {
+func pipelineWithName(pipelines []*api.Pipeline, name string) *api.Pipeline {
+	filterFn := func(p *api.Pipeline) bool {
 		return p.Name == name
 	}
 	return arrays.FindFirst(filterFn, pipelines...)
 }
 
-func resourceToPipeline(r v1ReadResource) (*spec.Pipeline, error) {
+func resourceToPipeline(r v1ReadResource) (*api.Pipeline, error) {
 	s, ok := r.Spec.(*v1PipelineSpec)
 	if !ok {
 		return nil, errors.New("pipeline spec cast error")
@@ -117,45 +117,43 @@ func resourceToPipeline(r v1ReadResource) (*spec.Pipeline, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &spec.Pipeline{Name: s.Name, Mode: mode}, nil
+	return &api.Pipeline{Name: s.Name, Mode: mode}, nil
 }
 
-func stringToExecutionMode(val string) (spec.ExecutionMode, error) {
+func stringToExecutionMode(val string) (api.ExecutionMode, error) {
 	switch val {
 	case "", "Offline":
-		return spec.OfflineExecution, nil
+		return api.OfflineExecution, nil
 	case "Online":
-		return spec.OnlineExecution, nil
+		return api.OnlineExecution, nil
 	default:
 		err := fmt.Errorf("unknown execution mode: %s", val)
-		return spec.OfflineExecution, err
+		return api.OfflineExecution, err
 	}
 }
 
-func resourceToStage(r v1ReadResource) (*spec.Stage, string, error) {
+func resourceToStage(r v1ReadResource) (*api.Stage, string, error) {
 	stageSpec, ok := r.Spec.(*v1StageSpec)
 	if !ok {
 		return nil, "", errors.New("stage spec cast error")
 	}
 
-	s := &spec.Stage{
-		Name: stageSpec.Name,
-		MethodContext: spec.MethodContext{
-			Address: stageSpec.Address,
-			Service: stageSpec.Service,
-			Method:  stageSpec.Method,
-		},
+	s := &api.Stage{
+		Name:    stageSpec.Name,
+		Address: stageSpec.Address,
+		Service: stageSpec.Service,
+		Method:  stageSpec.Method,
 	}
 	return s, stageSpec.Pipeline, nil
 }
 
-func resourceToLink(r v1ReadResource) (*spec.Link, string, error) {
+func resourceToLink(r v1ReadResource) (*api.Link, string, error) {
 	linkSpec, ok := r.Spec.(*v1LinkSpec)
 	if !ok {
 		return nil, "", errors.New("link spec cast error")
 	}
 
-	l := &spec.Link{
+	l := &api.Link{
 		Name:             linkSpec.Name,
 		SourceStage:      linkSpec.SourceStage,
 		SourceField:      linkSpec.SourceField,
@@ -280,7 +278,7 @@ func valV1LinkSpec(spec *v1LinkSpec) error {
 }
 
 // WriteV1 stores the resources set in a single file as a
-func WriteV1(pipeline *spec.Pipeline, file string, perm fs.FileMode) error {
+func WriteV1(pipeline *api.Pipeline, file string, perm fs.FileMode) error {
 	var (
 		buf bytes.Buffer
 		err error
@@ -290,14 +288,14 @@ func WriteV1(pipeline *spec.Pipeline, file string, perm fs.FileMode) error {
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
-	stageEncFunc := func(r *v1WriteResource, s *spec.Stage) {
+	stageEncFunc := func(r *v1WriteResource, s *api.Stage) {
 		stageToResource(r, s, pipeline.Name)
 	}
 	err = encodeResources(enc, stageEncFunc, pipeline.Stages...)
 	if err != nil {
 		return fmt.Errorf("write v1: %w", err)
 	}
-	linkEncFunc := func(r *v1WriteResource, l *spec.Link) {
+	linkEncFunc := func(r *v1WriteResource, l *api.Link) {
 		linkToResource(r, l, pipeline.Name)
 	}
 	err = encodeResources(enc, linkEncFunc, pipeline.Links...)
@@ -330,14 +328,14 @@ type v1WriteResource struct {
 	Spec interface{} `yaml:"spec"`
 }
 
-func pipelineToResource(r *v1WriteResource, p *spec.Pipeline) {
+func pipelineToResource(r *v1WriteResource, p *api.Pipeline) {
 	var pipelineSpec v1PipelineSpec
 	pipelineSpec.Name = p.Name
 	switch p.Mode {
 	// No need to specify offline as it is the default.
-	case spec.OfflineExecution:
+	case api.OfflineExecution:
 		pipelineSpec.Mode = ""
-	case spec.OnlineExecution:
+	case api.OnlineExecution:
 		pipelineSpec.Mode = "Online"
 	default:
 		pipelineSpec.Mode = "Unknown"
@@ -347,19 +345,19 @@ func pipelineToResource(r *v1WriteResource, p *spec.Pipeline) {
 	r.Spec = pipelineSpec
 }
 
-func stageToResource(r *v1WriteResource, s *spec.Stage, pipelineName string) {
+func stageToResource(r *v1WriteResource, s *api.Stage, pipelineName string) {
 	var stageSpec v1StageSpec
 	stageSpec.Name = s.Name
-	stageSpec.Address = s.MethodContext.Address
-	stageSpec.Service = s.MethodContext.Service
-	stageSpec.Method = s.MethodContext.Method
+	stageSpec.Address = s.Address
+	stageSpec.Service = s.Service
+	stageSpec.Method = s.Method
 	stageSpec.Pipeline = pipelineName
 
 	r.Kind = stageKind
 	r.Spec = stageSpec
 }
 
-func linkToResource(r *v1WriteResource, l *spec.Link, pipelineName string) {
+func linkToResource(r *v1WriteResource, l *api.Link, pipelineName string) {
 	var linkSpec v1LinkSpec
 	linkSpec.Name = l.Name
 	linkSpec.SourceStage = l.SourceStage

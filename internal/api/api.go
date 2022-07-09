@@ -1,4 +1,4 @@
-package spec
+package api
 
 // Pipeline specifies the schema of a pipeline to be orchestrated.
 type Pipeline struct {
@@ -28,13 +28,7 @@ func (e ExecutionMode) String() string {
 
 // Stage specifies a given step of the Pipeline.
 type Stage struct {
-	Name          string
-	MethodContext MethodContext
-}
-
-// MethodContext specifies the method to be executed in a given
-// Stage.
-type MethodContext struct {
+	Name    string
 	Address string
 	Service string
 	Method  string

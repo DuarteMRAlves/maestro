@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpcw"
@@ -65,15 +66,15 @@ func TestOfflineCycle(t *testing.T) {
 	defer incStop()
 	go incStart()
 
-	cfg := &compiled.PipelineConfig{
+	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: compiled.OfflineExecution,
-		Stages: []*compiled.StageConfig{
+		Mode: api.OfflineExecution,
+		Stages: []*api.Stage{
 			{Name: "counter", Address: counterAddr.String()},
 			{Name: "sum", Address: sumAddr.String()},
 			{Name: "inc", Address: incAddr.String()},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-counter-sum",
 				SourceStage: "counter",

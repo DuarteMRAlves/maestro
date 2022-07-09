@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/DuarteMRAlves/maestro/internal/spec"
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"gopkg.in/yaml.v2"
 )
 
 // ReadV0 reads configuration files for the orchestrator
 // https://github.com/DuarteMRAlves/Pipeline-Orchestrator for compatibility
 // purposes.
-func ReadV0(file string) (*spec.Pipeline, error) {
+func ReadV0(file string) (*api.Pipeline, error) {
 	var fileSpec v0FileSpec
 
 	data, err := ioutil.ReadFile(file)
@@ -32,15 +32,15 @@ func ReadV0(file string) (*spec.Pipeline, error) {
 	}
 
 	// v0 pipeline executes always online.
-	pipeline := &spec.Pipeline{Name: "v0-pipeline", Mode: spec.OnlineExecution}
+	pipeline := &api.Pipeline{Name: "v0-pipeline", Mode: api.OnlineExecution}
 
 	for _, stageSpec := range fileSpec.Stages {
-		methCtx := spec.MethodContext{
+		s := &api.Stage{
+			Name:    stageSpec.Name,
 			Address: fmt.Sprintf("%s:%d", stageSpec.Host, stageSpec.Port),
 			Service: stageSpec.Service,
 			Method:  stageSpec.Method,
 		}
-		s := &spec.Stage{Name: stageSpec.Name, MethodContext: methCtx}
 		pipeline.Stages = append(pipeline.Stages, s)
 	}
 
@@ -49,7 +49,7 @@ func ReadV0(file string) (*spec.Pipeline, error) {
 			"v0-link-%s-to-%s", linkSpec.Source.Stage, linkSpec.Target.Stage,
 		)
 
-		l := &spec.Link{
+		l := &api.Link{
 			Name:        name,
 			SourceStage: linkSpec.Source.Stage,
 			SourceField: linkSpec.Source.Field,

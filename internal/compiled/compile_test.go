@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/internal/method"
 	"github.com/google/go-cmp/cmp"
@@ -14,19 +15,19 @@ import (
 
 func TestNew(t *testing.T) {
 	tests := map[string]struct {
-		input    *PipelineConfig
+		input    *api.Pipeline
 		expected *Pipeline
 		resolver method.ResolveFunc
 	}{
 		"linear specification": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-2"},
 					{Name: "2-to-3", SourceStage: "stage-2", TargetStage: "stage-3"},
 				},
@@ -139,15 +140,15 @@ func TestNew(t *testing.T) {
 			},
 		},
 		"split and merge": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "pipeline",
-				Mode: OnlineExecution,
-				Stages: []*StageConfig{
+				Mode: api.OnlineExecution,
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -363,12 +364,12 @@ func TestNew(t *testing.T) {
 
 func TestNewIsErr(t *testing.T) {
 	tests := map[string]struct {
-		input       *PipelineConfig
+		input       *api.Pipeline
 		validateErr func(err error) string
 		resolver    method.ResolveFunc
 	}{
 		"empty pipeline name": {
-			input: &PipelineConfig{},
+			input: &api.Pipeline{},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyPipelineName) {
 					format := "error mismatch: expected %s, received %s"
@@ -382,9 +383,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty stage name": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name:   "Pipeline",
-				Stages: []*StageConfig{{Address: "method"}},
+				Stages: []*api.Stage{{Address: "method"}},
 			},
 			validateErr: func(err error) string {
 				if !errors.Is(err, errEmptyStageName) {
@@ -399,13 +400,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link name": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{SourceStage: "stage-1", TargetStage: "stage-2"},
 				},
 			},
@@ -429,13 +430,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link source name": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", TargetStage: "stage-2"},
 				},
 			},
@@ -459,13 +460,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"empty link target name": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", SourceStage: "stage-1"},
 				},
 			},
@@ -489,13 +490,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"equal link source and target": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-1"},
 				},
 			},
@@ -519,14 +520,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"cycle and online": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Mode: OnlineExecution,
-				Stages: []*StageConfig{
+				Mode: api.OnlineExecution,
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-3", SourceStage: "stage-1", TargetStage: "stage-3"},
 					{Name: "3-to-1", SourceStage: "stage-3", TargetStage: "stage-1"},
 				},
@@ -552,13 +553,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"source does not exist": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", SourceStage: "stage-3", TargetStage: "stage-1"},
 				},
 			},
@@ -588,13 +589,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"target does not exist": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{Name: "1-to-2", SourceStage: "stage-1", TargetStage: "stage-4"},
 				},
 			},
@@ -624,14 +625,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"new link set full message": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -677,14 +678,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"old link set full message": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -730,14 +731,14 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"new and old links set same": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 					{Name: "stage-3", Address: "method-3"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",
@@ -786,13 +787,13 @@ func TestNewIsErr(t *testing.T) {
 			},
 		},
 		"incompatible message descriptor": {
-			input: &PipelineConfig{
+			input: &api.Pipeline{
 				Name: "Pipeline",
-				Stages: []*StageConfig{
+				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
 				},
-				Links: []*LinkConfig{
+				Links: []*api.Link{
 					{
 						Name:        "1-to-2",
 						SourceStage: "stage-1",

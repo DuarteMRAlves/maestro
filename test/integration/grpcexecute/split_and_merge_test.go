@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpcw"
@@ -65,15 +66,15 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	cfg := &compiled.PipelineConfig{
+	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: compiled.OfflineExecution,
-		Stages: []*compiled.StageConfig{
+		Mode: api.OfflineExecution,
+		Stages: []*api.Stage{
 			{Name: "source", Address: sourceAddr.String()},
 			{Name: "transform", Address: transfAddr.String()},
 			{Name: "sink", Address: sinkAddr.String()},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -185,15 +186,15 @@ func TestOnlineSplitAndMerge(t *testing.T) {
 	defer sinkStop()
 	go sinkStart()
 
-	cfg := &compiled.PipelineConfig{
+	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: compiled.OnlineExecution,
-		Stages: []*compiled.StageConfig{
+		Mode: api.OnlineExecution,
+		Stages: []*api.Stage{
 			{Name: "source", Address: sourceAddr.String()},
 			{Name: "transform", Address: transfAddr.String()},
 			{Name: "sink", Address: sinkAddr.String()},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
