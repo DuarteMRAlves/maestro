@@ -27,26 +27,20 @@ func TestReadV1(t *testing.T) {
 					Mode: api.OnlineExecution,
 					Stages: []*api.Stage{
 						{
-							Name: "stage-1",
-							MethodContext: api.MethodContext{
-								Address: "address-1",
-								Service: "Service1",
-								Method:  "Method1",
-							},
+							Name:    "stage-1",
+							Address: "address-1",
+							Service: "Service1",
+							Method:  "Method1",
 						},
 						{
-							Name: "stage-2",
-							MethodContext: api.MethodContext{
-								Address: "address-2",
-								Service: "Service2",
-							},
+							Name:    "stage-2",
+							Address: "address-2",
+							Service: "Service2",
 						},
 						{
-							Name: "stage-3",
-							MethodContext: api.MethodContext{
-								Address: "address-3",
-								Method:  "Method3",
-							},
+							Name:    "stage-3",
+							Address: "address-3",
+							Method:  "Method3",
 						},
 					},
 					Links: []*api.Link{
@@ -79,19 +73,15 @@ func TestReadV1(t *testing.T) {
 					Mode: api.OfflineExecution,
 					Stages: []*api.Stage{
 						{
-							Name: "stage-5",
-							MethodContext: api.MethodContext{
-								Address: "address-5",
-								Method:  "Method5",
-							},
+							Name:    "stage-5",
+							Address: "address-5",
+							Method:  "Method5",
 						},
 						{
-							Name: "stage-6",
-							MethodContext: api.MethodContext{
-								Address: "address-6",
-								Service: "Service6",
-								Method:  "Method6",
-							},
+							Name:    "stage-6",
+							Address: "address-6",
+							Service: "Service6",
+							Method:  "Method6",
 						},
 					},
 					Links: []*api.Link{
@@ -108,17 +98,13 @@ func TestReadV1(t *testing.T) {
 					Mode: api.OfflineExecution,
 					Stages: []*api.Stage{
 						{
-							Name: "stage-4",
-							MethodContext: api.MethodContext{
-								Address: "address-4",
-							},
+							Name:    "stage-4",
+							Address: "address-4",
 						},
 						{
-							Name: "stage-7",
-							MethodContext: api.MethodContext{
-								Address: "address-7",
-								Service: "Service7",
-							},
+							Name:    "stage-7",
+							Address: "address-7",
+							Service: "Service7",
 						},
 					},
 					Links: []*api.Link{
@@ -237,26 +223,20 @@ func TestWriteV1(t *testing.T) {
 		Mode: api.OnlineExecution,
 		Stages: []*api.Stage{
 			{
-				Name: "stage-1",
-				MethodContext: api.MethodContext{
-					Address: "address-1",
-					Service: "Service1",
-					Method:  "Method1",
-				},
+				Name:    "stage-1",
+				Address: "address-1",
+				Service: "Service1",
+				Method:  "Method1",
 			},
 			{
-				Name: "stage-2",
-				MethodContext: api.MethodContext{
-					Address: "address-2",
-					Service: "Service2",
-				},
+				Name:    "stage-2",
+				Address: "address-2",
+				Service: "Service2",
 			},
 			{
-				Name: "stage-3",
-				MethodContext: api.MethodContext{
-					Address: "address-3",
-					Method:  "Method3",
-				},
+				Name:    "stage-3",
+				Address: "address-3",
+				Method:  "Method3",
 			},
 		},
 		Links: []*api.Link{

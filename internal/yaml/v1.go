@@ -139,12 +139,10 @@ func resourceToStage(r v1ReadResource) (*api.Stage, string, error) {
 	}
 
 	s := &api.Stage{
-		Name: stageSpec.Name,
-		MethodContext: api.MethodContext{
-			Address: stageSpec.Address,
-			Service: stageSpec.Service,
-			Method:  stageSpec.Method,
-		},
+		Name:    stageSpec.Name,
+		Address: stageSpec.Address,
+		Service: stageSpec.Service,
+		Method:  stageSpec.Method,
 	}
 	return s, stageSpec.Pipeline, nil
 }
@@ -350,9 +348,9 @@ func pipelineToResource(r *v1WriteResource, p *api.Pipeline) {
 func stageToResource(r *v1WriteResource, s *api.Stage, pipelineName string) {
 	var stageSpec v1StageSpec
 	stageSpec.Name = s.Name
-	stageSpec.Address = s.MethodContext.Address
-	stageSpec.Service = s.MethodContext.Service
-	stageSpec.Method = s.MethodContext.Method
+	stageSpec.Address = s.Address
+	stageSpec.Service = s.Service
+	stageSpec.Method = s.Method
 	stageSpec.Pipeline = pipelineName
 
 	r.Kind = stageKind

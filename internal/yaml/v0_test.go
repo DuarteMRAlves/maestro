@@ -21,32 +21,24 @@ func TestReadV0(t *testing.T) {
 		Mode: api.OnlineExecution,
 		Stages: []*api.Stage{
 			{
-				Name: "stage-1",
-				MethodContext: api.MethodContext{
-					Address: "host-1:1",
-				},
+				Name:    "stage-1",
+				Address: "host-1:1",
 			},
 			{
-				Name: "stage-2",
-				MethodContext: api.MethodContext{
-					Address: "host-2:2",
-					Service: "Service2",
-				},
+				Name:    "stage-2",
+				Address: "host-2:2",
+				Service: "Service2",
 			},
 			{
-				Name: "stage-3",
-				MethodContext: api.MethodContext{
-					Address: "host-3:3",
-					Method:  "Method3",
-				},
+				Name:    "stage-3",
+				Address: "host-3:3",
+				Method:  "Method3",
 			},
 			{
-				Name: "stage-4",
-				MethodContext: api.MethodContext{
-					Address: "host-4:4",
-					Service: "Service4",
-					Method:  "Method4",
-				},
+				Name:    "stage-4",
+				Address: "host-4:4",
+				Service: "Service4",
+				Method:  "Method4",
 			},
 		},
 		Links: []*api.Link{

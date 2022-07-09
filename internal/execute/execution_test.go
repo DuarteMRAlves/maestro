@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DuarteMRAlves/maestro/internal/api"
 	"github.com/DuarteMRAlves/maestro/internal/compiled"
 	"github.com/DuarteMRAlves/maestro/internal/message"
 	"github.com/DuarteMRAlves/maestro/internal/method"
@@ -20,7 +21,7 @@ func TestOfflineExecution_Linear(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OfflineExecution
+	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -56,7 +57,7 @@ func TestOnlineExecution_Linear(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OnlineExecution
+	pipelineCfg.Mode = api.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -94,15 +95,15 @@ func TestOnlineExecution_Linear(t *testing.T) {
 
 func setupLinear(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (*compiled.PipelineConfig, method.ResolveFunc) {
-	cfg := &compiled.PipelineConfig{
+) (*api.Pipeline, method.ResolveFunc) {
+	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Stages: []*compiled.StageConfig{
+		Stages: []*api.Stage{
 			{Name: "source", Address: "source"},
 			{Name: "transform", Address: "transform"},
 			{Name: "sink", Address: "sink"},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -242,7 +243,7 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OfflineExecution
+	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -282,7 +283,7 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OnlineExecution
+	pipelineCfg.Mode = api.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -321,15 +322,15 @@ func TestOnlineExecution_SplitAndMerge(t *testing.T) {
 
 func setupSplitAndMerge(
 	t *testing.T, max int, collect *[]*testTwoValMsg, done chan struct{},
-) (*compiled.PipelineConfig, method.ResolveFunc) {
-	pipelineCfg := &compiled.PipelineConfig{
+) (*api.Pipeline, method.ResolveFunc) {
+	pipelineCfg := &api.Pipeline{
 		Name: "pipeline",
-		Stages: []*compiled.StageConfig{
+		Stages: []*api.Stage{
 			{Name: "source", Address: "source"},
 			{Name: "transform", Address: "transform"},
 			{Name: "sink", Address: "sink"},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -473,7 +474,7 @@ func TestOfflineExecution_Slow(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OfflineExecution
+	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -509,7 +510,7 @@ func TestOnlineExecution_Slow(t *testing.T) {
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineCfg.Mode = compiled.OnlineExecution
+	pipelineCfg.Mode = api.OnlineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -546,15 +547,15 @@ func TestOnlineExecution_Slow(t *testing.T) {
 
 func setupSlow(
 	t *testing.T, max int, collect *[]*testValMsg, done chan struct{},
-) (*compiled.PipelineConfig, method.ResolveFunc) {
-	pipelineCfg := &compiled.PipelineConfig{
+) (*api.Pipeline, method.ResolveFunc) {
+	pipelineCfg := &api.Pipeline{
 		Name: "pipeline",
-		Stages: []*compiled.StageConfig{
+		Stages: []*api.Stage{
 			{Name: "source", Address: "source"},
 			{Name: "transform", Address: "transform"},
 			{Name: "sink", Address: "sink"},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-source-transform",
 				SourceStage: "source",
@@ -699,13 +700,13 @@ func TestOfflineExecution_Cycle(t *testing.T) {
 	oddCollect := make([]*testValMsg, 0, max)
 	oddDone := make(chan struct{})
 
-	pipelineCfg := &compiled.PipelineConfig{
+	pipelineCfg := &api.Pipeline{
 		Name: "pipeline",
-		Stages: []*compiled.StageConfig{
+		Stages: []*api.Stage{
 			{Name: "even", Address: "even"},
 			{Name: "odd", Address: "odd"},
 		},
-		Links: []*compiled.LinkConfig{
+		Links: []*api.Link{
 			{
 				Name:        "link-even-odd",
 				SourceStage: "even",

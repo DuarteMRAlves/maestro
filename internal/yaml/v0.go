@@ -35,12 +35,12 @@ func ReadV0(file string) (*api.Pipeline, error) {
 	pipeline := &api.Pipeline{Name: "v0-pipeline", Mode: api.OnlineExecution}
 
 	for _, stageSpec := range fileSpec.Stages {
-		methCtx := api.MethodContext{
+		s := &api.Stage{
+			Name:    stageSpec.Name,
 			Address: fmt.Sprintf("%s:%d", stageSpec.Host, stageSpec.Port),
 			Service: stageSpec.Service,
 			Method:  stageSpec.Method,
 		}
-		s := &api.Stage{Name: stageSpec.Name, MethodContext: methCtx}
 		pipeline.Stages = append(pipeline.Stages, s)
 	}
 

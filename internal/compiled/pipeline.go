@@ -2,6 +2,8 @@ package compiled
 
 import (
 	"fmt"
+
+	"github.com/DuarteMRAlves/maestro/internal/api"
 )
 
 // Pipeline defines an immutable pipeline that can be executed.
@@ -83,9 +85,7 @@ func (err *invalidPipelineName) Error() string {
 	return fmt.Sprintf("invalid pipeline name: '%s'", err.name)
 }
 
-type ExecutionMode struct {
-	val int
-}
+type ExecutionMode struct{ val int }
 
 const (
 	// OfflineExecution is the default execution mode.
@@ -97,6 +97,17 @@ var (
 	OfflineExecution = ExecutionMode{val: offlineExecution}
 	OnlineExecution  = ExecutionMode{val: onlineExecution}
 )
+
+func modeFromApi(m api.ExecutionMode) (ExecutionMode, error) {
+	switch m {
+	case api.OfflineExecution:
+		return OfflineExecution, nil
+	case api.OnlineExecution:
+		return OnlineExecution, nil
+	default:
+		return OfflineExecution, fmt.Errorf("unknown execution mode: %v", m)
+	}
+}
 
 func (e ExecutionMode) String() string {
 	switch e.val {
