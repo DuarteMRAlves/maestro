@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/e2e/online";
+
+package online;
+
+import "google/protobuf/empty.proto";
+
+service Source {
+    rpc Generate(google.protobuf.Empty) returns (Message);
+}
+
+service Transform {
+    rpc Process(Message) returns (Message);
+}
+
+service Sink {
+    rpc Collect(Message) returns (google.protobuf.Empty);
+}
+
+message Message {
+    int64 val = 1;
+}

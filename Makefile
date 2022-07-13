@@ -61,14 +61,14 @@ go/test: pb/api pb/test go/test/unit go/test/integration go/test/e2e
 go/test/unit: pb/api pb/test
 	go test $(UNIT_TEST_FLAGS) $(UNIT_TEST_DIR)
 
-.PHONT: go/test/integration
+.PHONY: go/test/integration
 go/test/integration: pb/api pb/test
 	go test ./test/integration/...
 
-.PHONE: go/go/test/e2e
-go/test/e2e: pb/api pb/test
-	@# go test ./test/e2e
-	@echo "Skipping end2end tests"
+# Requires target
+.PHONY: go/test/e2e
+go/test/e2e: pb/api pb/test go/build
+	go test --timeout 60s --shuffle on ./e2e/...
 
 .PHONY: pb
 pb: pb/api pb/test
@@ -82,9 +82,10 @@ pb/api:
 pb/test:
 	cd ./test/protobuf/unit && protoc $(PROTOC_FLAGS) ./*.proto
 	cd ./test/protobuf/integration && protoc $(PROTOC_FLAGS) ./*.proto
+	cd ./e2e/online/ && protoc $(PROTOC_FLAGS) ./*.proto
 
 pb/clean:
-	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go
+	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go ./e2e/online/*.pb.go
 
 .PHONY: ci-cd/build
 ci-cd/build:
