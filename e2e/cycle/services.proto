@@ -1,0 +1,37 @@
+// The pipeline has the following architecture:
+//                 |-----------|
+//             /-- | Increment | <-\
+//            /    |-----------|    \
+//            \                     /
+//             \-----> |-----|     /
+// |---------|         | Sum | ---/
+// | Counter | ------> |-----|
+// |---------|
+syntax = "proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/e2e/cycle";
+
+package cycle;
+
+import "google/protobuf/empty.proto";
+
+service Counter {
+    rpc Generate(google.protobuf.Empty) returns (ValMessage);
+}
+
+service Sum {
+    rpc Sum(SumMessage) returns (ValMessage);
+}
+
+service Inc {
+    rpc Inc(ValMessage) returns (ValMessage);
+}
+
+message SumMessage {
+    ValMessage inc = 1;
+    ValMessage counter = 2;
+}
+
+message ValMessage {
+    int64 val = 1;
+}

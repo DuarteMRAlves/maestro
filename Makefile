@@ -82,10 +82,11 @@ pb/api:
 pb/test:
 	cd ./test/protobuf/unit && protoc $(PROTOC_FLAGS) ./*.proto
 	cd ./test/protobuf/integration && protoc $(PROTOC_FLAGS) ./*.proto
+	cd ./e2e/cycle/ && protoc $(PROTOC_FLAGS) ./*.proto
 	cd ./e2e/splitmerge/ && protoc $(PROTOC_FLAGS) ./*.proto
 
 pb/clean:
-	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go ./e2e/online/*.pb.go
+	rm -rf ./api/pb/**.pb.go ./test/protobuf/**/*.pb.go ./e2e/cycle/*.pb.go ./e2e/splitmerge/*.pb.go
 
 .PHONY: ci-cd/build
 ci-cd/build:

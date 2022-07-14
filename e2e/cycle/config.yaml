@@ -1,0 +1,46 @@
+kind: pipeline
+spec:
+  name: LinearPipeline
+  execution_mode: Offline
+---
+kind: stage
+spec:
+  name: Counter
+  address: localhost:{{ .CounterPort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Inc
+  address: localhost:{{ .IncPort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Sum
+  address: localhost:{{ .SumPort }}
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Counter-To-Sum
+  source_stage: Counter
+  target_stage: Sum
+  target_field: counter
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Inc-To-Sum
+  source_stage: Inc
+  target_stage: Sum
+  target_field: inc
+  num_empty_messages: 1
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Sum-To-Inc
+  source_stage: Sum
+  target_stage: Inc
+  pipeline: LinearPipeline

@@ -12,6 +12,10 @@ type messageInstance struct {
 	m protoreflect.Message
 }
 
+func (mi messageInstance) String() string {
+	return fmt.Sprintf("GrpcMessageInstance(%v)", mi.m.Interface())
+}
+
 func (mi messageInstance) Set(field message.Field, value message.Instance) error {
 	i, ok := value.(messageInstance)
 	if !ok {
