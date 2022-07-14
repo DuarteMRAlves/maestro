@@ -1,0 +1,36 @@
+kind: pipeline
+spec:
+  name: LinearPipeline
+---
+kind: stage
+spec:
+  name: Source
+  address: host.docker.internal:{{ .SourcePort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Transform
+  address: host.docker.internal:{{ .TransformPort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Sink
+  method: Collect
+  address: host.docker.internal:{{ .SinkPort }}
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Source-To-Transform
+  source_stage: Source
+  target_stage: Transform
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Transform-To-Sink
+  source_stage: Transform
+  target_stage: Sink
+  pipeline: LinearPipeline
