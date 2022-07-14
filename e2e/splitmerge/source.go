@@ -1,4 +1,4 @@
-package online
+package splitmerge
 
 import (
 	"context"

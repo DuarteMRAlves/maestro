@@ -1,4 +1,4 @@
-package online
+package splitmerge
 
 import (
 	"context"
@@ -15,11 +15,11 @@ import (
 
 type sinkServer struct {
 	UnimplementedSinkServer
-	fn func(msg *Message)
+	fn func(msg *Compose)
 }
 
 func (s *sinkServer) Collect(
-	_ context.Context, m *Message,
+	_ context.Context, m *Compose,
 ) (*emptypb.Empty, error) {
 	s.fn(m)
 	delay := time.Duration(rand.Int63n(5))
@@ -27,7 +27,7 @@ func (s *sinkServer) Collect(
 	return &emptypb.Empty{}, nil
 }
 
-func ServeSink(fn func(msg *Message)) (net.Addr, func()) {
+func ServeSink(fn func(msg *Compose)) (net.Addr, func()) {
 	s := grpc.NewServer()
 	RegisterSinkServer(s, &sinkServer{fn: fn})
 	reflection.Register(s)

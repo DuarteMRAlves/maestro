@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/DuarteMRAlves/maestro/e2e/online";
+option go_package = "github.com/DuarteMRAlves/maestro/e2e/splitmerge";
 
-package online;
+package splitmerge;
 
 import "google/protobuf/empty.proto";
 
@@ -15,7 +15,12 @@ service Transform {
 }
 
 service Sink {
-    rpc Collect(Message) returns (google.protobuf.Empty);
+    rpc Collect(Compose) returns (google.protobuf.Empty);
+}
+
+message Compose {
+    Message orig = 1;
+    Message transf = 2;
 }
 
 message Message {

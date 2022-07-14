@@ -1,4 +1,4 @@
-package online
+package splitmerge
 
 import (
 	"bytes"
@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"sync"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type testData struct {
@@ -19,12 +21,12 @@ type testData struct {
 	SinkPort      int
 }
 
-func TestOnlineLinearPipeline(t *testing.T) {
+func TestOnlineSplitMergePipeline(t *testing.T) {
 	var mu sync.Mutex
 	max := 100
-	collect := make([]*Message, 0, max)
+	collect := make([]*Compose, 0, max)
 	done := make(chan struct{})
-	collectFunc := func(msg *Message) {
+	collectFunc := func(msg *Compose) {
 		mu.Lock()
 		defer mu.Unlock()
 		if len(collect) < max {
@@ -63,13 +65,16 @@ func TestOnlineLinearPipeline(t *testing.T) {
 
 	prev := int64(0)
 	for i, msg := range collect {
-		if prev >= msg.Val {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
+		if prev >= msg.Orig.Val {
+			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Orig.Val)
 		}
-		if msg.Val%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, msg.Val)
+		if msg.Transf.Val%2 != 0 {
+			t.Fatalf("value %d is not pair: %d", i, msg.Orig.Val)
 		}
-		prev = msg.Val
+		if diff := cmp.Diff(msg.Orig.Val*2, msg.Transf.Val); diff != "" {
+			t.Fatalf("mismatch between orig and transf at %d:\n%s", i, diff)
+		}
+		prev = msg.Orig.Val
 	}
 }
 

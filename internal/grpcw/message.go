@@ -49,6 +49,10 @@ type messageType struct {
 	t protoreflect.MessageType
 }
 
+func (t messageType) String() string {
+	return fmt.Sprintf("GrpcMessageType(%v)", t.t.Descriptor().FullName())
+}
+
 func (t messageType) Build() message.Instance {
 	return messageInstance{t.t.New()}
 }

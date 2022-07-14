@@ -31,7 +31,16 @@ spec:
 ---
 kind: link
 spec:
+  name: Source-To-Sink
+  source_stage: Source
+  target_stage: Sink
+  target_field: orig
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
   name: Transform-To-Sink
   source_stage: Transform
   target_stage: Sink
+  target_field: transf
   pipeline: LinearPipeline
