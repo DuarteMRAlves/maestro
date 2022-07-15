@@ -12,6 +12,8 @@ import (
 	sync "sync"
 	"testing"
 
+	// Import test flags for compilation
+	_ "github.com/DuarteMRAlves/maestro/e2e"
 	"github.com/google/go-cmp/cmp"
 )
 

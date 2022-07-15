@@ -12,10 +12,14 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/DuarteMRAlves/maestro/e2e"
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOnlineSplitMergePipeline(t *testing.T) {
+func TestDockerMestroImage(t *testing.T) {
+	if *e2e.NoDocker {
+		t.Skip("Environment does not support docker")
+	}
 	var mu sync.Mutex
 	max := 100
 	collect := make([]*Message, 0, max)
