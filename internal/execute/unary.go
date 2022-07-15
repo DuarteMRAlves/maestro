@@ -61,7 +61,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 			s.logger.Infof("'%s': finished\n", s.name)
 			return nil
 		}
-		s.logger.Debugf("'%s': recv msg: %#v\n", s.name, in.msg)
+		s.logger.Debugf("'%s': recv msg: %v\n", s.name, in.msg)
 		req := in.msg
 		rep, err := s.call(ctx, conn, req)
 		if err != nil {
@@ -69,7 +69,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 		}
 
 		out = newOfflineState(rep)
-		s.logger.Debugf("'%s': send msg: %#v\n", s.name, out.msg)
+		s.logger.Debugf("'%s': send msg: %v\n", s.name, out.msg)
 		select {
 		case s.output <- out:
 		case <-ctx.Done():

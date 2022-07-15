@@ -23,5 +23,17 @@ jobs:
       - name: Build | Format
         uses: ./.github/actions/gofmt-action
 
-      - name: Build | Test
-        run: make go/test
+      - name: Build | Proto
+        run: make pb
+
+      - name: Build | Executable
+        run: go build -o target/maestro ./cmd/maestro/maestro.go
+
+      - name: Test | Unit
+        run: go test --timeout 20s --shuffle on ./internal/...
+
+      - name: Test | Integration
+        run: go test --timeout 30s --shuffle on ./test/integration/...
+
+      - name: Test | End-2-End
+        run: go test --timeout 60s --shuffle on ./e2e/... -no-docker

@@ -139,14 +139,15 @@ func compileStage(ctx Context, cfg *api.Stage) (*Stage, error) {
 	if err != nil {
 		return nil, err
 	}
-	method, err := ctx.resolver.Resolve(context.Background(), cfg.Address)
+	address := compileStageAddr(cfg.Address, cfg.Service, cfg.Method)
+	method, err := ctx.resolver.Resolve(context.Background(), address)
 	if err != nil {
 		return nil, fmt.Errorf("load method %q: %w", cfg.Address, err)
 	}
 	stage := &Stage{
 		name:    name,
 		sType:   StageTypeUnary,
-		address: cfg.Address,
+		address: address,
 		desc:    method,
 		inputs:  []*Link{},
 		outputs: []*Link{},
@@ -163,6 +164,19 @@ func compileStageName(name string) (StageName, error) {
 		return stageName, errEmptyStageName
 	}
 	return stageName, nil
+}
+
+func compileStageAddr(address, service, method string) string {
+	a := address
+	s := "*"
+	m := "*"
+	if service != "" {
+		s = service
+	}
+	if method != "" {
+		m = method
+	}
+	return fmt.Sprintf("%s/%s/%s", a, s, m)
 }
 
 func compileLink(cfg *api.Link) (*Link, error) {

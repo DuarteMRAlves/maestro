@@ -1,0 +1,46 @@
+kind: pipeline
+spec:
+  name: LinearPipeline
+  execution_mode: Online
+---
+kind: stage
+spec:
+  name: Source
+  address: localhost:{{ .SourcePort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Transform
+  address: localhost:{{ .TransformPort }}
+  pipeline: LinearPipeline
+---
+kind: stage
+spec:
+  name: Sink
+  method: Collect
+  address: localhost:{{ .SinkPort }}
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Source-To-Transform
+  source_stage: Source
+  target_stage: Transform
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Source-To-Sink
+  source_stage: Source
+  target_stage: Sink
+  target_field: orig
+  pipeline: LinearPipeline
+---
+kind: link
+spec:
+  name: Transform-To-Sink
+  source_stage: Transform
+  target_stage: Sink
+  target_field: transf
+  pipeline: LinearPipeline

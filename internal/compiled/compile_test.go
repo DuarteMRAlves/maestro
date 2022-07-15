@@ -39,7 +39,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-1:aux-source"}: &Stage{
 						name:    StageName{val: "stage-1:aux-source"},
 						sType:   StageTypeSource,
-						address: "method-1",
+						address: "method-1/*/*",
 						desc:    testLinearStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-1"}: &Stage{
 						name:    StageName{val: "stage-1"},
 						sType:   StageTypeUnary,
-						address: "method-1",
+						address: "method-1/*/*",
 						desc:    testLinearStage1Method{},
 						inputs: []*Link{
 							{
@@ -73,7 +73,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-2"}: &Stage{
 						name:    StageName{val: "stage-2"},
 						sType:   StageTypeUnary,
-						address: "method-2",
+						address: "method-2/*/*",
 						desc:    testLinearStage2Method{},
 						inputs: []*Link{
 							{
@@ -93,7 +93,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-3"}: &Stage{
 						name:    StageName{val: "stage-3"},
 						sType:   StageTypeUnary,
-						address: "method-3",
+						address: "method-3/*/*",
 						desc:    testLinearStage3Method{},
 						inputs: []*Link{
 							{
@@ -113,7 +113,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-3:aux-sink"}: &Stage{
 						name:    StageName{val: "stage-3:aux-sink"},
 						sType:   StageTypeSink,
-						address: "method-3",
+						address: "method-3/*/*",
 						desc:    testLinearStage3Method{},
 						inputs: []*Link{
 							{
@@ -128,9 +128,9 @@ func TestNew(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
-					"method-3": testLinearStage3Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
+					"method-3/*/*": testLinearStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -175,7 +175,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-1:aux-source"}: &Stage{
 						name:    StageName{val: "stage-1:aux-source"},
 						sType:   StageTypeSource,
-						address: "method-1",
+						address: "method-1/*/*",
 						desc:    testSplitAndMergeStage1Method{},
 						inputs:  []*Link{},
 						outputs: []*Link{
@@ -189,7 +189,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-1"}: &Stage{
 						name:    StageName{val: "stage-1"},
 						sType:   StageTypeUnary,
-						address: "method-1",
+						address: "method-1/*/*",
 						desc:    testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
@@ -209,7 +209,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-1:aux-split"}: &Stage{
 						name:    StageName{val: "stage-1:aux-split"},
 						sType:   StageTypeSplit,
-						address: "method-1",
+						address: "method-1/*/*",
 						desc:    testSplitAndMergeStage1Method{},
 						inputs: []*Link{
 							{
@@ -237,7 +237,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-2"}: &Stage{
 						name:    StageName{val: "stage-2"},
 						sType:   StageTypeUnary,
-						address: "method-2",
+						address: "method-2/*/*",
 						desc:    testSplitAndMergeStage2Method{},
 						inputs: []*Link{
 							{
@@ -260,7 +260,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-3:aux-merge"}: &Stage{
 						name:    StageName{val: "stage-3:aux-merge"},
 						sType:   StageTypeMerge,
-						address: "method-3",
+						address: "method-3/*/*",
 						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
@@ -291,7 +291,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-3"}: &Stage{
 						name:    StageName{val: "stage-3"},
 						sType:   StageTypeUnary,
-						address: "method-3",
+						address: "method-3/*/*",
 						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
@@ -311,7 +311,7 @@ func TestNew(t *testing.T) {
 					StageName{val: "stage-3:aux-sink"}: &Stage{
 						name:    StageName{val: "stage-3:aux-sink"},
 						sType:   StageTypeSink,
-						address: "method-3",
+						address: "method-3/*/*",
 						desc:    testSplitAndMergeStage3Method{},
 						inputs: []*Link{
 							{
@@ -326,9 +326,9 @@ func TestNew(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testSplitAndMergeStage1Method{},
-					"method-2": testSplitAndMergeStage2Method{},
-					"method-3": testSplitAndMergeStage3Method{},
+					"method-1/*/*": testSplitAndMergeStage1Method{},
+					"method-2/*/*": testSplitAndMergeStage2Method{},
+					"method-3/*/*": testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -419,8 +419,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -449,8 +449,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -479,8 +479,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -509,8 +509,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -541,9 +541,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
+					"method-1/*/*": testLinearStage1Method{},
 					// Use method 3 to match method 1 message types
-					"method-3": testLinearStage3Method{},
+					"method-3/*/*": testLinearStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -578,8 +578,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -614,8 +614,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -666,9 +666,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
-					"method-3": testLinearStage3Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
+					"method-3/*/*": testLinearStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -719,9 +719,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
-					"method-3": testSplitAndMergeStage3Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
+					"method-3/*/*": testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -775,9 +775,9 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
-					"method-3": testSplitAndMergeStage3Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
+					"method-3/*/*": testSplitAndMergeStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {
@@ -817,8 +817,8 @@ func TestNewIsErr(t *testing.T) {
 			},
 			resolver: func(_ context.Context, address string) (method.Desc, error) {
 				mapper := map[string]method.Desc{
-					"method-1": testLinearStage1Method{},
-					"method-2": testLinearStage2Method{},
+					"method-1/*/*": testLinearStage1Method{},
+					"method-2/*/*": testLinearStage2Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {

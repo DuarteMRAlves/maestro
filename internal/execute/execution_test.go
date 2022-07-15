@@ -135,9 +135,9 @@ func setupLinear(
 	}
 
 	methods := map[string]method.Desc{
-		"source":    sourceMethod,
-		"transform": transformMethod,
-		"sink":      sinkMethod,
+		"source/*/*":    sourceMethod,
+		"transform/*/*": transformMethod,
+		"sink/*/*":      sinkMethod,
 	}
 	resolver := func(_ context.Context, address string) (method.Desc, error) {
 		m, ok := methods[address]
@@ -368,9 +368,9 @@ func setupSplitAndMerge(
 	}
 
 	methods := map[string]method.Desc{
-		"source":    sourceMethod,
-		"transform": transformMethod,
-		"sink":      sinkMethod,
+		"source/*/*":    sourceMethod,
+		"transform/*/*": transformMethod,
+		"sink/*/*":      sinkMethod,
 	}
 
 	resolver := func(_ context.Context, address string) (method.Desc, error) {
@@ -587,9 +587,9 @@ func setupSlow(
 	}
 
 	methods := map[string]method.Desc{
-		"source":    sourceMethod,
-		"transform": transformMethod,
-		"sink":      sinkMethod,
+		"source/*/*":    sourceMethod,
+		"transform/*/*": transformMethod,
+		"sink/*/*":      sinkMethod,
 	}
 
 	resolver := func(_ context.Context, address string) (method.Desc, error) {
@@ -734,8 +734,8 @@ func TestOfflineExecution_Cycle(t *testing.T) {
 	}
 
 	methods := map[string]method.Desc{
-		"even": evenMethod,
-		"odd":  oddMethod,
+		"even/*/*": evenMethod,
+		"odd/*/*":  oddMethod,
 	}
 
 	resolver := func(_ context.Context, address string) (method.Desc, error) {
