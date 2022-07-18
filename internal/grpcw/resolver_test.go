@@ -57,7 +57,7 @@ func TestReflectionClient_ListServices(t *testing.T) {
 	addr := lis.Addr().String()
 	start, stop := startTestResolverServer(t, lis, true)
 	defer stop()
-	start()
+	go start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -103,7 +103,7 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 	addr := lis.Addr().String()
 	start, stop := startTestResolverServer(t, lis, false)
 	defer stop()
-	start()
+	go start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -146,7 +146,7 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 	addr := lis.Addr().String()
 	start, stop := startTestResolverServer(t, lis, true)
 	defer stop()
-	start()
+	go start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -286,7 +286,7 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 	addr := lis.Addr().String()
 	start, stop := startTestResolverServer(t, lis, false)
 	defer stop()
-	start()
+	go start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -329,7 +329,7 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 	addr := lis.Addr().String()
 	start, stop := startTestResolverServer(t, lis, true)
 	defer stop()
-	start()
+	go start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
