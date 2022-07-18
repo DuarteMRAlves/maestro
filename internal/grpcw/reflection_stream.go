@@ -23,7 +23,7 @@ func newBlockingReflectionStream(
 	stub := grpc_reflection_v1alpha.NewServerReflectionClient(conn)
 	stream, err := stub.ServerReflectionInfo(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create grpc reflection stream: %w", err)
+		return nil, err
 	}
 	s.stream = stream
 	s.mu = sync.Mutex{}

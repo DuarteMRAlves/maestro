@@ -3,6 +3,7 @@ package grpcw
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"testing"
@@ -19,14 +20,44 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+func TestReflectionClient_SlowServerStartup(t *testing.T) {
+	var backoff retry.ExponentialBackoff
+
+	lis, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("failed to listen: %s", err)
+	}
+	addr := lis.Addr().String()
+	start, stop := startTestResolverServer(t, lis, true)
+	defer stop()
+	go func() {
+		// Delay invocation to allow the resolver to start.
+		time.Sleep(3 * time.Second)
+		start()
+	}()
+
+	r, err := NewReflectionResolver(5*time.Second, backoff, testLogger{})
+	if err != nil {
+		t.Fatalf("create resolver error: %s", err)
+	}
+
+	methodAddr := fmt.Sprintf("%s/*/Unary", addr)
+	fmt.Println("Resolving")
+	_, err = r.Resolve(context.Background(), methodAddr)
+	if err != nil {
+		t.Fatalf("resolve error: %s", err)
+	}
+}
+
 func TestReflectionClient_ListServices(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startTestResolverServer(t, lis, true)
-	defer testServer.GracefulStop()
+	start, stop := startTestResolverServer(t, lis, true)
+	defer stop()
+	start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -70,8 +101,9 @@ func TestReflectionClient_ListServicesNoReflection(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startTestResolverServer(t, lis, false)
-	defer testServer.GracefulStop()
+	start, stop := startTestResolverServer(t, lis, false)
+	defer stop()
+	start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -112,8 +144,9 @@ func TestReflectionClient_ResolveService_TestService(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startTestResolverServer(t, lis, true)
-	defer testServer.GracefulStop()
+	start, stop := startTestResolverServer(t, lis, true)
+	defer stop()
+	start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -251,8 +284,9 @@ func TestReflectionClient_ResolveServiceNoReflection(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startTestResolverServer(t, lis, false)
-	defer testServer.GracefulStop()
+	start, stop := startTestResolverServer(t, lis, false)
+	defer stop()
+	start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -293,8 +327,9 @@ func TestReflectionClient_ResolveServiceUnknownService(t *testing.T) {
 		t.Fatalf("failed to listen: %s", err)
 	}
 	addr := lis.Addr().String()
-	testServer := startTestResolverServer(t, lis, true)
-	defer testServer.GracefulStop()
+	start, stop := startTestResolverServer(t, lis, true)
+	defer stop()
+	start()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -349,7 +384,7 @@ func startTestResolverServer(
 	t *testing.T,
 	lis net.Listener,
 	reflectionFlag bool,
-) *grpc.Server {
+) (func(), func()) {
 	testServer := grpc.NewServer()
 	unit.RegisterMethodLoaderTestServiceServer(testServer, &testResolverService{})
 
@@ -357,10 +392,21 @@ func startTestResolverServer(
 		reflection.Register(testServer)
 	}
 
-	go func() {
+	start := func() {
 		if err := testServer.Serve(lis); err != nil {
 			t.Errorf("test server: %s", err)
 		}
-	}()
-	return testServer
+	}
+	stop := testServer.Stop
+	return start, stop
+}
+
+type testLogger struct{}
+
+func (t testLogger) Debugf(format string, args ...any) {
+	fmt.Printf(format, args...)
+}
+
+func (t testLogger) Infof(format string, args ...any) {
+	fmt.Printf(format, args...)
 }
