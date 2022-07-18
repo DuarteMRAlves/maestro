@@ -59,7 +59,7 @@ func NewReflectionResolver(
 }
 
 func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (method.Desc, error) {
-	m.logger.Debugf("Load method with reflection: %#v", address)
+	m.logger.Debugf("Load method with reflection: %q\n", address)
 
 	addr, err := m.parseAddress(address)
 	if err != nil {
@@ -122,17 +122,18 @@ func (m *ReflectionResolver) listServices(
 		all []string
 		st  *status.Status
 	)
-	stream, err := newBlockingReflectionStream(ctx, conn)
-	if err != nil {
-		return nil, err
-	}
 
 	retry.WhileTrue(func() bool {
+		stream, err := newBlockingReflectionStream(ctx, conn)
+		if err != nil {
+			st, _ = status.FromError(err)
+			return st.Code() == codes.Unavailable
+		}
 		all, err = stream.listServiceNames()
 		st, _ = status.FromError(err)
 		return st.Code() == codes.Unavailable
 	}, &m.expBackoff)
-	if err != nil {
+	if st.Err() != nil {
 		return nil, fmt.Errorf("list services: %w", st.Err())
 	}
 	// Filter the reflection service
@@ -168,17 +169,18 @@ func (m *ReflectionResolver) resolveService(
 		data [][]byte
 		st   *status.Status
 	)
-	stream, err := newBlockingReflectionStream(ctx, conn)
-	if err != nil {
-		return nil, err
-	}
 
 	retry.WhileTrue(func() bool {
+		stream, err := newBlockingReflectionStream(ctx, conn)
+		if err != nil {
+			st, _ = status.FromError(err)
+			return st.Code() == codes.Unavailable
+		}
 		data, err = stream.filesForSymbol(string(service))
 		st, _ = status.FromError(err)
 		return st.Code() == codes.Unavailable
 	}, &m.expBackoff)
-	if err != nil {
+	if st.Err() != nil {
 		switch st.Code() {
 		case codes.NotFound:
 			return nil, &serviceNotFound{srv: string(service)}
