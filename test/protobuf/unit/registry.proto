@@ -1,0 +1,16 @@
+syntax="proto3";
+
+option go_package = "github.com/DuarteMRAlves/maestro/test/protobuf/unit";
+
+package unit;
+
+import "google/protobuf/empty.proto";
+
+service CustomService {
+    rpc Unary(InputMessage) returns (OutputMessage);
+    rpc WithEmpty(google.protobuf.Empty) returns (stream OutputMessage);
+}
+
+message InputMessage {}
+
+message OutputMessage {}
