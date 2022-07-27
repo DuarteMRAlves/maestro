@@ -8,10 +8,13 @@ import (
 
 type ProtoRegistry struct {
 	descs map[protoreflect.FullName]protoreflect.Descriptor
+	files map[string]protoreflect.FileDescriptor
 }
 
 // Register file registers the top level definitions of a file. The behaviour
 // for duplicate descriptors is to replace with the new descriptors.
+// The function also associates the file with its path. If multiple files have
+// the same path, the last one is also kept.
 func (r ProtoRegistry) RegisterFile(f protoreflect.FileDescriptor) ProtoRegistry {
 	var toAdd []protoreflect.Descriptor
 
@@ -47,9 +50,31 @@ func (r ProtoRegistry) RegisterFile(f protoreflect.FileDescriptor) ProtoRegistry
 	for _, d := range toAdd {
 		newDescs[d.FullName()] = d
 	}
-	return ProtoRegistry{descs: newDescs}
+
+	newFiles := make(map[string]protoreflect.FileDescriptor, len(r.files)+1)
+	for k, v := range r.files {
+		newFiles[k] = v
+	}
+	newFiles[f.Path()] = f
+	return ProtoRegistry{descs: newDescs, files: newFiles}
 }
 
-func (p ProtoRegistry) String() string {
-	return fmt.Sprintf("ProtoRegistry(%s)", p.descs)
+func (r ProtoRegistry) FindFileByPath(p string) (protoreflect.Descriptor, error) {
+	f, ok := r.files[p]
+	if !ok {
+		return nil, &errPathNotFound{Path: p}
+	}
+	return f, nil
+}
+
+func (r ProtoRegistry) String() string {
+	return fmt.Sprintf("ProtoRegistry{\n\tdescriptors: %s,\n\tfiles: %s\n}", r.descs, r.files)
+}
+
+type errPathNotFound struct {
+	Path string
+}
+
+func (e *errPathNotFound) Error() string {
+	return fmt.Sprintf("path not found: %q", e.Path)
 }

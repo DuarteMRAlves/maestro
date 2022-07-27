@@ -134,3 +134,34 @@ func verifyCustomService(t *testing.T, r ProtoRegistry) {
 		t.Fatal("with empty method not fouond in custom service")
 	}
 }
+
+func TestRegisterAndFindFile(t *testing.T) {
+	var registry ProtoRegistry
+
+	registry = registry.
+		RegisterFile(emptypb.File_google_protobuf_empty_proto).
+		RegisterFile(anypb.File_google_protobuf_any_proto).
+		RegisterFile(unit.File_registry_proto)
+
+	emptyFd, err := registry.FindFileByPath("google/protobuf/empty.proto")
+	if err != nil {
+		t.Fatalf("find empty file descriptor: %s", err)
+	}
+	if emptyFd != emptypb.File_google_protobuf_empty_proto {
+		t.Fatalf("empty file descriptor not the same struct")
+	}
+	anyFd, err := registry.FindFileByPath("google/protobuf/any.proto")
+	if err != nil {
+		t.Fatalf("find any file descriptor: %s", err)
+	}
+	if anyFd != anypb.File_google_protobuf_any_proto {
+		t.Fatalf("any file descriptor not the same struct")
+	}
+	customFd, err := registry.FindFileByPath("registry.proto")
+	if err != nil {
+		t.Fatalf("find custom file descriptor: %s", err)
+	}
+	if customFd != unit.File_registry_proto {
+		t.Fatalf("custom file descriptor not the same struct")
+	}
+}
