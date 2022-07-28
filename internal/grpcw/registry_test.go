@@ -14,25 +14,54 @@ func TestRegisterFile(t *testing.T) {
 	var emptyRegistry ProtoRegistry
 
 	withEmpty := emptyRegistry.RegisterFile(emptypb.File_google_protobuf_empty_proto)
-	verifyEmptyMessage(t, withEmpty)
+	verifyEmptyMessageMap(t, withEmpty)
 
 	withAny := withEmpty.RegisterFile(anypb.File_google_protobuf_any_proto)
-	verifyEmptyMessage(t, withAny)
-	verifyAnyMessage(t, withAny)
+	verifyEmptyMessageMap(t, withAny)
+	verifyAnyMessageMap(t, withAny)
 
 	withCustom := withAny.RegisterFile(unit.File_registry_proto)
-	verifyEmptyMessage(t, withCustom)
-	verifyAnyMessage(t, withCustom)
-	verifyInputMessage(t, withCustom)
-	verifyOutputMessage(t, withCustom)
-	verifyCustomService(t, withCustom)
+	verifyEmptyMessageMap(t, withCustom)
+	verifyAnyMessageMap(t, withCustom)
+	verifyInputMessageMap(t, withCustom)
+	verifyOutputMessageMap(t, withCustom)
+	verifyCustomServiceMap(t, withCustom)
 }
 
-func verifyEmptyMessage(t *testing.T, r ProtoRegistry) {
+func TestRegisterAndFindDescriptor(t *testing.T) {
+	var registry ProtoRegistry
+
+	registry = registry.
+		RegisterFile(emptypb.File_google_protobuf_empty_proto).
+		RegisterFile(anypb.File_google_protobuf_any_proto).
+		RegisterFile(unit.File_registry_proto)
+
+	verifyEmptyMessageFind(t, registry)
+	verifyAnyMessageFind(t, registry)
+	verifyInputMessageFind(t, registry)
+	verifyOutputMessageFind(t, registry)
+	verifyCustomServiceFind(t, registry)
+	verifyUnaryMethodFind(t, registry)
+	verifyWithEmptyMethodFind(t, registry)
+}
+
+func verifyEmptyMessageMap(t *testing.T, r ProtoRegistry) {
 	msgDescIface, ok := r.descs[protoreflect.FullName("google.protobuf.Empty")]
 	if !ok {
 		t.Fatal("empty message descriptor missing.")
 	}
+	verifyEmptyMessage(t, msgDescIface)
+}
+
+func verifyEmptyMessageFind(t *testing.T, r ProtoRegistry) {
+	msgDescIface, err := r.FindDescriptorByName(protoreflect.FullName("google.protobuf.Empty"))
+	if err != nil {
+		t.Fatalf("find empty message descriptor: %v", err)
+	}
+	verifyEmptyMessage(t, msgDescIface)
+}
+
+func verifyEmptyMessage(t *testing.T, msgDescIface protoreflect.Descriptor) {
 	msgDesc, ok := msgDescIface.(protoreflect.MessageDescriptor)
 	if !ok {
 		t.Fatal("empty message descriptor is not protoreflect.MessageDescritptor")
@@ -45,11 +74,23 @@ func verifyEmptyMessage(t *testing.T, r ProtoRegistry) {
 	}
 }
 
-func verifyAnyMessage(t *testing.T, r ProtoRegistry) {
+func verifyAnyMessageMap(t *testing.T, r ProtoRegistry) {
 	msgDescIface, ok := r.descs[protoreflect.FullName("google.protobuf.Any")]
 	if !ok {
 		t.Fatal("any message descriptor missing.")
 	}
+	verifyAnyMessage(t, msgDescIface)
+}
+
+func verifyAnyMessageFind(t *testing.T, r ProtoRegistry) {
+	msgDescIface, err := r.FindDescriptorByName(protoreflect.FullName("google.protobuf.Any"))
+	if err != nil {
+		t.Fatalf("find any message descriptor: %v", err)
+	}
+	verifyAnyMessage(t, msgDescIface)
+}
+
+func verifyAnyMessage(t *testing.T, msgDescIface protoreflect.Descriptor) {
 	msgDesc, ok := msgDescIface.(protoreflect.MessageDescriptor)
 	if !ok {
 		t.Fatal("any message descriptor is not protoreflect.MessageDescritptor")
@@ -74,11 +115,23 @@ func verifyAnyMessage(t *testing.T, r ProtoRegistry) {
 	}
 }
 
-func verifyInputMessage(t *testing.T, r ProtoRegistry) {
+func verifyInputMessageMap(t *testing.T, r ProtoRegistry) {
 	msgDescIface, ok := r.descs[protoreflect.FullName("unit.InputMessage")]
 	if !ok {
 		t.Fatal("input message descriptor missing.")
 	}
+	verifyInputMessage(t, msgDescIface)
+}
+
+func verifyInputMessageFind(t *testing.T, r ProtoRegistry) {
+	msgDescIface, err := r.FindDescriptorByName(protoreflect.FullName("unit.InputMessage"))
+	if err != nil {
+		t.Fatalf("find input message descriptor: %v", err)
+	}
+	verifyInputMessage(t, msgDescIface)
+}
+
+func verifyInputMessage(t *testing.T, msgDescIface protoreflect.Descriptor) {
 	msgDesc, ok := msgDescIface.(protoreflect.MessageDescriptor)
 	if !ok {
 		t.Fatal("input message descriptor is not protoreflect.MessageDescritptor")
@@ -91,11 +144,23 @@ func verifyInputMessage(t *testing.T, r ProtoRegistry) {
 	}
 }
 
-func verifyOutputMessage(t *testing.T, r ProtoRegistry) {
+func verifyOutputMessageMap(t *testing.T, r ProtoRegistry) {
 	msgDescIface, ok := r.descs[protoreflect.FullName("unit.OutputMessage")]
 	if !ok {
 		t.Fatal("output message descriptor missing.")
 	}
+	verifyOutputMessage(t, msgDescIface)
+}
+
+func verifyOutputMessageFind(t *testing.T, r ProtoRegistry) {
+	msgDescIface, err := r.FindDescriptorByName(protoreflect.FullName("unit.OutputMessage"))
+	if err != nil {
+		t.Fatalf("find output message descriptor: %v", err)
+	}
+	verifyOutputMessage(t, msgDescIface)
+}
+
+func verifyOutputMessage(t *testing.T, msgDescIface protoreflect.Descriptor) {
 	msgDesc, ok := msgDescIface.(protoreflect.MessageDescriptor)
 	if !ok {
 		t.Fatal("output message descriptor is not protoreflect.MessageDescritptor")
@@ -108,11 +173,23 @@ func verifyOutputMessage(t *testing.T, r ProtoRegistry) {
 	}
 }
 
-func verifyCustomService(t *testing.T, r ProtoRegistry) {
+func verifyCustomServiceMap(t *testing.T, r ProtoRegistry) {
 	descIface, ok := r.descs[protoreflect.FullName("unit.CustomService")]
 	if !ok {
 		t.Fatal("custom service descriptor missing")
 	}
+	verifyCustomService(t, descIface)
+}
+
+func verifyCustomServiceFind(t *testing.T, r ProtoRegistry) {
+	descIface, err := r.FindDescriptorByName(protoreflect.FullName("unit.CustomService"))
+	if err != nil {
+		t.Fatalf("find custom service descriptor: %v", err)
+	}
+	verifyCustomService(t, descIface)
+}
+
+func verifyCustomService(t *testing.T, descIface protoreflect.Descriptor) {
 	srvDesc, ok := descIface.(protoreflect.ServiceDescriptor)
 	if !ok {
 		t.Fatal("custom service descriptor is not protoreflect.ServiceDescriptor")
@@ -124,15 +201,48 @@ func verifyCustomService(t *testing.T, r ProtoRegistry) {
 		t.Fatalf("mismatch on custom service descriptor number of methods:\n%s", diff)
 	}
 
-	unary := srvDesc.Methods().ByName("Unary")
-	if unary == nil {
-		t.Fatal("unary method not found in custom service")
-	}
+	verifyUnaryMethod(t, srvDesc.Methods().ByName("Unary"))
+	verifyWithEmptyMethod(t, srvDesc.Methods().ByName("WithEmpty"))
+}
 
-	withEmpty := srvDesc.Methods().ByName("WithEmpty")
-	if withEmpty == nil {
-		t.Fatal("with empty method not fouond in custom service")
+func verifyUnaryMethodFind(t *testing.T, r ProtoRegistry) {
+	descIface, err := r.FindDescriptorByName(protoreflect.FullName("unit.CustomService.Unary"))
+	if err != nil {
+		t.Fatalf("find unary method descriptor: %v", err)
 	}
+	verifyUnaryMethod(t, descIface)
+}
+
+func verifyUnaryMethod(t *testing.T, descIface protoreflect.Descriptor) {
+	methodDesc, ok := descIface.(protoreflect.MethodDescriptor)
+	if !ok {
+		t.Fatal("unary method descriptor is not protoreflect.MethodDescriptor")
+	}
+	if diff := cmp.Diff(protoreflect.FullName("unit.CustomService.Unary"), methodDesc.FullName()); diff != "" {
+		t.Fatalf("mismatch unary method descriptor name:\n%s", diff)
+	}
+	verifyInputMessage(t, methodDesc.Input())
+	verifyOutputMessage(t, methodDesc.Output())
+}
+
+func verifyWithEmptyMethodFind(t *testing.T, r ProtoRegistry) {
+	descIface, err := r.FindDescriptorByName(protoreflect.FullName("unit.CustomService.WithEmpty"))
+	if err != nil {
+		t.Fatalf("find with empty method descriptor: %v", err)
+	}
+	verifyWithEmptyMethod(t, descIface)
+}
+
+func verifyWithEmptyMethod(t *testing.T, descIface protoreflect.Descriptor) {
+	methodDesc, ok := descIface.(protoreflect.MethodDescriptor)
+	if !ok {
+		t.Fatal("with empty method descriptor is not protoreflect.MethodDescriptor")
+	}
+	if diff := cmp.Diff(protoreflect.FullName("unit.CustomService.WithEmpty"), methodDesc.FullName()); diff != "" {
+		t.Fatalf("mismatch with empty method descriptor name:\n%s", diff)
+	}
+	verifyEmptyMessage(t, methodDesc.Input())
+	verifyOutputMessage(t, methodDesc.Output())
 }
 
 func TestRegisterAndFindFile(t *testing.T) {
