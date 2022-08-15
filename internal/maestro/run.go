@@ -15,6 +15,7 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/execute"
 	"github.com/DuarteMRAlves/maestro/internal/grpcw"
 	"github.com/DuarteMRAlves/maestro/internal/logs"
+	"github.com/DuarteMRAlves/maestro/internal/repr"
 	"github.com/DuarteMRAlves/maestro/internal/retry"
 	"github.com/DuarteMRAlves/maestro/internal/yaml"
 	"github.com/spf13/cobra"
@@ -135,6 +136,7 @@ func (opts *RunOpts) run() error {
 			"unknown config version: expected %s or %s but found %s", v0, v1, opts.version,
 		)
 	}
+	opts.logger.Infof("Pipeline Config:\n%s", repr.Pipeline(pipelineCfg))
 
 	r, err := grpcw.NewReflectionResolver(time.Minute, backoff, opts.logger)
 	if err != nil {
