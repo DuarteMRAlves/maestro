@@ -14,5 +14,5 @@ ARG PROTOC
 COPY --from=builder /opt/protoc /opt/protoc
 ENV PATH="${PATH}:/opt/protoc/bin"
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1 && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
