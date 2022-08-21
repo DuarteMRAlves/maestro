@@ -23,11 +23,11 @@ docker run --mount type=bind,source=<config file absolute path>,target=/config.y
 
 ## Developing
 
-* Install golang version 1.18.3
-* Install protobuf version 3.19.4
+* Install golang version 1.19
+* Install protobuf version 21.5
 * Run the following commands:
 
 ```shell
-$ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
-$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
+$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 ```
