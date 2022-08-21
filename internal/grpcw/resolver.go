@@ -56,7 +56,7 @@ func NewReflectionResolver(
 }
 
 func (m *ReflectionResolver) Resolve(ctx context.Context, address string) (method.Desc, error) {
-	m.logger.Debugf("Load method with reflection: %q\n", address)
+	m.logger.Infof("Load method with reflection: %q\n", address)
 
 	addr, err := m.parseAddress(address)
 	if err != nil {
