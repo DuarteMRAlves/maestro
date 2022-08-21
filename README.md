@@ -24,7 +24,7 @@ docker run --mount type=bind,source=<config file absolute path>,target=/config.y
 ## Developing
 
 * Install golang version 1.19
-* Install protobuf version 3.19.4
+* Install protobuf version 21.5
 * Run the following commands:
 
 ```shell
