@@ -25,10 +25,18 @@ type Stage struct {
 }
 
 func (s *Stage) Name() StageName {
+	if s == nil {
+		return StageName{}
+	}
 	return s.name
 }
 
-func (s *Stage) Type() StageType { return s.sType }
+func (s *Stage) Type() StageType {
+	if s == nil {
+		return StageTypeUnknown
+	}
+	return s.sType
+}
 
 func (s *Stage) Dialer() method.Dialer {
 	if s == nil {
@@ -51,12 +59,52 @@ func (s *Stage) OutputDesc() message.Type {
 	return s.desc.Output()
 }
 
-func (s *Stage) Inputs() []*Link {
-	return s.inputs
+// Iterates over the input links of Stage while fn returns true.
+func (s *Stage) RangeInputs(fn func(*Link) bool) {
+	if s == nil {
+		return
+	}
+	for _, i := range s.inputs {
+		if !fn(i) {
+			return
+		}
+	}
 }
 
-func (s *Stage) Outputs() []*Link {
-	return s.outputs
+func (s *Stage) CopyInputs() []*Link {
+	if s == nil {
+		return nil
+	}
+	cp := make([]*Link, 0, len(s.inputs))
+	s.RangeInputs(func(l *Link) bool {
+		cp = append(cp, l)
+		return true
+	})
+	return cp
+}
+
+// Iterates over the output links of Stage while fn returns true.
+func (s *Stage) RangeOutputs(fn func(*Link) bool) {
+	if s == nil {
+		return
+	}
+	for _, i := range s.outputs {
+		if !fn(i) {
+			return
+		}
+	}
+}
+
+func (s *Stage) CopyOutputs() []*Link {
+	if s == nil {
+		return nil
+	}
+	cp := make([]*Link, 0, len(s.outputs))
+	s.RangeOutputs(func(l *Link) bool {
+		cp = append(cp, l)
+		return true
+	})
+	return cp
 }
 
 type StageName struct{ val string }
@@ -85,9 +133,10 @@ func (err *invalidStageName) Error() string {
 type StageType string
 
 const (
-	StageTypeUnary  StageType = "UnaryStage"
-	StageTypeSource StageType = "SourceStage"
-	StageTypeSink   StageType = "SinkStage"
-	StageTypeMerge  StageType = "MergeStage"
-	StageTypeSplit  StageType = "SplitStage"
+	StageTypeUnknown StageType = "UnknownStage"
+	StageTypeUnary   StageType = "UnaryStage"
+	StageTypeSource  StageType = "SourceStage"
+	StageTypeSink    StageType = "SinkStage"
+	StageTypeMerge   StageType = "MergeStage"
+	StageTypeSplit   StageType = "SplitStage"
 )
