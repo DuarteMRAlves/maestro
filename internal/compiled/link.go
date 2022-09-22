@@ -13,19 +13,31 @@ type Link struct {
 	numEmptyMessages uint
 }
 
-func (l Link) Name() LinkName {
+func (l *Link) Name() LinkName {
+	if l == nil {
+		return LinkName{}
+	}
 	return l.name
 }
 
-func (l Link) Source() *LinkEndpoint {
+func (l *Link) Source() *LinkEndpoint {
+	if l == nil {
+		return nil
+	}
 	return l.source
 }
 
-func (l Link) Target() *LinkEndpoint {
+func (l *Link) Target() *LinkEndpoint {
+	if l == nil {
+		return nil
+	}
 	return l.target
 }
 
-func (l Link) NumEmptyMessages() uint {
+func (l *Link) NumEmptyMessages() uint {
+	if l == nil {
+		return 0
+	}
 	return l.numEmptyMessages
 }
 
@@ -70,11 +82,17 @@ type LinkEndpoint struct {
 	field message.Field
 }
 
-func (e LinkEndpoint) Stage() StageName {
+func (e *LinkEndpoint) Stage() StageName {
+	if e == nil {
+		return StageName{}
+	}
 	return e.stage
 }
 
-func (e LinkEndpoint) Field() message.Field {
+func (e *LinkEndpoint) Field() message.Field {
+	if e == nil {
+		return ""
+	}
 	return e.field
 }
 

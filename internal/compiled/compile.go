@@ -270,27 +270,39 @@ func validateLink(stages stageGraph, link *Link) error {
 		return &incompatibleMessageDesc{A: sourceMsg, B: targetMsg}
 	}
 
-	for _, prev := range target.Inputs() {
+	return compatibleWithPreviousLinks(link, target)
+}
+
+func compatibleWithPreviousLinks(link *Link, target *Stage) error {
+	var err error
+	target.RangeInputs(func(prev *Link) bool {
 		targetFieldLink := link.Target().Field()
 		targetFieldPrev := prev.Target().Field()
-		// Target receives entire message from this link but another exists.
+
+		// 1. Target receives entire message from this link but another exists.
 		if targetFieldLink.IsUnspecified() {
-			return &linkSetsFullMessage{name: link.Name().Unwrap()}
+			err = &linkSetsFullMessage{name: link.Name().Unwrap()}
+			return false
 		}
+
 		// 2. Target already receives entire message from existing link.
 		if targetFieldPrev.IsUnspecified() {
-			return &linkSetsFullMessage{name: prev.Name().Unwrap()}
+			err = &linkSetsFullMessage{name: prev.Name().Unwrap()}
+			return false
 		}
+
 		// 3. Target receives same field from both links.
 		if targetFieldLink == targetFieldPrev {
-			return &linksSetSameField{
+			err = &linksSetSameField{
 				A:     link.Name().Unwrap(),
 				B:     prev.Name().Unwrap(),
 				field: string(targetFieldPrev),
 			}
+			return false
 		}
-	}
-	return nil
+		return true
+	})
+	return err
 }
 
 func augmentedGraphFromCondensed(condensedGraph stageGraph) stageGraph {

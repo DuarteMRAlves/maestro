@@ -100,8 +100,8 @@ func buildOfflineStage(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 
 func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState, l Logger) (Stage, error) {
 	name := s.Name()
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
@@ -130,8 +130,8 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 		return nil, errors.New("nil method input")
 	}
 
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 	if len(inputs) != 0 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 0, actual %d", len(inputs))
 	}
@@ -147,8 +147,8 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 }
 
 func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
 	}
@@ -163,7 +163,7 @@ func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlin
 }
 
 func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	inputs := s.Inputs()
+	inputs := s.CopyInputs()
 	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan offlineState, 0, len(inputs))
@@ -176,7 +176,7 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		inChans = append(inChans, inChan)
 	}
 
-	outputs := s.Outputs()
+	outputs := s.CopyOutputs()
 	if len(outputs) != 1 {
 		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
 	}
@@ -193,7 +193,7 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 }
 
 func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
-	inputs := s.Inputs()
+	inputs := s.CopyInputs()
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
 	}
@@ -202,11 +202,11 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
 	}
 
-	outputs := s.Outputs()
+	outputs := s.CopyOutputs()
 	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- offlineState, 0, len(outputs))
-	for _, l := range s.Outputs() {
+	for _, l := range outputs {
 		fields = append(fields, l.Source().Field())
 		outChan, exists := chans[l.Name()]
 		if !exists {
@@ -322,8 +322,8 @@ func buildOnlineStage(s *compiled.Stage, chans map[compiled.LinkName]chan online
 
 func buildOnlineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState, l Logger) (Stage, error) {
 	name := s.Name()
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
@@ -352,8 +352,8 @@ func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlin
 		return nil, errors.New("nil method input")
 	}
 
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 	if len(inputs) != 0 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 0, actual %d", len(inputs))
 	}
@@ -369,8 +369,8 @@ func buildOnlineSource(s *compiled.Stage, chans map[compiled.LinkName]chan onlin
 }
 
 func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	inputs := s.Inputs()
-	outputs := s.Outputs()
+	inputs := s.CopyInputs()
+	outputs := s.CopyOutputs()
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
 	}
@@ -385,7 +385,7 @@ func buildOnlineSink(s *compiled.Stage, chans map[compiled.LinkName]chan onlineS
 }
 
 func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	inputs := s.Inputs()
+	inputs := s.CopyInputs()
 	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
 	inChans := make([]<-chan onlineState, 0, len(inputs))
@@ -398,7 +398,7 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 		inChans = append(inChans, inChan)
 	}
 
-	outputs := s.Outputs()
+	outputs := s.CopyOutputs()
 	if len(outputs) != 1 {
 		return nil, fmt.Errorf("outputs size mismatch: expected 1, actual %d", len(outputs))
 	}
@@ -415,7 +415,7 @@ func buildOnlineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan online
 }
 
 func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan onlineState) (Stage, error) {
-	inputs := s.Inputs()
+	inputs := s.CopyInputs()
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
 	}
@@ -424,11 +424,11 @@ func buildOnlineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan online
 		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
 	}
 
-	outputs := s.Outputs()
+	outputs := s.CopyOutputs()
 	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
 	outChans := make([]chan<- onlineState, 0, len(outputs))
-	for _, l := range s.Outputs() {
+	for _, l := range outputs {
 		fields = append(fields, l.Source().Field())
 		outChan, exists := chans[l.Name()]
 		if !exists {
