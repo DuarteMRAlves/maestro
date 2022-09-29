@@ -68,7 +68,6 @@ func TestOfflineCycle(t *testing.T) {
 
 	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: api.OfflineExecution,
 		Stages: []*api.Stage{
 			{Name: "counter", Address: counterAddr.String()},
 			{Name: "sum", Address: sumAddr.String()},

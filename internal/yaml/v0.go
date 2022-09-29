@@ -31,8 +31,7 @@ func ReadV0(file string) (*api.Pipeline, error) {
 		return nil, fmt.Errorf("read v0: %w", err)
 	}
 
-	// v0 pipeline executes always online.
-	pipeline := &api.Pipeline{Name: "v0-pipeline", Mode: api.OnlineExecution}
+	pipeline := &api.Pipeline{Name: "v0-pipeline"}
 
 	for _, stageSpec := range fileSpec.Stages {
 		s := &api.Stage{

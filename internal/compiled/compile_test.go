@@ -34,7 +34,6 @@ func TestNew(t *testing.T) {
 			},
 			expected: &Pipeline{
 				name: PipelineName{val: "pipeline"},
-				mode: OfflineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
 						name:    StageName{val: "stage-1:aux-source"},
@@ -142,7 +141,6 @@ func TestNew(t *testing.T) {
 		"split and merge": {
 			input: &api.Pipeline{
 				Name: "pipeline",
-				Mode: api.OnlineExecution,
 				Stages: []*api.Stage{
 					{Name: "stage-1", Address: "method-1"},
 					{Name: "stage-2", Address: "method-2"},
@@ -170,7 +168,6 @@ func TestNew(t *testing.T) {
 			},
 			expected: &Pipeline{
 				name: PipelineName{val: "pipeline"},
-				mode: OnlineExecution,
 				stages: stageGraph{
 					StageName{val: "stage-1:aux-source"}: &Stage{
 						name:    StageName{val: "stage-1:aux-source"},
@@ -348,7 +345,6 @@ func TestNew(t *testing.T) {
 			cmpOpts := cmp.AllowUnexported(
 				Pipeline{},
 				PipelineName{},
-				ExecutionMode{},
 				Stage{},
 				StageName{},
 				Link{},
@@ -511,39 +507,6 @@ func TestNewIsErr(t *testing.T) {
 				mapper := map[string]method.Desc{
 					"method-1/*/*": testLinearStage1Method{},
 					"method-2/*/*": testLinearStage2Method{},
-				}
-				s, ok := mapper[address]
-				if !ok {
-					panic(fmt.Sprintf("No such method: %v", address))
-				}
-				return s, nil
-			},
-		},
-		"cycle and online": {
-			input: &api.Pipeline{
-				Name: "Pipeline",
-				Mode: api.OnlineExecution,
-				Stages: []*api.Stage{
-					{Name: "stage-1", Address: "method-1"},
-					{Name: "stage-3", Address: "method-3"},
-				},
-				Links: []*api.Link{
-					{Name: "1-to-3", SourceStage: "stage-1", TargetStage: "stage-3"},
-					{Name: "3-to-1", SourceStage: "stage-3", TargetStage: "stage-1"},
-				},
-			},
-			validateErr: func(err error) string {
-				if !errors.Is(err, errCyclesAndOnline) {
-					format := "error mismatch: expected %s, received %s"
-					return fmt.Sprintf(format, errCyclesAndOnline, err)
-				}
-				return ""
-			},
-			resolver: func(_ context.Context, address string) (method.Desc, error) {
-				mapper := map[string]method.Desc{
-					"method-1/*/*": testLinearStage1Method{},
-					// Use method 3 to match method 1 message types
-					"method-3/*/*": testLinearStage3Method{},
 				}
 				s, ok := mapper[address]
 				if !ok {

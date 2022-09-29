@@ -19,21 +19,3 @@ func (s *offlineSink) Run(ctx context.Context) error {
 		}
 	}
 }
-
-type onlineSink struct {
-	input <-chan onlineState
-}
-
-func newOnlineSink(input <-chan onlineState) Stage {
-	return &onlineSink{input: input}
-}
-
-func (s *onlineSink) Run(ctx context.Context) error {
-	for {
-		select {
-		case <-s.input:
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}

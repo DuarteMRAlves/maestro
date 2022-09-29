@@ -68,7 +68,6 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 
 	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: api.OfflineExecution,
 		Stages: []*api.Stage{
 			{Name: "source", Address: sourceAddr.String()},
 			{Name: "transform", Address: transfAddr.String()},
@@ -140,128 +139,6 @@ func TestOfflineSplitAndMerge(t *testing.T) {
 		if diff := cmp.Diff(int64((i+1)*3), trans.Val); diff != "" {
 			t.Fatalf("mismatch at trans %d:\n%s", i, diff)
 		}
-	}
-}
-
-func TestOnlineSplitAndMerge(t *testing.T) {
-	var (
-		source  splitAndMergeSource
-		transf  splitAndMergeTransform
-		sink    splitAndMergeSink
-		backoff retry.ExponentialBackoff
-	)
-
-	max := 100
-	collect := make([]*integration.JoinMessage, 0, max)
-	done := make(chan struct{})
-
-	sink.max = max
-	sink.collect = &collect
-	sink.done = done
-
-	sourceAddr, sourceStart, sourceStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterSplitAndMergeSourceServer(registrar, &source)
-		},
-	)
-	defer sourceStop()
-	go sourceStart()
-
-	transfAddr, transfStart, transfStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterSplitAndMergeTransformServer(registrar, &transf)
-		},
-	)
-	defer transfStop()
-	go transfStart()
-
-	sinkAddr, sinkStart, sinkStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterSplitAndMergeSinkServer(registrar, &sink)
-		},
-	)
-	defer sinkStop()
-	go sinkStart()
-
-	cfg := &api.Pipeline{
-		Name: "pipeline",
-		Mode: api.OnlineExecution,
-		Stages: []*api.Stage{
-			{Name: "source", Address: sourceAddr.String()},
-			{Name: "transform", Address: transfAddr.String()},
-			{Name: "sink", Address: sinkAddr.String()},
-		},
-		Links: []*api.Link{
-			{
-				Name:        "link-source-transform",
-				SourceStage: "source",
-				TargetStage: "transform",
-			},
-			{
-				Name:        "link-source-sink",
-				SourceStage: "source",
-				TargetStage: "sink",
-				TargetField: "original",
-			},
-			{
-				Name:        "link-transform-sink",
-				SourceStage: "transform",
-				TargetStage: "sink",
-				TargetField: "transformed",
-			},
-		},
-	}
-
-	resolver, err := grpcw.NewReflectionResolver(5*time.Minute, backoff, logs.New(true))
-	if err != nil {
-		t.Fatalf("create resolver: %v", err)
-	}
-	compilationCtx := compiled.NewContext(resolver)
-	pipeline, err := compiled.New(compilationCtx, cfg)
-	if err != nil {
-		t.Fatalf("compile error: %s", err)
-	}
-
-	executionBuilder := execute.NewBuilder(logs.New(true))
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		cause, ok := errors.Unwrap(err).(interface {
-			GRPCStatus() *status.Status
-		})
-		if !ok {
-			t.Fatalf("stop error does not implement grpc interface")
-		}
-		st := cause.GRPCStatus()
-		// The cancel can happen midways through a method call
-		if diff := cmp.Diff(codes.Canceled, st.Code()); diff != "" {
-			t.Fatalf("stop error code mismatch:\n%s", diff)
-		}
-	}
-
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		orig := msg.Original
-		trans := msg.Transformed
-		if prev >= orig.Val {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, orig.Val)
-		}
-		if trans.Val != 3*orig.Val {
-			t.Fatalf("transformed != 3 * original at %d: orig is %d and transf is %d", i, orig.Val, trans.Val)
-		}
-		prev = orig.Val
 	}
 }
 

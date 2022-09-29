@@ -68,7 +68,6 @@ func TestOfflineLinear(t *testing.T) {
 
 	cfg := &api.Pipeline{
 		Name: "pipeline",
-		Mode: api.OfflineExecution,
 		Stages: []*api.Stage{
 			{Name: "source", Address: sourceAddr.String()},
 			{Name: "transform", Address: transfAddr.String()},
@@ -128,119 +127,6 @@ func TestOfflineLinear(t *testing.T) {
 		if diff := cmp.Diff(int64((i+1)*3), msg.Val); diff != "" {
 			t.Fatalf("mismatch at msg %d:\n%s", i, diff)
 		}
-	}
-}
-
-func TestOnlineLinear(t *testing.T) {
-	var (
-		source  linearSource
-		transf  linearTransform
-		sink    linearSink
-		backoff retry.ExponentialBackoff
-	)
-
-	max := 100
-	collect := make([]*integration.LinearMessage, 0, max)
-	done := make(chan struct{})
-
-	sink.max = max
-	sink.collect = &collect
-	sink.done = done
-
-	sourceAddr, sourceStart, sourceStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearSourceServer(registrar, &source)
-		},
-	)
-	defer sourceStop()
-	go sourceStart()
-
-	transfAddr, transfStart, transfStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearTransformServer(registrar, &transf)
-		},
-	)
-	defer transfStop()
-	go transfStart()
-
-	sinkAddr, sinkStart, sinkStop := createGrpcServer(
-		t,
-		func(registrar grpc.ServiceRegistrar) {
-			integration.RegisterLinearSinkServer(registrar, &sink)
-		},
-	)
-	defer sinkStop()
-	go sinkStart()
-
-	cfg := &api.Pipeline{
-		Name: "pipeline",
-		Mode: api.OnlineExecution,
-		Stages: []*api.Stage{
-			{Name: "source", Address: sourceAddr.String()},
-			{Name: "transform", Address: transfAddr.String()},
-			{Name: "sink", Address: sinkAddr.String()},
-		},
-		Links: []*api.Link{
-			{
-				Name:        "link-source-transform",
-				SourceStage: "source",
-				TargetStage: "transform",
-			},
-			{
-				Name:        "link-transform-sink",
-				SourceStage: "transform",
-				TargetStage: "sink",
-			},
-		},
-	}
-
-	resolver, err := grpcw.NewReflectionResolver(5*time.Minute, backoff, logs.New(true))
-	if err != nil {
-		t.Fatalf("create resolver: %v", err)
-	}
-	compilationCtx := compiled.NewContext(resolver)
-	pipeline, err := compiled.New(compilationCtx, cfg)
-	if err != nil {
-		t.Fatalf("compile error: %s", err)
-	}
-
-	executionBuilder := execute.NewBuilder(logs.New(true))
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		cause, ok := errors.Unwrap(err).(interface {
-			GRPCStatus() *status.Status
-		})
-		if !ok {
-			t.Fatalf("stop error does not implement grpc interface")
-		}
-		st := cause.GRPCStatus()
-		// The cancel can happen midways through a method call
-		if diff := cmp.Diff(codes.Canceled, st.Code()); diff != "" {
-			t.Fatalf("stop error code mismatch:\n%s", diff)
-		}
-	}
-
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		if prev >= msg.Val {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
-		}
-		if msg.Val%3 != 0 {
-			t.Fatalf("value %d is not divisible by 3: %d", i, msg.Val)
-		}
-		prev = msg.Val
 	}
 }
 

@@ -28,7 +28,6 @@ var (
 	errEmptySourceName      = errors.New("empty source name")
 	errEmptyTargetName      = errors.New("empty target name")
 	errEqualSourceAndTarget = errors.New("equal source and target stages")
-	errCyclesAndOnline      = errors.New("pipeline with cycles and online mode")
 )
 
 type stageAlreadyExists struct{ name string }
@@ -106,18 +105,8 @@ func New(ctx Context, cfg *api.Pipeline) (*Pipeline, error) {
 
 	augmentedGraph := augmentedGraphFromCondensed(condensedGraph)
 
-	if cfg.Mode == api.OnlineExecution && hasLoops(augmentedGraph) {
-		return nil, errCyclesAndOnline
-	}
-
-	m, err := modeFromApi(cfg.Mode)
-	if err != nil {
-		return nil, err
-	}
-
 	p := &Pipeline{
 		name:   name,
-		mode:   m,
 		stages: augmentedGraph,
 	}
 	return p, nil

@@ -15,10 +15,8 @@ func TestPipeline(t *testing.T) {
 		"empty stages and links": {
 			input: &api.Pipeline{
 				Name: "Pipeline",
-				Mode: api.OnlineExecution,
 			},
 			expected: `Name: "Pipeline"
-ExecutionMode: Online
 Stages: []
 Links: []`,
 		},
@@ -39,7 +37,6 @@ Links: []`,
 				},
 			},
 			expected: `Name: "Pipeline"
-ExecutionMode: Offline
 Stages: [
 	{
 		Name: "Stage-1"
@@ -88,7 +85,6 @@ Links: []`,
 				},
 			},
 			expected: `Name: "Pipeline"
-ExecutionMode: Offline
 Stages: [
 	{
 		Name: "Stage-1"
