@@ -113,23 +113,7 @@ func resourceToPipeline(r v1ReadResource) (*api.Pipeline, error) {
 	if !ok {
 		return nil, errors.New("pipeline spec cast error")
 	}
-	mode, err := stringToExecutionMode(s.Mode)
-	if err != nil {
-		return nil, err
-	}
-	return &api.Pipeline{Name: s.Name, Mode: mode}, nil
-}
-
-func stringToExecutionMode(val string) (api.ExecutionMode, error) {
-	switch val {
-	case "", "Offline":
-		return api.OfflineExecution, nil
-	case "Online":
-		return api.OnlineExecution, nil
-	default:
-		err := fmt.Errorf("unknown execution mode: %s", val)
-		return api.OfflineExecution, err
-	}
+	return &api.Pipeline{Name: s.Name}, nil
 }
 
 func resourceToStage(r v1ReadResource) (*api.Stage, string, error) {
@@ -331,15 +315,6 @@ type v1WriteResource struct {
 func pipelineToResource(r *v1WriteResource, p *api.Pipeline) {
 	var pipelineSpec v1PipelineSpec
 	pipelineSpec.Name = p.Name
-	switch p.Mode {
-	// No need to specify offline as it is the default.
-	case api.OfflineExecution:
-		pipelineSpec.Mode = ""
-	case api.OnlineExecution:
-		pipelineSpec.Mode = "Online"
-	default:
-		pipelineSpec.Mode = "Unknown"
-	}
 
 	r.Kind = pipelineKind
 	r.Spec = pipelineSpec

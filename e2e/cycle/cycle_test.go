@@ -17,7 +17,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineCycle(t *testing.T) {
+func TestCycle(t *testing.T) {
 	var mu sync.Mutex
 	max := 100
 	collect := make([]*SumMessage, 0, max)

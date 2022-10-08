@@ -20,11 +20,9 @@ func TestReadV1(t *testing.T) {
 			expected: []*api.Pipeline{
 				{
 					Name: "pipeline-2",
-					Mode: api.OfflineExecution,
 				},
 				{
 					Name: "pipeline-1",
-					Mode: api.OnlineExecution,
 					Stages: []*api.Stage{
 						{
 							Name:    "stage-1",
@@ -70,7 +68,6 @@ func TestReadV1(t *testing.T) {
 			expected: []*api.Pipeline{
 				{
 					Name: "pipeline-3",
-					Mode: api.OfflineExecution,
 					Stages: []*api.Stage{
 						{
 							Name:    "stage-5",
@@ -95,7 +92,6 @@ func TestReadV1(t *testing.T) {
 				},
 				{
 					Name: "pipeline-4",
-					Mode: api.OfflineExecution,
 					Stages: []*api.Stage{
 						{
 							Name:    "stage-4",
@@ -220,7 +216,6 @@ func TestReadV1_Err(t *testing.T) {
 func TestWriteV1(t *testing.T) {
 	pipeline := api.Pipeline{
 		Name: "pipeline-1",
-		Mode: api.OnlineExecution,
 		Stages: []*api.Stage{
 			{
 				Name:    "stage-1",

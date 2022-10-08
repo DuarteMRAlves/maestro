@@ -21,25 +21,11 @@ func writePipeline(b *strings.Builder, p *api.Pipeline) {
 
 	writeStringField(b, "Name", p.Name, 0)
 
-	b.WriteString("\nExecutionMode: ")
-	writeExecutionMode(b, p.Mode)
-
 	b.WriteString("\nStages: ")
 	writeStages(b, p.Stages...)
 
 	b.WriteString("\nLinks: ")
 	writeLinks(b, p.Links...)
-}
-
-func writeExecutionMode(b *strings.Builder, m api.ExecutionMode) {
-	switch m {
-	case api.OfflineExecution:
-		b.WriteString("Offline")
-	case api.OnlineExecution:
-		b.WriteString("Online")
-	default:
-		b.WriteString("Unknown")
-	}
 }
 
 func writeStages(b *strings.Builder, ss ...*api.Stage) {

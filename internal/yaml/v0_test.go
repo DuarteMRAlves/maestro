@@ -18,7 +18,6 @@ func TestReadV0(t *testing.T) {
 
 	expected := &api.Pipeline{
 		Name: "v0-pipeline",
-		Mode: api.OnlineExecution,
 		Stages: []*api.Stage{
 			{
 				Name:    "stage-1",

@@ -23,7 +23,7 @@ type testData struct {
 	SinkPort      int
 }
 
-func TestOnlineSplitMergePipeline(t *testing.T) {
+func TestSplitMergePipeline(t *testing.T) {
 	var mu sync.Mutex
 	max := 100
 	collect := make([]*Compose, 0, max)

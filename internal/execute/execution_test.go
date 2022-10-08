@@ -15,13 +15,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineExecution_Linear(t *testing.T) {
+func TestExecution_Linear(t *testing.T) {
 	max := 100
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -48,48 +47,6 @@ func TestOfflineExecution_Linear(t *testing.T) {
 		if diff := cmp.Diff(int64((i+1)*2), msg.Val); diff != "" {
 			t.Fatalf("mismatch on value %d:\n%s", i, diff)
 		}
-	}
-}
-
-func TestOnlineExecution_Linear(t *testing.T) {
-	max := 100
-	collect := make([]*testValMsg, 0, max)
-	done := make(chan struct{})
-
-	pipelineCfg, methodLoader := setupLinear(t, max, &collect, done)
-	pipelineCfg.Mode = api.OnlineExecution
-
-	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
-	if err != nil {
-		t.Fatalf("compile error: %s", err)
-	}
-
-	executionBuilder := NewBuilder(logger{debug: true})
-
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		if prev >= msg.Val {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
-		}
-		if msg.Val%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, msg.Val)
-		}
-		prev = msg.Val
 	}
 }
 
@@ -237,13 +194,12 @@ func (c *linearSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *linearSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_SplitAndMerge(t *testing.T) {
+func TestExecution_SplitAndMerge(t *testing.T) {
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -274,49 +230,6 @@ func TestOfflineExecution_SplitAndMerge(t *testing.T) {
 		if diff := cmp.Diff(int64((i+1)*3), msg.Transf.Val); diff != "" {
 			t.Fatalf("mismatch on transf value %d:\n%s", i, diff)
 		}
-	}
-}
-
-func TestOnlineExecution_SplitAndMerge(t *testing.T) {
-	max := 100
-	collect := make([]*testTwoValMsg, 0, max)
-	done := make(chan struct{})
-
-	pipelineCfg, methodLoader := setupSplitAndMerge(t, max, &collect, done)
-	pipelineCfg.Mode = api.OnlineExecution
-
-	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
-	if err != nil {
-		t.Fatalf("compile error: %s", err)
-	}
-
-	executionBuilder := NewBuilder(logger{debug: true})
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		origVal := msg.Orig.Val
-		if prev >= origVal {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, origVal)
-		}
-		transfVal := msg.Transf.Val
-		if transfVal != 3*origVal {
-			t.Fatalf("transf != 3 * orig at %d: orig is %d and transf is %d", i, origVal, transfVal)
-		}
-		prev = origVal
 	}
 }
 
@@ -468,13 +381,12 @@ func (c *splitAndMergeSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *splitAndMergeSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_Slow(t *testing.T) {
+func TestExecution_Slow(t *testing.T) {
 	max := 100
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
 
 	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineCfg.Mode = api.OfflineExecution
 
 	compilationCtx := compiled.NewContext(methodLoader)
 	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
@@ -501,47 +413,6 @@ func TestOfflineExecution_Slow(t *testing.T) {
 		if diff := cmp.Diff(int64((i+1)*2), msg.Val); diff != "" {
 			t.Fatalf("mismatch on value %d:\n%s", i, diff)
 		}
-	}
-}
-
-func TestOnlineExecution_Slow(t *testing.T) {
-	max := 100
-	collect := make([]*testValMsg, 0, max)
-	done := make(chan struct{})
-
-	pipelineCfg, methodLoader := setupSlow(t, max, &collect, done)
-	pipelineCfg.Mode = api.OnlineExecution
-
-	compilationCtx := compiled.NewContext(methodLoader)
-	pipeline, err := compiled.New(compilationCtx, pipelineCfg)
-	if err != nil {
-		t.Fatalf("compile error: %s", err)
-	}
-
-	executionBuilder := NewBuilder(logger{debug: true})
-	e, err := executionBuilder(pipeline)
-	if err != nil {
-		t.Fatalf("build error: %s", err)
-	}
-
-	e.Start()
-	<-done
-	if err := e.Stop(); err != nil {
-		t.Fatalf("stop error: %s", err)
-	}
-	if diff := cmp.Diff(max, len(collect)); diff != "" {
-		t.Fatalf("mismatch on number of collected messages:\n%s", diff)
-	}
-
-	prev := int64(0)
-	for i, msg := range collect {
-		if prev >= msg.Val {
-			t.Fatalf("wrong value order at %d, %d: values are %d, %d", i-1, i, prev, msg.Val)
-		}
-		if msg.Val%2 != 0 {
-			t.Fatalf("value %d is not pair: %d", i, msg.Val)
-		}
-		prev = msg.Val
 	}
 }
 
@@ -693,7 +564,7 @@ func (c *slowSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *slowSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_Cycle(t *testing.T) {
+func TestExecution_Cycle(t *testing.T) {
 	max := 100
 	evenCollect := make([]*testValMsg, 0, max)
 	evenDone := make(chan struct{})

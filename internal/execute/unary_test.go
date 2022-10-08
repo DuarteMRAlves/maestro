@@ -11,25 +11,25 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineUnaryStage_Run(t *testing.T) {
-	var received []offlineState
+func TestUnaryStage_Run(t *testing.T) {
+	var received []state
 
 	stageDone := make(chan struct{})
 	receiveDone := make(chan struct{})
 
 	requests := []testUnaryMessage{{"val1"}, {"val2"}, {"val3"}}
-	states := []offlineState{
-		newOfflineState(requests[0]),
-		newOfflineState(requests[1]),
-		newOfflineState(requests[2]),
+	states := []state{
+		newState(requests[0]),
+		newState(requests[1]),
+		newState(requests[2]),
 	}
 
-	input := make(chan offlineState, len(requests))
-	output := make(chan offlineState, len(requests))
+	input := make(chan state, len(requests))
+	output := make(chan state, len(requests))
 
 	name := createStageName(t, "test-stage")
 	dialer := testDialer{}
-	stage := newOfflineUnary(name, input, output, dialer, logger{debug: true})
+	stage := newUnary(name, input, output, dialer, logger{debug: true})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -62,77 +62,12 @@ func TestOfflineUnaryStage_Run(t *testing.T) {
 		t.Fatalf("mismatch on number of received states:\n%s", diff)
 	}
 	for i, rcv := range received {
-		exp := offlineState{
+		exp := state{
 			msg: testUnaryMessage{
 				val: fmt.Sprintf("val%dval%d", i+1, i+1),
 			},
 		}
-		cmpOpts := cmp.AllowUnexported(offlineState{}, testUnaryMessage{})
-		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
-			t.Fatalf("mismatch on message %d:\n%s", i, diff)
-		}
-	}
-}
-
-func TestOnlineUnaryStage_Run(t *testing.T) {
-	var received []onlineState
-
-	stageDone := make(chan struct{})
-	receiveDone := make(chan struct{})
-
-	requests := []testUnaryMessage{{"val1"}, {"val2"}, {"val3"}}
-	states := []onlineState{
-		newOnlineState(1, requests[0]),
-		newOnlineState(3, requests[1]),
-		newOnlineState(5, requests[2]),
-	}
-
-	input := make(chan onlineState, len(requests))
-	output := make(chan onlineState, len(requests))
-
-	name := createStageName(t, "test-stage")
-	dialer := testDialer{}
-	stage := newOnlineUnary(name, input, output, dialer, logger{debug: true})
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go func() {
-		if err := stage.Run(ctx); err != nil {
-			t.Errorf("run error: %s", err)
-			return
-		}
-		close(stageDone)
-	}()
-
-	go func() {
-		for i := 0; i < len(states); i++ {
-			c := <-output
-			received = append(received, c)
-		}
-		close(receiveDone)
-	}()
-
-	input <- states[0]
-	input <- states[1]
-	input <- states[2]
-	<-receiveDone
-	cancel()
-	<-stageDone
-	close(input)
-
-	if diff := cmp.Diff(len(states), len(received)); diff != "" {
-		t.Fatalf("mismatch on number of received states:\n%s", diff)
-	}
-	for i, rcv := range received {
-		in := states[i]
-		exp := onlineState{
-			id: in.id,
-			msg: testUnaryMessage{
-				val: fmt.Sprintf("val%dval%d", i+1, i+1),
-			},
-		}
-		cmpOpts := cmp.AllowUnexported(onlineState{}, testUnaryMessage{})
+		cmpOpts := cmp.AllowUnexported(state{}, testUnaryMessage{})
 		if diff := cmp.Diff(exp, rcv, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)
 		}

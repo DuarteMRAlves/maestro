@@ -1,7 +1,6 @@
 kind: pipeline
 spec:
   name: LinearPipeline
-  execution_mode: Offline
 ---
 kind: stage
 spec:

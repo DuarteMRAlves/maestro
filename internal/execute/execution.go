@@ -17,7 +17,7 @@ type Execution interface {
 	Stop() error
 }
 
-type offlineExecution struct {
+type execution struct {
 	stages map[compiled.StageName]Stage
 
 	runner *runner
@@ -25,11 +25,11 @@ type offlineExecution struct {
 	logger Logger
 }
 
-func newOfflineExecution(stages map[compiled.StageName]Stage, logger Logger) *offlineExecution {
-	return &offlineExecution{stages: stages, logger: logger}
+func newExecution(stages map[compiled.StageName]Stage, logger Logger) *execution {
+	return &execution{stages: stages, logger: logger}
 }
 
-func (e *offlineExecution) Start() {
+func (e *execution) Start() {
 	e.runner = newRunner()
 
 	for _, s := range e.stages {
@@ -39,41 +39,7 @@ func (e *offlineExecution) Start() {
 	e.logger.Debugf("Execution started\n")
 }
 
-func (e *offlineExecution) Stop() error {
-	err := e.runner.cancelAndWait()
-	e.logger.Debugf("Execution stopped\n")
-	return err
-}
-
-type onlineExecution struct {
-	stages      map[compiled.StageName]Stage
-	chanDrainer chanDrainer
-
-	runner *runner
-
-	logger Logger
-}
-
-func newOnlineExecution(stages map[compiled.StageName]Stage, drainFunc chanDrainer, logger Logger) *onlineExecution {
-	return &onlineExecution{stages: stages, chanDrainer: drainFunc, logger: logger}
-}
-
-func (e *onlineExecution) Start() {
-	e.runner = newRunner()
-
-	e.runner.goWithCtx(func(ctx context.Context) error {
-		e.chanDrainer(ctx)
-		return nil
-	})
-
-	for _, s := range e.stages {
-		e.runner.goWithCtx(s.Run)
-	}
-
-	e.logger.Debugf("Execution started\n")
-}
-
-func (e *onlineExecution) Stop() error {
+func (e *execution) Stop() error {
 	err := e.runner.cancelAndWait()
 	e.logger.Debugf("Execution stopped\n")
 	return err
