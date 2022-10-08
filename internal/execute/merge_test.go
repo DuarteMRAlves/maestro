@@ -9,53 +9,53 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineMergeStage_Run(t *testing.T) {
+func TestMergeStage_Run(t *testing.T) {
 	fields := []message.Field{"inner1", "inner2", "inner3"}
 
-	input1 := make(chan offlineState)
+	input1 := make(chan state)
 	defer close(input1)
-	input2 := make(chan offlineState)
+	input2 := make(chan state)
 	defer close(input2)
-	input3 := make(chan offlineState)
+	input3 := make(chan state)
 	defer close(input3)
-	inputs := []<-chan offlineState{input1, input2, input3}
+	inputs := []<-chan state{input1, input2, input3}
 
-	output := make(chan offlineState)
+	output := make(chan state)
 
 	builder := message.BuildFunc(func() message.Instance { return &testMergeOuterMessage{} })
 
-	s := newOfflineMerge(fields, inputs, output, builder)
+	s := newMerge(fields, inputs, output, builder)
 
 	inputs1 := []*testMergeInnerMessage{{1}, {4}, {7}, {10}}
 	inputs2 := []*testMergeInnerMessage{{2}, {5}, {8}, {11}}
 	inputs3 := []*testMergeInnerMessage{{3}, {6}, {9}, {12}}
 
-	expected := []offlineState{
-		newOfflineState(&testMergeOuterMessage{inputs1[0], inputs2[0], inputs3[0]}),
-		newOfflineState(&testMergeOuterMessage{inputs1[1], inputs2[1], inputs3[1]}),
-		newOfflineState(&testMergeOuterMessage{inputs1[2], inputs2[2], inputs3[2]}),
-		newOfflineState(&testMergeOuterMessage{inputs1[3], inputs2[3], inputs3[3]}),
+	expected := []state{
+		newState(&testMergeOuterMessage{inputs1[0], inputs2[0], inputs3[0]}),
+		newState(&testMergeOuterMessage{inputs1[1], inputs2[1], inputs3[1]}),
+		newState(&testMergeOuterMessage{inputs1[2], inputs2[2], inputs3[2]}),
+		newState(&testMergeOuterMessage{inputs1[3], inputs2[3], inputs3[3]}),
 	}
 
 	go func() {
-		input1 <- newOfflineState(inputs1[0])
-		input1 <- newOfflineState(inputs1[1])
-		input1 <- newOfflineState(inputs1[2])
-		input1 <- newOfflineState(inputs1[3])
+		input1 <- newState(inputs1[0])
+		input1 <- newState(inputs1[1])
+		input1 <- newState(inputs1[2])
+		input1 <- newState(inputs1[3])
 	}()
 
 	go func() {
-		input2 <- newOfflineState(inputs2[0])
-		input2 <- newOfflineState(inputs2[1])
-		input2 <- newOfflineState(inputs2[2])
-		input2 <- newOfflineState(inputs2[3])
+		input2 <- newState(inputs2[0])
+		input2 <- newState(inputs2[1])
+		input2 <- newState(inputs2[2])
+		input2 <- newState(inputs2[3])
 	}()
 
 	go func() {
-		input3 <- newOfflineState(inputs3[0])
-		input3 <- newOfflineState(inputs3[1])
-		input3 <- newOfflineState(inputs3[2])
-		input3 <- newOfflineState(inputs3[3])
+		input3 <- newState(inputs3[0])
+		input3 <- newState(inputs3[1])
+		input3 <- newState(inputs3[2])
+		input3 <- newState(inputs3[3])
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -74,7 +74,7 @@ func TestOfflineMergeStage_Run(t *testing.T) {
 	for i, exp := range expected {
 		out := <-output
 		cmpOpts := cmp.AllowUnexported(
-			offlineState{}, testMergeInnerMessage{}, testMergeOuterMessage{},
+			state{}, testMergeInnerMessage{}, testMergeOuterMessage{},
 		)
 		if diff := cmp.Diff(exp, out, cmpOpts); diff != "" {
 			t.Fatalf("mismatch on message %d:\n%s", i, diff)

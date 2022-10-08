@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestOfflineCycle(t *testing.T) {
+func TestCycle(t *testing.T) {
 	var (
 		counter cycleCounter
 		sum     cycleSum

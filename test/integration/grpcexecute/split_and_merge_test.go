@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestOfflineSplitAndMerge(t *testing.T) {
+func TestSplitAndMerge(t *testing.T) {
 	var (
 		source  splitAndMergeSource
 		transf  splitAndMergeTransform

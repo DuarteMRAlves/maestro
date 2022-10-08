@@ -15,7 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineExecution_Linear(t *testing.T) {
+func TestExecution_Linear(t *testing.T) {
 	max := 100
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
@@ -194,7 +194,7 @@ func (c *linearSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *linearSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_SplitAndMerge(t *testing.T) {
+func TestExecution_SplitAndMerge(t *testing.T) {
 	max := 100
 	collect := make([]*testTwoValMsg, 0, max)
 	done := make(chan struct{})
@@ -381,7 +381,7 @@ func (c *splitAndMergeSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *splitAndMergeSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_Slow(t *testing.T) {
+func TestExecution_Slow(t *testing.T) {
 	max := 100
 	collect := make([]*testValMsg, 0, max)
 	done := make(chan struct{})
@@ -564,7 +564,7 @@ func (c *slowSinkConn) Call(_ context.Context, req message.Instance) (
 
 func (c *slowSinkConn) Close() error { return nil }
 
-func TestOfflineExecution_Cycle(t *testing.T) {
+func TestExecution_Cycle(t *testing.T) {
 	max := 100
 	evenCollect := make([]*testValMsg, 0, max)
 	evenDone := make(chan struct{})

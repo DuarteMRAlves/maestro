@@ -9,25 +9,25 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/method"
 )
 
-type offlineUnary struct {
+type unary struct {
 	name compiled.StageName
 
-	input  <-chan offlineState
-	output chan<- offlineState
+	input  <-chan state
+	output chan<- state
 
 	dialer method.Dialer
 
 	logger Logger
 }
 
-func newOfflineUnary(
+func newUnary(
 	name compiled.StageName,
-	input <-chan offlineState,
-	output chan<- offlineState,
+	input <-chan state,
+	output chan<- state,
 	dialer method.Dialer,
 	logger Logger,
 ) Stage {
-	return &offlineUnary{
+	return &unary{
 		name:   name,
 		input:  input,
 		output: output,
@@ -36,9 +36,9 @@ func newOfflineUnary(
 	}
 }
 
-func (s *offlineUnary) Run(ctx context.Context) error {
+func (s *unary) Run(ctx context.Context) error {
 	var (
-		in, out offlineState
+		in, out state
 		more    bool
 	)
 	conn, err := s.dialer.Dial()
@@ -68,7 +68,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 			return err
 		}
 
-		out = newOfflineState(rep)
+		out = newState(rep)
 		s.logger.Debugf("'%s': send msg: %v\n", s.name, out.msg)
 		select {
 		case s.output <- out:
@@ -80,7 +80,7 @@ func (s *offlineUnary) Run(ctx context.Context) error {
 	}
 }
 
-func (s *offlineUnary) call(
+func (s *unary) call(
 	ctx context.Context, conn method.Conn, req message.Instance,
 ) (message.Instance, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)

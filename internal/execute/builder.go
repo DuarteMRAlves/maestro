@@ -14,19 +14,19 @@ type Builder func(pipeline *compiled.Pipeline) (Execution, error)
 
 func NewBuilder(logger Logger) Builder {
 	return func(pipeline *compiled.Pipeline) (Execution, error) {
-		return buildOfflineExecution(pipeline, logger)
+		return buildExecution(pipeline, logger)
 	}
 }
 
-func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offlineExecution, error) {
+func buildExecution(pipeline *compiled.Pipeline, logger Logger) (*execution, error) {
 	// allChans stores all the channels, including the ones for aux stages.
 	// linkChans stores the channels associates with the pipeline links.
-	var allChans []chan offlineState
+	var allChans []chan state
 
-	chans := make(map[compiled.LinkName]chan offlineState)
+	chans := make(map[compiled.LinkName]chan state)
 
 	err := pipeline.VisitLinks(func(l *compiled.Link) error {
-		ch := make(chan offlineState, defaultChanSize)
+		ch := make(chan state, defaultChanSize)
 		allChans = append(allChans, ch)
 		chans[l.Name()] = ch
 		return nil
@@ -37,7 +37,7 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 
 	stages := make(map[compiled.StageName]Stage)
 	err = pipeline.VisitStages(func(s *compiled.Stage) error {
-		execStage, err := buildOfflineStage(s, chans, logger)
+		execStage, err := buildStage(s, chans, logger)
 		if err != nil {
 			return fmt.Errorf("build stage: %w", err)
 		}
@@ -48,39 +48,39 @@ func buildOfflineExecution(pipeline *compiled.Pipeline, logger Logger) (*offline
 		return nil, err
 	}
 
-	initOfflineChans(pipeline, chans)
+	initChans(pipeline, chans)
 
-	return newOfflineExecution(stages, logger), nil
+	return newExecution(stages, logger), nil
 }
 
-func buildOfflineStage(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState, l Logger) (Stage, error) {
+func buildStage(s *compiled.Stage, chans map[compiled.LinkName]chan state, l Logger) (Stage, error) {
 	switch s.Type() {
 	case compiled.StageTypeUnary:
-		s, err := buildOfflineUnary(s, chans, l)
+		s, err := buildUnary(s, chans, l)
 		if err != nil {
 			return nil, fmt.Errorf("build unary: %w", err)
 		}
 		return s, nil
 	case compiled.StageTypeSource:
-		s, err := buildOfflineSource(s, chans)
+		s, err := buildSource(s, chans)
 		if err != nil {
 			return nil, fmt.Errorf("build source: %w", err)
 		}
 		return s, nil
 	case compiled.StageTypeSink:
-		s, err := buildOfflineSink(s, chans)
+		s, err := buildSink(s, chans)
 		if err != nil {
 			return nil, fmt.Errorf("build sink: %w", err)
 		}
 		return s, nil
 	case compiled.StageTypeMerge:
-		s, err := buildOfflineMerge(s, chans)
+		s, err := buildMerge(s, chans)
 		if err != nil {
 			return nil, fmt.Errorf("build merge: %w", err)
 		}
 		return s, nil
 	case compiled.StageTypeSplit:
-		s, err := buildOfflineSplit(s, chans)
+		s, err := buildSplit(s, chans)
 		if err != nil {
 			return nil, fmt.Errorf("build split: %w", err)
 		}
@@ -90,7 +90,7 @@ func buildOfflineStage(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	}
 }
 
-func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState, l Logger) (Stage, error) {
+func buildUnary(s *compiled.Stage, chans map[compiled.LinkName]chan state, l Logger) (Stage, error) {
 	name := s.Name()
 	inputs := s.CopyInputs()
 	outputs := s.CopyOutputs()
@@ -113,10 +113,10 @@ func buildOfflineUnary(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if dialer == nil {
 		return nil, errors.New("nil dialer")
 	}
-	return newOfflineUnary(name, inChan, outChan, dialer, l), nil
+	return newUnary(name, inChan, outChan, dialer, l), nil
 }
 
-func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+func buildSource(s *compiled.Stage, chans map[compiled.LinkName]chan state) (Stage, error) {
 	input := s.InputDesc()
 	if input == nil {
 		return nil, errors.New("nil method input")
@@ -135,10 +135,10 @@ func buildOfflineSource(s *compiled.Stage, chans map[compiled.LinkName]chan offl
 	if !exists {
 		return nil, fmt.Errorf("unknown output link name: %s", outputs[0].Name())
 	}
-	return newOfflineSource(message.BuildFunc(input.Build), outChan), nil
+	return newSource(message.BuildFunc(input.Build), outChan), nil
 }
 
-func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+func buildSink(s *compiled.Stage, chans map[compiled.LinkName]chan state) (Stage, error) {
 	inputs := s.CopyInputs()
 	outputs := s.CopyOutputs()
 	if len(inputs) != 1 {
@@ -151,14 +151,14 @@ func buildOfflineSink(s *compiled.Stage, chans map[compiled.LinkName]chan offlin
 	if !exists {
 		return nil, fmt.Errorf("unknown input link name: %s", inputs[0].Name())
 	}
-	return newOfflineSink(inChan), nil
+	return newSink(inChan), nil
 }
 
-func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+func buildMerge(s *compiled.Stage, chans map[compiled.LinkName]chan state) (Stage, error) {
 	inputs := s.CopyInputs()
 	fields := make([]message.Field, 0, len(inputs))
 	// channels where the stage will receive the several inputs.
-	inChans := make([]<-chan offlineState, 0, len(inputs))
+	inChans := make([]<-chan state, 0, len(inputs))
 	for _, l := range inputs {
 		fields = append(fields, l.Target().Field())
 		inChan, exists := chans[l.Name()]
@@ -181,10 +181,10 @@ func buildOfflineMerge(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	if input == nil {
 		return nil, errors.New("nil method input")
 	}
-	return newOfflineMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
+	return newMerge(fields, inChans, outChan, message.BuildFunc(input.Build)), nil
 }
 
-func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offlineState) (Stage, error) {
+func buildSplit(s *compiled.Stage, chans map[compiled.LinkName]chan state) (Stage, error) {
 	inputs := s.CopyInputs()
 	if len(inputs) != 1 {
 		return nil, fmt.Errorf("inputs size mismatch: expected 1, actual %d", len(inputs))
@@ -197,7 +197,7 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 	outputs := s.CopyOutputs()
 	fields := make([]message.Field, 0, len(outputs))
 	// channels to split the received states.
-	outChans := make([]chan<- offlineState, 0, len(outputs))
+	outChans := make([]chan<- state, 0, len(outputs))
 	for _, l := range outputs {
 		fields = append(fields, l.Source().Field())
 		outChan, exists := chans[l.Name()]
@@ -206,11 +206,11 @@ func buildOfflineSplit(s *compiled.Stage, chans map[compiled.LinkName]chan offli
 		}
 		outChans = append(outChans, outChan)
 	}
-	return newOfflineSplit(fields, inChan, outChans), nil
+	return newSplit(fields, inChan, outChans), nil
 }
 
-func initOfflineChans(
-	pipeline *compiled.Pipeline, chans map[compiled.LinkName]chan offlineState,
+func initChans(
+	pipeline *compiled.Pipeline, chans map[compiled.LinkName]chan state,
 ) error {
 	return pipeline.VisitLinks(func(l *compiled.Link) error {
 		if l.NumEmptyMessages() == 0 {
@@ -236,7 +236,7 @@ func initOfflineChans(
 			}
 		}
 		for i := 0; i < int(l.NumEmptyMessages()); i++ {
-			ch <- newOfflineState(msgType.Build())
+			ch <- newState(msgType.Build())
 		}
 		return nil
 	})

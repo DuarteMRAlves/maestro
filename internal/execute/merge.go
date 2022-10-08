@@ -6,25 +6,25 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
-type offlineMerge struct {
+type merge struct {
 	// fields are the names of the fields of the generated message that should
 	// be filled with the collected messages.
 	fields []message.Field
 	// inputs are the several input channels from which to collect the messages.
-	inputs []<-chan offlineState
+	inputs []<-chan state
 	// output is the channel used to send messages to the downstream stage.
-	output chan<- offlineState
+	output chan<- state
 	// builder generates empty messages for the output type.
 	builder message.Builder
 }
 
-func newOfflineMerge(
+func newMerge(
 	fields []message.Field,
-	inputs []<-chan offlineState,
-	output chan<- offlineState,
+	inputs []<-chan state,
+	output chan<- state,
 	gen message.Builder,
 ) Stage {
-	return &offlineMerge{
+	return &merge{
 		fields:  fields,
 		inputs:  inputs,
 		output:  output,
@@ -32,10 +32,10 @@ func newOfflineMerge(
 	}
 }
 
-func (s *offlineMerge) Run(ctx context.Context) error {
+func (s *merge) Run(ctx context.Context) error {
 	for {
 		var (
-			currState offlineState
+			currState state
 			more      bool
 		)
 		// partial is the current message being constructed.
@@ -56,7 +56,7 @@ func (s *offlineMerge) Run(ctx context.Context) error {
 				return err
 			}
 		}
-		sendState := newOfflineState(partial)
+		sendState := newState(partial)
 		select {
 		case s.output <- sendState:
 		case <-ctx.Done():

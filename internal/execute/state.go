@@ -6,15 +6,15 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
-// offlineState defines a structure to store the state of an offline pipeline.
-type offlineState struct {
+// state defines a structure to store the state of an pipeline.
+type state struct {
 	msg message.Instance
 }
 
-func newOfflineState(msg message.Instance) offlineState {
-	return offlineState{msg: msg}
+func newState(msg message.Instance) state {
+	return state{msg: msg}
 }
 
-func (s offlineState) String() string {
-	return fmt.Sprintf("offlineState{msg:%v}", s.msg)
+func (s state) String() string {
+	return fmt.Sprintf("state{msg:%v}", s.msg)
 }

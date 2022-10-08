@@ -9,20 +9,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOfflineSplitStage_Run(t *testing.T) {
+func TestSplitStage_Run(t *testing.T) {
 	// Send full message through second output
 	fields := []message.Field{"inner1", "", "inner3"}
 
-	input := make(chan offlineState)
+	input := make(chan state)
 	defer close(input)
 
-	output1 := make(chan offlineState)
-	output2 := make(chan offlineState)
-	output3 := make(chan offlineState)
+	output1 := make(chan state)
+	output2 := make(chan state)
+	output3 := make(chan state)
 
-	outputs := []chan<- offlineState{output1, output2, output3}
+	outputs := []chan<- state{output1, output2, output3}
 
-	s := newOfflineSplit(fields, input, outputs)
+	s := newSplit(fields, input, outputs)
 
 	inputs := []*testSplitOuterMessage{
 		{&testSplitInnerMessage{1}, &testSplitInnerMessage{2}, &testSplitInnerMessage{3}},
@@ -30,26 +30,26 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 		{&testSplitInnerMessage{7}, &testSplitInnerMessage{8}, &testSplitInnerMessage{9}},
 	}
 
-	expected1 := []offlineState{
-		newOfflineState(inputs[0].inner1),
-		newOfflineState(inputs[1].inner1),
-		newOfflineState(inputs[2].inner1),
+	expected1 := []state{
+		newState(inputs[0].inner1),
+		newState(inputs[1].inner1),
+		newState(inputs[2].inner1),
 	}
-	expected2 := []offlineState{
-		newOfflineState(inputs[0]),
-		newOfflineState(inputs[1]),
-		newOfflineState(inputs[2]),
+	expected2 := []state{
+		newState(inputs[0]),
+		newState(inputs[1]),
+		newState(inputs[2]),
 	}
-	expected3 := []offlineState{
-		newOfflineState(inputs[0].inner3),
-		newOfflineState(inputs[1].inner3),
-		newOfflineState(inputs[2].inner3),
+	expected3 := []state{
+		newState(inputs[0].inner3),
+		newState(inputs[1].inner3),
+		newState(inputs[2].inner3),
 	}
 
 	go func() {
-		input <- newOfflineState(inputs[0])
-		input <- newOfflineState(inputs[1])
-		input <- newOfflineState(inputs[2])
+		input <- newState(inputs[0])
+		input <- newState(inputs[1])
+		input <- newState(inputs[2])
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -66,7 +66,7 @@ func TestOfflineSplitStage_Run(t *testing.T) {
 	}()
 
 	cmpOpts := cmp.AllowUnexported(
-		offlineState{}, testSplitInnerMessage{}, testSplitOuterMessage{},
+		state{}, testSplitInnerMessage{}, testSplitOuterMessage{},
 	)
 	for i := 0; i < len(expected1); i++ {
 		exp1 := expected1[i]

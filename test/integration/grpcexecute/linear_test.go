@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestOfflineLinear(t *testing.T) {
+func TestLinear(t *testing.T) {
 	var (
 		source  linearSource
 		transf  linearTransform

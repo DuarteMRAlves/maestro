@@ -6,32 +6,32 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
-type offlineSplit struct {
+type split struct {
 	// fields are the names of the fields of the received message that should
 	// be sent through the respective channel. If field is empty, the
 	// entire message is sent.
 	fields []message.Field
 	// input is the channel from which to receive the messages.
-	input <-chan offlineState
+	input <-chan state
 	// outputs are the several channels where to send messages.
-	outputs []chan<- offlineState
+	outputs []chan<- state
 }
 
-func newOfflineSplit(
+func newSplit(
 	fields []message.Field,
-	input <-chan offlineState,
-	outputs []chan<- offlineState,
+	input <-chan state,
+	outputs []chan<- state,
 ) Stage {
-	return &offlineSplit{
+	return &split{
 		fields:  fields,
 		input:   input,
 		outputs: outputs,
 	}
 }
 
-func (s *offlineSplit) Run(ctx context.Context) error {
+func (s *split) Run(ctx context.Context) error {
 	for {
-		var currState offlineState
+		var currState state
 		select {
 		case currState = <-s.input:
 		case <-ctx.Done():
@@ -51,7 +51,7 @@ func (s *offlineSplit) Run(ctx context.Context) error {
 				}
 				send = fieldMsg
 			}
-			sendState := newOfflineState(send)
+			sendState := newState(send)
 			select {
 			case out <- sendState:
 			case <-ctx.Done():
