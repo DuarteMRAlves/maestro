@@ -187,8 +187,12 @@ func compileLink(cfg *api.Link) (*Link, error) {
 	if target.Stage().IsEmpty() {
 		return nil, errEmptyTargetName
 	}
-	l := NewLink(name, source, target, cfg.NumEmptyMessages)
-	return &l, nil
+	size := defaultLinkSize
+	if cfg.Size > 0 {
+		size = cfg.Size
+	}
+	l := NewLink(name, source, target, size, cfg.NumEmptyMessages)
+	return l, nil
 }
 
 func compileLinkName(name string) (LinkName, error) {
@@ -330,11 +334,13 @@ func compileAuxInputIfNecessary(s *Stage) *Stage {
 
 func compileSourceInput(s *Stage) *Stage {
 	name := StageName{fmt.Sprintf("%s:aux-source", s.name.val)}
-	l := &Link{
-		name:   LinkName{fmt.Sprintf("%s:aux-source-link", s.name.val)},
-		source: &LinkEndpoint{stage: name},
-		target: &LinkEndpoint{stage: s.name},
-	}
+	l := NewLink(
+		LinkName{fmt.Sprintf("%s:aux-source-link", s.name.val)},
+		&LinkEndpoint{stage: name},
+		&LinkEndpoint{stage: s.name},
+		defaultLinkSize,
+		0,
+	)
 	source := &Stage{
 		name:  name,
 		sType: StageTypeSource,
@@ -350,11 +356,13 @@ func compileSourceInput(s *Stage) *Stage {
 
 func compileMergeInput(s *Stage) *Stage {
 	name := StageName{fmt.Sprintf("%s:aux-merge", s.name.val)}
-	l := &Link{
-		name:   LinkName{fmt.Sprintf("%s:aux-merge-link", s.name.val)},
-		source: &LinkEndpoint{stage: name},
-		target: &LinkEndpoint{stage: s.name},
-	}
+	l := NewLink(
+		LinkName{fmt.Sprintf("%s:aux-merge-link", s.name.val)},
+		&LinkEndpoint{stage: name},
+		&LinkEndpoint{stage: s.name},
+		defaultLinkSize,
+		0,
+	)
 	merge := &Stage{
 		name:  name,
 		sType: StageTypeMerge,
@@ -390,11 +398,13 @@ func compileAuxOutputIfNecessary(s *Stage) *Stage {
 
 func compileSinkOutput(s *Stage) *Stage {
 	name := StageName{fmt.Sprintf("%s:aux-sink", s.name.val)}
-	l := &Link{
-		name:   LinkName{fmt.Sprintf("%s:aux-sink-link", s.name.val)},
-		source: &LinkEndpoint{stage: s.name},
-		target: &LinkEndpoint{stage: name},
-	}
+	l := NewLink(
+		LinkName{fmt.Sprintf("%s:aux-sink-link", s.name.val)},
+		&LinkEndpoint{stage: s.name},
+		&LinkEndpoint{stage: name},
+		defaultLinkSize,
+		0,
+	)
 	sink := &Stage{
 		name:  name,
 		sType: StageTypeSink,
@@ -410,11 +420,13 @@ func compileSinkOutput(s *Stage) *Stage {
 
 func compileSplitOutput(s *Stage) *Stage {
 	name := StageName{fmt.Sprintf("%s:aux-split", s.name.val)}
-	l := &Link{
-		name:   LinkName{fmt.Sprintf("%s:aux-split-link", s.name.val)},
-		source: &LinkEndpoint{stage: s.name},
-		target: &LinkEndpoint{stage: name},
-	}
+	l := NewLink(
+		LinkName{fmt.Sprintf("%s:aux-split-link", s.name.val)},
+		&LinkEndpoint{stage: s.name},
+		&LinkEndpoint{stage: name},
+		defaultLinkSize,
+		0,
+	)
 	split := &Stage{
 		name:  name,
 		sType: StageTypeSplit,
