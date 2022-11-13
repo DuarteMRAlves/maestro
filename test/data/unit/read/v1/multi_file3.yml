@@ -11,6 +11,7 @@ spec:
   source_stage: stage-5
   target_stage: stage-6
   target_field: Field1
+  size: 2
   pipeline: pipeline-3
 ---
 kind: link

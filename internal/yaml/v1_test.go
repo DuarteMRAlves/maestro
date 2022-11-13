@@ -54,6 +54,7 @@ func TestReadV1(t *testing.T) {
 							SourceField: "Field1",
 							TargetStage: "stage-2",
 							TargetField: "Field2",
+							Size:        4,
 						},
 					},
 				},
@@ -87,6 +88,7 @@ func TestReadV1(t *testing.T) {
 							SourceStage: "stage-5",
 							TargetStage: "stage-6",
 							TargetField: "Field1",
+							Size:        2,
 						},
 					},
 				},
@@ -239,6 +241,7 @@ func TestWriteV1(t *testing.T) {
 				Name:             "link-stage-2-stage-1",
 				SourceStage:      "stage-2",
 				TargetStage:      "stage-1",
+				Size:             6,
 				NumEmptyMessages: 2,
 			},
 			{

@@ -39,6 +39,7 @@ spec:
   source_field: Field1
   target_stage: stage-2
   target_field: Field2
+  size: 4
   pipeline: pipeline-1
 ---
 kind: pipeline
