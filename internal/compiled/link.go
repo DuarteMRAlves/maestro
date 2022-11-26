@@ -6,11 +6,14 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
+const defaultLinkSize uint = 10
+
 type Link struct {
 	name             LinkName
 	source           *LinkEndpoint
 	target           *LinkEndpoint
 	numEmptyMessages uint
+	size             uint
 }
 
 func (l *Link) Name() LinkName {
@@ -34,6 +37,13 @@ func (l *Link) Target() *LinkEndpoint {
 	return l.target
 }
 
+func (l *Link) Size() uint {
+	if l == nil {
+		return defaultLinkSize
+	}
+	return l.size
+}
+
 func (l *Link) NumEmptyMessages() uint {
 	if l == nil {
 		return 0
@@ -44,12 +54,15 @@ func (l *Link) NumEmptyMessages() uint {
 func NewLink(
 	name LinkName,
 	source, target *LinkEndpoint,
+	size uint,
 	numEmptyMessages uint,
-) Link {
-	return Link{
+) *Link {
+	fmt.Println("Creating link with size", size)
+	return &Link{
 		name:             name,
 		source:           source,
 		target:           target,
+		size:             size,
 		numEmptyMessages: numEmptyMessages,
 	}
 }

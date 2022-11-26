@@ -8,8 +8,6 @@ import (
 	"github.com/DuarteMRAlves/maestro/internal/message"
 )
 
-const defaultChanSize = 10
-
 type Builder func(pipeline *compiled.Pipeline) (Execution, error)
 
 func NewBuilder(logger Logger) Builder {
@@ -26,7 +24,7 @@ func buildExecution(pipeline *compiled.Pipeline, logger Logger) (*execution, err
 	chans := make(map[compiled.LinkName]chan state)
 
 	err := pipeline.VisitLinks(func(l *compiled.Link) error {
-		ch := make(chan state, defaultChanSize)
+		ch := make(chan state, l.Size())
 		allChans = append(allChans, ch)
 		chans[l.Name()] = ch
 		return nil
@@ -216,8 +214,13 @@ func initChans(
 		if l.NumEmptyMessages() == 0 {
 			return nil
 		}
-		if l.NumEmptyMessages() > defaultChanSize {
-			return fmt.Errorf("link %q: too many empty messages", l.Name())
+		if l.NumEmptyMessages() > l.Size() {
+			return fmt.Errorf(
+				"link %q: %d empty messages for link of size %d",
+				l.Name(),
+				l.NumEmptyMessages(),
+				l.Size(),
+			)
 		}
 		ch, ok := chans[l.Name()]
 		if !ok {

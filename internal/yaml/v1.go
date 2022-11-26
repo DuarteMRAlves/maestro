@@ -143,6 +143,7 @@ func resourceToLink(r v1ReadResource) (*api.Link, string, error) {
 		SourceField:      linkSpec.SourceField,
 		TargetStage:      linkSpec.TargetStage,
 		TargetField:      linkSpec.TargetField,
+		Size:             linkSpec.Size,
 		NumEmptyMessages: linkSpec.NumEmptyMessages,
 	}
 	return l, linkSpec.Pipeline, nil
@@ -339,6 +340,7 @@ func linkToResource(r *v1WriteResource, l *api.Link, pipelineName string) {
 	linkSpec.SourceField = l.SourceField
 	linkSpec.TargetStage = l.TargetStage
 	linkSpec.TargetField = l.TargetField
+	linkSpec.Size = l.Size
 	linkSpec.NumEmptyMessages = l.NumEmptyMessages
 	linkSpec.Pipeline = pipelineName
 
